@@ -681,6 +681,10 @@ def _inner_procedure(proc, **kwargs):
 
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
+            # Add process name prefix for OG-generated CHOICE selectors
+            if typename.endswith('_Selection') and var_type.kind == 'ReferenceType':
+                typename = f'{PROCESS_NAME}-{var_type.ReferencedTypeName}'.title().replace('-', '_')
+                typename = f'{ASN1SCC}{typename}'
 
             if def_value:
                 # Expression must be a ground expression, i.e. must not
