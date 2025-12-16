@@ -699,6 +699,11 @@ def _inner_procedure(proc, **kwargs):
                     dstr = array_content(def_value, dstr, varbty)
 
                 assert not dst and not dlocal, 'Ground expression error'
+            else:
+                # No default value, use the ASN1SCC generated constant, at
+                # least the value will not be garbage
+                def_value = True
+                dstr = f'{typename}_constant'
 
             code.append('{ty} {name}{default};'.format(ty=typename, name=var_name, default=' = ' + dstr if def_value else ''))
 
