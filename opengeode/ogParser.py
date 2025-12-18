@@ -718,7 +718,11 @@ def check_call(name, params, context):
             for child in sort.Children.keys():
                 if child.lower() == child_name:
                     break
-            optional = sort.Children[child].Optional
+            try:
+                optional = sort.Children[child].Optional
+            except AttributeError:
+                # fields of CHOICE types don't have this attribute..
+                optional = False
             sort = sort.Children[child].type
             if sort.kind == 'ReferenceType':
                 sort = find_basic_type (sort)
