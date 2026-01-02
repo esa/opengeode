@@ -192,22 +192,20 @@ def req_server(symbol):
 
 def req_ids(symbol):
     ''' PR string for the optional requirement ids associated to a symbol '''
-    if symbol.req_model is None:
-        return []
-    # We have to check if some requirements are selected for the symbol
-    ticked = symbol.req_model.selectedRequirements()
-    ticked.extend(symbol.ast.req_ids)
-    selected=set(ticked)
+    ticked = symbol.ast.req_ids
+    if symbol.req_model is not None:
+        # User has opened the requirement manager, take the list from there
+        # (some requirements may have been unselected)
+        ticked = symbol.req_model.selectedRequirements()
+    #selected=set(ticked)
     result = []
-    for each in selected:
+    for each in ticked:
         result.append(f"/* CIF Keep Specific Geode _REQID_ '{each}' */")
     return result
 
 
 def rid_ids(symbol):
     ''' PR string for the optional requirement ids associated to a symbol '''
-    if symbol.rid_model is None:
-        return[]
     # Check if some RIDs apply to this symbol and save their IDs
     rids = symbol.ast.rid_ids
     result = []
