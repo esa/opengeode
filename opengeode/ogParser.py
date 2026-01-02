@@ -5039,12 +5039,17 @@ def rec_check_composite_state(comp):
         ns = t.instance_of or t.inputString
         ns = ns.lower()
         if not ns in [s.lower() for s in keys] + ['-', '-*']:
-            msg = f'In composite state {comp.statename}: missing definition'\
-                  f' of substate "{ns.upper()}"'
+            msg = f'Missing definition of state "{ns.upper()}"'
             errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
             t.errors.append(msg)
     for each in chain(errors, warnings):
-        each[2].insert(0, 'STATE {}'.format(comp.statename))
+        if isinstance(comp, ogAST.CompositeState):
+            content = f'STATE {comp.statename}'
+        elif isinstance(comp, ogAST.Process):
+            content = f'PROCESS {comp.processName}'
+        else:
+            content = 'UNDEFINED_BUG'
+        each[2].insert(0, content)
 
     # for each state instance inside the composite state, find the corresponding
     # state type definition (can be in a context above), and then for each

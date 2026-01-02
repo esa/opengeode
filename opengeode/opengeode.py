@@ -258,7 +258,7 @@ def log_errors(window, errors, warnings, clearfirst=True):
         window.addItem("Error checking complete")
 
 
-class Vi_bar(QLineEdit, object):
+class Vi_bar(QLineEdit):
     ''' Line editor for the Vi-like command mode '''
     def __init__(self):
         ''' Create the bar - no need for parent '''
@@ -292,7 +292,7 @@ class Vi_bar(QLineEdit, object):
             pass
 
 
-class File_toolbar(QToolBar, object):
+class File_toolbar(QToolBar):
     ''' Toolbar with file open, save, etc '''
     def __init__(self, parent):
         ''' Create the toolbar using standard icons '''
@@ -322,7 +322,7 @@ class File_toolbar(QToolBar, object):
         self.right_button.setEnabled(False)
 
 
-class Sdl_toolbar(QToolBar, object):
+class Sdl_toolbar(QToolBar):
     '''
         Toolbar with SDL symbols
         The list of symbols is passed as parameters at creation time ; the class
@@ -868,6 +868,7 @@ class SDL_Scene(QGraphicsScene):
             item.pos_y += delta_y
         return delta_x, delta_y
 
+    @Slot(Sdl_toolbar)
     def set_selection(self, toolbar):
         ''' When the selection has changed, update menu, etc '''
         toolbar.update_menu(self)
@@ -1861,8 +1862,10 @@ class SDL_View(QGraphicsView):
                 bar_items=ACTIONS.get(self.scene().context, []))
 
         # Connect toolbar actions
-        self.scene().selectionChanged.connect(partial(
-                                    self.scene().set_selection, self.toolbar))
+        self.scene().menuslot = partial(self.scene().set_selection, self.toolbar)
+        if not self.scene().menuslot:
+            # avoid multiple connections. it causes Pyside bugs on app exit
+            self.scene().selectionChanged.connect(self.scene().menuslot)
         for item in self.toolbar.actions.keys():
             self.toolbar.actions[item].triggered.connect(
                                                    self.scene().actions[item])
@@ -1932,6 +1935,7 @@ class SDL_View(QGraphicsView):
         self.viewport().update()
 
     def update_phantom_rect(self):
+        LOG.debug("Update phantom rect")
         scene_rect = self.scene().itemsBoundingRect()
         view_size = self.size()
         scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
