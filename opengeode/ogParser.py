@@ -860,7 +860,7 @@ def check_call(name, params, context):
         elif isinstance(p, ogAST.PrimConstant):
             try:
                 Min = Max = get_asn1_constant_value (p.constant_value)
-            except ValueError:
+            except (ValueError, TypeError):
                 # Non-numerical constants
                 Min = Max = None
         elif isinstance (p, (ogAST.PrimBitStringLiteral,
@@ -2415,6 +2415,11 @@ def get_asn1_constant_value(const_val):
                 # Exceptional case - should be caught by asn1scc
                 raise ValueError(str(first_str) + " could not be resolved")
             retry += 1
+        except TypeError:
+            # Non-numerical types?
+            LOG.debug(f"Exception in get_asn1_constant_value: constant is not a number: {str(const_val)}")
+            LOG.debug(str(traceback.format_exc()))
+            raise
     raise ValueError(str(first_str) + " actual value not found" )
 
 

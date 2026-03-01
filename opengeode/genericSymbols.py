@@ -88,6 +88,10 @@ except Exception as e:
     # ignore netrc-related errors
     print("[INFO] Requirement and RID widget is not available: ", str(e))
 
+if not g_QtTaste:
+    # To avoid a NameError in the slot, in case the widget is not available
+    QtTaste = type('_', (), {"reviews": type('_', (), {"Review": bool})}) 
+
 # global updated when a RID is created or a Requirement tick has changed
 # Since there is no Undo action associated to this, this is the way to
 # update the model cleanliness
