@@ -41,7 +41,7 @@
     For a complete example, look at the "sdlSymbols.py" module, that
     provide symbol definitions that correspond to an SDL editor.
 
-    Copyright (c) 2012-2025 European Space Agency
+    Copyright (c) 2012-2026 European Space Agency
 
     Designed and implemented by Maxime Perrotin for the TASTE project
 
@@ -189,8 +189,6 @@ class Symbol(QObject, QGraphicsPathItem):
         self.req_manager, self.rid_manager = None, None
         self.req_model, self.rid_model = None, None
         self.req_widget, self.rid_widget = None, None
-        if g_QtTaste is True:
-            self.initRequirementsPlugin()
 
         # hasParent compensates a Qt (or PySide) bug when calling parentItem()
         # on top-level items
@@ -220,6 +218,8 @@ class Symbol(QObject, QGraphicsPathItem):
         # Flag to indicate a detected syntax error, used to force the
         # refocus of the text area to make sure user fixes it before saving
         self.syntax_error: bool = False
+        # Flag indicating that the requirement manager is initialized
+        self.req_is_initialized = False
 
     def set_valid_pos(self, pos):
         ''' Hook that can be redefined by sub classes to forbid wrong
@@ -544,9 +544,14 @@ class Symbol(QObject, QGraphicsPathItem):
 
     @Slot(str, bool)
     def req_selected(self, req_id, checked):
-        ''' When a requirement is ticked or unticked, change the cleanliness of the model '''
+        ''' When a requirement is ticked or unticked, change the cleanliness
+            of the model, and update the AST entry with the current list of
+            selected requirements for this symbol.
+        '''
         global g_rids_or_reqs_clean
         g_rids_or_reqs_clean = False
+        self.ast.req_ids = self.req_model.selectedRequirements()
+        LOG.info(f"req_selected calls: {self.ast.req_ids}")
 
 
     @Slot(QtTaste.reviews.Review)
@@ -560,6 +565,8 @@ class Symbol(QObject, QGraphicsPathItem):
         LOG.info(f"Added RID ID {review.m_id}")
         global g_rids_or_reqs_clean
         g_rids_or_reqs_clean = False
+        # does not work XXX need fixes from Kispe
+        LOG.info("Added RID to symbol")
 
 
     def initRequirementsPlugin(self):
@@ -575,6 +582,8 @@ class Symbol(QObject, QGraphicsPathItem):
             self.req_widget.setToken(g_token)
         self.req_widget.setWindowTitle('Requirements')
         self.req_widget.requirementsCredentialsChanged.connect(self.set_credentials)
+        # XXX following does not seem to have any effect anymore with Kispe
+        # version of the widget: signal is NOT SENT. BUG to be fixed by Kispe
         self.req_widget.requirementSelected.connect(self.req_selected)
         self.req_widget.resize(640, 480)
 
@@ -637,6 +646,9 @@ class Symbol(QObject, QGraphicsPathItem):
                     self.hlink_field.setText(self.text.hyperlink)
                     self.hyperlink_dialog.show()
             elif action.text() == req_action:
+                if g_QtTaste is True and not self.req_is_initialized:
+                    self.initRequirementsPlugin()
+                    self.req_is_initialized = True
                 # update credentials if they were changed in another
                 # instance of the widget
                 if self.req_widget.url() != g_url:
@@ -647,7 +659,7 @@ class Symbol(QObject, QGraphicsPathItem):
                 if not self.req_model.m_requirements:
                     LOG.info("Fetching requirements")
                     self.req_manager.setCredentials(g_url, g_token)
-                    self.req_manager.requestAllRequirements()
+                    self.req_manager.requestAllRequirements("")  # Kispe widget now has an argument
                 self.req_widget.show()
                 # Set the list of selected requirements, both from the AST and
                 # from the user-selection
@@ -656,6 +668,9 @@ class Symbol(QObject, QGraphicsPathItem):
                 selected = set(ticked)
                 self.req_model.setSelectedRequirements(list(selected))
             elif action.text() == rid_action:
+                if g_QtTaste is True and not self.req_is_initialized:
+                    self.initRequirementsPlugin()
+                    self.req_is_initialized = True
                 # update credentials if they were changed in another
                 # instance of the widget
                 # right now the filter below is not applicable because

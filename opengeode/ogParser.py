@@ -718,7 +718,11 @@ def check_call(name, params, context):
             for child in sort.Children.keys():
                 if child.lower() == child_name:
                     break
-            optional = sort.Children[child].Optional
+            try:
+                optional = sort.Children[child].Optional
+            except AttributeError:
+                # fields of CHOICE types don't have this attribute..
+                optional = False
             sort = sort.Children[child].type
             if sort.kind == 'ReferenceType':
                 sort = find_basic_type (sort)
@@ -3578,6 +3582,7 @@ def composite_state(root, parent=None, context=None):
     ''' Parse a composite state (incl. state aggregation) definition '''
     if root.type == lexer.COMPOSITE_STATE:
         comp = ogAST.CompositeState()
+        comp.parent = context
     elif root.type == lexer.STATE_AGGREGATION:
         comp = ogAST.StateAggregation()
     errors, warnings = [], []
@@ -3737,16 +3742,6 @@ def composite_state(root, parent=None, context=None):
                            f' missing CONNECT for exitpoint "{exitpt}"')
                     errors.append([msg, [each.pos_x, each.pos_y], []])
 
-    # Post-processing: check that all NEXTSTATEs have a corresponding STATE
-    for t in comp.terminators:
-        if t.kind != "next_state":
-            continue
-        ns = t.inputString.lower()
-        if not ns in [s.lower() for s in comp.mapping.keys()] + ['-', '-*']:
-            msg = f'In composite state {comp.statename}: missing definition'\
-                  f'of substate "{ns.upper()}"'
-            errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
-            t.errors.append(msg)
     for each in chain(errors, warnings):
         each[2].insert(0, 'STATE {}'.format(comp.statename))
     return comp, errors, warnings
@@ -5009,6 +5004,86 @@ def system_definition(root, parent):
     return system, errors, warnings
 
 
+def rec_check_composite_state(comp):
+    '''
+        Once all composite states have been parsed we must make some checks:
+        - If the nextstate is a state instance (inst:type), check if the type
+          is defined, in any of the parent diagrams up to the process
+        - check that return and connect statements match
+
+        This is also done on the first level (process)
+    '''
+    errors, warnings = [], []
+
+    # Go recursive first:
+    for sub in comp.composite_states:
+        err, warn = rec_check_composite_state(sub)
+        errors.extend(err)
+        warnings.extend(warn)
+
+    # list upper level diagrams, to look for state type definitions
+    contexts = [comp]
+    current = comp
+    while isinstance(current, ogAST.CompositeState):
+        current = current.parent
+        contexts.insert(0, current)
+    # 1) check that all NEXTSTATEs have a corresponding STATE, and if it is
+    #    an instance, look for the corresponding type.
+    for t in (term for term in comp.terminators if term.kind == 'next_state'):
+        keys = []
+        if t.instance_of:
+            for ctxt in contexts:
+                keys.extend(list(ctxt.mapping.keys()))
+        else:
+            keys = list(comp.mapping.keys())
+        ns = t.instance_of or t.inputString
+        ns = ns.lower()
+        if not ns in [s.lower() for s in keys] + ['-', '-*']:
+            msg = f'Missing definition of state "{ns.upper()}"'
+            errors.append([msg, [t.pos_x or 0, t.pos_y or 0], []])
+            t.errors.append(msg)
+    for each in chain(errors, warnings):
+        if isinstance(comp, ogAST.CompositeState):
+            content = f'STATE {comp.statename}'
+        elif isinstance(comp, ogAST.Process):
+            content = f'PROCESS {comp.processName}'
+        else:
+            content = 'UNDEFINED_BUG'
+        each[2].insert(0, content)
+
+    # for each state instance inside the composite state, find the corresponding
+    # state type definition (can be in a context above), and then for each
+    # connect part, check and resolve the terminator transitions
+    # also check that no connects are missing below the nested state
+    for state_def in comp.content.states:
+        if not state_def.instance_of:
+            continue
+        # Find the state definition
+        nested = None
+        for ctxt in contexts:
+            for each in ctxt.composite_states:
+                if each.statename.lower() == state_def.instance_of.lower():
+                    nested = each
+        if not nested:
+            # Create a dummy state to but errors will be raised as sate was not
+            # found.
+            ested = ogAST.CompositeState()
+        for conn in state_def.connects:
+            # check each connection and update the transitions in terminators
+            errs = check_and_resolve_connect_part(conn, nested)
+            errors.extend(errs)
+        # check that all returns are present below a state instance
+        connects = set(c for each in state_def.connects for c in each.connect_list)
+        missing = nested.state_exitpoints - connects
+        str_missing = ", ".join(missing)
+        if missing:
+            msg = f'Below state instance {state_def.inputString}: missing connection(s) '\
+                  f' "{str_missing}"'
+            errors.append([msg, [state_def.pos_x or 0, state_def.pos_y or 0], []])
+            state_def.errors.append(msg)
+    return errors, warnings
+
+
 def process_definition(root, parent=None, context=None):
     ''' Process definition analysis '''
     errors, warnings, perr, pwarn = [], [], [], []
@@ -5232,6 +5307,10 @@ def process_definition(root, parent=None, context=None):
                             ' - line ' + str(child.getLine()),
                             [proc_x, proc_y], []])
 
+    # Check composite states
+    err, warn = rec_check_composite_state(process)
+    errors.extend(err)
+    warnings.extend(warn)
 
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
@@ -5730,16 +5809,27 @@ def state(root, parent, context):
             if inp.inputString.strip() == '*':
                 asterisk_input = inp
         elif child.type == lexer.CONNECT:
-            comp_states = (comp.statename for comp in context.composite_states)
-            if asterisk_state or len(state_def.statelist) != 1 \
-                    or state_def.statelist[0].lower() not in comp_states:
-                sterr.append('State {} is not a composite state and cannot '
-                             'be followed by a connect statement'
-                             .format(state_def.statelist[0]))
             conn_part, err, warn = connect_part(child, state_def, context)
             state_def.connects.append(conn_part)
-            warnings.extend(warn)
-            errors.extend(err)
+            comp_states = [comp.statename for comp in context.composite_states]
+            if asterisk_state or len(state_def.statelist) != 1 \
+                    or (state_def.statelist[0].lower() not in comp_states
+                        and state_def.instance_of.lower() not in comp_states):
+                # At this point return an error only if this is not an instance
+                # of a state type. XXX but if there are errors in the connect
+                # part, they must not be ignored after the verification of the
+                # state.
+                if not state_def.instance_of:
+                    sterr.append('State {} is not a composite state and cannot'
+                                 ' be followed by a connect statement'
+                                 .format(state_def.statelist[0]))
+                else:
+                    # Remove the errors that were found in the connect part
+                    conn_part.errors = []
+            else:
+                # Add errors from the connect
+                warnings.extend(warn)
+                errors.extend(err)
         elif child.type == lexer.COMMENT:
             state_def.comment, _, _ = end(child)
         elif child.type == lexer.HYPERLINK:
@@ -5762,8 +5852,6 @@ def state(root, parent, context):
                 for each in existing:
                    if ''.join(each.inputString.lower().split()) == \
                            ''.join(provided_part.inputString.lower().split()):
-                #if provided_part in \
-                #        context.cs_mapping.get(statename.lower(), []):
                       sterr.append('Continuous signal is defined more than once '
                                   'below state "{}"'.format(statename.lower()))
                 else:
@@ -5793,10 +5881,13 @@ def state(root, parent, context):
         remaining_inputs = set(input_signals) - explicit_inputs
         asterisk_input.inputlist = list(remaining_inputs)
     # post-processing: check for duplicate inputs
-    if not state_def.instance_of:
-        statelist = state_def.statelist
-    else:
-        statelist = [state_def.instance_of]
+    statelist = state_def.statelist
+    # Use the instance name, not the state type name
+    # as otherwise duplicates on the state type name would be raised
+    #   if not state_def.instance_of:
+    #       statelist = state_def.statelist
+    #   else:
+    #       statelist = [state_def.instance_of]
     for statename in statelist:
         inputs = context.mapping.get(statename.lower(), [])
         dupl = set()
@@ -5828,6 +5919,9 @@ def state(root, parent, context):
         for each in context.composite_states:
             if each.statename.lower() == state_def.statelist[0].lower():
                 state_def.composite = each
+            # If this is an instance of a state type, keep track of it
+            if each.statename.lower() == state_def.instance_of:
+                each.instances.add(state_def.statelist[0].lower())
     for each in sterr:
         errors.append([each, [st_x, st_y], []])
         state_def.errors.append(each)
@@ -5837,6 +5931,57 @@ def state(root, parent, context):
     return state_def, errors, warnings
 
 
+def check_and_resolve_connect_part(
+                       conn: ogAST.Connect,
+                       nested: ogAST.CompositeState) -> list:
+    ''' Make checks in CONNECT transitions (below a nested state)
+        and update in place with resolved connections
+        Inputs/outputs
+            * connect part (modified in place)
+            * nested (terminators modified)
+        Returns a list of errors
+    '''
+    errors = []
+    for exitp in conn.connect_list:
+        if exitp != '' and not exitp in nested.state_exitpoints:
+            # Here also can happen if it is a state instance and the state
+            # type has not been parsed yet
+            msg = f'Exit point {exitp} not defined in state {nested.statename.lower()}'
+            errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+            conn.errors.append(msg)
+        def check_terminators(comp):
+            terminators = [term for term in comp.terminators
+                           if term.kind == 'return'
+                           and term.inputString.lower() == exitp]
+            if not terminators:
+                msg = f'No {exitp} return statement in nested state {comp.statename.lower()}'
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
+                conn.errors.append(msg)
+            return terminators
+
+        if not isinstance(nested, ogAST.StateAggregation):
+            # Not a parallel state, just a normal nested state
+            terminators = check_terminators(nested)
+        else:
+            # State aggregation: we must check that all parallel states
+            # contain indeed a return statement of the given name
+            def siblings(aggregate):
+                for comp in aggregate.composite_states:
+                    if not isinstance(comp, ogAST.StateAggregation):
+                        yield comp
+                    else:
+                        for each in siblings(comp()):
+                            yield each
+            all_terms = map(check_terminators, siblings(nested))
+            terminators = []
+            for each in all_terms:
+                terminators.extend(each)
+        for each in terminators:
+            # Set next transition, exact id to be found in postprocessing
+            each.next_trans.append(conn.transition)
+    return errors
+
+
 def connect_part(root, parent, context):
     ''' Connection of a nested state exit point with a transition
         Very similar to INPUT '''
@@ -5844,7 +5989,8 @@ def connect_part(root, parent, context):
     conn = ogAST.Connect()
     conn.path = context.path
     try:
-        statename = parent.statelist[0].lower()
+        # use the type name if this state is an instance
+        statename = parent.instance_of or parent.statelist[0].lower()
     except AttributeError:
         # Ignore missing parent/statelist to allow local syntax check
         statename = ''
@@ -5858,6 +6004,9 @@ def connect_part(root, parent, context):
                    if comp.statename.lower() == statename.lower())
     except ValueError:
         # Ignore unexisting state - to allow local syntax check
+        # but also here if we are inside a nested state and the CONNECT
+        # is below a state instance, at this point the definition of the
+        # corresponding state type may not have been parsed yet.
         nested = ogAST.CompositeState()
 
     for child in root.getChildren():
@@ -5867,6 +6016,7 @@ def connect_part(root, parent, context):
         elif child.type == lexer.SYMBOLID:
             conn.pos_x = symbolid(child)
         elif child.type == lexer.ID:
+            # name of the connection point
             id_token.append(child)
             conn.connect_list.append(child.toString().lower())
         elif child.type == lexer.ASTERISK:
@@ -5903,51 +6053,31 @@ def connect_part(root, parent, context):
         conn.inputString = token_stream(id_token[0]).toString(
                                         id_token[0].getTokenStartIndex(),
                                         id_token[-1].getTokenStopIndex())
-    for exitp in conn.connect_list:
-        if exitp != '' and not exitp in nested.state_exitpoints:
-            msg = f'Exit point {exitp} not defined in state {statename}'
-            errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
-            conn.errors.append(msg)
-        def check_terminators(comp):
-            terminators = [term for term in comp.terminators
-                           if term.kind == 'return'
-                           and term.inputString.lower() == exitp]
-            if not terminators:
-                msg = f'No {exitp} return statement in nested state {comp.statename.lower()}'
-                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
-                conn.errors.append(msg)
-            return terminators
 
-        if not isinstance(nested, ogAST.StateAggregation):
-            terminators = check_terminators(nested)
-        else:
-            # State aggregation: we must check that all parallel states
-            # contain indeed a return statement of the given name
-            def siblings(aggregate):
-                for comp in aggregate.composite_states:
-                    if not isinstance(comp, ogAST.StateAggregation):
-                        yield comp
-                    else:
-                        for each in siblings(comp()):
-                            yield each
-            all_terms = map(check_terminators, siblings(nested))
-            terminators = []
-            for each in all_terms:
-                terminators.extend(each)
-        for each in terminators:
-            # Set next transition, exact id to be found in postprocessing
-            each.next_trans = trans
-    # Find duplicate CONNECT statements
+    # Make some checks and update the terminators transitions in the nested
+    # state, Works only if the nested state has already been parsed, which
+    # is not the case if we are parsing a connection below an instance of
+    # a state type inside a nested state.
+    # removed, this is done after the full model is parsed, and recursively
+    #errs = check_and_resolve_connect_part(conn, nested)
+    #errors.extend(errs)
+
+    # Find duplicate CONNECT statements (except for instances of state type)
     if statename:
         existing = context.connect_mapping.get(statename, [])
         for each in existing:
-            if each.lower() in (a.lower() for a in conn.connect_list):
+            if each.lower() in (a.lower() for a in conn.connect_list) and (
+                    statename.lower() != parent.instance_of):
                 msg = (f'CONNECT: trigger {each} already specified '
                         f'for state {statename}')
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
                 break
         else:
-            context.connect_mapping[statename].extend(conn.connect_list)
+            try:
+                context.connect_mapping[statename].extend(conn.connect_list)
+            except KeyError:
+                msg = f'CONNECT: State name {statename} not defined'
+                errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
 
     # Set list of terminators
     conn.terminators = list(context.terminators[terms:])
@@ -6343,6 +6473,7 @@ def decision(root, parent, context):
             dec.pos_x = symbolid(child)
             dec_x = dec.pos_x
         elif child.type == lexer.QUESTION:
+            # Standard formal decisions
             dec.kind = 'question'
             dec.question, qerr, qwarn = expression(child.getChild(0), context)
             dec.inputString = get_input_string(child.getChild(0))
@@ -6363,6 +6494,7 @@ def decision(root, parent, context):
             dec.line = dec.question.line
             dec.charPositionInLine = dec.question.charPositionInLine
         elif child.type == lexer.INFORMAL_TEXT:
+            # In that case dec.question remains None
             dec.kind = 'informal_text'
             dec.inputString = get_input_string(child)
             dec.informalText = child.getChild(0).toString()[1:-1]
@@ -6695,6 +6827,9 @@ def decision(root, parent, context):
                 txt = f"range {low} .. {high}"
             qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
 
+    elif has_else and dec.kind in ('informal_text', 'any'):
+        qwarn.append(f'Informal decision "{dec.inputString}": ELSE branch is meaningless')
+
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
         qwarn.append(f'Decision "{dec.inputString}": ELSE branch is unreachable')
@@ -6769,9 +6904,14 @@ def nextstate(root, context):
             else:
                 errors.append('"History" NEXTSTATE cannot have a "via" clause')
         elif child.type == lexer.TYPE_INSTANCE:
+            # nextstate hello:bar -> then instance_of will be "bar"
+            # as next_state_id has been set to "hello" already
             instance_of = child.getChild(0).text
+            # We also set via here to save the raw string, this is useful
+            # when rendering the diagram, as it respects the user syntax and
+            # allows to merge state and nextstate.
             via = get_input_string(root).replace(
-                                                'NEXTSTATE', '', 1).strip()
+                                            'NEXTSTATE', '', 1).strip()
         else:
             errors.append('NEXTSTATE undefined construct: ' +
                             sdl92Parser.tokenNamesMap[child.type])
@@ -6779,25 +6919,6 @@ def nextstate(root, context):
     # Checks on the NEXTSTATE
     if via:  # instance and/or via clause
         state_id = instance_of or next_state_id
-        try:
-            composite, = (comp for comp in context.composite_states
-                          if comp.statename.lower() == state_id.lower())
-        except ValueError:
-            errors.append(f'State {state_id} is not a composite state')
-        else:
-            if entrypoint is None:
-                pass
-            elif entrypoint.lower() not in composite.state_entrypoints:
-                errors.append(
-                        f'State {state_id} has no "{entrypoint}" entrypoint')
-            # The test below seems identical to the one just done
-#           for each in composite.content.named_start:
-#               if not entrypoint or \
-#                       each.inputString == entrypoint.lower() + '_START':
-#                   break
-#           else:
-#               errors.append(f'Entrypoint {entrypoint} in state'
-#                       f' {state_id} is declared but not defined')
     else: # not via and/or instance
         # check that if the nextstate is nested, it has a START symbol
         try:
@@ -6835,6 +6956,8 @@ def terminator_statement(root, parent, context):
             lab.terminators = [t]
         elif term.type == lexer.NEXTSTATE:
             t.kind = 'next_state'
+            # set the terminator next state name and possibly the corresponding
+            # state type if this is an instance ("nextstate hello:bar")
             t.inputString, t.via, t.entrypoint, t.instance_of, err = \
                     nextstate(term, context)
             if err:
@@ -6846,7 +6969,7 @@ def terminator_statement(root, parent, context):
             context.terminators.append(t)
             # post-processing: if nextatate is nested, add link to the content
             # (normally handled at state level, but if state is not defined
-            # standalone, the nextstate must hold the composite content)
+            # standalone, the next state must hold the composite content)
             if t.inputString not in ('-', '-*'):
                 for each in context.composite_states:
                     if each.statename.lower() == t.inputString.lower():
