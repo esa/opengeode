@@ -146,6 +146,9 @@ def external_ri_list(process) -> List:
             else:
                 params_spec = "({})".format("; ".join(params))
             ri_header += params_spec
+        elif 'PID' in TYPES:  # no parameter: just Dest_PID
+            params_spec = f'(Dest_PID : {ASN1SCC}PID := {ASN1SCC}Env)'
+            ri_header += params_spec
         result.append(ri_header)
 
     for timer in process.timers:

@@ -125,6 +125,15 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.4.1 (03/2026)**
+- Fix support for paramless procedures in PROCESS TYPEs 
+- Update requirement widget version
+- Fix crash on exit due to regressions with PySide6
+- Load requirement widget only on demand
+- Fix with the check of optional fields
+- C backend: initialize local variables in procedures
+- C backend: fix support for -Selection variables in procedures
+
 **4.4.0 (09/2025)**
 - Refactoring of the Ada code generator to allow better traceability
 - Instroduce support for STATE TYPE

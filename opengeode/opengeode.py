@@ -1494,6 +1494,7 @@ class SDL_Scene(QGraphicsScene):
         super().mousePressEvent(event)
         # Store mouse coordinates as possible paste position
         self.click_coordinates = event.scenePos()
+        LOG.debug (self.click_coordinates)
         # Enter state machine
         if self.mode == 'idle' and event.button() == Qt.LeftButton:
             # Idle mode: click triggers selection square
@@ -1969,7 +1970,7 @@ class SDL_View(QGraphicsView):
         QMessageBox.about(self, 'About OpenGEODE',
                 'OpenGEODE SDL editor for TASTE\n\n'
                 'Version {}\n\n'
-                'Copyright (c) 2012-2019 Maxime Perrotin / European Space Agency\n\n'
+                'Copyright (c) 2012-2026 Maxime Perrotin / European Space Agency\n\n'
                 'Contact: Maxime.Perrotin@esa.int\n\n'.format(__version__))
 
     # pylint: disable=C0103
