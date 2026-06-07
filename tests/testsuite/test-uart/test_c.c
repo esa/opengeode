@@ -15,6 +15,7 @@ void og_check_queue(bool* has_pending_msg)
 
 int main()
 {
+    extern void CInitog();
     CInitog();
 
     og_PI_go();
