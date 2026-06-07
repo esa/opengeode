@@ -119,12 +119,16 @@ def _process(process, **kwargs):
         dump('preprocessed_ast.dump', process.parent.parent.ast)
 
     Helper.generate_asn1_datamodel(process)
-    
+
     VARIABLES.update(process.variables)
     MONITORS.update(process.monitors)
 
     del STATES[:]
     STATES.extend(process.mapping.keys())
+
+    # Insert labels before branches
+    Helper.add_labels_before_each_branch(process)
+    Helper.inner_labels_to_floating(process)
 
     beginning_of_include_guard_header_file_code, ending_of_include_guard_header_file_code = generate_header_file_include_guard(process)
     sdl_constants_code = generate_sdl_constants(process)
@@ -133,14 +137,12 @@ def _process(process, **kwargs):
     startup_header_file_code, startup_function_code = generating_startup_function(process, no_renames)
     aggreg_start_proc_code = generating_aggregate_start_funtions(process)
     run_transition_declaration_code = generating_run_transition_declaration(process)
-    nested_states_code = generating_nested_states(process)
+    #nested_states_code = generating_nested_states(process)
     inner_procedures_header_file_code, inner_procedures_declarations_code, inner_procedures_code = processing_inner_procedures(process)
     input_signals_header_file_code, input_signals_code = processing_input_signals(process)
     output_signals_header_file_code, output_signals_code = processing_output_signals(process)
     external_procedures_header_file_code = processing_external_procedures(process, output_signals_code)
     timers_header_file_code = processing_timers(process, output_signals_code)
-
-    Helper.inner_labels_to_floating(process)
 
     continuous_signals_header_file_code, transition_code = processing_transitions_and_floating_labels(process)
     includes_code = generating_includes(process)
@@ -148,11 +150,11 @@ def _process(process, **kwargs):
 
     generated_c_source_code = []
     generated_c_source_code.extend(includes_code)
-    generated_c_source_code.extend(nested_states_code)
+    #generated_c_source_code.extend(nested_states_code)
     generated_c_source_code.extend(sdl_constants_code)
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
-    generated_c_source_code.extend(run_transition_declaration_code)
+    # run_transition_declaration_code is moved to header
     generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(startup_function_code)
@@ -167,6 +169,7 @@ def _process(process, **kwargs):
 
     generated_h_source_code = []
     generated_h_source_code.extend(beginning_of_include_guard_header_file_code)
+    generated_h_source_code.extend(run_transition_declaration_code)
     generated_h_source_code.extend(startup_header_file_code)
     generated_h_source_code.extend(inner_procedures_header_file_code)
     generated_h_source_code.extend(input_signals_header_file_code)
@@ -326,7 +329,10 @@ def _decision(dec, **kwargs):
                     for exit in exitcalls:
                         stmts.append(exit)
 
-                    stmts.append(f'trId = {branch_to};')
+                    if isinstance(branch_to, str):
+                        stmts.append(f'return {branch_to};')
+                    else:
+                        stmts.append(f'trId = {branch_to};')
 
                 #stmts.append('}')  not here
                 sep = '} else if('
@@ -384,31 +390,59 @@ def _decision(dec, **kwargs):
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label, **kwargs):
-    ''' Generate the code for a floating label (C label + transition) '''
+    ''' Generate the code for a floating label (C function or label) '''
 
     code = []
     local_decl = []
 
+    # Check if we are in a procedure
+    try:
+        context = label.path[-1]
+        is_procedure = 'PROCEDURE' in context
+    except Exception:
+        is_procedure = False
+
     # Add the traceability information
     code.extend(traceability(label))
-    code.append(u'{label}:'.format(label=label.inputString.lower()))
+    if is_procedure:
+        code.append(u'{label}:'.format(label=label.inputString.lower()))
+    else:
+        enum_name = f'{PROCESS_NAME}_Branches'
+        code.append(f'static enum {enum_name} branch_{label.inputString.lower()}(void)')
+        code.append('{')
 
     if label.transition:
         code_trans, local_trans = generate(label.transition)
-        code.extend(code_trans)
-        local_decl.extend(local_trans)
+        if is_procedure:
+            code.extend(code_trans)
+            local_decl.extend(local_trans)
+        else:
+            code.extend(set(local_trans))
+            code.extend(code_trans)
+            code.append('}')
     else:
-        code.append('return;')
+        if is_procedure:
+            code.append('return;')
+        else:
+            code.append('return continuous_signals;')
+            code.append('}')
 
-    return code, local_decl
+    return code, local_decl if is_procedure else []
 
 
 @generate.register(ogAST.Label)
 def _label(lab, **kwargs):
-    ''' Transition following labels are generated in a separate section
-        for visibility reasons
-    '''
-    return ['goto {label};'.format(label=lab.inputString.lower())], []
+    ''' Transition following labels '''
+    try:
+        context = lab.path[-1]
+        is_procedure = 'PROCEDURE' in context
+    except Exception:
+        is_procedure = False
+
+    if is_procedure:
+        return ['goto {label};'.format(label=lab.inputString.lower())], []
+    else:
+        return [f'return {lab.inputString.lower()};'], []
 
 
 @generate.register(ogAST.Output)
@@ -921,6 +955,13 @@ def _transition(tr, **kwargs):
             if tr.terminator.label:
                 stmts.append(f'{ns}:')
 
+            # check if we are in a procedure using the path
+            try:
+                context = tr.terminator.path[-1]
+                is_procedure = 'PROCEDURE' in context
+            except Exception:
+                is_procedure = False
+
             next_state_id = find_state_in_states(tr.terminator.next_id)
             next_state_id_str = ''
 
@@ -944,18 +985,27 @@ def _transition(tr, **kwargs):
                         stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
                                         f' {generate_state_name(tr.terminator.inputString)};')
                     # Call the START function of the state aggregation
-                    stmts.append(f'{tr.terminator.next_id}();')
-                    stmts.append('trId = -1;')
+                    stmts.append(f'{tr.terminator.next_id.lower()}();')
+                    if is_procedure:
+                        stmts.append('trId = -1;')
+                    else:
+                        stmts.append('return continuous_signals;')
 
                 elif not history:
-                    stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
-
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate:
                             stmts.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
                         else:
                             stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
                                         f' {generate_state_name(tr.terminator.inputString)};')
+                    if is_procedure:
+                        stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
+                    else:
+                        if tr.terminator.next_id == -1:
+                            stmts.append(f'return continuous_signals;')
+                        else:
+                            stmts.append(f'return {str(tr.terminator.next_id).lower()};')
+
                 else:
                     if ns != "-*" and any(next_id
                             for next_id in tr.terminator.candidate_id.keys()
@@ -968,23 +1018,33 @@ def _transition(tr, **kwargs):
                                 for each in sta:
                                     stmts.append(f'case {generate_state_name(each)}:')
                                     stmts.append('{')
-                                    stmts.append(f'trId = {nid};')
+                                    if is_procedure:
+                                        stmts.append(f'trId = {nid};')
+                                    else:
+                                        stmts.append(f'return {nid.lower()};')
                                     stmts.append('break;')
                                     stmts.append('}')
 
-                        stmts.extend(['default:','{','trId = -1;','break;','}','}'])
+                        stmts.extend(['default:','{','trId = -1;' if is_procedure else 'return continuous_signals;','break;','}','}'])
                     else:
-                        stmts.append('trId = -1;')
+                        if is_procedure:
+                            stmts.append('trId = -1;')
+                        else:
+                            stmts.append('return continuous_signals;')
 
-                stmts.append('goto continuous_signals;')
+                if is_procedure:
+                    stmts.append('goto continuous_signals;')
             elif tr.terminator.kind == 'join':
-                stmts.append('goto {label};'.format(label=tr.terminator.inputString.lower()))
+                if is_procedure:
+                    stmts.append('goto {label};'.format(label=tr.terminator.inputString.lower()))
+                else:
+                    stmts.append(f'return {tr.terminator.inputString.lower()};')
             elif tr.terminator.kind == 'stop':
                 pass
                 # TODO
             elif tr.terminator.kind == 'return':
                 return_string = ''
-                
+
                 aggregate = False
                 if tr.terminator.substate:
                     aggregate = True
@@ -1008,20 +1068,54 @@ def _transition(tr, **kwargs):
                     stmts.append('{')
 
                 if tr.terminator.next_id == -1:
-                    if tr.terminator.return_expr:
-                        return_stmt, return_string, return_decls = expression(tr.terminator.return_expr)
+                    retexp = tr.terminator.return_expr
+                    if retexp:
+                        return_stmt, return_string, return_decls = expression(retexp)
                         stmts.extend(return_stmt)
                         decls.extend(return_decls)
 
-                    stmts.append('return{};'.format(' ' + return_string if return_string else ''))
+                    if is_procedure:
+                        stmts.append('return{};'.format(' ' + return_string if return_string else ''))
+                    else:
+                        stmts.append(f'return branch_end;')
                 else:
-                    stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
-                    stmts.append('goto continuous_signals;')
+                    # next_id != -1, can be a return from an inner state
+                    if is_procedure:
+                        stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
+                        stmts.append('goto continuous_signals;')
+                    else:
+                        # from Ada backend
+                        # We have to check recursively if the next transition
+                        # ends with a JOIN to find the next branch to execute
+                        last_path = tr.terminator.path[-1].split()
+                        if last_path[0] == 'STATE':
+                            state_name = last_path[1]
+                            def find_a_label(trans):
+                                if not hasattr(trans, 'terminator'):
+                                    # Return in a parallel state
+                                    return "continuous_signals"
+                                if trans.terminator.kind == 'join':
+                                    return trans.terminator.inputString
+                                return find_a_label(trans.terminator.next_trans) # ?
+
+                            # If there are multiple next_trans, it's because
+                            # we are exiting an instance of a state type.
+                            # (not supported in C - check Ada backend when needed)
+                            if len(tr.terminator.next_trans) == 1:
+                                ret_branch = find_a_label(tr.terminator.next_trans[0])
+                                stmts.append(f'return {ret_branch.lower()};')
+                            else:
+                                ...
+
+                        #stmts.append(f'return {str(next_state_id_str).lower()}; // UGH2')
                 if aggregate:
                     stmts.append('} else')
                     stmts.append('{')
-                    stmts.append('trId = -1;')
-                    stmts.append('goto continuous_signals;')
+                    if is_procedure:
+                        stmts.append('trId = -1;')
+                        stmts.append('goto continuous_signals;')
+                    else:
+                        stmts.append('return continuous_signals;')
                     stmts.append('}')
 
     if empty_transition:
@@ -2685,10 +2779,10 @@ def generating_aggregate_start_funtions(process):
    # Declare start procedure for aggregate states
    # should create one START per "via" clause, TODO later
    for name, substates in process.aggregates.items():
-       proc_name = f'void {name}{SEPARATOR}START(void)'
+       proc_name = f'void {name}{SEPARATOR}start(void)'
        aggreg_start_proc.extend([f'{proc_name}',
                                  '{'])
-       aggreg_start_proc.extend(f'runTransition{process.processName} ({subname.statename}{SEPARATOR}START);'
+       aggreg_start_proc.extend(f'runTransition{process.processName} ({subname.statename}{SEPARATOR}start);'
                                 for subname in substates)
        aggreg_start_proc.extend(['}',
                                 '\n'])
@@ -2715,7 +2809,7 @@ def generating_startup_function(process, no_renames):
 
     if process.transitions:
         startup_function_code.append('\n')
-        startup_function_code.append(f'runTransition{process.processName}(0);')
+        startup_function_code.append(f'runTransition{process.processName}(startup_transition);')
 
     startup_function_code.append(f'{LPREFIX}.init_done = true;')
     startup_function_code.append('}\n')
@@ -2730,15 +2824,34 @@ def generating_startup_function(process, no_renames):
 
 
 def generating_run_transition_declaration(process):
-    run_transition_declaration_code = [f'#define CS_Only {len(process.transitions)}']
+    all_labels = [lab.inputString.lower() for lab in process.content.floating_labels]
+    
+    branches = []
+    for label in all_labels:
+        if label not in branches:
+            branches.append(label)
+
+    if "startup_transition" not in branches and process.content.start:
+        branches.insert(0, "startup_transition")
+
+    if "continuous_signals" not in branches:
+        branches.append("continuous_signals")
+    if "branch_end" not in branches:
+        branches.append("branch_end")
+
+    enum_name = f'{process.processName}_Branches'
+    run_transition_declaration_code = [f'enum {enum_name} {{']
+    run_transition_declaration_code.append(', '.join(branches))
+    run_transition_declaration_code.append('};\n')
 
     if process.transitions:
-        run_transition_declaration_code.append(u'void runTransition{}(int Id);\n'.format(process.processName))
+        run_transition_declaration_code.append(u'void runTransition{}(enum {} Id);\n'.format(process.processName, enum_name))
 
     return run_transition_declaration_code
 
 
 def generating_nested_states(process):
+    # MP, this code is useless there is an enum generated with the start transitions
     nested_states_code = [u'//// Nested States']
 
     for name, val in process.mapping.items():
@@ -2845,7 +2958,7 @@ def processing_inner_procedures(process):
 def processing_input_signals(process):
     input_signals_header_file_code = ['//// Input Signals\n']
     input_signals_code = ['//// Input Signals']
-    
+
     reduced_statelist = {s for s in process.full_statelist
             if s not in process.parallel_states}
 
@@ -2933,7 +3046,7 @@ def processing_input_signals(process):
                     dest.append(f'{LPREFIX}.{inp} = *{param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    dest.append(f'runTransition{process.processName}({input_def.transition_id});')
+                    dest.append(f'runTransition{process.processName}({input_def.branch_label.lower()});')
                     dest.append('break;')
                     dest.append('}')
                 else:
@@ -2953,7 +3066,7 @@ def processing_input_signals(process):
                 to the current state
                 The input name is in signame
             '''
-            if state.endswith('START'):
+            if state.lower().endswith('start'):
                 return
             statecase = [f'case {generate_state_name(state)}:', '{']
             input_def = process.input_mapping[signal['name']].get(state)
@@ -2967,12 +3080,13 @@ def processing_input_signals(process):
                     if [a for a in sub.mapping.keys()
                             if a in process.input_mapping[signame].keys()]:
                         input_signals_code.append(f'switch ({LPREFIX}.{sub.statename}{SEPARATOR}state)')
-                        input_signals_code.append('{')
+                        input_signals_code.append('{ // switch aggregation')
                         for par in sub.mapping.keys():
                             case_state(par)
                         input_signals_code.append('default:')
-                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
-                        input_signals_code.append('}')
+                        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+                        input_signals_code.append('} // end switch aggregation')
+                        input_signals_code.append('} // end case')
                         break
                 else:
                     # Input is not managed in the state aggregation
@@ -2980,7 +3094,7 @@ def processing_input_signals(process):
                         # check if it is managed one level above
                         execute_transition(state, input_signals_code)
                     else:
-                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+                        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
             else:
                 if execute_transition(state, statecase):
                     input_signals_code.extend(statecase)
@@ -2990,7 +3104,7 @@ def processing_input_signals(process):
 
         input_signals_code.append('default:')
         input_signals_code.append('{')
-        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
         input_signals_code.append('break;')
         input_signals_code.append('}')
         input_signals_code.append('}')
@@ -3112,169 +3226,90 @@ def processing_transitions_and_floating_labels(process):
     transition_code = [u'//// Definition Of Run Transition']
 
     has_continuous_signals = any(process.cs_mapping.values())
+    enum_name = f'{process.processName}_Branches'
 
-    code_transitions = []
-    decl_transitions = []
+    all_labels = [lab.inputString.lower() for lab in process.content.floating_labels]
+
+    def find_a_label(transition):
+        for action in transition.actions:
+            if isinstance(action, ogAST.Label):
+                return action.inputString.lower()
+        return 'branch_end'
+
+    # Generate code for the floating labels (as functions)
     code_labels = []
-
-    for transition in process.transitions:
-        transition_stmts, transition_decls = generate(transition)
-        code_transitions.append(transition_stmts)
-        decl_transitions.extend(transition_decls)
-
-    # Generate code for the floating labels
     for label in process.content.floating_labels:
-        code_label, label_decl = generate(label)
-        decl_transitions.extend(label_decl)
+        code_label, _ = generate(label)
         code_labels.extend(code_label)
 
-    # Generate the code of the runTransition procedure, if needed
-    if process.transitions:
-        transition_code.append('void runTransition{}(int Id)'.format(process.processName))
-        transition_code.append('{')
-        transition_code.append('int trId = Id;')
+    if has_continuous_signals:
+        # Generate Branch_Continuous_Signals function
+        cs_code = [f'static enum {enum_name} branch_continuous_signals(void)', '{']
+        if not MONITORS:
+            continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue(bool* has_pending_msg);')
+            cs_code.append('bool message_pending = true;')
+            cs_code.append(f'if({LPREFIX}.init_done)')
+            cs_code.append('{')
+            cs_code.append(f'{process.processName.lower()}_check_queue(&message_pending);')
+            cs_code.append('}')
+            cs_code.append('if (message_pending) return branch_end;')
+        else:
+            cs_code.append('// Observer: no message pending check')
+            cs_code.append('bool message_pending = false;')
 
-        if has_continuous_signals:
-            transition_code.append('flag message_pending = true;')
-
-        # Declare the local variables needed by the transitions in the template
-        transition_code.extend(set(decl_transitions))
-
-        # Generate a loop that ends when a next state is reached
-        # (there can be chained transition when entering a nested state)
-        transition_code.append('while (trId != -1)')
-        transition_code.append('{')
-
-        # Generate the switch-case on the transition id
-        transition_code.append('switch(trId)')
-        transition_code.append('{')
-
-        for idx, val in enumerate(code_transitions):
-            transition_code.append('case {idx}:'.format(idx=idx))
-            transition_code.append('{')
-            val = ['{line}'.format(line=l) for l in val]
-
-            if val:
-                transition_code.extend(val)
-
-            transition_code.append('break;')
-            transition_code.append('}')
-
-        transition_code.append('case CS_Only:')
-        transition_code.append('{')
-        transition_code.append('trId = -1;')
-        transition_code.append('goto continuous_signals;')
-        transition_code.append('}')
-        transition_code.append('default:')
-        transition_code.append('{')
-        transition_code.append('break;')
-        transition_code.append('}')
-        transition_code.append('}')
-
-        if code_labels:
-            # Due to nested states (chained transitions) jump over label code
-            # (NEXTSTATEs do not return from runTransition)
-            transition_code.append('goto continuous_signals;')
-
-        # Add the code for the floating labels
-        transition_code.extend(code_labels)
-
-        transition_code.append('continuous_signals:\n')
-
-        # After completing active transition(s), check continuous signals:
-        #     - Check current state(s)
-        #     - For each continuous signal generate code (test+transition)
-        if has_continuous_signals:
-            if not MONITORS:
-                continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue(bool* has_pending_msg);')
-
-                transition_code.append('// Process Continuous Signals')
-                transition_code.append(f'if({LPREFIX}.init_done)')
-                transition_code.append(u'{')
-                transition_code.append(f'{process.processName.lower()}_check_queue(&message_pending);')
-                transition_code.append(u'}\n')
-            else:
-                transition_code.append('// Process Observer Transitions')
-                transition_code.append("message_pending = false;\n")
-                
-        if has_continuous_signals:
-            transition_code.append(u'if(message_pending || trId != -1)')
-            transition_code.append(u'{')
-            transition_code.append(u'goto next_transition;')
-            transition_code.append(u'}\n')
-
-        # Process the continuous signals in state aggregations first
-        # (reminder: state aggregations = parallel states)
+        # Process the continuous signals
         done = []
         sep = 'if('
         last = ''
-
-        # flag indicating there are CS in nested states but not at root
         need_final_endif = False
         first_of_aggreg = True
         for cs, agg in product(process.cs_mapping.items(), process.aggregates.items()):
             (statename, cs_item)  = cs
             (agg_name, substates) = agg
-
             if not cs_item:
                 continue
-
             for each in substates:
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
                     if first_of_aggreg:
-                        transition_code.append(f'if({LPREFIX}.state == {generate_state_name(agg_name)})')
-                        transition_code.append('{')
+                        cs_code.append(f'if({LPREFIX}.state == {generate_state_name(agg_name)})')
+                        cs_code.append('{')
                         first_of_aggreg = False
-
                     need_final_endif = True
-                    first = "} else" if done else ""
-                    transition_code.append(f'if({LPREFIX}.{each.statename}{SEPARATOR}state == {generate_state_name(statename)})')
-                    transition_code.append('{')
-
-                    # Change priority 0 (no priority set) to lowest priority
+                    cs_code.append(f'if({LPREFIX}.{each.statename}{SEPARATOR}state == {generate_state_name(statename)})')
+                    cs_code.append('{')
                     lowest_priority = max(item.priority for item in cs_item)
-                    for each in cs_item:
-                        if each.priority == 0:
-                            each.priority = lowest_priority + 1
-
+                    for item in cs_item:
+                        if item.priority == 0:
+                            item.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
-                        transition_code.append(f'// Priority {provided_clause.priority}')
-                        trId = process.transitions.index(provided_clause.transition)
+                        tr_label = find_a_label(provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
-                                            branch_to=trId,
+                                            branch_to=tr_label,
                                             sep=sep, last=last)
-                        code.append('goto next_transition;')
+                        cs_code.extend(code)
                         sep='} else if('
-                        transition_code.extend(code)
-
                     done.append(statename)
-                    transition_code.append('}')  # inner if
-                    transition_code.append('}')  # substate if
+                    cs_code.append('}')  # inner if
+                    cs_code.append('}')  # substate if
                     sep = 'if('
                     break
 
-        count = 0
         for statename in process.cs_mapping.keys() - done:
             cs_item = process.cs_mapping[statename]
-
             if cs_item:
-                count += 1 
                 need_final_endif = False
                 first = "} else " if done else ""
-                transition_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
-                transition_code.append(u'{')
-
-            # Change priority 0 (no priority set) to lowest priority
-            if cs_item:
+                cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
+                cs_code.append('{')
                 lowest_priority = max(item.priority for item in cs_item)
 
-            for each in cs_item:
-                if each.priority == 0:
-                    each.priority = lowest_priority + 1
+            for item in cs_item:
+                if item.priority == 0:
+                    item.priority = lowest_priority + 1
 
             for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
-                transition_code.append(f'// Priority: {provided_clause.priority}')
-                trId = process.transitions.index(provided_clause.transition)
+                cs_code.append(f'//  Priority: {provided_clause.priority}')
+                tr_label = find_a_label(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
                 state_tree = statename.split(SEPARATOR)
@@ -3289,40 +3324,57 @@ def processing_transitions_and_floating_labels(process):
                         if current.lower() == comp.statename.lower():
                             if comp.exit_procedure:
                                 exitlist.append(current)
-
                             context = comp
                             current = current + SEPARATOR
                             break
 
-                trans = process.transitions[trId]
+                trans = provided_clause.transition
+
                 for each in reversed (exitlist):
                     if trans and all(each.startswith(trans_st)
                             for trans_st in trans.possible_states):
-                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit();") # should be tested and fixed
+                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit();")
 
+                # generate the code of the transision
                 code, loc = generate(provided_clause.trigger,
-                                     branch_to=trId, sep=sep, last=last,
+                                     branch_to=None, sep=sep, last=last,
                                      exitcalls=exitcalls)
+                cs_code.extend(code)
                 sep='} else if('
-                transition_code.extend(code)
-
             if cs_item:
-                transition_code.append('} // inner if') # inner if
-                transition_code.append('} // current state') # current state
-
+                cs_code.append('}') # inner if
+                cs_code.append('}') # current state
             sep = 'if('
 
         if need_final_endif:
-            transition_code.append('}')
+            cs_code.append('}')
 
-        transition_code.append('next_transition:')
-        transition_code.append(';')
+        cs_code.append('return branch_end;')
+        cs_code.append('}')
+        code_labels.extend(cs_code)
+
+    # Generate the code of the runTransition procedure
+    if process.transitions:
+        transition_code.append(f'void runTransition{process.processName}(enum {enum_name} Id)')
+        transition_code.append('{')
+        transition_code.append(f'enum {enum_name} trId = Id;')
+        transition_code.append('while (trId != branch_end)')
+        transition_code.append('{')
+        transition_code.append('switch (trId)')
+        transition_code.append('{')
+        for label in all_labels:
+            transition_code.append(f'case {label}: trId = branch_{label}(); break;')
+        if has_continuous_signals:
+            transition_code.append('case continuous_signals: trId = branch_continuous_signals(); break;')
+        else:
+            transition_code.append('case continuous_signals: trId = branch_end; break;')
+        transition_code.append('default: trId = branch_end; break;')
         transition_code.append('}')
         transition_code.append('}')
-        transition_code.append('\n')
+        transition_code.append('}')
 
+    transition_code = code_labels + transition_code
     continuous_signals_header_file_code.append(u'\n')
-
     return continuous_signals_header_file_code, transition_code
 
 

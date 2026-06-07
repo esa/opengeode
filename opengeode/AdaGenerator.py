@@ -255,9 +255,9 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
             cs_template.append(
                     f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
                     ' then')
-        # Change priority 0 (no priority set) to lowest priority
-        if cs_item:
+            # Change priority 0 (no priority set) to lowest priority
             lowest_priority = max(item.priority for item in cs_item)
+
         for each in cs_item:
             if each.priority == 0:
                 each.priority = lowest_priority + 1
@@ -3364,7 +3364,7 @@ def _transition(tr, **kwargs):
             elif tr.terminator.kind == 'return':
                 string = ''
                 aggregate = False
-                if tr.terminator.substate: # XXX add to C generator
+                if tr.terminator.substate:
                     aggregate = True
                     # within a state aggregation, a return means that one
                     # of the parallel states becomes disabled, but it does
@@ -3383,6 +3383,7 @@ def _transition(tr, **kwargs):
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
                     code.append(f'if {" and ".join(conds)} then')
+
                 if tr.terminator.next_id == -1:
                     retexp = tr.terminator.return_expr
                     if retexp:
@@ -3423,7 +3424,7 @@ def _transition(tr, **kwargs):
                     #code.append(f'trId :=  {str(tr.terminator.next_id)};')
                     if not MONITORS:
                         # We have to check recursively if the next transition
-                        # ends with a JOIN to find the next branch to exectute
+                        # ends with a JOIN to find the next branch to execute
                         last_path = tr.terminator.path[-1].split()
                         if last_path[0] == 'STATE':
                             state_name = last_path[1]
