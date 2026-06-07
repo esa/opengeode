@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.4.2 (06/2026)**
+- Ada backend: fix exit/connect support when returning from nested states
+
 **4.4.1 (03/2026)**
 - Fix support for paramless procedures in PROCESS TYPEs 
 - Update requirement widget version

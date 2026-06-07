@@ -6059,8 +6059,10 @@ def connect_part(root, parent, context):
     # is not the case if we are parsing a connection below an instance of
     # a state type inside a nested state.
     # removed, this is done after the full model is parsed, and recursively
-    #errs = check_and_resolve_connect_part(conn, nested)
-    #errors.extend(errs)
+    # Added back: we still have to do it for non-instance states
+    if not parent.instance_of:
+        errs = check_and_resolve_connect_part(conn, nested)
+        errors.extend(errs)
 
     # Find duplicate CONNECT statements (except for instances of state type)
     if statename:

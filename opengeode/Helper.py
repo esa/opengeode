@@ -1032,6 +1032,7 @@ def add_labels_before_each_branch(
             transitions = []
             for composite in process.composite_states:
                 if composite.statename == state_name:
+                    print("! ", connect_name.strip().lower())
                     for term in composite.terminators:
                         if term.kind == 'return' \
                             and term.inputString.strip().lower() \
@@ -1045,6 +1046,7 @@ def add_labels_before_each_branch(
             for trans in transitions:
                 if trans is not None and need_label(trans):
                     label_name = fresh_label_name + connect_name
+                    print(".. ", label_name)
                     if len(transitions) > 1 and len(trans.possible_states) == 1:
                         # instance of a state
                         label_name += "_" + trans.possible_states[0]
