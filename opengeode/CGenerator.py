@@ -1639,7 +1639,7 @@ def _equality(expr):
                 VAR_COUNTER = VAR_COUNTER + 1
 
                 if lbty.kind == 'IA5StringType':
-                    decls.append('static {ty} constant_{var_counter} = {{{values}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
+                    decls.append('static {ty} constant_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, lbty)))
                     right_string = 'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
                 else:
                     decls.append('static {ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
@@ -1722,15 +1722,29 @@ def _assign_expression(expr):
     decls.extend(left_decls)
     decls.extend(right_decls)
 
-    if (basic_left.kind == 'IA5StringType' and isinstance(expr.right, ogAST.PrimStringLiteral)):
+    if basic_left.kind == 'IA5StringType':
         VAR_COUNTER = VAR_COUNTER + 1
-        decls.append('{ty} assign_var_{var_counter} = {{{init}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=right_string))
         decls.append('asn1SccUint var_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
-
-        stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_right.Max))
-        stmts.append('{')
-        stmts.append('{lvar}[var_counter_{var_counter}] = assign_var_{var_counter}[var_counter_{var_counter}];'.format(lvar=left_string, var_counter=VAR_COUNTER))
-        stmts.append('}')
+        if isinstance(expr.right, ogAST.PrimStringLiteral):
+            decls.append('{ty} assign_var_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, basic_left)))
+            right_var = 'assign_var_{var_counter}'.format(var_counter=VAR_COUNTER)
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_left.Max))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
+        elif isinstance(expr.right, ogAST.PrimSubstring):
+            right_var = right_string
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} <= max_range_{var_counter} - min_range_{var_counter}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter} + min_range_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
+            stmts.append('if (var_counter_{var_counter} < {size}) {lvar}[var_counter_{var_counter}] = \'\\0\';'.format(lvar=left_string, var_counter=VAR_COUNTER, size=basic_left.Max))
+        else:
+            right_var = right_string
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_left.Max))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
     elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
         rlen = "{}.nCount".format(right_string)
 
@@ -3473,6 +3487,12 @@ def find_basic_type(a_type):
     return Helper.find_basic_type(TYPES, a_type)
 
 
+def ia5string_raw(prim: ogAST.PrimStringLiteral):
+    ''' IA5Strings are null-terminated C arrays '''
+    unsigned_8 = [str(ord(val)) for val in prim.value[1:-1]]
+    return u'{{{values}{sep}0}}'.format(values=', '.join(unsigned_8), sep=', ' if unsigned_8 else '')
+
+
 def array_content(prim, values, asnty):
     ''' String literal and SEQOF are given as a sequence of elements '''
 
@@ -3480,7 +3500,7 @@ def array_content(prim, values, asnty):
         return values
 
     elif asnty.kind == 'IA5StringType':
-        return u'{{{values}}}'.format(values=values)
+        return ia5string_raw(prim)
 
     elif asnty.Min != asnty.Max:
         length = len(prim.value)
