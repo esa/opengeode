@@ -2356,6 +2356,7 @@ def _conditional(cond):
 
     stmts = []
     tmp_type = type_name(cond.exprType)
+
     local_decl = ['{tmpType} tmp{idx};'.format(idx=cond.value['tmpVar'], tmpType=tmp_type)]
     if_stmts, if_str, if_local = expression(cond.value['if'])
 
@@ -2372,10 +2373,10 @@ def _conditional(cond):
     local_decl.extend(else_local)
 
     if isinstance(cond.value['then'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        then_str = u'({tmpTyp}) {{{size}, {{{then_str}}}}}'.format(tmpTyp=tmp_type, then_str=then_str, size=len((cond.value['then'].value))-2)
+        then_str = '({tmpTyp}) {{{size}, {{{then_str}}}}}'.format(tmpTyp=tmp_type, then_str=then_str, size=len((cond.value['then'].value))-2)
     
     if isinstance(cond.value['else'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        else_str = u'({tmpTyp}) {{{size}, {{{else_str}}}}}'.format(tmpTyp=tmp_type, else_str=else_str, size=len((cond.value['else'].value))-2)
+        else_str = '({tmpTyp}) {{{size}, {{{else_str}}}}}'.format(tmpTyp=tmp_type, else_str=else_str, size=len((cond.value['else'].value))-2)
 
     stmts.append('if ({if_str})'.format(if_str=if_str))
     stmts.append('{')
@@ -3710,14 +3711,16 @@ def write_statement(param, newline):
                 code.append(u'printf(\"%c\", {var}[tmp_counter]);'.format(var=string))
                 code.append(u'}')
                 code.append(u'}')
+            elif type_kind.endswith('StringType'):
+                code.append(f'printf(\"%s\", {string});')
             else:
-                code.append(u'{')
-                code.append(u'int tmp_counter = 0;')
-                code.append(u'for(tmp_counter = 0; tmp_counter < {st}.nCount; tmp_counter++)'.format(st=string))
-                code.append(u'{')
-                code.append(u'printf(\"%c\", {}.arr[tmp_counter]);'.format(string))
-                code.append(u'}')
-                code.append(u'}')
+                code.append('{')
+                code.append('int tmp_counter = 0;')
+                code.append('for(tmp_counter = 0; tmp_counter < {st}.nCount; tmp_counter++)'.format(st=string))
+                code.append('{')
+                code.append('printf(\"%c\", {}.arr[tmp_counter]);'.format(string))
+                code.append('}')
+                code.append('}')
     elif type_kind in ('IntegerType', 'RealType', 'BooleanType', 'Integer32Type',
             'IntegerU8Type'):
         code, string, local = expression(param)
