@@ -1,0 +1,60 @@
+system og;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (279, 258), (267, 140) */
+    -- Text area for declarations and comments
+    
+    use dv comment 'dataview-uniq.asn';
+    
+    signal run;
+    /* CIF ENDTEXT */
+    channel c
+        from env to og with run;
+    endchannel;
+    block og;
+        signalroute r
+            from env to og with run;
+        connect c and r;
+        /* CIF PROCESS (253, 105), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process og;
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (0, 33), (267, 140) */
+            -- Text area for declarations and comments
+            
+            
+            dcl octstr OutStr := 'world';
+            dcl ia5 TextString := 'hello';
+            
+            
+            /* CIF ENDTEXT */
+            /* CIF START (284, 274), (70, 35) */
+            START;
+                /* CIF PROCEDURECALL (241, 329), (154, 35) */
+                call writeln(ia5, " ", octstr)
+                /* CIF comment (416, 329), (89, 35) */
+                comment 'hello world';
+                /* CIF PROCEDURECALL (199, 384), (238, 35) */
+                call writeln(if true then ia5 else octstr fi)
+                /* CIF comment (458, 384), (70, 35) */
+                comment 'hello';
+                /* CIF PROCEDURECALL (194, 434), (248, 35) */
+                call writeln(if true then "world" else ia5 fi)
+                /* CIF comment (463, 434), (70, 35) */
+                comment 'world';
+                /* CIF PROCEDURECALL (188, 489), (261, 35) */
+                call writeln(if true then "hello" else octstr fi)
+                /* CIF comment (469, 489), (70, 35) */
+                comment 'hello';
+                /* CIF PROCEDURECALL (183, 544), (271, 35) */
+                call writeln(if true then "world" else "hello" fi)
+                /* CIF comment (474, 544), (70, 35) */
+                comment 'world';
+                /* CIF NEXTSTATE (284, 594), (70, 35) */
+                NEXTSTATE wait;
+            /* CIF state (165, 194), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state wait;
+            endstate;
+        endprocess og;
+    endblock;
+endsystem;
