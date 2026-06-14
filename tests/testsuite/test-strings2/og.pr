@@ -24,8 +24,8 @@ system og;
             
             dcl octstr OutStr := 'world';
             dcl ia5 TextString := 'hello';
-            
-            
+            dcl fixed FixedOctetString := 'FoO';
+            dcl fixedIA5 FixedIA5String := 'BaR';
             /* CIF ENDTEXT */
             /* CIF START (284, 274), (70, 35) */
             START;
@@ -33,23 +33,35 @@ system og;
                 call writeln(ia5, " ", octstr)
                 /* CIF comment (416, 329), (89, 35) */
                 comment 'hello world';
-                /* CIF PROCEDURECALL (199, 384), (238, 35) */
+                /* CIF PROCEDURECALL (228, 384), (180, 35) */
+                call writeln(fixed, " ", fixedIA5)
+                /* CIF comment (430, 384), (73, 35) */
+                comment 'FoO BaR';
+                /* CIF PROCEDURECALL (199, 434), (238, 35) */
                 call writeln(if true then ia5 else octstr fi)
-                /* CIF comment (458, 384), (70, 35) */
+                /* CIF comment (458, 434), (70, 35) */
                 comment 'hello';
-                /* CIF PROCEDURECALL (194, 434), (248, 35) */
-                call writeln(if true then "world" else ia5 fi)
-                /* CIF comment (463, 434), (70, 35) */
-                comment 'world';
-                /* CIF PROCEDURECALL (188, 489), (261, 35) */
+                /* CIF PROCEDURECALL (200, 484), (236, 35) */
+                call writeln(if true then "you" else ia5 fi)
+                /* CIF comment (457, 484), (70, 35) */
+                comment 'you';
+                /* CIF PROCEDURECALL (188, 539), (261, 35) */
                 call writeln(if true then "hello" else octstr fi)
-                /* CIF comment (469, 489), (70, 35) */
+                /* CIF comment (469, 539), (70, 35) */
                 comment 'hello';
-                /* CIF PROCEDURECALL (183, 544), (271, 35) */
+                /* CIF PROCEDURECALL (183, 594), (271, 35) */
                 call writeln(if true then "world" else "hello" fi)
-                /* CIF comment (474, 544), (70, 35) */
+                /* CIF comment (474, 594), (70, 35) */
                 comment 'world';
-                /* CIF NEXTSTATE (284, 594), (70, 35) */
+                /* CIF PROCEDURECALL (187, 649), (263, 35) */
+                call writeln(if true then fixed else fixedia5 fi)
+                /* CIF comment (470, 649), (70, 35) */
+                comment 'FoO';
+                /* CIF PROCEDURECALL (159, 704), (319, 35) */
+                call writeln(if true then fixedia5 else "Not expected" fi)
+                /* CIF comment (498, 704), (70, 35) */
+                comment 'BaR';
+                /* CIF NEXTSTATE (284, 754), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (165, 194), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
