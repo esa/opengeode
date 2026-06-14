@@ -290,7 +290,7 @@ def class_properties_generator(class_obj, file, indent_level):
 
         class_obj_property_value = getattr(class_obj, class_obj_property_name)
 
-        if isinstance(class_obj_property_value, (FunctionType, MethodType, BuiltinFunctionType)):
+        if isinstance(class_obj_property_value, (FunctionType, MethodType, BuiltinFunctionType, property)):
             continue
 
         yield (class_obj_property_name, class_obj_property_value)

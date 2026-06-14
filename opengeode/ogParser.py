@@ -651,6 +651,7 @@ def check_call(name, params, context):
         returning the type of its result (value-returning functions only,
         i.e not signal sending
         Returns tuple: (expression type, warnings)
+        In case of a ternary param (PrimConditional) set the type in place
         '''
     warnings = []
 
@@ -662,7 +663,7 @@ def check_call(name, params, context):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
                     is_enumerated(p_ty):
-                return (UNKNOWN_TYPE, warnings)
+                return
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
         for p in params:
@@ -682,7 +683,19 @@ def check_call(name, params, context):
                    is_string(p.value['else'].exprType) == True) or \
                    (is_enumerated(p.value['then'].exprType) ==
                    is_enumerated(p.value['else'].exprType) == True):
-                      p.exprType = p.value['then'].exprType
+                       # Change the type in place.For String types, since there
+                       # can be mixed IA5/OctetString/Raw string, it is not
+                       # possible to just take the type of the "then" value:
+                       # set a generic String type
+                       if is_string(p.value['then'].exprType):
+                           p.exprType = type('WriteString', (object,), {
+                               'kind': 'StringType',
+                               'Min': 0,
+                               'Max': 1000, # irrelevant
+                               'NumericValue': -1
+                               })
+                       else:
+                           p.exprType = p.value['then'].exprType
                 else:
                     raise TypeError('{}: both options must have the same type.'
                                     .format(name))

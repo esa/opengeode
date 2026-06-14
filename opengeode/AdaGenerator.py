@@ -1297,7 +1297,16 @@ def write_statement(param, newline):
         # IA5String are null-terminated to match the C representation
         # ASN1SCC API offers the getStringSize function to read the actual size
         code, string, local = expression(param, readonly=1)
-        code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
+        # the experession can be a ternary evaluating to IA5String, in which
+        # case it has to be rendered as is. However if it is a pure IA5String
+        # variable, then its actual length has to be computed as it is
+        # null-terminated to memory match the C representation.
+        if isinstance(param, ogAST.PrimVariable): # and basic_type.Min != basic_type.Max:
+            # (removed the test for fixed size: Asn1scc generates strings with
+            # one extra char to store the null termination character)
+            code.append(f'Put ({string}(1 .. adaasn1rtl.GetStringSize ({string})));')
+        else:
+            code.append(f'Put ({string});')
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
             # Octet string or bit string
@@ -1378,14 +1387,28 @@ def _call_external_function(output, **kwargs):
             # but not yet complex ASN.1 structures (sequence/seqof/choice)
             for param in out['params'][:-1]:
                 stmts, _, local = write_statement(param, newline=False)
-                code.extend(stmts)
-                local_decl.extend(local)
+                if local:
+                    code.append('declare')
+                    code.extend(local)
+                    code.append('begin')
+                    code.extend(stmts)
+                    code.append('end;')
+                else:
+                    code.extend(stmts)
+                # local_decl.extend(local)
             for param in out['params'][-1:]:
                 # Last parameter - add newline if necessary
                 stmts, _, local = write_statement(param, newline=True if
                         signal_name.lower() == 'writeln' else False)
-                code.extend(stmts)
-                local_decl.extend(local)
+                if local:
+                    code.append('declare')
+                    code.extend(local)
+                    code.append('begin')
+                    code.extend(stmts)
+                    code.append('end;')
+                else:
+                    code.extend(stmts)
+                # local_decl.extend(local)
             continue
         elif signal_name.lower() == 'reset_timer':
             # built-in operator for resetting timers. param = timer name
@@ -2748,47 +2771,105 @@ def _mantissa_base_exp(primary, **kwargs):
 def _conditional(cond, **kwargs):
     ''' Return string and statements for conditional expressions '''
     stmts = []
+    local_decl = []
 
-    tmp_type = type_name(cond.exprType)
+    basic_cond = find_basic_type(cond.exprType)
+    actual_type = type_name(cond.exprType)
 
-    if tmp_type == 'String':
-        then_str = cond.value['then'].value.replace("'", '"')
-        else_str = cond.value['else'].value.replace("'", '"')
-        lens = [len(then_str), len(else_str)]
-        tmp_type = f'String (1 .. {max(lens) - 2})'
-        # Ada require fixed-length strings, adjust with spaces
-        if lens[0] < lens[1]:
-            then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
-        elif lens[1] < lens[0]:
-            else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
-
-    local_decl = [f'tmp{cond.value["tmpVar"]} : {tmp_type};']
     if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
-    if not tmp_type.startswith('String'):
-        then_stmts, then_str, then_local = expression(cond.value['then'],
-                                                      readonly=1)
-        else_stmts, else_str, else_local = expression(cond.value['else'],
-                                                      readonly=1)
-#       print "\nCONDITIONAL :", cond.inputString, tmp_type,
-#       print "THEN TYPE:", type_name(find_basic_type(cond.value['then'].exprType)),
-#       print "ELSE TYPE:", type_name(find_basic_type(cond.value['else'].exprType))
+
+    then_stmts, then_str, then_local = expression(cond.value['then'],
+                                                  readonly=1)
+    else_stmts, else_str, else_local = expression(cond.value['else'],
+                                                  readonly=1)
+    local_decl.extend(then_local)
+    local_decl.extend(else_local)
+
+    if actual_type == 'String' or basic_cond.kind == "IA5StringType":
+        # IA5String: generate two constant strings and use ternary operator
+        # to avoid uninitialized constrained string issue in Ada
+        max_size = basic_cond.Max
+        then_id = f'cond_then_{cond.value["tmpVar"]}'
+        else_id = f'cond_else_{cond.value["tmpVar"]}'
+        then_basic = find_basic_type(cond.value['then'].exprType)
+        else_basic = find_basic_type(cond.value['else'].exprType)
+
+        then_is_octet = False
+        then_decl_type = 'String'
+        if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
+            # For literals, use the string literal format directly
+            then_val = cond.value['then'].value.replace("'", '"')
+        else:
+            if then_basic.kind in ('OctetStringType', 'BitStringType'):
+                # wow wait, if size if fixed, there is no .Length
+                len_sep = "." if then_basic.Min != then_basic.Max else ".Data'"
+                then_val = f"(for I in 1 .. {then_str}{len_sep}Length => (Character'Val({then_str}.Data(I))))"
+                then_decl_type = f"String (1 .. {then_str}{len_sep}Length)"
+                then_is_octet = True
+            else:
+                then_val = then_str
+
+        else_is_octet = False
+        else_decl_type = 'String'
+        if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
+            # For literals, use the string literal format directly
+            else_val = cond.value['else'].value.replace("'", '"')
+        else:
+            if else_basic.kind in ('OctetStringType', 'BitStringType'):
+                len_sep = "." if else_basic.Min != else_basic.Max else ".Data'"
+                else_val = f"(for I in 1 .. {else_str}{len_sep}Length => (Character'Val({else_str}.Data(I))))"
+                else_decl_type = f"String (1 .. {else_str}{len_sep}Length)"
+                else_is_octet = True
+            else:
+                else_val = else_str
+
+
+        # We need a local declaration only for octet strings, otherwise use
+        # either the IA5String variable directly (with size limit) or raw string
+        if then_is_octet:
+            local_decl.append(f'{then_id} : constant {then_decl_type} := {then_val};')
+        else:
+            then_id = then_val
+            if then_basic.kind == "IA5StringType":
+                # if it's a variable, take the value until it finds a NUL
+                then_id = f"{then_id}(1 .. adaasn1rtl.GetStringSize({then_id}))"
+        if else_is_octet:
+            local_decl.append(f'{else_id} : constant {else_decl_type} := {else_val};')
+        else:
+            else_id = else_val
+            if else_basic.kind == "IA5StringType":
+                else_id = f"{else_id}(1 .. adaasn1rtl.GetStringSize({else_id}))"
+
         stmts.extend(then_stmts)
         stmts.extend(else_stmts)
-        local_decl.extend(then_local)
-        local_decl.extend(else_local)
+
+        # Note: if branches have different lengths, this will fail in Ada.
+        # But padding literals to Max might not be what the user wants if they
+        # asked for "as is". If lengths mismatch, the model might be invalid.
+        ada_string = f'(if {if_str} then {then_id} else {else_id})'
+        return stmts, str(ada_string), local_decl
+
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+
+        ada_string = f'(if {if_str} then {then_id} else {else_id})'
+        return stmts, str(ada_string), local_decl
+
+    # Non-String types (SequenceOf, OctetString, basic types)
+    local_decl.append(f'tmp{cond.value["tmpVar"]} : {actual_type};')
+    stmts.extend(then_stmts)
+    stmts.extend(else_stmts)
     stmts.append('if {if_str} then'.format(if_str=if_str))
 
     # the "then" or "else" part may be an iterator (Integer32),
-    # so a cast to the expected type (tmp_type) may be needed
-    basic_cond = find_basic_type(cond.exprType)
+    # so a cast to the expected type (actual_type) may be needed
     basic_then = find_basic_type(cond.value['then'].exprType)
     basic_else = find_basic_type(cond.value['else'].exprType)
 
     then_len = None
-    # CHECKME : I think the IA5String case is not handled properly here
-    if not tmp_type.startswith('String') and isinstance(cond.value['then'],
+    if isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         then_str = array_content(cond.value['then'], then_str, basic_then)
     if isinstance(cond.value['then'], ogAST.ExprAppend):
@@ -2802,7 +2883,7 @@ def _conditional(cond, **kwargs):
         if basic_then.Min != basic_then.Max:
             then_len = f"{then_str}'Length"
     else:
-        cast = basic_cond.kind != basic_then.kind and f" {tmp_type}" or ""
+        cast = basic_cond.kind != basic_then.kind and f" {actual_type}" or ""
         stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({then_str});')
     if then_len:
         stmts.append("tmp{idx}.Length := {then_len};"
@@ -2810,7 +2891,7 @@ def _conditional(cond, **kwargs):
 
     stmts.append('else')
     else_len = None
-    if not tmp_type.startswith('String') and isinstance(cond.value['else'],
+    if isinstance(cond.value['else'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         else_str = array_content(cond.value['else'], else_str, basic_else)
 
@@ -2825,7 +2906,7 @@ def _conditional(cond, **kwargs):
         if basic_else.Min != basic_else.Max:
             else_len = "{}'Length".format(else_str)
     else:
-        cast = basic_cond.kind != basic_else.kind and f" {tmp_type}" or ""
+        cast = basic_cond.kind != basic_else.kind and f" {actual_type}" or ""
         stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({else_str});')
     if else_len:
         stmts.append("tmp{idx}.Length := {else_len};"
@@ -3887,8 +3968,12 @@ def format_ada_code(stmts):
     indent = 0
     indent_pattern = '   '
     last_was_is = False
+    declare = False   # manage decrement before "begin" after a "declare"
     for line in stmts[:-1]:
         elems = line.strip().split()
+        if elems and elems[0] == "begin" and declare:
+            indent -= 1
+            declare = False
         if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
             # Decrement the line, but the "when" will be incremented anyway
             # because of "last_was_is"
@@ -3913,6 +3998,8 @@ def format_ada_code(stmts):
                 yield indent_pattern * indented_level + line
         if elems and elems[-1] in ('then', 'loop', 'declare'):
             indent += 1
+        if elems and elems[-1] == 'declare':
+            declare = True
         if elems and elems[-1] == 'is':
             if elems[0] not in ('procedure', 'function'):
                 indent += 1
