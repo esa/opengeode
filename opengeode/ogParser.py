@@ -1307,7 +1307,7 @@ def check_type_compatibility(primary, type_ref, context):
 
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'BitStringType':
-        # a bit string can be assigned an SeqOf kind if the elements are
+        # a bit string can be assigned a SeqOf kind if the elements are
         # using named bits declared in the model
         # At this point the elements have been set as PrimVariable instances
         named_bits = [n.lower().replace('-', '_') for n in basic_type.NamedBits.keys()]

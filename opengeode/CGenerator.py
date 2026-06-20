@@ -312,7 +312,7 @@ def _decision(dec, **kwargs):
                     if isinstance(constant, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
                         ans_str = str(constant.numeric_value)
 
-                    exp = u'(({q}) {op} {ans})'.format(q=question_string, op='==' if op.operand == '=' else op.operand, ans=ans_str)
+                    exp = '(({q}) {op} {ans})'.format(q=question_string, op='==' if op.operand == '=' else op.operand, ans=ans_str)
 
                 stmts.append(sep + exp + ')')
                 stmts.append('{')
@@ -830,10 +830,10 @@ def _task_assign(task, **kwargs):
 
         # ExprAssign only returns code statements, no string
         code_assign, _, decl_assign = expression(expr)
-        
+
         code.extend(code_assign)
         local_decl.extend(decl_assign)
-        
+
     return code, local_decl
 
 
@@ -1715,14 +1715,6 @@ def _assign_expression(expr):
     basic_right = find_basic_type(expr.right.exprType)
 
     LEFT_TYPE=type_name(expr.left.exprType)
-#   if variable_name in VARIABLES:
-#       LEFT_TYPE = type_name(VARIABLES[variable_name][0])
-#   else:
-#       if basic_left.__name__ == 'Subtype':  # numerical type
-#           breakpoint()
-#           LEFT_TYPE = ''
-#       else:
-#           LEFT_TYPE = 'asn1Scc' + basic_left.__name__[:-5].replace('-','_')
 
     right_stmts, right_string, right_decls = expression(expr.right)
     # If left side is a string/seqOf and right side is a substring, we must
@@ -1755,7 +1747,7 @@ def _assign_expression(expr):
             stmts.append('{')
             stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
             stmts.append('}')
-    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         rlen = "{}.nCount".format(right_string)
 
         if isinstance(expr.right, ogAST.PrimSubstring):
@@ -1770,8 +1762,9 @@ def _assign_expression(expr):
             stmts.append('}')
         elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             VAR_COUNTER = VAR_COUNTER + 1
-            decls.append('{ty} assign_var_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, basic_left)))
-            strings.append("{lvar} = assign_var_{var_counter};".format(lvar=left_string, var_counter=VAR_COUNTER))
+            decls.append(
+                    f'{LEFT_TYPE} assign_var_{VAR_COUNTER} = {array_content(expr.right, right_string, basic_left)};')
+            strings.append(f"{left_string} = assign_var_{VAR_COUNTER};")
             rlen = None
         elif isinstance(expr.right, ogAST.ExprNot) and isinstance(expr.right.expr, ogAST.PrimSequenceOf):
             strings.append("{ls} = ({ty}) {rs};".format(ls=left_string, ty=LEFT_TYPE, rs=right_string))
@@ -1785,14 +1778,9 @@ def _assign_expression(expr):
             strings.append(u"{lvar}.nCount= {rlen};".format(lvar=left_string, rlen=rlen))
     else:
         if isinstance(expr.right, ogAST.PrimSequence):
-            # not sure why we need an intermediate variable here...removed it
-            #VAR_COUNTER = VAR_COUNTER + 1
-            #decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
-            #stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {right_string};')
-            #stmts.append('{ls} = constant_{var_counter};'.format(ls=left_string, var_counter=VAR_COUNTER))
             stmts.append(f'{left_string} = ({LEFT_TYPE}) {right_string};')
         else:
-            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};")
+            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // default assignment")
 
     stmts.extend(strings)
     LOG.debug('Expanding assignment: ' + expr.inputString + ': DONE')
@@ -2439,8 +2427,15 @@ def _string_literal(primary):
 
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
-    # as expected by the Ada type corresponding to Octet String
-    if isinstance(primary, ogAST.PrimOctetStringLiteral):
+    if isinstance(primary, ogAST.PrimBitStringLiteral):
+        # here we have a bit string literal and inside primary.bitarray
+        # we have something like ['0', '1']
+        # In C the representation is packed in a byte (for bitstings <= 8 bits)
+        # so we must set it using proper bitwise logic
+        bits = ''.join(primary.bit_array)
+        c_value = f"0b{bits}"
+        return [], c_value, []
+    elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
     else:
@@ -3715,15 +3710,17 @@ def array_content(prim, values, asnty):
     elif asnty.Min != asnty.Max:
         length = len(prim.value)
 
-        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+        if isinstance(prim, ogAST.PrimBitStringLiteral):
+            length = len(prim.bit_array)
+        elif isinstance(prim, ogAST.PrimOctetStringLiteral):
             length = len(prim.hexstring)
         elif isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
 
-        return u'{{{length}, {{{values}}}}}'.format(length=length, values=values)
+        return f'{{{length}, {{{values}}}}}'
 
-    return u'{{{{{values}}}}}'.format(values=values)
+    return f'{{{{{values}}}}}'
 
 
 def type_name(a_type, use_prefix=True):

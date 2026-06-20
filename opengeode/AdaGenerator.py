@@ -2413,7 +2413,14 @@ def _assign_expression(expr, **kwargs):
         leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
         rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
         if leftIsBitString and rightIsBoolean:
-            strings.append(f"{left_str} := (if {right_str} then 1 else 0);")
+            # If right is actually a boolean literal (true or false) set 1 or 0 directly
+            if right_str.strip().lower() == "true":
+                res = "1"
+            elif  right_str.strip().lower() == "false":
+                res = "0"
+            else:
+                res = f"(if {right_str} then 1 else 0)"
+            strings.append(f"{left_str} := {res};")
         else:
             strings.append(f"{left_str} := {right_str};")
     else:
