@@ -470,14 +470,24 @@ def _call_external_function(output, **kwargs):
             # but not yet complex ASN.1 structures (sequence/seqof/choice)
             for param in out['params'][:-1]:
                 write_stmts, _, local = write_statement(param, newline=False)
-                stmts.extend(write_stmts)
-                decls.extend(local)
+                if local:
+                    stmts.append('{')
+                    stmts.extend(local)
+                    stmts.extend(write_stmts)
+                    stmts.append('}')
+                else:
+                    stmts.extend(write_stmts)
 
             for param in out['params'][-1:]:
                 # Last parameter - add newline if necessary
                 write_stmts, _, local = write_statement(param, newline=True if signal_name.lower() == 'writeln' else False)
-                stmts.extend(write_stmts)
-                decls.extend(local)
+                if local:
+                    stmts.append('{')
+                    stmts.extend(local)
+                    stmts.extend(write_stmts)
+                    stmts.append('}')
+                else:
+                    stmts.extend(write_stmts)
 
             continue
         elif signal_name.lower() == 'reset_timer':
@@ -2506,7 +2516,8 @@ def _conditional(cond):
                 then_decl_type = f"char {then_id}[{len_sep} + 1];  // +1 for null-termination"
                 local_decl.append(then_decl_type)
                 then_stmts.extend([
-                f"for (size_t i = 0; i < {len_sep}; ++i) {{",
+                f"for (size_t i = 0; i < {len_sep}; ++i)",
+                f"{{",
                 f"    {then_id}[i] = (char){then_str}.arr[i];",
                 f"}}",
                 f"{then_id}[{len_sep}] = '\\0';"])
@@ -2529,7 +2540,8 @@ def _conditional(cond):
                 else_decl_type = f"char {else_id}[{len_sep} + 1];  // +1 for null-termination"
                 local_decl.append(else_decl_type)
                 else_stmts.extend([
-                f"for (size_t i = 0; i < {len_sep}; ++i) {{",
+                f"for (size_t i = 0; i < {len_sep}; ++i)",
+                f"{{",
                 f"    {else_id}[i] = (char){else_str}.arr[i];",
                 f"}}",
                 f"{else_id}[{len_sep}] = '\\0';"])
@@ -3963,13 +3975,8 @@ def write_statement(param, newline):
                     code.append('printf(\"%c\", {st}.arr[write_{var_counter}]);'.format(st=string, var_counter=VAR_COUNTER))
                     code.append('}')
             elif type_kind == 'IA5StringType' and isinstance(param, ogAST.PrimVariable): # should be fixed later
-                code.append(u'{')
-                code.append(u'asn1SccUint tmp_counter = 0;')
-                code.append(u'for(tmp_counter = 0; tmp_counter < {size} && {var}[tmp_counter] != \'\\0\'; tmp_counter++)'.format(size=basic_type.Max, var=string))
-                code.append(u'{')
-                code.append(u'printf(\"%c\", {var}[tmp_counter]);'.format(var=string))
-                code.append(u'}')
-                code.append(u'}')
+                # IA5String variables are just null-terminated: print as is
+                code.append(f'printf(\"%s\", {string});')
             elif type_kind.endswith('StringType'):
                 code.append(f'printf(\"%s\", {string});')
             else:
