@@ -3454,19 +3454,13 @@ def generating_includes(process):
 
 
 def processing_transitions_and_floating_labels(process):
-    continuous_signals_header_file_code = [u'//// Continuous Signals']
-    transition_code = [u'//// Definition Of Run Transition']
+    continuous_signals_header_file_code = ['//// Continuous Signals']
+    transition_code = ['//// Definition Of Run Transition']
 
     has_continuous_signals = any(process.cs_mapping.values())
     enum_name = f'{process.processName}_Branches'
 
     all_labels = [lab.inputString.lower() for lab in process.content.floating_labels]
-
-    def find_a_label(transition):
-        for action in transition.actions:
-            if isinstance(action, ogAST.Label):
-                return action.inputString.lower()
-        return 'branch_end'
 
     # Generate code for the floating labels (as functions)
     code_labels = []
@@ -3514,9 +3508,8 @@ def processing_transitions_and_floating_labels(process):
                         if item.priority == 0:
                             item.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
-                        tr_label = find_a_label(provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
-                                            branch_to=tr_label,
+                                            branch_to=None,
                                             sep=sep, last=last)
                         cs_code.extend(code)
                         sep='} else if('
@@ -3541,7 +3534,6 @@ def processing_transitions_and_floating_labels(process):
 
             for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
                 cs_code.append(f'//  Priority: {provided_clause.priority}')
-                tr_label = find_a_label(provided_clause.transition)
 
                 # check if we are leaving a nested state with a CS
                 state_tree = statename.split(SEPARATOR)
@@ -3581,7 +3573,7 @@ def processing_transitions_and_floating_labels(process):
         if need_final_endif:
             cs_code.append('}')
 
-        cs_code.append('return branch_end;')
+        cs_code.append('return branch_end; // end of CS code')
         cs_code.append('}')
         code_labels.extend(cs_code)
 
