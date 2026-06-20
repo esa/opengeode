@@ -3313,7 +3313,9 @@ def processing_input_signals(process):
                             case_state(par)
                         input_signals_code.append('default:')
                         input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+                        input_signals_code.append('break;')
                         input_signals_code.append('} // end switch aggregation')
+                        input_signals_code.append('break;')
                         input_signals_code.append('} // end case')
                         break
                 else:
@@ -3323,6 +3325,8 @@ def processing_input_signals(process):
                         execute_transition(state, input_signals_code)
                     else:
                         input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+                        input_signals_code.append('break;')
+                        input_signals_code.append('}')
             else:
                 if execute_transition(state, statecase):
                     input_signals_code.extend(statecase)
