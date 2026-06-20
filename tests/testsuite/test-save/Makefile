@@ -33,7 +33,7 @@ test-ada:
 test-c: 
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
-	$(CC) -O$(O) -o test_c *.c && ./test_c | diff expected -
+	$(CC) -o test_c *.c && ./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr
