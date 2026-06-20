@@ -2803,7 +2803,6 @@ def _conditional(cond, **kwargs):
             then_val = cond.value['then'].value.replace("'", '"')
         else:
             if then_basic.kind in ('OctetStringType', 'BitStringType'):
-                # wow wait, if size if fixed, there is no .Length
                 len_sep = "." if then_basic.Min != then_basic.Max else ".Data'"
                 then_val = f"(for I in 1 .. {then_str}{len_sep}Length => (Character'Val({then_str}.Data(I))))"
                 then_decl_type = f"String (1 .. {then_str}{len_sep}Length)"

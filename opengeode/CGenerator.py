@@ -2426,7 +2426,7 @@ def _empty_string(primary):
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary):
     ''' Generate code for a string (Octet String) '''
-    
+
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
@@ -2459,73 +2459,258 @@ def _mantissa_base_exp(primary):
 
 @expression.register(ogAST.PrimConditional)
 def _conditional(cond):
-    ''' Return string and statements for conditional expressions '''
-    # FIXME: this function is not fully aligned with Ada, many cases are missing
-
+    ''' Return string and statements for conditional expressions
+        Aligned with the Ada generator: handles IA5String types with ternary,
+        uses C ternary (? :) for basic types, and if/else with tmp variable
+        only for complex compound types (ExprAppend, PrimSubstring).
+    '''
     stmts = []
-    tmp_type = type_name(cond.exprType)
+    local_decl = []
 
-    local_decl = ['{tmpType} tmp{idx};'.format(idx=cond.value['tmpVar'], tmpType=tmp_type)]
+    basic_cond = find_basic_type(cond.exprType)
+    actual_type = type_name(cond.exprType)   # may be char *
+
     if_stmts, if_str, if_local = expression(cond.value['if'])
-
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
 
     then_stmts, then_str, then_local = expression(cond.value['then'])
+    then_vc = VAR_COUNTER
+
     else_stmts, else_str, else_local = expression(cond.value['else'])
-
-    stmts.extend(then_stmts)
-    stmts.extend(else_stmts)
-
+    else_vc = VAR_COUNTER
     local_decl.extend(then_local)
     local_decl.extend(else_local)
 
-    if isinstance(cond.value['then'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        then_str = '({tmpTyp}) {{{size}, {{{then_str}}}}}'.format(tmpTyp=tmp_type, then_str=then_str, size=len((cond.value['then'].value))-2)
-    
-    if isinstance(cond.value['else'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        else_str = '({tmpTyp}) {{{size}, {{{else_str}}}}}'.format(tmpTyp=tmp_type, else_str=else_str, size=len((cond.value['else'].value))-2)
 
-    stmts.append('if ({if_str})'.format(if_str=if_str))
-    stmts.append('{')
-    # the following has to check if the expression is an Append or a Substring and generate the proper code.
-    # see the Ada backend to complete.
-    if isinstance(cond.value['then'], ogAST.PrimSubstring):
-       # assign the substring elements to the temporary storage
-       stmts.extend([
-           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
-           '{',
-           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {then_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];", 
-           '}'
-           ])
-       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
-       basic = find_basic_type(cond.exprType)
-       if basic.Min != basic.Max:
-           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+    if actual_type == "char *" or basic_cond.kind == 'IA5StringType':
+        # IA5String: generate two constant strings and use ternary operator
+        max_size = basic_cond.Max
+        then_id = f'cond_then_{cond.value["tmpVar"]}'
+        else_id = f'cond_else_{cond.value["tmpVar"]}'
+        then_basic = find_basic_type(cond.value['then'].exprType)
+        else_basic = find_basic_type(cond.value['else'].exprType)
+
+        # Process "then" value
+        then_is_octet = False
+        then_decl_type = 'char *'
+        if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
+            # For literals, use ia5string_raw to get C null-terminated byte array
+            #then_val = ia5string_raw(cond.value['then'])
+            then_val = cond.value['then'].value.replace("'", '"')
+        else:
+            if then_basic.kind in ('OctetStringType', 'BitStringType'):
+                # OctetString/BitString to IA5String conversion:
+                # need to copy bytes from .arr to a char array
+                len_sep = f"{then_str}.nCount" if then_basic.Min != then_basic.Max else f"{then_basic.Max}"
+                then_decl_type = f"char {then_id}[{len_sep} + 1];  // +1 for null-termination"
+                local_decl.append(then_decl_type)
+                then_stmts.extend([
+                f"for (size_t i = 0; i < {len_sep}; ++i) {{",
+                f"    {then_id}[i] = (char){then_str}.arr[i];",
+                f"}}",
+                f"{then_id}[{len_sep}] = '\\0';"])
+                then_is_octet = True
+                then_val = None
+            else:
+                # IA5String variable: use directly (already a char array)
+                then_val = then_str
+
+        # Process "else" value
+        else_is_octet = False
+        if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
+            #else_val = ia5string_raw(cond.value['else'])
+            else_val = cond.value['else'].value.replace("'", '"')
+        else:
+            if else_basic.kind in ('OctetStringType', 'BitStringType'):
+                # OctetString/BitString to IA5String conversion:
+                # need to copy bytes from .arr to a char array
+                len_sep = f"{else_str}.nCount" if else_basic.Min != else_basic.Max else f"{else_basic.Max}"
+                else_decl_type = f"char {else_id}[{len_sep} + 1];  // +1 for null-termination"
+                local_decl.append(else_decl_type)
+                else_stmts.extend([
+                f"for (size_t i = 0; i < {len_sep}; ++i) {{",
+                f"    {else_id}[i] = (char){else_str}.arr[i];",
+                f"}}",
+                f"{else_id}[{len_sep}] = '\\0';"])
+
+                else_is_octet = True
+                else_val = None
+            else:
+                else_val = else_str
+
+        # Build local declarations and setup statements for "then"
+        if not then_is_octet:
+            if then_val is not None and then_val.startswith('{'):
+                # Initializer from ia5string_raw: need a static declaration
+                local_decl.append(
+                    f'static const char {then_id}[{max_size} + 1] = {then_val};')
+            else:
+                # IA5String variable or other expression: use directly
+                then_id = then_val if then_val is not None else then_str
+
+        # Build local declarations and setup statements for "else"
+        if not else_is_octet:
+            if else_val is not None and else_val.startswith('{'):
+                local_decl.append(
+                    f'static const char {else_id}[{max_size} + 1] = {else_val};')
+            else:
+                else_id = else_val if else_val is not None else else_str
+
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+
+        c_string = f'(({if_str}) ? {then_id} : {else_id})'
+        return stmts, str(c_string), local_decl
+
+    # Non-IA5String types (SequenceOf, OctetString, basic types)
+    # the "then" or "else" part may be an iterator (Integer32),
+    # so a cast to the expected type (actual_type) may be needed
+    basic_then = find_basic_type(cond.value['then'].exprType)
+    basic_else = find_basic_type(cond.value['else'].exprType)
+
+    # Check if either branch requires multi-statement handling
+    # (ExprAppend and PrimSubstring need loops / multi-field assignments)
+    # OctetString/BitString types are structs and need if/else too
+    need_ifelse = (isinstance(cond.value['then'],
+                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                   isinstance(cond.value['else'],
+                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                   basic_cond.kind in ('OctetStringType', 'BitStringType',
+                                       'SequenceOfType'))
+
+    if need_ifelse:
+        # Complex compound types: use if/else with tmp variable
+        # (same approach as Ada for ExprAppend / PrimSubstring)
+        local_decl.append(f'{actual_type} tmp{cond.value["tmpVar"]};')
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+        stmts.append(f'if ({if_str})')
+        stmts.append('{')
+
+        # -- Process "then" branch --
+        then_len = None
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_str = array_content(cond.value['then'], then_str, basic_then)
+
+        if isinstance(cond.value['then'], ogAST.ExprAppend):
+            then_len = append_size(cond.value['then'])
+            stmts.append(
+                f"tmp{cond.value['tmpVar']} = {then_str};")
+        elif isinstance(cond.value['then'], ogAST.PrimSubstring):
+            stmts.extend([
+                f'for(int var_counter_{then_vc} = 0; '
+                f'var_counter_{then_vc} <= max_range_{then_vc}'
+                f' - min_range_{then_vc}; var_counter_{then_vc}++)',
+                '{',
+                f"tmp{cond.value['tmpVar']}.arr[var_counter_{then_vc}]"
+                f" = {then_str}.arr[var_counter_{then_vc}"
+                f" + min_range_{then_vc}];",
+                '}'
+            ])
+            rlen = f'max_range_{then_vc} - min_range_{then_vc} + 1'
+            if basic_cond.Min != basic_cond.Max:
+                stmts.append(
+                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+        else:
+            if isinstance(cond.value['then'],
+                           (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                # Compound literal needed for brace-enclosed initializer
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]}'
+                    f' = ({actual_type}) {then_str};')
+            else:
+                cast = (f'({actual_type}) '
+                        if basic_cond.kind != basic_then.kind else '')
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]} = {cast}{then_str};')
+        if then_len:
+            stmts.append(
+                f"tmp{cond.value['tmpVar']}.nCount = {then_len};")
+
+        stmts.append('}')
+        stmts.append('else')
+        stmts.append('{')
+
+        # -- Process "else" branch --
+        else_len = None
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_str = array_content(cond.value['else'], else_str, basic_else)
+
+        if isinstance(cond.value['else'], ogAST.ExprAppend):
+            else_len = append_size(cond.value['else'])
+            stmts.append(
+                f"tmp{cond.value['tmpVar']} = {else_str};")
+        elif isinstance(cond.value['else'], ogAST.PrimSubstring):
+            stmts.extend([
+                f'for(int var_counter_{else_vc} = 0; '
+                f'var_counter_{else_vc} <= max_range_{else_vc}'
+                f' - min_range_{else_vc}; var_counter_{else_vc}++)',
+                '{',
+                f"tmp{cond.value['tmpVar']}.arr[var_counter_{else_vc}]"
+                f" = {else_str}.arr[var_counter_{else_vc}"
+                f" + min_range_{else_vc}];",
+                '}'
+            ])
+            rlen = f'max_range_{else_vc} - min_range_{else_vc} + 1'
+            if basic_cond.Min != basic_cond.Max:
+                stmts.append(
+                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+        else:
+            if isinstance(cond.value['else'],
+                           (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]}'
+                    f' = ({actual_type}) {else_str};')
+            else:
+                cast = (f'({actual_type}) '
+                        if basic_cond.kind != basic_else.kind else '')
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]} = {cast}{else_str};')
+        if else_len:
+            stmts.append(
+                f"tmp{cond.value['tmpVar']}.nCount = {else_len};")
+
+        stmts.append('}')
+        c_string = f'tmp{cond.value["tmpVar"]}'
     else:
-       stmts.append('tmp{idx} = ({ty}) {then_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], then_str=then_str))
-    stmts.append('}')
-    stmts.append('else')
-    stmts.append('{')
-    if isinstance(cond.value['else'], ogAST.PrimSubstring):
-       # assign the substring elements to the temporary storage
-       stmts.extend([
-           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
-           '{',
-           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {else_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];",
-           '}'
-           ])
-       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
-       basic = find_basic_type(cond.exprType)
-       if basic.Min != basic.Max:
-           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
-    else:
-        stmts.append('tmp{idx} = ({ty}) {else_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], else_str=else_str))
-    stmts.append('}')
+        # Simple case: use C ternary operator (? :)
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
 
-    string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
+        # Apply array_content transformation if needed
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_str = array_content(cond.value['then'], then_str, basic_then)
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_str = array_content(cond.value['else'], else_str, basic_else)
 
-    return stmts, str(string), local_decl
+        # Build ternary operands with appropriate casts:
+        # - Compound literals (from array_content, with braces) always need
+        #   the type prefix to form a valid C compound literal expression
+        # - Basic types get cast only when type kinds differ
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_expr = f'({actual_type}) {then_str}'
+        elif basic_cond.kind != basic_then.kind:
+            then_expr = f'({actual_type}) ({then_str})'
+        else:
+            then_expr = then_str
+
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_expr = f'({actual_type}) {else_str}'
+        elif basic_cond.kind != basic_else.kind:
+            else_expr = f'({actual_type}) ({else_str})'
+        else:
+            else_expr = else_str
+
+        c_string = f'(({if_str}) ? {then_expr} : {else_expr})'
+
+    return stmts, str(c_string), local_decl
 
 
 @expression.register(ogAST.PrimSequence)
@@ -3491,7 +3676,7 @@ def find_basic_type(a_type):
 def ia5string_raw(prim: ogAST.PrimStringLiteral):
     ''' IA5Strings are null-terminated C arrays '''
     unsigned_8 = [str(ord(val)) for val in prim.value[1:-1]]
-    return u'{{{values}{sep}0}}'.format(values=', '.join(unsigned_8), sep=', ' if unsigned_8 else '')
+    return '{{{values}{sep}0}}'.format(values=', '.join(unsigned_8), sep=', ' if unsigned_8 else '')
 
 
 def array_content(prim, values, asnty):
@@ -3529,7 +3714,9 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'RealType':
         return u'asn1SccReal'
     elif a_type.kind.endswith('StringType'):
-        return u'asn1SccString'
+        # String types should normally come through as ReferenceType.
+        # When we get a basic string type, it has to be a raw string (char *)
+            return 'char *'
     elif a_type.kind == 'ChoiceEnumeratedType':
         return u'asn1SccSint'
     elif a_type.kind == 'StateEnumeratedType':
@@ -3650,7 +3837,7 @@ def append_size(append):
             else:
                 # Must be a variable of type SEQOF
                 _, inner, _ = expression(each)
-                result += '{}.Count'.format(inner)
+                result += '{}.nCount'.format(inner)
 
     return result
 
