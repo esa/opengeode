@@ -1135,7 +1135,7 @@ def _transition(tr, **kwargs):
 
 
 @singledispatch
-def expression(expr):
+def expression(expr, **kwargs):
     ''' Generate the code for Expression-classes, returning 3 things:
         - list of statements
         - useable string corresponding to the evaluation of the expression,
@@ -1146,7 +1146,7 @@ def expression(expr):
 
 
 @expression.register(ogAST.PrimVariable)
-def _primary_variable(prim):
+def _primary_variable(prim, **kwargs):
     ''' Single variable reference '''
 
     prim_variable_raw_value = prim.value[0]
@@ -1180,7 +1180,7 @@ def _primary_variable(prim):
 
 
 @expression.register(ogAST.PrimCall)
-def _prim_call(prim):
+def _prim_call(prim, **kwargs):
     global MATH_INCLUDE
 
     function_name = prim.value[0].lower()
@@ -1460,24 +1460,40 @@ def _prim_call(prim):
 
 
 @expression.register(ogAST.PrimIndex)
-def _prim_index(prim):
+def _prim_index(prim, **kwargs):
+    # readonly allows to check if we are assigning to or reading from the value
+    # it is especially useful here for BIT STRING elements as they are packed
+    # so reading a bit requires a bitwise operation
+
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
 
     receiver = prim.value[0]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
+    expr_bs = find_basic_type(receiver.exprType)
     string = receiver_string
 
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0])
-    string += u'.arr'
+    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0], readonly=ro)
+    string += '.arr'
 
     if not isinstance(receiver, ogAST.PrimSubstring):
-        string += u'[{idx}]'.format(idx=idx_string)
+        if expr_bs.kind == 'BitStringType' and ro:
+            phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
+            # .arr is an array so we have to read the bit in the right byte
+            # depending on the size of the array
+            string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
+        elif expr_bs.kind == 'BitStringType' and not ro:
+            # It is for a write to a bit index: here we only compute the
+            # place in the byte array.
+            string += f'[{idx_string} / 8]'
+        else:
+            string += f'[{idx_string}]'
     else:
-        string += u'[{idx} + min_range_{var_counter}]'.format(idx=idx_string, var_counter=VAR_COUNTER)
+        string += f'[{idx_string} + min_range_{VAR_COUNTER}]'
 
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
@@ -1486,15 +1502,16 @@ def _prim_index(prim):
 
 
 @expression.register(ogAST.PrimSelector)
-def _prim_selector(prim):
+def _prim_selector(prim, **kwargs):
     ''' Selector (field access with '!' separation) '''
 
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
 
     receiver = prim.value[0]
     field_name = prim.value[1]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
     string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
@@ -1525,7 +1542,7 @@ def _prim_selector(prim):
 
 
 @expression.register(ogAST.PrimStateReference)
-def _primary_state_reference(prim):
+def _primary_state_reference(prim, **kwargs):
     ''' Reference to the current state '''
 
     error = 'To Be Implemented'
@@ -1543,13 +1560,13 @@ def _primary_state_reference(prim):
 @expression.register(ogAST.ExprLe)
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprRem)
-def _basic_operators(expr):
+def _basic_operators(expr, **kwargs):
     ''' Expressions with two sides '''
 
     code, local_decl = [], []
 
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     operand = '%' if isinstance(expr, ogAST.ExprRem) else expr.operand
     string = u'({left} {op} {right})'.format(left=left_str, op=operand, right=right_str)
@@ -1564,12 +1581,12 @@ def _basic_operators(expr):
 
 
 @expression.register(ogAST.ExprMod)
-def _basic_operators(expr):
+def _basic_operators(expr, **kwargs):
     ''' Expressions with two sides '''
     code, local_decl = [], []
 
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     string = u'({left} % {right})'.format(left=left_str, op=expr.operand, right=right_str)
 
@@ -1584,12 +1601,12 @@ def _basic_operators(expr):
 
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
-def _equality(expr):
+def _equality(expr, **kwargs):
     global VAR_COUNTER
     global VARIABLES
 
-    stmts, left_string, decls = expression(expr.left)
-    right_stmts, right_string, right_local = expression(expr.right)
+    stmts, left_string, decls = expression(expr.left, readonly=1)
+    right_stmts, right_string, right_local = expression(expr.right, readonly=1)
 
     stmts.extend(right_stmts)
     decls.extend(right_local)
@@ -1700,7 +1717,7 @@ def _equality(expr):
 
 
 @expression.register(ogAST.ExprAssign)
-def _assign_expression(expr):
+def _assign_expression(expr, **kwargs):
     LOG.debug('Expanding assignment: ' + expr.inputString)
 
     global LEFT_TYPE
@@ -1716,7 +1733,7 @@ def _assign_expression(expr):
 
     LEFT_TYPE=type_name(expr.left.exprType)
 
-    right_stmts, right_string, right_decls = expression(expr.right)
+    right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .arr and .Length parts properly
     stmts.extend(left_stmts)
@@ -1751,7 +1768,7 @@ def _assign_expression(expr):
         rlen = "{}.nCount".format(right_string)
 
         if isinstance(expr.right, ogAST.PrimSubstring):
-            rlen = u'max_range_{var_counter} - min_range_{var_counter} + 1'.format(var_counter=VAR_COUNTER)
+            rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
 
             decls.append('asn1SccUint var_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
             stmts.append('{')
@@ -1776,6 +1793,17 @@ def _assign_expression(expr):
 
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(u"{lvar}.nCount= {rlen};".format(lvar=left_string, rlen=rlen))
+    elif isinstance(expr.left, ogAST.PrimIndex):
+        # check if it is an assignment of a single bit of a BIT STRING
+        leftbs = find_basic_type(expr.left.value[0].exprType)
+        leftIsBitString = leftbs.kind == 'BitStringType'
+        if leftIsBitString:
+            _, bit_idx, _ = expression(expr.left.value[1]['index'][0])
+            bit = f'({leftbs.Max} - 1 - {bit_idx})'
+            res = f"({right_string} ? {left_string} | (1u << {bit} % 8) : {left_string} & ~(1u << {bit} % 8))"
+            strings.append(f"{left_string} = {res};")
+        else:
+            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // index assignment")
     else:
         if isinstance(expr.right, ogAST.PrimSequence):
             stmts.append(f'{left_string} = ({LEFT_TYPE}) {right_string};')
@@ -1792,12 +1820,12 @@ def _assign_expression(expr):
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
 @expression.register(ogAST.ExprImplies)
-def _bitwise_operators(expr):
+def _bitwise_operators(expr, **kwargs):
     ''' Logical operators '''
 
     stmts, decls = [], []
-    left_stmts, left_string, left_local = expression(expr.left)
-    right_stmts, right_string, right_local = expression(expr.right)
+    left_stmts, left_string, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_string, right_local = expression(expr.right, readonly=1)
     basic_type = find_basic_type(expr.exprType)
 
     if basic_type.kind != 'BooleanType':
@@ -1858,7 +1886,7 @@ def _bitwise_operators(expr):
 
 
 @expression.register(ogAST.ExprNot)
-def _not_expression(expr):
+def _not_expression(expr, **kwargs):
     ''' Generate the code for a not expression '''
 
     stmts, decls = [], []
@@ -1868,7 +1896,7 @@ def _not_expression(expr):
         for each in expr.expr.value:
             each.value[0] = 'true' if each.value[0] == 'false' else 'false'
 
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
     stmts.extend(expr_stmts)
     decls.extend(expr_local)
 
@@ -1914,11 +1942,11 @@ def _not_expression(expr):
 
 
 @expression.register(ogAST.ExprNeg)
-def _neg_expression(expr):
+def _neg_expression(expr, **kwargs):
     ''' Generate the code for a negative expression '''
 
     code, local_decl = [], []
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
     string = u'(-{expr})'.format( expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
@@ -1927,7 +1955,7 @@ def _neg_expression(expr):
 
 
 @expression.register(ogAST.ExprAppend)
-def _append(expr):
+def _append(expr, **kwargs):
     ''' Generate code for the APPEND construct: a // b '''
 
     LOG.debug(str(type(expr.left)) + str(type(expr.right)))
@@ -1943,11 +1971,11 @@ def _append(expr):
 
     stmts.append('{')
 
-    left_stmts, left_string, left_decls = expression(expr.left)
+    left_stmts, left_string, left_decls = expression(expr.left, readonly=1)
     stmts.extend(left_stmts)
     decls.extend(left_decls)
 
-    right_stmts, right_string, right_decls = expression(expr.right)
+    right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
     stmts.extend(right_stmts)
     decls.extend(right_decls)
 
@@ -2272,7 +2300,7 @@ def _append(expr):
 
 
 @expression.register(ogAST.ExprIn)
-def _expr_in(expr):
+def _expr_in(expr, **kwargs):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
 
     # Check if item is in a SEQUENCE OF
@@ -2281,8 +2309,8 @@ def _expr_in(expr):
 
     string = ''
     stmts, decls = [], []
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
@@ -2346,7 +2374,7 @@ def _expr_in(expr):
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
-def _enumerated_value(primary):
+def _enumerated_value(primary, **kwargs):
     ''' Generate code for an enumerated value '''
 
     basic_type = find_basic_type(primary.exprType)
@@ -2372,7 +2400,7 @@ def _enumerated_value(primary):
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
-def _choice_determinant(primary):
+def _choice_determinant(primary, **kwargs):
     ''' Generate code for a choice determinant (enumerated) '''
 
     enumerant = primary.value[0].replace('_', '-').lower()
@@ -2388,7 +2416,7 @@ def _choice_determinant(primary):
 
 @expression.register(ogAST.PrimInteger)
 @expression.register(ogAST.PrimReal)
-def _integer(primary):
+def _integer(primary, **kwargs):
     ''' Generate code for a raw numerical value  '''
 
     string = primary.value[0]
@@ -2396,7 +2424,7 @@ def _integer(primary):
 
 
 @expression.register(ogAST.PrimBoolean)
-def _boolean(primary):
+def _boolean(primary, **kwargs):
     ''' Generate code for a raw boolean value  '''
 
     string = primary.value[0]
@@ -2412,7 +2440,7 @@ def _null(primary, **kwargs):
 
 
 @expression.register(ogAST.PrimEmptyString)
-def _empty_string(primary):
+def _empty_string(primary, **kwargs):
     ''' Generate code for an empty SEQUENCE OF: {} '''
 
     typename = type_name(primary.exprType)
@@ -2422,7 +2450,7 @@ def _empty_string(primary):
 
 
 @expression.register(ogAST.PrimStringLiteral)
-def _string_literal(primary):
+def _string_literal(primary, **kwargs):
     ''' Generate code for a string (Octet String) '''
 
     # If user put a literal string to fill an Octet string,
@@ -2446,14 +2474,14 @@ def _string_literal(primary):
 
 
 @expression.register(ogAST.PrimConstant)
-def _constant(primary):
+def _constant(primary, **kwargs):
     ''' Generate code for a reference to an ASN.1 constant '''
 
     return [], str(primary.constant_c_name), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
-def _mantissa_base_exp(primary):
+def _mantissa_base_exp(primary, **kwargs):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
 
     error = 'To Be Implemented'
@@ -2463,7 +2491,7 @@ def _mantissa_base_exp(primary):
 
 
 @expression.register(ogAST.PrimConditional)
-def _conditional(cond):
+def _conditional(cond, **kwargs):
     ''' Return string and statements for conditional expressions
         Aligned with the Ada generator: handles IA5String types with ternary,
         uses C ternary (? :) for basic types, and if/else with tmp variable
@@ -2475,14 +2503,14 @@ def _conditional(cond):
     basic_cond = find_basic_type(cond.exprType)
     actual_type = type_name(cond.exprType)   # may be char *
 
-    if_stmts, if_str, if_local = expression(cond.value['if'])
+    if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
 
-    then_stmts, then_str, then_local = expression(cond.value['then'])
+    then_stmts, then_str, then_local = expression(cond.value['then'], readonly=1)
     then_vc = VAR_COUNTER
 
-    else_stmts, else_str, else_local = expression(cond.value['else'])
+    else_stmts, else_str, else_local = expression(cond.value['else'], readonly=1)
     else_vc = VAR_COUNTER
     local_decl.extend(then_local)
     local_decl.extend(else_local)
@@ -2737,7 +2765,7 @@ def _conditional(cond):
 
 
 @expression.register(ogAST.PrimSequence)
-def _sequence(seq):
+def _sequence(seq, **kwargs):
     ''' Return C string for an ASN.1 SEQUENCE '''
 
     stmts, local_decl = [], []
@@ -2817,7 +2845,7 @@ def _sequence(seq):
 
 
 @expression.register(ogAST.PrimSequenceOf)
-def _sequence_of(seqof):
+def _sequence_of(seqof, **kwargs):
     ''' Return C string for an ASN.1 SEQUENCE OF '''
 
     stmts, local_decl, tab = [], [], []
@@ -2854,7 +2882,7 @@ def _sequence_of(seqof):
 
 
 @expression.register(ogAST.PrimChoiceItem)
-def _choiceitem(choice):
+def _choiceitem(choice, **kwargs):
     ''' Return the c code for a CHOICE expression '''
 
     stmts, choice_str, local_decl = expression(choice.value['value'])
@@ -2887,19 +2915,20 @@ def _choiceitem(choice):
 
 
 @expression.register(ogAST.PrimSubstring)
-def _prim_substring(prim):
+def _prim_substring(prim, **kwargs):
     ''' Generate expression for SEQOF/OCT.STRING substrings, e.g. foo(1,2) '''
 
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
     receiver = prim.value[0]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
     string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
-    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
+    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0], readonly=ro)
+    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1], readonly=ro)
 
     global VAR_COUNTER
     VAR_COUNTER = VAR_COUNTER + 1
