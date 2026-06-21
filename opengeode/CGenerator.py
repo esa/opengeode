@@ -76,11 +76,22 @@ def generate(*args, **kwargs):
 
 
 @generate.register(ogAST.Process)
-def _process(process, **kwargs):
+def _process(process, instance=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
 
     app_parameters = kwargs["options"]
-    process_name = process.processName
+
+    if not instance:
+        process.name = process.instance_of_name or process.processName
+        generic = process.instance_of_name
+        process_instance = process
+        process = process.instance_of_ref or process
+        process_name = process_instance.name
+    else:
+        process.name = process.processName
+        generic = False
+        process_instance = process
+        process_name = process.name
 
     LOG.info(f'Generating C code for process {process_name}')
 
@@ -90,11 +101,135 @@ def _process(process, **kwargs):
     global STRING_INCLUDE
     global LPREFIX
     global TIMER_VARIABLES
+    global IS_INSTANCE
     global PROCESS_NAME
 
     PROCESS_NAME = process_name
 
     TYPES = process.dataview
+    
+    IS_INSTANCE = bool(generic)
+    LPREFIX = '(*ctxt)' if IS_INSTANCE else 'ctxt'
+
+    if instance:
+        type_name_str = process.instance_of_name
+        # Generate the instance wrapper files and return
+        wrapper_c = [
+            f'/* Instance wrapper for {process_instance.processName} */',
+            f'#include "{process_instance.processName.lower()}.h"',
+            f'#include "{type_name_str.lower()}.c"'
+        ]
+        
+        wrapper_h = [
+            f'/* Instance header for {process_instance.processName} */',
+            f'#ifndef __GENERATED_{process_instance.processName.upper()}_H__',
+            f'#define __GENERATED_{process_instance.processName.upper()}_H__',
+            f'#include "{type_name_str.lower()}.h"',
+        ]
+
+        # Allocate the context
+        wrapper_c.append(f'static {ASN1SCC}{type_name_str.capitalize()}_Context ctxt = {{0}};\n')
+
+        # Startup wrapper
+        wrapper_c.append(f'void CInit{process_instance.processName}(void) {{')
+        wrapper_c.append(f'    CInit{type_name_str}(&ctxt);')
+        wrapper_c.append('}\n')
+        wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
+
+        # PI wrappers
+        for pi in process.input_signals:
+            if 'type' in pi:
+                pi_type = type_name(pi['type'])
+                sig = f'void {process_instance.processName}_PI_{pi["name"]}({pi_type} *param)'
+                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt, param)'
+            else:
+                sig = f'void {process_instance.processName}_PI_{pi["name"]}()'
+                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt)'
+            wrapper_c.append(f'{sig} {{')
+            wrapper_c.append(f'    {call};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig};\n')
+
+        # Timer wrappers
+        for timer in process.timers:
+            # set
+            sig_set = f'void {process_instance.processName}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_set = f'{type_name_str}_PI_set_{timer}(&ctxt, val)'
+            wrapper_c.append(f'{sig_set} {{')
+            wrapper_c.append(f'    {call_set};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig_set};\n')
+
+            # reset
+            sig_reset = f'void {process_instance.processName}_PI_reset_{timer}()'
+            call_reset = f'{type_name_str}_PI_reset_{timer}(&ctxt)'
+            wrapper_c.append(f'{sig_reset} {{')
+            wrapper_c.append(f'    {call_reset};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig_reset};\n')
+
+        # RI forwarders (type calling instance)
+        for ri in process.output_signals:
+            if 'type' in ri:
+                ri_type = type_name(ri['type'])
+                sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
+                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
+                call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
+            else:
+                sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
+                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
+                call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
+            
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+
+        for proc in process.procedures:
+            if proc.external:
+                args, call_args = [], []
+                for param in proc.parameters:
+                    p_type = type_name(param["type"])
+                    args.append(f'{p_type} *{param["name"]}')
+                    call_args.append(param["name"])
+                
+                sig_type = f'void {type_name_str}_RI_{proc.inputString}({", ".join(args)})'
+                sig_inst = f'void {process_instance.processName}_RI_{proc.inputString}({", ".join(args)})'
+                call_inst = f'{process_instance.processName}_RI_{proc.inputString}({", ".join(call_args)})'
+
+                wrapper_c.append(f'{sig_type} {{')
+                wrapper_c.append(f'    {call_inst};')
+                wrapper_c.append('}\n')
+                wrapper_h.append(f'extern {sig_inst};\n')
+
+        for timer in process.timers:
+            # set
+            sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+
+            # reset
+            sig_type = f'void {type_name_str}_RI_reset_{timer}()'
+            sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
+            call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+            
+        wrapper_h.append('#endif\n')
+
+        with open(process_name.lower() + '.c', 'wb') as c_file:
+            c_file.write(u'\n'.join(wrapper_c).encode('latin1'))
+
+        with open(process_name.lower() + '.h', 'wb') as h_file:
+            h_file.write(u'\n'.join(wrapper_h).encode('latin1'))
+
+        return
 
     del OUT_SIGNALS[:]
     OUT_SIGNALS.extend(process.output_signals)
@@ -169,6 +304,13 @@ def _process(process, **kwargs):
 
     generated_h_source_code = []
     generated_h_source_code.extend(beginning_of_include_guard_header_file_code)
+    
+    for each in process.DV.asn1Files:
+        hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
+        generated_h_source_code.append(f'#include "{hname.split(os.sep)[-1]}"')
+
+    generated_h_source_code.append(f'#include \"{process.name.lower()}_datamodel.h\"\n')
+
     generated_h_source_code.extend(run_transition_declaration_code)
     generated_h_source_code.extend(startup_header_file_code)
     generated_h_source_code.extend(inner_procedures_header_file_code)
@@ -181,6 +323,16 @@ def _process(process, **kwargs):
 
     with open(process_name.lower() + '.h', 'wb') as h_file:
         h_file.write(u'\n'.join(indent_c_code(generated_h_source_code)).encode('latin1'))
+
+    if process_instance is not process:
+        # Generate an instance of the process type, too.
+        # First copy the list of timers to the instance (otherwise the
+        # instance would miss some PIs and RIs to set the actual timers)
+        process_instance.timers = process.timers
+        # And for the same reason copy the continuous states, needed to
+        # determine if Check_Queue is needed
+        process_instance.cs_mapping = process.cs_mapping
+        generate(process_instance, instance=True, options=app_parameters)
 
 
 # Processing of the AST
@@ -408,7 +560,8 @@ def _floating_label(label, **kwargs):
         code.append(u'{label}:'.format(label=label.inputString.lower()))
     else:
         enum_name = f'{PROCESS_NAME}_Branches'
-        code.append(f'static enum {enum_name} branch_{label.inputString.lower()}(void)')
+        ctxt_arg = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_Context *ctxt' if IS_INSTANCE else 'void'
+        code.append(f'static enum {enum_name} branch_{label.inputString.lower()}({ctxt_arg})')
         code.append('{')
 
     if label.transition:
@@ -643,6 +796,10 @@ def _call_external_function(output, **kwargs):
                 full_name = f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}'
             else:
                 full_name = f'{PROCESS_NAME.lower()}_PI_{proc.inputString}'
+                
+            if IS_INSTANCE:
+                list_of_params.insert(0, 'ctxt')
+                
             if list_of_params:
                 params=', '.join(list_of_params)
                 stmts.append(f'{full_name}({params});')
@@ -3022,7 +3179,8 @@ def processing_process_aliases(process, no_renames):
 def generating_context(process):
     context_code = ['//// Context']
     #context_code.append(f'__attribute__ ((persistent)) {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
-    context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    if not IS_INSTANCE:
+        context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context ctxt = {{0}};\n')
 
     return context_code
 
@@ -3045,32 +3203,36 @@ def generating_aggregate_start_funtions(process):
 def generating_startup_function(process, no_renames):
     startup_header_file_code = [u'//// Startup']
 
-    generic = process.instance_of_name
+    ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else ''
 
-    if not generic:
+    if not IS_INSTANCE:
         startup_header_file_code.append(u'void {}_startup();'.format(process.processName.lower()))
+    else:
+        startup_header_file_code.append(f'void CInit{process.processName.lower()}({ctxt_arg});')
 
     startup_header_file_code.append(u'\n')
 
     # Generate the code of the start transition (if process not empty)
     startup_function_code = ['//// Startup']
-    startup_function_code.append(f'void CInit{process.processName.lower()}()')
+    startup_function_code.append(f'void CInit{process.processName.lower()}({ctxt_arg})')
     startup_function_code.append('{')
 
     processing_process_variables(process, no_renames, startup_function_code)
 
     if process.transitions:
         startup_function_code.append('\n')
-        startup_function_code.append(f'runTransition{process.processName}(startup_transition);')
+        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+        startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
 
     startup_function_code.append(f'{LPREFIX}.init_done = true;')
     startup_function_code.append('}\n')
 
-    startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
-    startup_function_code.append(f'void {process.processName.lower()}_startup()')
-    startup_function_code.append('{')
-    startup_function_code.append(f'CInit{process.processName.lower()}();')
-    startup_function_code.append('}\n')
+    if not IS_INSTANCE:
+        startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
+        startup_function_code.append(f'void {process.processName.lower()}_startup()')
+        startup_function_code.append('{')
+        startup_function_code.append(f'CInit{process.processName.lower()}();')
+        startup_function_code.append('}\n')
 
     return startup_header_file_code, startup_function_code
 
@@ -3097,7 +3259,8 @@ def generating_run_transition_declaration(process):
     run_transition_declaration_code.append('};\n')
 
     if process.transitions:
-        run_transition_declaration_code.append(u'void runTransition{}(enum {} Id);\n'.format(process.processName, enum_name))
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+        run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
 
     return run_transition_declaration_code
 
@@ -3241,10 +3404,18 @@ def processing_input_signals(process):
         pi_header = f'void {name}'
 
         param_name = signal.get('param_name') or '{}_param'.format(signal['name'])
+        
+        args = []
+        if IS_INSTANCE:
+            args.append(f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt')
+
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
-            pi_header += '({tn} * {pn})'.format(tn=typename, pn=param_name)
+            args.append('{tn} * {pn}'.format(tn=typename, pn=param_name))
+            
+        if args:
+            pi_header += '(' + ', '.join(args) + ')'
         else:
             pi_header += '()'
 
@@ -3298,7 +3469,8 @@ def processing_input_signals(process):
                     dest.append(f'{LPREFIX}.{inp} = *{param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    dest.append(f'runTransition{process.processName}({input_def.branch_label.lower()});')
+                    ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                    dest.append(f'runTransition{process.processName}({ctxt_param}{input_def.branch_label.lower()});')
                     dest.append('break;')
                     dest.append('}')
                 else:
@@ -3336,7 +3508,8 @@ def processing_input_signals(process):
                         for par in sub.mapping.keys():
                             case_state(par)
                         input_signals_code.append('default:')
-                        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
                         input_signals_code.append('break;')
                         input_signals_code.append('} // end switch aggregation')
                         input_signals_code.append('break;')
@@ -3348,7 +3521,8 @@ def processing_input_signals(process):
                         # check if it is managed one level above
                         execute_transition(state, input_signals_code)
                     else:
-                        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
                         input_signals_code.append('break;')
                         input_signals_code.append('}')
             else:
@@ -3360,7 +3534,8 @@ def processing_input_signals(process):
 
         input_signals_code.append('default:')
         input_signals_code.append('{')
-        input_signals_code.append(f'runTransition{process.processName}(continuous_signals);')
+        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
         input_signals_code.append('break;')
         input_signals_code.append('}')
         input_signals_code.append('}')
@@ -3494,13 +3669,16 @@ def processing_transitions_and_floating_labels(process):
 
     if has_continuous_signals:
         # Generate Branch_Continuous_Signals function
-        cs_code = [f'static enum {enum_name} branch_continuous_signals(void)', '{']
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else 'void'
+        cs_code = [f'static enum {enum_name} branch_continuous_signals({ctxt_arg})', '{']
         if not MONITORS:
-            continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue(bool* has_pending_msg);')
+            ctxt_param_decl = f'bool* has_pending_msg, {ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else 'bool* has_pending_msg'
+            continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue({ctxt_param_decl});')
             cs_code.append('bool message_pending = true;')
             cs_code.append(f'if({LPREFIX}.init_done)')
             cs_code.append('{')
-            cs_code.append(f'{process.processName.lower()}_check_queue(&message_pending);')
+            ctxt_param_call = '&message_pending, ctxt' if IS_INSTANCE else '&message_pending'
+            cs_code.append(f'{process.processName.lower()}_check_queue({ctxt_param_call});')
             cs_code.append('}')
             cs_code.append('if (message_pending) return branch_end;')
         else:
@@ -3603,7 +3781,8 @@ def processing_transitions_and_floating_labels(process):
 
     # Generate the code of the runTransition procedure
     if process.transitions:
-        transition_code.append(f'void runTransition{process.processName}(enum {enum_name} Id)')
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+        transition_code.append(f'void runTransition{process.processName}({ctxt_arg}enum {enum_name} Id)')
         transition_code.append('{')
         transition_code.append(f'enum {enum_name} trId = Id;')
         transition_code.append('while (trId != branch_end)')
@@ -3611,9 +3790,11 @@ def processing_transitions_and_floating_labels(process):
         transition_code.append('switch (trId)')
         transition_code.append('{')
         for label in all_labels:
-            transition_code.append(f'case {label}: trId = branch_{label}(); break;')
+            ctxt_param = 'ctxt' if IS_INSTANCE else ''
+            transition_code.append(f'case {label}: trId = branch_{label}({ctxt_param}); break;')
         if has_continuous_signals:
-            transition_code.append('case continuous_signals: trId = branch_continuous_signals(); break;')
+            ctxt_param = 'ctxt' if IS_INSTANCE else ''
+            transition_code.append(f'case continuous_signals: trId = branch_continuous_signals({ctxt_param}); break;')
         else:
             transition_code.append('case continuous_signals: trId = branch_end; break;')
         transition_code.append('default: trId = branch_end; break;')
@@ -3668,10 +3849,14 @@ def procedure_args(proc):
     declaration_args = ''
     invoke_args = ''
 
-    if proc.fpar:
-        declaration_args_list = []
-        invoke_args_list = []
+    declaration_args_list = []
+    invoke_args_list = []
 
+    if IS_INSTANCE:
+        declaration_args_list.append(f'{ASN1SCC}{PROCESS_NAME.capitalize()}_Context *ctxt')
+        invoke_args_list.append('ctxt')
+
+    if proc.fpar:
         for fpar in proc.fpar:
             name = fpar['name'].lower()
             direction = fpar['direction']
@@ -3684,8 +3869,11 @@ def procedure_args(proc):
             declaration_args_list.append(f'{typename} {pointer}{name}')
             invoke_args_list.append(name)
 
-        declaration_args = ', '.join(declaration_args_list)
-        invoke_args = ', '.join(invoke_args_list)
+    declaration_args = ', '.join(declaration_args_list)
+    invoke_args = ', '.join(invoke_args_list)
+
+    if not declaration_args:
+        declaration_args = 'void'
 
     return declaration_args, invoke_args
 
