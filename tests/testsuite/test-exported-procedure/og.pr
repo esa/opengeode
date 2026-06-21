@@ -1,5 +1,6 @@
 system og;
-    /* CIF TEXT (167, 226), (290, 168) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (167, 226), (267, 140) */
     -- Text area for declarations and comments
     
     use dv comment 'dataview-uniq.asn';
@@ -9,46 +10,55 @@ system og;
     fpar in/out a_param Type2;
     referenced;
     /* CIF ENDTEXT */
-    /* CIF TEXT (476, 187), (302, 161) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (476, 187), (267, 140) */
     -- Text area for declarations and comments
     
     signal doSomething;
     /* CIF ENDTEXT */
     channel c
-        from env to og with doSomething;
+        from env to og with doSomething,
+hehe;
     endchannel;
     block og;
         signalroute r
-            from env to og with doSomething;
+            from env to og with doSomething,
+hehe;
         connect c and r;
         /* CIF PROCESS (251, 47), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process og;
             /* CIF procedure (734, 0), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             procedure hehe;
+                /* CIF Keep Specific Geode Partition 'default' */
                 /* CIF TEXT (186, 163), (267, 140) */
                 -- Text area for declarations and comments
                 
                 fpar in/out a_param Type2;
                 /* CIF ENDTEXT */
-                /* CIF START (744, 300), (70, 35) */
+                /* CIF START (605, 181), (70, 35) */
                 START;
-                    /* CIF PROCEDURECALL (723, 355), (110, 35) */
-                    call writeln('hello');
-                    /* CIF return (761, 410), (35, 35) */
+                    /* CIF PROCEDURECALL (584, 236), (111, 35) */
+                    call writeln('hehe');
+                    /* CIF task (557, 291), (164, 35) */
+                    task a_param := not a_param;
+                    /* CIF return (622, 341), (35, 35) */
                     return ;
             endprocedure;
             /* CIF START (723, 124), (70, 34) */
             START;
-                /* CIF PROCEDURECALL (703, 178), (109, 40) */
+                /* CIF PROCEDURECALL (705, 178), (104, 38) */
                 call writeln('hello
 world');
-                /* CIF NEXTSTATE (723, 236), (70, 35) */
+                /* CIF NEXTSTATE (723, 234), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (373, 103), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
-                /* CIF input (306, 158), (102, 35) */
+                /* CIF input (304, 158), (102, 35) */
                 input doSomething;
-                    /* CIF NEXTSTATE (323, 213), (70, 35) */
+                    /* CIF NEXTSTATE (321, 213), (70, 35) */
                     NEXTSTATE -;
                 /* CIF input (429, 158), (70, 35) */
                 input hehe;
