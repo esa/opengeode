@@ -838,7 +838,7 @@ def _inner_procedure(proc, **kwargs):
         elem = {var['name']: (var['type'], None)}
         VARIABLES.update(elem)
         LOCAL_VARIABLES.update(elem)
-        if var.get('direction') == 'out':
+        if var.get('direction') == 'out' or (proc.exported and var.get('direction') == 'in'):
             LOCAL_OUT_VARIABLES.update(elem)
 
     if proc.external:
@@ -866,19 +866,6 @@ def _inner_procedure(proc, **kwargs):
         code.append(procedure_declaration)
         code.append('{')
 
-        if proc.exported:
-            # The input parameters of exported procedures are pointers,
-            # so they must be copied in local variables (the procedure
-            # statements do not expect pointers at this level
-            for fpar in proc.fpar:
-                typename = type_name(fpar['type'])
-                name = fpar.get('name').lower()
-                direction = fpar.get('direction')
-
-                if direction != 'in':
-                    continue
-
-                code.append(f'{typename} {name} = *in__{name};')
 
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
@@ -3863,8 +3850,6 @@ def procedure_args(proc):
             typename = type_name(fpar['type'])
             pointer = '*' if direction == 'out' or proc.exported else ''
 
-            if proc.exported and direction == 'in':
-                name = f'in__{name}'
 
             declaration_args_list.append(f'{typename} {pointer}{name}')
             invoke_args_list.append(name)

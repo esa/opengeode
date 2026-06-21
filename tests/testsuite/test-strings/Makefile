@@ -33,7 +33,7 @@ test-ada: dataview-uniq.o | test_ada.o
 	$(GNATLINK) -o test_ada test_ada.o og.ali
 	./test_ada | diff - expected
 
-test-c: dataview-uniq.o | test_ada.o
+test-c:
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) test_c.c og.c dataview-uniq.c -o test_c

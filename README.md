@@ -125,6 +125,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.5.1 (06/2026)**
+- Optimize generation of exported proedures in C (don't copy input parameters to the stack)
+
+**4.5.0 (06/2026)**
+- Introduce support for instances in C backend
+
 **4.4.3 (06/2026)**
 - C backend improvements (aligment with Ada):
     - generate separate functions for each branch (instead of goto)
