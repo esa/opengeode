@@ -1,20 +1,21 @@
 system og;
     /* CIF Keep Specific Geode Partition 'default' */
-    /* CIF TEXT (167, 226), (267, 140) */
+    /* CIF TEXT (476, 187), (267, 140) */
+    -- Text area for declarations and comments
+    
+    signal doSomething;
+    /* CIF ENDTEXT */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (167, 226), (267, 143) */
     -- Text area for declarations and comments
     
     use dv comment 'dataview-uniq.asn';
     
     
     exported procedure hehe;
-    fpar in/out a_param Type2;
+    fpar in inp Toto,
+             in/out a_param Type2;
     referenced;
-    /* CIF ENDTEXT */
-    /* CIF Keep Specific Geode Partition 'default' */
-    /* CIF TEXT (476, 187), (267, 140) */
-    -- Text area for declarations and comments
-    
-    signal doSomething;
     /* CIF ENDTEXT */
     channel c
         from env to og with doSomething,
@@ -34,13 +35,13 @@ hehe;
                 /* CIF Keep Specific Geode Partition 'default' */
                 /* CIF TEXT (186, 163), (267, 140) */
                 -- Text area for declarations and comments
-                
-                fpar in/out a_param Type2;
+                fpar in inp Toto,
+                         in/out a_param Type2;
                 /* CIF ENDTEXT */
                 /* CIF START (605, 181), (70, 35) */
                 START;
-                    /* CIF PROCEDURECALL (584, 236), (111, 35) */
-                    call writeln('hehe');
+                    /* CIF PROCEDURECALL (547, 236), (185, 35) */
+                    call writeln('hehe: ', inp.elem_1);
                     /* CIF task (557, 291), (164, 35) */
                     task a_param := not a_param;
                     /* CIF return (622, 341), (35, 35) */
@@ -56,9 +57,9 @@ world');
             /* CIF state (373, 103), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
             state wait;
-                /* CIF input (304, 158), (102, 35) */
+                /* CIF input (302, 158), (102, 35) */
                 input doSomething;
-                    /* CIF NEXTSTATE (321, 213), (70, 35) */
+                    /* CIF NEXTSTATE (319, 213), (70, 35) */
                     NEXTSTATE -;
                 /* CIF input (429, 158), (70, 35) */
                 input hehe;
