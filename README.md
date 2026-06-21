@@ -125,6 +125,14 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.4.3 (06/2026)**
+- C backend improvements (aligment with Ada):
+    - generate separate functions for each branch (instead of goto)
+    - support bitstrings
+    - support parallel states (aggregations)
+    - support better strings in general
+    - regression suite passes except for instances
+
 **4.4.2 (06/2026)**
 - Ada backend: fix exit/connect support when returning from nested states
 
