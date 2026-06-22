@@ -7896,6 +7896,15 @@ def parse_pr(files=None, string=None):
             errors.append([f'Nested state definition missing : {missing}',
                 [0, 0],
                 ['PROCESS {}'.format(process.processName)]])
+
+        process.only_procedures = False
+        if len(process.transitions) == 1:
+            startup_transition = process.transitions[0]
+            if len(startup_transition.actions) == 0:
+                if startup_transition.terminator and startup_transition.terminator.kind == 'next_state':
+                    next_state_name = startup_transition.terminator.inputString.lower()
+                    if next_state_name not in comp_states and not startup_transition.terminator.instance_of:
+                        process.only_procedures = True
     return og_ast, warnings, errors
 
 

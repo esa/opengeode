@@ -1119,6 +1119,8 @@ class Process:
         self.parent = None
         # A process can be referenced (externally defined)
         self.referenced = False
+        # Flag indicating if there are no transitions in the model
+        self.only_procedures = False
         # variables: dictionary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)

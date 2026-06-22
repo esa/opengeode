@@ -290,14 +290,17 @@ def _process(process, instance=False, **kwargs):
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
     # run_transition_declaration_code is moved to header
-    generated_c_source_code.extend(aggreg_start_proc_code)
+    if not process.only_procedures:
+        generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(startup_function_code)
-    generated_c_source_code.extend(input_signals_code)
+    if not process.only_procedures:
+        generated_c_source_code.extend(input_signals_code)
     generated_c_source_code.extend(output_signals_code)
     generated_c_source_code.extend(inner_procedures_code)
-    generated_c_source_code.extend(transition_code)
-    generated_c_source_code.extend(generate_current_state_to_str_code)
+    if not process.only_procedures:
+        generated_c_source_code.extend(transition_code)
+        generated_c_source_code.extend(generate_current_state_to_str_code)
 
     with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
@@ -311,12 +314,15 @@ def _process(process, instance=False, **kwargs):
 
     generated_h_source_code.append(f'#include \"{process.name.lower()}_datamodel.h\"\n')
 
-    generated_h_source_code.extend(run_transition_declaration_code)
+    if not process.only_procedures:
+        generated_h_source_code.extend(run_transition_declaration_code)
     generated_h_source_code.extend(startup_header_file_code)
     generated_h_source_code.extend(inner_procedures_header_file_code)
-    generated_h_source_code.extend(input_signals_header_file_code)
+    if not process.only_procedures:
+        generated_h_source_code.extend(input_signals_header_file_code)
     generated_h_source_code.extend(output_signals_header_file_code)
-    generated_h_source_code.extend(continuous_signals_header_file_code)
+    if not process.only_procedures:
+        generated_h_source_code.extend(continuous_signals_header_file_code)
     generated_h_source_code.extend(external_procedures_header_file_code)
     generated_h_source_code.extend(timers_header_file_code)
     generated_h_source_code.extend(ending_of_include_guard_header_file_code)
@@ -3206,7 +3212,7 @@ def generating_startup_function(process, no_renames):
 
     processing_process_variables(process, no_renames, startup_function_code)
 
-    if process.transitions:
+    if process.transitions and not process.only_procedures:
         startup_function_code.append('\n')
         ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
         startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
