@@ -1234,6 +1234,20 @@ def _transition(tr, **kwargs):
                         stmts.extend(return_stmt)
                         decls.extend(return_decls)
 
+                        if retexp.is_raw and is_procedure:
+                            proc_name = context.split()[-1]
+                            proc = find_procedure_by_name(proc_name)
+                            if proc and proc.return_type:
+                                basic_return = find_basic_type(proc.return_type)
+                                if basic_return.kind == 'IA5StringType':
+                                    global VAR_COUNTER
+                                    var_name = f"_ret_{VAR_COUNTER}"
+                                    VAR_COUNTER += 1
+                                    t_name = type_name(proc.return_type)
+                                    init_val = array_content(retexp, return_string, basic_return)
+                                    decls.append(f"static {t_name} {var_name} = {init_val};")
+                                    return_string = var_name
+
                     if is_procedure:
                         stmts.append('return{};'.format(' ' + return_string if return_string else ''))
                     else:
@@ -3875,6 +3889,10 @@ def procedure_header(procedure, noPrefix=False):
     # needed for inner external procedure (e.g. to link with math symbols)
 
     return_type = type_name(procedure.return_type) if procedure.return_type else None
+    if return_type:
+        basic_return = find_basic_type(procedure.return_type)
+        if basic_return.kind == 'IA5StringType':
+            return_type = 'char *'
     return_type = 'void' if not return_type else return_type
 
     external = 'extern ' if procedure.external else ''
