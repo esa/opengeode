@@ -1366,25 +1366,21 @@ def write_statement(param, newline):
 def _call_external_function(output, **kwargs):
     ''' Generate the code of a set of output or procedure call statement '''
     code = []
-    local_decl = []
-
+    
     # Add the traceability information
     code.extend(traceability(output))
+    with open("debug_ada.txt", "a") as f: f.write("output called\n")
     # code.extend(debug_trace())
 
-    # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
-    # Exceptions are the _Transition procedures called after exported PIs (RPC)
-    # and the inner call of exported procedures
     need_prefix = True
 
     for out in output.output:
         signal_name = out['outputName']
         list_of_params = []
+        call_code = []
+        call_local = []
 
         if signal_name.lower() in ('write', 'writeln'):
-            # special built-in SDL procedure for printing strings
-            # supports printing of native types (int, real, bool)
-            # but not yet complex ASN.1 structures (sequence/seqof/choice)
             for param in out['params'][:-1]:
                 stmts, _, local = write_statement(param, newline=False)
                 if local:
@@ -1395,11 +1391,8 @@ def _call_external_function(output, **kwargs):
                     code.append('end;')
                 else:
                     code.extend(stmts)
-                # local_decl.extend(local)
             for param in out['params'][-1:]:
-                # Last parameter - add newline if necessary
-                stmts, _, local = write_statement(param, newline=True if
-                        signal_name.lower() == 'writeln' else False)
+                stmts, _, local = write_statement(param, newline=True if signal_name.lower() == 'writeln' else False)
                 if local:
                     code.append('declare')
                     code.extend(local)
@@ -1408,56 +1401,62 @@ def _call_external_function(output, **kwargs):
                     code.append('end;')
                 else:
                     code.extend(stmts)
-                # local_decl.extend(local)
             continue
         elif signal_name.lower() == 'reset_timer':
-            # built-in operator for resetting timers. param = timer name
             param, = out['params']
             p_code, p_id, p_local = expression(param, readonly=1)
-            code.extend(p_code)
-            local_decl.extend(p_local)
-            code.append(f'RESET_{p_id};')
+            call_code.extend(p_code)
+            call_local.extend(p_local)
+            call_code.append(f'RESET_{p_id};')
+            if call_local:
+                code.append('declare')
+                code.extend(call_local)
+                code.append('begin')
+                code.extend(call_code)
+                code.append('end;')
+            else:
+                code.extend(call_code)
             continue
         elif signal_name.lower() == 'set_timer':
-            # built-in operator for setting a timer: SET(1000, timer_name)
             timer_value, timer_id = out['params']
             t_code, t_val, t_local = expression(timer_value)
             p_code, p_id, p_local = expression(timer_id)
-            code.extend(t_code)
-            code.extend(p_code)
-            local_decl.extend(t_local)
-            local_decl.extend(p_local)
-            # Use a temporary variable to store the timer value
+            call_code.extend(t_code)
+            call_code.extend(p_code)
+            call_local.extend(t_local)
+            call_local.extend(p_local)
             tmp_id = 'tmp' + str(out['tmpVars'][0])
-            local_decl.append(f'{tmp_id} : {ASN1SCC}T_UInt32;')
-            code.append(f'{tmp_id} := {t_val};')
-            code.append(f"SET_{p_id} ({tmp_id});")
+            if not t_code and not isinstance(timer_value, ogAST.ExprAppend):
+                call_local.append(f'{tmp_id} : {ASN1SCC}T_UInt32 := {t_val};')
+            else:
+                call_local.append(f'{tmp_id} : {ASN1SCC}T_UInt32;')
+                call_code.append(f'{tmp_id} := {t_val};')
+            call_code.append(f"SET_{p_id} ({tmp_id});")
+            if call_local:
+                code.append('declare')
+                code.extend(call_local)
+                code.append('begin')
+                code.extend(call_code)
+                code.append('end;')
+            else:
+                code.extend(call_code)
             continue
+            
         proc, out_sig = None, None
         try:
-            out_sig, = [sig for sig in OUT_SIGNALS
-                        if sig['name'].lower() == signal_name.lower()]
+            out_sig, = [sig for sig in OUT_SIGNALS if sig['name'].lower() == signal_name.lower()]
         except ValueError:
-            # Not an output, try if it is an external or inner procedure
             try:
-                candidates = [sig for sig in PROCEDURES
-                            if sig.inputString.lower() == signal_name.lower()]
+                candidates = [sig for sig in PROCEDURES if sig.inputString.lower() == signal_name.lower()]
                 if not candidates:
                     raise ValueError
                 if len(candidates) > 1:
-                    # there are 2 results when the procedure is exported
-                    # (happens in the case of a call of an inner procedure
-                    # that is exported)
-                    # there can be 3 if a procedure exists as PI and RI
                     if not out.get('toDest'):
                         need_prefix = False
-                        # find a candidate that is not marked as external
                         for c in candidates:
                             if not c.external:
                                 proc = c
                     else:
-                        # if toDest is set, it has to be a RI call
-                        # find the candidate that is declared as external
                         for c in candidates:
                             if c.external:
                                 proc = c
@@ -1466,55 +1465,42 @@ def _call_external_function(output, **kwargs):
                 if proc.external:
                     out_sig = proc
             except ValueError:
-                # Last chance to find it: if it is an exported procedure,
-                # in that case an additional signal with _Transition suffix
-                # exists but is not visible in the model at this point
                 for sig in PROCEDURES:
                     if signal_name.lower() == f'{sig.inputString.lower()}_transition':
                         out_sig = sig
                         need_prefix = False
                         break
                 else:
-                    # Not there? Impossible, the parser would have barked
-                    # Can happen with stop conditions because they are defined
-                    # as exported but the _Transition signal was not added
                     LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
-                    return code, local_decl
+                    return code, []
+                    
         if out_sig:
             dest_pid = out.get('toDest') or 'env'
             if isinstance(dest_pid, ogAST.PrimVariable):
                 _, dest_pid, _ = expression(dest_pid)
             else:
-                dest_pid = f'{ASN1SCC}{dest_pid}'  # enumerated value
+                dest_pid = f'{ASN1SCC}{dest_pid}'
             dest_pid = dest_pid.replace('-', '_')
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
-                    # If it is an output, there is a single parameter
                     param_type = out_sig['type']
                 except TypeError:
-                    # Else if it is a procedure, get the type
                     param_type = out_sig.fpar[idx]['type']
                     param_direction = out_sig.fpar[idx]['direction']
 
                 typename = type_name(param_type)
                 p_code, p_id, p_local = expression(param, readonly=1)
-                code.extend(p_code)
-                local_decl.extend(p_local)
-                # Create a temporary variable for input parameters only
-                # (If needed, i.e. if argument is not a local variable)
-                if param_direction == 'in' \
-                        and (not (isinstance(param, ogAST.PrimVariable)
-                        and p_id.startswith(LPREFIX))  # NO FIXME WITH CTXT
-                        or isinstance(param, ogAST.PrimFPAR)):
+                call_code.extend(p_code)
+                call_local.extend(p_local)
+                
+                if param_direction == 'in' and (not (isinstance(param, ogAST.PrimVariable) and p_id.startswith(LPREFIX)) or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = f'tmp{out["tmpVars"][idx]}'
-                    # local_decl.extend(debug_trace())
-                    local_decl.append(f'{tmp_id} : {typename};')
                     basic_param = find_basic_type(param_type)
                     if basic_param.kind.startswith('Integer'):
                         p_id = f"{typename} ({p_id})"
-                    if isinstance(param,
-                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                    
+                    if isinstance(param, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         if basic_param.kind == 'IA5StringType':
                             p_id = ia5string_raw(param)
                         elif basic_param.kind.startswith('Integer'):
@@ -1522,100 +1508,103 @@ def _call_external_function(output, **kwargs):
                         else:
                             p_id = array_content(param, p_id, basic_param)
 
+                    call_local.append(f'{tmp_id} : {typename};')
                     if isinstance(param, ogAST.ExprAppend):
-                        # Process Append constructs properly when they are
-                        # used as raw params (e.g. callme(a//b//c))
-                        # TODO: ogAST.PrimSubstring seem to be missing
-                        # Check the template in def _conditional
                         app_len = append_size(param)
-                        code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
+                        call_code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
                         if basic_param.Min != basic_param.Max:
-                            # Append should only apply to this case, i.e.
-                            # types of varying length...
-                            code.append(f'{tmp_id}.Length := {app_len};')
+                            call_code.append(f'{tmp_id}.Length := {app_len};')
                     else:
-                        code.append(f'{tmp_id} := {p_id};')
+                        call_code.append(f'{tmp_id} := {p_id};')
                     list_of_params.append(tmp_id)
                 else:
-                    # Output parameters/local variables
                     list_of_params.append(p_id)
+                    
             name = out["outputName"]
             if list_of_params:
                 params = ', '.join(list_of_params)
                 if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
-                    code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
+                    call_code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
                 else:
-                    code.append(f'RI{SEPARATOR}{name}({params});')
-
+                    call_code.append(f'RI{SEPARATOR}{name}({params});')
             else:
                 prefix = f'RI{SEPARATOR}' if need_prefix else ''
                 if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
-                    code.append(f'{prefix}{name}(Dest_PID => {dest_pid});')
+                    call_code.append(f'{prefix}{name}(Dest_PID => {dest_pid});')
                 else:
-                    code.append(f'{prefix}{name};')
+                    call_code.append(f'{prefix}{name};')
         else:
-            # inner procedure call without a RETURN statement
-            # retrieve the procedure signature
             ident = proc.inputString
-            p = [p for p in PROCEDURES
-                    if p.inputString.lower() == ident.lower()
-                    and not p.referenced][0]
+            p = [p for p in PROCEDURES if p.inputString.lower() == ident.lower() and not p.referenced][0]
 
-            list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
-                # Expected basic type of the parameter
                 param_type = p.fpar[idx]['type']
                 basic_param = find_basic_type(param_type)
 
                 p_code, p_id, p_local = expression(param, readonly=1)
 
-                # We need to format strings properly, this depends on the expected
-                # type of the procedure parameter
-                if isinstance(param,
-                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if isinstance(param, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                     if basic_param.kind == 'IA5StringType':
                         p_id = ia5string_raw(param)
                     elif basic_param.kind.startswith('Integer'):
                         p_id = str(param.numeric_value)
                     else:
                         p_id = array_content(param, p_id, basic_param)
-                    # Here at least we need a temporary variable, it's never
-                    # possible to send a raw string as a parameter
                     tmp_string = f'tmp{param.tmpVar}'
-                    local_decl.append(f'{tmp_string} : {type_name(param_type)} := {p_id};')
+                    call_local.append(f'{tmp_string} : {type_name(param_type)};')
+                    call_code.append(f'{tmp_string} := {p_id};')
                     p_id = tmp_string
 
-                code.extend(p_code)
-                local_decl.extend(p_local)
-                # no need to use temporary variables, we are in pure Ada
+                call_code.extend(p_code)
+                call_local.extend(p_local)
                 list_of_params.append(p_id)
+                
             if need_prefix:
                 full_name = f'p{SEPARATOR}{proc.inputString}'
             else:
                 full_name = proc.inputString
             if list_of_params:
-                code.append(f'{full_name}({", ".join(list_of_params)});')
+                call_code.append(f'{full_name}({", ".join(list_of_params)});')
             else:
-                code.append(f'{full_name};')
-    return code, local_decl
+                call_code.append(f'{full_name};')
+                
+        if call_local:
+            code.append('declare')
+            code.extend(call_local)
+            code.append('begin')
+            code.extend(call_code)
+            code.append('end;')
+        else:
+            code.extend(call_code)
+
+    return code, []
 
 
 @generate.register(ogAST.TaskAssign)
 def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    if task.comment:
-        code.extend(traceability(task.comment))
     for expr in task.elems:
-        code.extend(traceability(expr))
+        trace_comments = traceability(expr)
         # ExprAssign only returns code statements, no string
         try:
             code_assign, _, decl_assign = expression(expr)
         except TypeError as err:
             raise TypeError(f"{str(err)} - TaskAssign: '{task.inputString}' (please report this bug)")
-        code.extend(code_assign)
-        local_decl.extend(decl_assign)
-    return code, local_decl
+        if decl_assign:
+            code.extend(trace_comments)
+            code.append('declare')
+            code.extend(decl_assign)
+            code.append('begin')
+            code.extend(code_assign)
+            code.append('end;')
+        else:
+            code.extend(trace_comments)
+            code.extend(code_assign)
+            
+    if task.comment:
+        code = traceability(task.comment) + code
+    return code, []
 
 
 @generate.register(ogAST.TaskInformalText)

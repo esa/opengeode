@@ -618,7 +618,7 @@ def _call_external_function(output, **kwargs):
     need_prefix = True
 
     # Add the traceability information
-    stmts.extend(traceability(output))
+    trace_stmts = traceability(output)
 
     for out in output.output:
         signal_name = out['outputName']
@@ -753,9 +753,16 @@ def _call_external_function(output, **kwargs):
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' and (not (isinstance(param, ogAST.PrimVariable) and p_id.startswith(LPREFIX))  or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
+                    basic_param = find_basic_type(param_type)
+
+                    is_ground = not param_stmts and not p_local
 
                     if isinstance(param, ogAST.PrimStringLiteral):
                         decls.append('{sort} {tmp} = {init};'.format(tmp=tmp_id, sort=typename, init=array_content(param, p_id, find_basic_type(param_type))))
+                    elif is_ground:
+                        if isinstance(param, ogAST.PrimSequenceOf):
+                            p_id = array_content(param, p_id, find_basic_type(param_type))
+                        decls.append(f'{typename} {tmp_id} = ({typename}) {p_id};')
                     else:
                         decls.append('{sort} {tmp};'.format(tmp=tmp_id, sort=typename))
 
@@ -763,6 +770,12 @@ def _call_external_function(output, **kwargs):
                             p_id = array_content(param, p_id, find_basic_type(param_type))
 
                         stmts.append(f'{tmp_id} = ({typename}) {p_id};')
+                    if isinstance(param, ogAST.ExprAppend):
+                        # Compute the size of the append expression
+                        app_len = append_size(param)
+                        if basic_param.Min != basic_param.Max:
+                            stmts.append(f'{tmp_id}.nCount = {app_len};')
+
 
                     list_of_params.append("&{}{}".format(tmp_id,", sizeof({})".format(tmp_id) if is_out_sig else ""))
                 else:
@@ -812,7 +825,9 @@ def _call_external_function(output, **kwargs):
             else:
                 stmts.append(f'{full_name}();')
 
-    return stmts, decls
+    if decls:
+        return trace_stmts + ['{'] + decls + stmts + ['}'], []
+    return trace_stmts + stmts, decls
 
 
 @generate.register(ogAST.Procedure)
@@ -981,10 +996,15 @@ def _task_assign(task, **kwargs):
         # ExprAssign only returns code statements, no string
         code_assign, _, decl_assign = expression(expr)
 
-        code.extend(code_assign)
-        local_decl.extend(decl_assign)
+        if decl_assign:
+            code.append('{')
+            code.extend(decl_assign)
+            code.extend(code_assign)
+            code.append('}')
+        else:
+            code.extend(code_assign)
 
-    return code, local_decl
+    return code, []
 
 
 @generate.register(ogAST.TaskForLoop)
@@ -1244,7 +1264,8 @@ def _transition(tr, **kwargs):
                                     var_name = f"_ret_{VAR_COUNTER}"
                                     VAR_COUNTER += 1
                                     t_name = type_name(proc.return_type)
-                                    init_val = array_content(retexp, return_string, basic_return)
+                                    val = retexp.value[1:-1].replace('"', '\\"')
+                                    init_val = f'"{val}"'
                                     decls.append(f"static {t_name} {var_name} = {init_val};")
                                     return_string = var_name
 
@@ -1428,9 +1449,9 @@ def _prim_call(prim, **kwargs):
             ret_string += min_length
         else:
             if isinstance(exp, ogAST.PrimSubstring):
-                range_str = u"max_range_{var_counter} - min_range_{var_counter} + 1".format(var_counter=VAR_COUNTER)
+                range_str = "max_range_{var_counter} - min_range_{var_counter} + 1".format(var_counter=VAR_COUNTER)
             else:
-                range_str = u"{}.nCount".format(param_str)
+                range_str = f"{param_str}.nCount"
 
             ret_string += ('{}'.format(range_str))
 
@@ -2208,7 +2229,7 @@ def _append(expr, **kwargs):
         #stmts.append(f'memcpy_temp_{VAR_COUNTER} = {left_string};')
 
         #Then append the right part
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < {right_string}.nCount; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < {right_string}.nCount && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {lbty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[memcpy_counter_{VAR_COUNTER}];')
         stmts.append('}')
@@ -2224,7 +2245,7 @@ def _append(expr, **kwargs):
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -2250,13 +2271,13 @@ def _append(expr, **kwargs):
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, ogAST.PrimVariable):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
+        decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -2271,7 +2292,7 @@ def _append(expr, **kwargs):
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -2282,12 +2303,13 @@ def _append(expr, **kwargs):
         decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
         decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
         decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
+        stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount = 0; // initialize size before append')
         stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {{{rbty.Max}, {{{right_string}}}}};')
 
         LOCAL_VARIABLE_TYPES[f'memcpy_temp_{VAR_COUNTER}'] = LEFT_TYPE
 
         #First copy left part in the result
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {lbty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter}] = {ls}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, ls=left_string))
         stmts.append('}')
@@ -2316,7 +2338,7 @@ def _append(expr, **kwargs):
         stmts.append(f'memcpy_temp_{VAR_COUNTER} = ({LEFT_TYPE}) {{{lbty.Max}, {{{left_string}}}}};')
 
         #Then append the right part (PrimSubString)
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {lbty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[min_range_{VAR_COUNTER-1} + memcpy_counter_{VAR_COUNTER}];')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount++;')
@@ -2354,7 +2376,7 @@ def _append(expr, **kwargs):
 
         #Append right part single value
         if find_basic_type(expr.right.exprType).kind == 'SequenceOfType':
-            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=lbty.Max))
             stmts.append(u'{')
             stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
             stmts.append(u'}')
@@ -2373,7 +2395,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
 
         #Then append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} <= (max_range_{var_counter1} - min_range_{var_counter1}); memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} <= (max_range_{var_counter1} - min_range_{var_counter1}) && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'
                 .format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, rs=right_string))
@@ -2398,7 +2420,7 @@ def _append(expr, **kwargs):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount && constant_left_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + constant_left_{var_counter}.nCount] = constant_right_{var_counter}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER))
         stmts.append(u'}\n')
@@ -2422,7 +2444,7 @@ def _append(expr, **kwargs):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount && {left}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, left=left_string, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + {left}.nCount] = constant_right_{var_counter}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, left=left_string))
         stmts.append(u'}\n')
@@ -2446,19 +2468,20 @@ def _append(expr, **kwargs):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right}.nCount && constant_left_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right=right_string, max_size=lbty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + constant_left_{var_counter}.nCount] = {right}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, right=right_string))
         stmts.append(u'}\n')
 
-        stmts.append(u'memcpy_temp_{var_counter}.nCount = constant_left_{var_counter}.nCount + {right}.nCount;'.format(var_counter=VAR_COUNTER, right=right_string))
+        stmts.append(u'memcpy_temp_{var_counter}.nCount = constant_left_{var_counter}.nCount + memcpy_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     else:
         LOG.error("Append expression not supported in C backend: " + expr.inputString)
         raise NotImplementedError(str(type(expr.left)) + ' and ' + str(type(expr.right)))
 
-    stmts.append(u'}')
+    #stmts.append(f'if ({string}.nCount > {lbty.Max}) {string}.nCount = {max_size};')
+    stmts.append('}')
 
     return stmts, string, decls
 
@@ -3931,7 +3954,20 @@ def array_content(prim, values, asnty):
         return values
 
     elif asnty.kind == 'IA5StringType':
-        return ia5string_raw(prim)
+        val = prim.value[1:-1].replace('"', '\\"')
+        return f'"{val}"'
+
+    elif asnty.kind == 'OctetStringType':
+        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+            hex_parts = [f"\\x{x:02X}" for x in prim.hexstring]
+        else:
+            hex_parts = [f"\\x{ord(x):02X}" for x in prim.value[1:-1]]
+        hex_string = f'"{ "".join(hex_parts) }"'
+        
+        if asnty.Min != asnty.Max:
+            return f'{{{len(hex_parts)}, {hex_string}}}'
+        else:
+            return f'{{{hex_string}}}'
 
     elif asnty.Min != asnty.Max:
         length = len(prim.value)
@@ -4036,7 +4072,7 @@ def find_var_in_timers(var):
     for timer_variable in TIMER_VARIABLES:
         if timer_variable.lower() == var_lower:
             return timer_variable
-        
+
     return None
 
 
@@ -4052,7 +4088,7 @@ def find_state_in_states(state):
     for state_variable in STATES:
         if state_variable.lower() == state_lower:
             return state_variable
-        
+
     return None
 
 
@@ -4068,7 +4104,7 @@ def append_size(append):
     if basic.Min == basic.Max:
         # Simple case when appending two fixed-length sizes
         return basic.Min
-    
+
     for each in (append.left, append.right):
         if result:
             result += ' + '

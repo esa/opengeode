@@ -29,7 +29,7 @@ system og;
             /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (74, 125), (170, 140) */
             dcl foo, bar  SeqBool;
-            dcl idx myinteger := 3;
+            dcl idx myinteger := 2;
             /* CIF ENDTEXT */
             /* CIF START (556, 221), (70, 35) */
             START;
