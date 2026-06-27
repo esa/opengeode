@@ -25,16 +25,20 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
-	#make -f Makefile.og
+
+test-ada: dataview-uniq.o | test_ada.o
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
-	gnat make og
+	$(GNATMAKE) -O$(O) -c *.adb
+	$(GNATBIND) -n og.ali
+	$(GNATLINK) -o test_ada test_ada.o og.ali
+	./test_ada | diff - expected
 
-test-c: 
+test-c:
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
-	$(CC) -O$(O) -c *.c
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) test_c.c og.c dataview-uniq.c -o test_c
+	./test_c | diff - expected
 
 test-if:
 	sdl2if og.pr
