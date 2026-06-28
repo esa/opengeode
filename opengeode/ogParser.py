@@ -7263,11 +7263,8 @@ def assign(root, context):
         # to the same value as left in case of ExprAppend
         # Setting it - I did not see any place in the Ada backend where
         # this could cause a bug (and regression is OK)
-#       if isinstance(expr.right, ogAST.ExprAppend):
-#           fix_append_expression_type(expr.right, expr.left.exprType)
-#           # all append components must be of the same type, which is the
-#           # type of the left part of the expression. we must recursively
-#           # fix the right type, in case we have the for a//b//c
+        if isinstance(expr.right, ogAST.ExprAppend):
+            fix_append_expression_type(expr.right, expr.left.exprType)
 #           # that is handled as (a//b)//c
 #           def rec_append(inner_expr, set_type):
 #               for each in (inner_expr.left, inner_expr.right):

@@ -25,7 +25,7 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: 
+test-ada:  clean
 	mkdir -p src && cd src && $(OPENGEODE) ../toto.pr -g --toAda && \
 	cp ../test_toto.ada test_toto.adb && \
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../*.asn *.asn
