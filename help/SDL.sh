@@ -1,17 +1,18 @@
 #!/bin/bash
-echo set NO_DL=1 to avoid re-downloading all files
-if [ -z $NO_DL ]
-then
-    git clone https://github.com/maxime-esa/exportMediaWiki2Html
-    exportMediaWiki2Html/exportMediaWiki2Html.py --url https://taste.tuxfamily.org/wiki/ --page 357
-    exportMediaWiki2Html/exportMediaWiki2Html.py --url https://taste.tuxfamily.org/wiki/ --page 254
+
+if [ -d "wiki" ]; then
+    echo "Wiki folder already exists, updating..."
+    git -C wiki pull
+else
+    echo "Cloning wiki folder..."
+    git clone https://gitlab.esa.int/taste/taste-setup.wiki.git wiki
 fi
 
-cp opengeode.qhp export
-cp opengeode.qhcp export
-cd export
-spacecreator.AppImage --qhelpgenerator -o opengeode.qch opengeode.qhp
-spacecreator.AppImage --qhelpgenerator -o opengeode.qhc opengeode.qhcp
-mv opengeode.qch ..
-mv opengeode.qhc ..
-
+if [ $? -eq 0 ]; then
+    ./process_gitlab_wiki.py && \
+    mv html_output/opengeode.qch .. && \
+    mv html_output/opengeode.qhc ..
+else
+    echo "Failed to retrieve or update wiki."
+    exit 1
+fi
