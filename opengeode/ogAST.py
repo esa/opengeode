@@ -1121,6 +1121,8 @@ class Process:
         self.referenced = False
         # Flag indicating if there are no transitions in the model
         self.only_procedures = False
+        # Flag indicating if the process has no state context (no transitions, variables, etc)
+        self.no_context = False
         # variables: dictionary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)

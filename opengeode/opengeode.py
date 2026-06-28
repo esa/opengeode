@@ -2344,7 +2344,9 @@ class SDL_View(QGraphicsView):
             source_dir = "."
             firstAsn1File, otherAsn1Files = "", []
 
-        otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
+        process = scene.ast.processes[0] if scene.ast and len(scene.ast.processes) == 1 else None
+        if not process or not getattr(process, 'no_context', False):
+            otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
         otherAsn = " ".join(otherAsn1Files)
 
         #  Template for the Makefile

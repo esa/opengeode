@@ -7906,6 +7906,8 @@ def parse_pr(files=None, string=None):
                     next_state_name = startup_transition.terminator.inputString.lower()
                     if next_state_name not in comp_states and not startup_transition.terminator.instance_of:
                         process.only_procedures = True
+                        if not process.variables and not process.global_variables and not process.timers and not process.global_timers and not getattr(process, 'user_defined_types', {}):
+                            process.no_context = True
     return og_ast, warnings, errors
 
 

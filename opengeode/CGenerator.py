@@ -103,8 +103,9 @@ def _process(process, instance=False, **kwargs):
     global TIMER_VARIABLES
     global IS_INSTANCE
     global PROCESS_NAME
-
     PROCESS_NAME = process_name
+    global PROCESS
+    PROCESS = process
 
     TYPES = process.dataview
     
@@ -312,7 +313,8 @@ def _process(process, instance=False, **kwargs):
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
         generated_h_source_code.append(f'#include "{hname.split(os.sep)[-1]}"')
 
-    generated_h_source_code.append(f'#include \"{process.name.lower()}_datamodel.h\"\n')
+    if not getattr(process, 'no_context', False):
+        generated_h_source_code.append(f'#include "{process.name.lower()}_datamodel.h"\n')
 
     if not process.only_procedures:
         generated_h_source_code.extend(run_transition_declaration_code)
@@ -919,7 +921,8 @@ def _inner_procedure(proc, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        if proc.exported and proc.content.start is not None and is_rpc:
+        has_transition = any(proc.inputString.lower() == k.lower() for k in PROCESS.input_mapping.keys())
+        if proc.exported and proc.content.start is not None and is_rpc and has_transition:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
             # We need to update all the transitions of the procedure
@@ -3210,7 +3213,7 @@ def processing_process_aliases(process, no_renames):
 def generating_context(process):
     context_code = ['//// Context']
     #context_code.append(f'__attribute__ ((persistent)) {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
-    if not IS_INSTANCE:
+    if not IS_INSTANCE and not process.no_context:
         context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context ctxt = {{0}};\n')
 
     return context_code
@@ -3255,7 +3258,8 @@ def generating_startup_function(process, no_renames):
         ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
         startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
 
-    startup_function_code.append(f'{LPREFIX}.init_done = true;')
+    if not getattr(process, 'no_context', False):
+        startup_function_code.append(f'{LPREFIX}.init_done = true;')
     startup_function_code.append('}\n')
 
     if not IS_INSTANCE:
@@ -3698,7 +3702,8 @@ def generating_includes(process):
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
         includes_code.append(f'#include "{hname.split(os.sep)[-1]}"')
 
-    includes_code.append(f'#include \"{process.name.lower()}_datamodel.h\"')
+    if not getattr(process, 'no_context', False):
+        includes_code.append(f'#include \"{process.name.lower()}_datamodel.h\"')
     includes_code.append(f'#include \"{process.processName.lower()}.h\"\n')
 
     return includes_code

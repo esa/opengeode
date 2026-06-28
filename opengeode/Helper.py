@@ -743,6 +743,8 @@ def find_basic_type(TYPES, a_type):
 
 
 def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPARATOR) -> None:
+    if getattr(process, 'no_context', False):
+        return
     ''' Generate an ASN.1 model containing:
           - the state definition
           - a type describing the SDL context

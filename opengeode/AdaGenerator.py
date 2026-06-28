@@ -100,6 +100,7 @@ PROCEDURES = []
 SEPARATOR = "_0_"
 LPREFIX = 'ctxt'
 ASN1SCC = 'asn1Scc'
+NO_CONTEXT = False
 
 
 def is_numeric(string) -> bool:
@@ -362,6 +363,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
 
     global PROCESS_NAME
     PROCESS_NAME = process.name
+    global PROCESS
+    PROCESS = process
 
     global TYPES
     TYPES = process.dataview
@@ -370,6 +373,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
     global LPREFIX
+    global NO_CONTEXT
+
+    NO_CONTEXT = getattr(process, 'no_context', False)
 
     for each in PROCEDURES:
         process.random_generator.update(each.random_generator)
@@ -474,42 +480,43 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
             else:
                 context_decl.append(f"{const.varName} : constant {ASN1SCC}{const_sort} := {val};")
 
-        ctxt = (f'Default_Context: constant {ASN1SCC}{process.name.capitalize()}_Context :=\n'
-            '      (Init_Done => False,\n       ')
-        initial_values = []
-        # some parts of the context may have initial values
-        for var_name, (var_type, def_value) in process.variables.items():
-            if var_name in process.aliases.keys():
-                # aliases are not part of the context
-                continue
-            if def_value:
-                # Expression must be a ground expression, i.e. must not
-                # require temporary variable to store computed result
-                dst, dstr, dlocal = expression(def_value)
-                varbty = find_basic_type(var_type)
+        if not process.no_context:
+            ctxt = (f'Default_Context: constant {ASN1SCC}{process.name.capitalize()}_Context :=\n'
+                '      (Init_Done => False,\n       ')
+            initial_values = []
+            # some parts of the context may have initial values
+            for var_name, (var_type, def_value) in process.variables.items():
+                if var_name in process.aliases.keys():
+                    # aliases are not part of the context
+                    continue
+                if def_value:
+                    # Expression must be a ground expression, i.e. must not
+                    # require temporary variable to store computed result
+                    dst, dstr, dlocal = expression(def_value)
+                    varbty = find_basic_type(var_type)
 
-                if varbty.kind.startswith('Integer') and \
-                        isinstance(def_value, (ogAST.PrimOctetStringLiteral,
-                                               ogAST.PrimBitStringLiteral)):
-                    dstr = str(def_value.numeric_value)
+                    if varbty.kind.startswith('Integer') and \
+                            isinstance(def_value, (ogAST.PrimOctetStringLiteral,
+                                                   ogAST.PrimBitStringLiteral)):
+                        dstr = str(def_value.numeric_value)
 
-                elif varbty.kind in ('SequenceOfType',
-                                     'OctetStringType',
-                                     'BitStringType') and def_value.is_raw:
-                    dstr = array_content(def_value, dstr, varbty)
+                    elif varbty.kind in ('SequenceOfType',
+                                         'OctetStringType',
+                                         'BitStringType') and def_value.is_raw:
+                        dstr = array_content(def_value, dstr, varbty)
 
-                elif varbty.kind == 'IA5StringType' and isinstance(def_value,
-                        ogAST.PrimStringLiteral):
-                    dstr = ia5string_raw(def_value)
-                assert not dst and not dlocal,\
-                        'DCL: Expecting a ground expression'
-                initial_values.append(f'{var_name} => {dstr}')
+                    elif varbty.kind == 'IA5StringType' and isinstance(def_value,
+                            ogAST.PrimStringLiteral):
+                        dstr = ia5string_raw(def_value)
+                    assert not dst and not dlocal,\
+                            'DCL: Expecting a ground expression'
+                    initial_values.append(f'{var_name} => {dstr}')
 
-        if initial_values:
-            ctxt += ",\n       ".join(initial_values) + ",\n       "
-        ctxt += "others => <>);"
-        context_decl.append(ctxt)
-        context_decl.append(f'{LPREFIX} : aliased {ASN1SCC}{process.name.title()}_Context := Default_Context;')
+            if initial_values:
+                ctxt += ",\n       ".join(initial_values) + ",\n       "
+            ctxt += "others => <>);"
+            context_decl.append(ctxt)
+            context_decl.append(f'{LPREFIX} : aliased {ASN1SCC}{process.name.title()}_Context := Default_Context;\n')
 
         # Add monitors, that are variables that must be set by an external
         # module. They are not part of the global state of the process, and
@@ -559,20 +566,25 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
                                      '\n'])
 
         # Generate the code of the start transition (if process not empty)
-        Init_Done = f'{LPREFIX}.Init_Done := True;'
+        Init_Done = f'{LPREFIX}.Init_Done := True;' if not getattr(process, 'no_context', False) else ''
         rand_reset_decl = []
         for rand_g in process.random_generator:
             rand_reset_decl.append(f'Rand_{rand_g}_Pkg.Reset (Gen_{rand_g});')
 
-        start_transition = [
-                'procedure Startup is',
-                'begin',
-                *rand_reset_decl,
-                'Execute_Transition (Startup_Transition);'
-                if process.transitions else 'null;',
-                Init_Done,
-                'end Startup;',
-                '']
+        if NO_CONTEXT:
+            start_transition = [
+                    'procedure Startup is null;',
+                    '']
+        else:
+            start_transition = [
+                    'procedure Startup is',
+                    'begin',
+                    *rand_reset_decl,
+                    'Execute_Transition (Startup_Transition);'
+                    if process.transitions else 'null;',
+                    Init_Done,
+                    'end Startup;',
+                    '']
         # Elaboration will execute the startup transition except from taste,
         # that does an explicit call to the startup procedure (allowing
         # to postpone the call in case of multiple instances
@@ -637,7 +649,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     imp_str = f"with {stop_condition}; use {stop_condition};" \
             if stop_condition else ''
 
-    imp_datamodel = (f"with {process.name}_Datamodel; "
+    imp_datamodel = "" if getattr(process, 'no_context', False) else \
+                    (f"with {process.name}_Datamodel; "
                      f"use {process.name}_Datamodel;") \
                              if not stop_condition and not instance else (
                                      f"with {stop_condition}_Datamodel; "
@@ -710,7 +723,7 @@ package body {process.name}_RI is''']
         # Add function allowing to trace current state as a string
         # This uses malloc and should be generated only for Linux
         # when Debug is ON
-        if reduced_statelist:
+        if reduced_statelist and not getattr(process, 'no_context', False):
             ads_template.append(
                 f"function Get_State return Chars_Ptr "
                 f"is ({process.name.title()}_RI.To_C_Pointer "
@@ -818,6 +831,8 @@ package body {process.name}_RI is''']
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer} for timer in process.timers]:
+        if getattr(process, 'only_procedures', False):
+            break
         if stop_condition:
             # dont generate anything in stop_condition functions
             break
@@ -1138,7 +1153,7 @@ package body {process.name}_RI is''']
     # type for all of them, and a function to execute its content, and
     # returning the next branch to exectute.
     all_labels = [lab.inputString for lab in process.content.floating_labels]
-    if not instance:
+    if not instance and not NO_CONTEXT:
         ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
 
     if instance:
@@ -1173,39 +1188,44 @@ package body {process.name}_RI is''']
         if ri_inst or has_context_params or 'PID' in TYPES:
             pkg_decl += ")"
         ads_template.append(f"{pkg_decl};")
-        ads_template.append(
-               f"function Get_State return chars_ptr "
-               f"is ({process.name}_RI.To_C_Pointer ({process.name}_Instance.{LPREFIX}.State'Img))"
-               f" with Export, Convention => C, "
-               f'Link_Name => "{process.name.lower()}_state";')
+        if not getattr(process, 'no_context', False):
+            ads_template.append(
+                   f"function Get_State return chars_ptr "
+                   f"is ({process.name}_RI.To_C_Pointer ({process.name}_Instance.{LPREFIX}.State'Img))"
+                   f" with Export, Convention => C, "
+                   f'Link_Name => "{process.name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
-        ads_template.append(f'procedure Execute_Transition (Branch : {process.name}_Instance.Branches) renames {process.name}_Instance.Execute_Transition;')
+        if not NO_CONTEXT:
+            ads_template.append(f'procedure Execute_Transition (Branch : {process.name}_Instance.Branches) renames {process.name}_Instance.Execute_Transition;')
         #ads_template.append(f'CS_Only : constant := {process.name}_Instance.CS_Only;')
 
     else:
-        ads_template.append('procedure Execute_Transition (Branch : Branches);')
+        if not NO_CONTEXT:
+            ads_template.append('procedure Execute_Transition (Branch : Branches);')
         # ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
 
     # Generate the code for all transitions
     code_transitions = []
     local_decl_transitions = []
-    for proc_tr in process.transitions:
-        code_tr, tr_local_decl = generate(proc_tr)
-        code_transitions.append(code_tr)
-        local_decl_transitions.extend(tr_local_decl)
+    if not NO_CONTEXT:
+        for proc_tr in process.transitions:
+            code_tr, tr_local_decl = generate(proc_tr)
+            code_transitions.append(code_tr)
+            local_decl_transitions.extend(tr_local_decl)
 
     # Generate code for the floating labels as individual functions
     code_labels = []
-    for label in process.content.floating_labels:
-        ads_template.append(
-                f'function Branch_{label.inputString} return Branches;')
-        code_label, _ = generate(label)
-        taste_template.extend(code_label)
+    if not NO_CONTEXT:
+        for label in process.content.floating_labels:
+            ads_template.append(
+                    f'function Branch_{label.inputString} return Branches;')
+            code_label, _ = generate(label)
+            taste_template.extend(code_label)
 
     # Generate the code of the Execute_Transition procedure, if needed
-    if process.transitions and not instance:
+    if process.transitions and not instance and not NO_CONTEXT:
         taste_template.append('procedure Execute_Transition (Branch : Branches) is')
         taste_template.append('Next_Branch : Branches := Branch;')
 
@@ -1216,9 +1236,10 @@ package body {process.name}_RI is''']
         # Make sure initialization has happened before executing transitions
         # other than the startup transition. It may be reset to False when an
         # instance terminates with the stop symbol.
-        taste_template.append(f'if not {LPREFIX}.Init_Done and Branch /= Startup_Transition then')
-        taste_template.append('return;')
-        taste_template.append('end if;')
+        if not getattr(process, 'no_context', False):
+            taste_template.append(f'if not {LPREFIX}.Init_Done and Branch /= Startup_Transition then')
+            taste_template.append('return;')
+            taste_template.append('end if;')
 
         # Generate a loop that ends when a next state is reached
         # (there can be chained transition when entering a nested state)
@@ -1273,7 +1294,7 @@ package body {process.name}_RI is''']
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
-    elif not instance:
+    elif not instance and not NO_CONTEXT:
         # No transitions defined, but keep the interface for CS_Only calls
         taste_template.append('procedure Execute_Transition (Branch : Branches) is null;')
         taste_template.append('\n')
@@ -3374,33 +3395,36 @@ def _transition(tr, **kwargs):
                     # First change the state (to avoid looping in continuous signals since
                     # they will be evaluated after the start transition ; if the state is
                     # still the old state, there is a risk of infinite recursion)
-                    if not tr.terminator.substate:
-                        code.append(
-                          f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
-                    else:
-                        # We may be already in a substate
-                        code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
-                                        f' {ASN1SCC}{tr.terminator.inputString};')
+                    if not NO_CONTEXT:
+                        if not tr.terminator.substate:
+                            code.append(
+                              f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                        else:
+                            # We may be already in a substate
+                            code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
+                                            f' {ASN1SCC}{tr.terminator.inputString};')
                     # Call the START function of the state aggregation
                     code.append(f'{tr.terminator.next_id};')
                     code.append('return Continuous_Signals;')
                 elif not history:
                     # code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
-                        if not tr.terminator.substate:
-                            code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
-                        else:
-                            code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
-                                        f' {ASN1SCC}{tr.terminator.inputString};')
+                        if not NO_CONTEXT:
+                            if not tr.terminator.substate:
+                                code.append(f'{LPREFIX}.State := {ASN1SCC}{tr.terminator.inputString};')
+                            else:
+                                code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}State :='
+                                            f' {ASN1SCC}{tr.terminator.inputString};')
                         code.append('return Continuous_Signals;')
                     else:
                         # single next state, set next branch, pre-computed
                         if tr.terminator.instance_of:
                             code.append(f'--  Instance {tr.terminator.inputString}'
                                         f' of state {tr.terminator.instance_of}')
-                            code.append(
-                                    f'{LPREFIX}.State_Instance := '
-                                    f'{ASN1SCC}{tr.terminator.inputString};')
+                            if not NO_CONTEXT:
+                                code.append(
+                                        f'{LPREFIX}.State_Instance := '
+                                        f'{ASN1SCC}{tr.terminator.inputString};')
                         code.append(f'return {str(tr.terminator.next_id)};')
                 else:
                     # "nextstate -": switch case to re-run the entry transition
@@ -3719,7 +3743,8 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        if proc.exported and proc.content.start is not None and is_rpc:
+        has_transition = any(proc.inputString.lower() == k.lower() for k in PROCESS.input_mapping.keys())
+        if proc.exported and proc.content.start is not None and is_rpc and has_transition:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
             # We need to update all the transitions of the procedure
