@@ -4039,6 +4039,8 @@ def format_ada_code(stmts):
                 indent += 1
             else:
                 last_was_is = True
-        if elems and elems[0] in ('begin', 'case', 'else', 'when'):
+        if elems and (elems[0] in ('begin', 'case', 'else', 'when') or (elems[0] == 'return' and elems[-1] == 'is')):
             indent += 1
+        if elems and elems[-1].endswith(');') and elems[0].startswith('when'):
+            indent = max(indent - 2, 0)
     yield stmts[-1]
