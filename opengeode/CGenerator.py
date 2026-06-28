@@ -4174,18 +4174,36 @@ def append_size(append):
 def indent_c_code(lines):
     indent = 0
     indent_pattern = '   '
+    previous_line = ''
 
-    for line in lines:
-        elems = line.strip().split()
+    # Flatten the lines to handle strings that contain \n
+    flat_lines = []
+    for chunk in lines:
+        flat_lines.extend(chunk.splitlines())
 
-        if elems and elems[0].startswith(('}')):
-            indent -=1
+    for line in flat_lines:
+        line_stripped = line.strip()
+        if not line_stripped:
+            if previous_line != '':
+                yield ''
+            previous_line = ''
+            continue
 
-        if line:
-            yield indent_pattern * indent + line
+        if line_stripped.startswith('}'):
+            indent -= 1
+            if indent < 0:
+                indent = 0
 
-        if elems and elems[0].startswith(('{')):
-            indent +=1
+        yield indent_pattern * indent + line_stripped
+
+        if line_stripped.endswith('{'):
+            indent += 1
+
+        if indent == 0 and line_stripped in ('}', '};'):
+            yield ''
+            previous_line = ''
+        else:
+            previous_line = line_stripped
 
 
 def traceability(symbol):
