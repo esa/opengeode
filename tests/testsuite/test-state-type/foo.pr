@@ -17,6 +17,33 @@ sig2;
         /* CIF PROCESS (215, 219), (150, 75) */
         /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process foo;
+            state bar;
+            substructure
+                out (redundant,nominal);
+                    /* CIF START (146, 102), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (140, 157), (80, 35) */
+                        NEXTSTATE innerWait;
+                    /* CIF state (140, 157), (80, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state innerWait;
+                        /* CIF input (146, 212), (70, 35) */
+                        input sig;
+                            /* CIF decision (146, 267), (70, 50) */
+                            decision blah;
+                                /* CIF ANSWER (101, 337), (70, 23) */
+                                (1):
+                                    /* CIF return (118, 380), (35, 35) */
+                                    return nominal;
+                                /* CIF ANSWER (191, 337), (70, 23) */
+                                else:
+                                    /* CIF task (191, 380), (70, 35) */
+                                    task 'cc';
+                                    /* CIF return (208, 430), (35, 35) */
+                                    return redundant;
+                            enddecision;
+                    endstate;
+            endsubstructure;
             state wait;
             substructure
                     /* CIF START (36, 0), (70, 35) */
@@ -58,113 +85,105 @@ sig2;
                             NEXTSTATE end_of_the_haricots;
                     endstate;
             endsubstructure;
-            state bar;
-            substructure
-                out (redundant,nominal);
-                    /* CIF START (146, 102), (70, 35) */
-                    START;
-                        /* CIF NEXTSTATE (140, 157), (80, 35) */
-                        NEXTSTATE innerWait;
-                    /* CIF state (140, 157), (80, 35) */
-                    /* CIF Keep Specific Geode Partition 'default' */
-                    state innerWait;
-                        /* CIF input (146, 212), (70, 35) */
-                        input sig;
-                            /* CIF decision (146, 267), (70, 50) */
-                            decision blah;
-                                /* CIF ANSWER (101, 337), (70, 23) */
-                                (1):
-                                    /* CIF return (118, 380), (35, 35) */
-                                    return nominal;
-                                /* CIF ANSWER (191, 337), (70, 23) */
-                                else:
-                                    /* CIF task (191, 380), (70, 35) */
-                                    task 'cc';
-                                    /* CIF return (208, 430), (35, 35) */
-                                    return redundant;
-                            enddecision;
-                    endstate;
-            endsubstructure;
             /* CIF Keep Specific Geode Partition 'default' */
-            /* CIF TEXT (5, 0), (170, 140) */
+            /* CIF TEXT (179, 0), (170, 140) */
             dcl blah T_UInt32 := 5;
             /* CIF ENDTEXT */
-            /* CIF START (287, 11), (70, 35) */
+            /* CIF START (461, 11), (70, 35) */
             START;
-                /* CIF NEXTSTATE (287, 61), (70, 35) */
+                /* CIF NEXTSTATE (461, 61), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (607, 25), (70, 35) */
+            /* CIF state (458, 166), (75, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state hello:bar
+            /* CIF comment (560, 161), (177, 38) */
+            comment 'Enter in an instance of the
+state type bar';
+                /* CIF input (296, 221), (70, 35) */
+                input sig2;
+                    /* CIF task (252, 276), (157, 35) */
+                    task 'sig to get out of hello';
+                    /* CIF NEXTSTATE (295, 331), (70, 35) */
+                    NEXTSTATE finished;
+                /* CIF connect (19, 221), (70, 35) */
+                connect nominal;
+                    /* CIF task (0, 276), (109, 35) */
+                    task 'nominal path ';
+                    /* CIF NEXTSTATE (19, 326), (70, 35) */
+                    NEXTSTATE finished;
+                /* CIF connect (146, 221), (70, 35) */
+                connect redundant;
+                    /* CIF task (120, 276), (120, 35) */
+                    task 'redundant path';
+                    /* CIF NEXTSTATE (145, 326), (70, 35) */
+                    NEXTSTATE finished;
+                /* CIF provided (496, 221), (70, 35) */
+                provided blah = 5;
+                    /* CIF task (420, 276), (221, 35) */
+                    task 'condition blah = 5, instance hello';
+                    /* CIF NEXTSTATE (496, 331), (70, 35) */
+                    NEXTSTATE finished;
+                /* CIF provided (723, 221), (80, 38) */
+                provided blah /=5;
+priority 1;
+                    /* CIF task (650, 279), (226, 35) */
+                    task 'condition blah /= 5, instance hello';
+                    /* CIF NEXTSTATE (728, 334), (70, 35) */
+                    NEXTSTATE finished;
+            endstate;
+            /* CIF state (461, 61), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state wait;
+                /* CIF input (461, 116), (70, 35) */
+                input sig;
+                    /* CIF NEXTSTATE (458, 166), (75, 35) */
+                    NEXTSTATE hello:bar
+                    /* CIF comment (560, 161), (177, 38) */
+                    comment 'Enter in an instance of the
+state type bar';
+            endstate;
+            /* CIF state (781, 25), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
             state bar;
             endstate;
-            /* CIF state (216, 435), (70, 35) */
+            /* CIF state (389, 435), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
             state finished;
-                /* CIF connect (218, 490), (70, 35) */
+                /* CIF connect (392, 490), (70, 35) */
                 connect after_finished;
-                    /* CIF NEXTSTATE (218, 545), (70, 35) */
+                    /* CIF NEXTSTATE (392, 545), (70, 35) */
                     NEXTSTATE alt:bar
-                    /* CIF comment (308, 545), (157, 38) */
+                    /* CIF comment (482, 545), (157, 38) */
                     comment 'Go to another instance
 of the state type bar';
             endstate;
-            /* CIF state (863, 31), (70, 35) */
+            /* CIF state (1096, 31), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
             state alt:bar;
-                /* CIF input (953, 86), (70, 35) */
+                /* CIF input (1053, 86), (70, 35) */
                 input sig2;
-                    /* CIF task (932, 141), (111, 35) */
+                    /* CIF task (1032, 141), (111, 35) */
                     task 'sig2 out of alt';
-                    /* CIF NEXTSTATE (953, 196), (70, 35) */
+                    /* CIF NEXTSTATE (1053, 196), (70, 35) */
                     NEXTSTATE finished;
-                /* CIF connect (718, 86), (70, 35) */
+                /* CIF connect (826, 86), (70, 35) */
                 connect nominal;
-                    /* CIF task (701, 141), (103, 35) */
+                    /* CIF task (809, 141), (103, 35) */
                     task 'alt nom path';
-                    /* CIF NEXTSTATE (718, 196), (70, 35) */
+                    /* CIF NEXTSTATE (826, 196), (70, 35) */
                     NEXTSTATE finished;
-                /* CIF connect (839, 86), (70, 35) */
+                /* CIF connect (937, 86), (70, 35) */
                 connect redundant;
-                    /* CIF task (826, 141), (97, 35) */
+                    /* CIF task (923, 141), (97, 35) */
                     task 'alt red path';
-                    /* CIF NEXTSTATE (839, 196), (70, 35) */
+                    /* CIF NEXTSTATE (937, 196), (70, 35) */
                     NEXTSTATE finished;
-            endstate;
-            /* CIF state (284, 166), (75, 35) */
-            /* CIF Keep Specific Geode Partition 'default' */
-            state hello:bar
-            /* CIF comment (386, 161), (177, 38) */
-            comment 'Enter in an instance of the
-state type bar';
-                /* CIF input (377, 221), (70, 35) */
-                input sig2;
-                    /* CIF task (333, 276), (157, 35) */
-                    task 'sig to get out of hello';
-                    /* CIF NEXTSTATE (376, 331), (70, 35) */
+                /* CIF provided (1231, 86), (70, 35) */
+                provided blah = 5;
+                    /* CIF task (1162, 141), (207, 35) */
+                    task 'condition blah = 5, instance alt';
+                    /* CIF NEXTSTATE (1231, 196), (70, 35) */
                     NEXTSTATE finished;
-                /* CIF connect (101, 221), (70, 35) */
-                connect nominal;
-                    /* CIF task (81, 276), (109, 35) */
-                    task 'nominal path ';
-                    /* CIF NEXTSTATE (100, 326), (70, 35) */
-                    NEXTSTATE finished;
-                /* CIF connect (228, 221), (70, 35) */
-                connect redundant;
-                    /* CIF task (202, 276), (120, 35) */
-                    task 'redundant path';
-                    /* CIF NEXTSTATE (227, 326), (70, 35) */
-                    NEXTSTATE finished;
-            endstate;
-            /* CIF state (287, 61), (70, 35) */
-            /* CIF Keep Specific Geode Partition 'default' */
-            state wait;
-                /* CIF input (287, 116), (70, 35) */
-                input sig;
-                    /* CIF NEXTSTATE (284, 166), (75, 35) */
-                    NEXTSTATE hello:bar
-                    /* CIF comment (386, 161), (177, 38) */
-                    comment 'Enter in an instance of the
-state type bar';
             endstate;
         endprocess foo;
     endblock;

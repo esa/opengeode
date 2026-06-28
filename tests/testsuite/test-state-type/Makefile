@@ -28,6 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) *.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	cp ris.ada ris.ads && cp ris_adb.ada ris.adb
 	gnat make test_ada.ada
 	./test_ada | diff expected -
 
@@ -57,6 +58,8 @@ clean:
 		! -name "Makefile" \
 		! -name "expected" \
 		! -name "test_ada.ada" \
+		! -name "ris.ada" \
+		! -name "ris_adb.ada" \
 		! -name "test_c.c" \
 		-delete
 	rm -rf x86

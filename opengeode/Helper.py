@@ -142,12 +142,20 @@ def map_input_state(process):
         for state_name, input_symbols in process.mapping.items():
             if isinstance(input_symbols, list):
                 # Start symbols have no list of inputs
+                matched_inputs = []
+                asterisk_inputs = []
                 for i in input_symbols:
                     if input_signal.lower() in (inp.lower() for
                                                 inp in i.inputlist):
-                        if state_name not in mapping[input_signal]:
-                            mapping[input_signal][state_name] = []
-                        mapping[input_signal][state_name].append(i)
+                        if getattr(i, 'inputString', '').strip() == '*':
+                            asterisk_inputs.append(i)
+                        else:
+                            matched_inputs.append(i)
+                
+                # Specific inputs take precedence over asterisk inputs
+                final_inputs = matched_inputs if matched_inputs else asterisk_inputs
+                if final_inputs:
+                    mapping[input_signal][state_name] = final_inputs
     return mapping
 
 
