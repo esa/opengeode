@@ -255,9 +255,9 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
             cs_template.append(
                     f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
                     ' then')
-        # Change priority 0 (no priority set) to lowest priority
-        if cs_item:
+            # Change priority 0 (no priority set) to lowest priority
             lowest_priority = max(item.priority for item in cs_item)
+
         for each in cs_item:
             if each.priority == 0:
                 each.priority = lowest_priority + 1
@@ -1297,7 +1297,16 @@ def write_statement(param, newline):
         # IA5String are null-terminated to match the C representation
         # ASN1SCC API offers the getStringSize function to read the actual size
         code, string, local = expression(param, readonly=1)
-        code.append(f'Put ({string} (1 .. adaasn1rtl.GetStringSize ({string})));')
+        # the experession can be a ternary evaluating to IA5String, in which
+        # case it has to be rendered as is. However if it is a pure IA5String
+        # variable, then its actual length has to be computed as it is
+        # null-terminated to memory match the C representation.
+        if isinstance(param, ogAST.PrimVariable): # and basic_type.Min != basic_type.Max:
+            # (removed the test for fixed size: Asn1scc generates strings with
+            # one extra char to store the null termination character)
+            code.append(f'Put ({string}(1 .. adaasn1rtl.GetStringSize ({string})));')
+        else:
+            code.append(f'Put ({string});')
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
             # Octet string or bit string
@@ -1357,84 +1366,97 @@ def write_statement(param, newline):
 def _call_external_function(output, **kwargs):
     ''' Generate the code of a set of output or procedure call statement '''
     code = []
-    local_decl = []
-
+    
     # Add the traceability information
     code.extend(traceability(output))
+    with open("debug_ada.txt", "a") as f: f.write("output called\n")
     # code.extend(debug_trace())
 
-    # Calling a procedure or RI usually needs a prefix (RI_.. or p_...)
-    # Exceptions are the _Transition procedures called after exported PIs (RPC)
-    # and the inner call of exported procedures
     need_prefix = True
 
     for out in output.output:
         signal_name = out['outputName']
         list_of_params = []
+        call_code = []
+        call_local = []
 
         if signal_name.lower() in ('write', 'writeln'):
-            # special built-in SDL procedure for printing strings
-            # supports printing of native types (int, real, bool)
-            # but not yet complex ASN.1 structures (sequence/seqof/choice)
             for param in out['params'][:-1]:
                 stmts, _, local = write_statement(param, newline=False)
-                code.extend(stmts)
-                local_decl.extend(local)
+                if local:
+                    code.append('declare')
+                    code.extend(local)
+                    code.append('begin')
+                    code.extend(stmts)
+                    code.append('end;')
+                else:
+                    code.extend(stmts)
             for param in out['params'][-1:]:
-                # Last parameter - add newline if necessary
-                stmts, _, local = write_statement(param, newline=True if
-                        signal_name.lower() == 'writeln' else False)
-                code.extend(stmts)
-                local_decl.extend(local)
+                stmts, _, local = write_statement(param, newline=True if signal_name.lower() == 'writeln' else False)
+                if local:
+                    code.append('declare')
+                    code.extend(local)
+                    code.append('begin')
+                    code.extend(stmts)
+                    code.append('end;')
+                else:
+                    code.extend(stmts)
             continue
         elif signal_name.lower() == 'reset_timer':
-            # built-in operator for resetting timers. param = timer name
             param, = out['params']
             p_code, p_id, p_local = expression(param, readonly=1)
-            code.extend(p_code)
-            local_decl.extend(p_local)
-            code.append(f'RESET_{p_id};')
+            call_code.extend(p_code)
+            call_local.extend(p_local)
+            call_code.append(f'RESET_{p_id};')
+            if call_local:
+                code.append('declare')
+                code.extend(call_local)
+                code.append('begin')
+                code.extend(call_code)
+                code.append('end;')
+            else:
+                code.extend(call_code)
             continue
         elif signal_name.lower() == 'set_timer':
-            # built-in operator for setting a timer: SET(1000, timer_name)
             timer_value, timer_id = out['params']
             t_code, t_val, t_local = expression(timer_value)
             p_code, p_id, p_local = expression(timer_id)
-            code.extend(t_code)
-            code.extend(p_code)
-            local_decl.extend(t_local)
-            local_decl.extend(p_local)
-            # Use a temporary variable to store the timer value
+            call_code.extend(t_code)
+            call_code.extend(p_code)
+            call_local.extend(t_local)
+            call_local.extend(p_local)
             tmp_id = 'tmp' + str(out['tmpVars'][0])
-            local_decl.append(f'{tmp_id} : {ASN1SCC}T_UInt32;')
-            code.append(f'{tmp_id} := {t_val};')
-            code.append(f"SET_{p_id} ({tmp_id});")
+            if not t_code and not isinstance(timer_value, ogAST.ExprAppend):
+                call_local.append(f'{tmp_id} : {ASN1SCC}T_UInt32 := {t_val};')
+            else:
+                call_local.append(f'{tmp_id} : {ASN1SCC}T_UInt32;')
+                call_code.append(f'{tmp_id} := {t_val};')
+            call_code.append(f"SET_{p_id} ({tmp_id});")
+            if call_local:
+                code.append('declare')
+                code.extend(call_local)
+                code.append('begin')
+                code.extend(call_code)
+                code.append('end;')
+            else:
+                code.extend(call_code)
             continue
+            
         proc, out_sig = None, None
         try:
-            out_sig, = [sig for sig in OUT_SIGNALS
-                        if sig['name'].lower() == signal_name.lower()]
+            out_sig, = [sig for sig in OUT_SIGNALS if sig['name'].lower() == signal_name.lower()]
         except ValueError:
-            # Not an output, try if it is an external or inner procedure
             try:
-                candidates = [sig for sig in PROCEDURES
-                            if sig.inputString.lower() == signal_name.lower()]
+                candidates = [sig for sig in PROCEDURES if sig.inputString.lower() == signal_name.lower()]
                 if not candidates:
                     raise ValueError
                 if len(candidates) > 1:
-                    # there are 2 results when the procedure is exported
-                    # (happens in the case of a call of an inner procedure
-                    # that is exported)
-                    # there can be 3 if a procedure exists as PI and RI
                     if not out.get('toDest'):
                         need_prefix = False
-                        # find a candidate that is not marked as external
                         for c in candidates:
                             if not c.external:
                                 proc = c
                     else:
-                        # if toDest is set, it has to be a RI call
-                        # find the candidate that is declared as external
                         for c in candidates:
                             if c.external:
                                 proc = c
@@ -1443,55 +1465,42 @@ def _call_external_function(output, **kwargs):
                 if proc.external:
                     out_sig = proc
             except ValueError:
-                # Last chance to find it: if it is an exported procedure,
-                # in that case an additional signal with _Transition suffix
-                # exists but is not visible in the model at this point
                 for sig in PROCEDURES:
                     if signal_name.lower() == f'{sig.inputString.lower()}_transition':
                         out_sig = sig
                         need_prefix = False
                         break
                 else:
-                    # Not there? Impossible, the parser would have barked
-                    # Can happen with stop conditions because they are defined
-                    # as exported but the _Transition signal was not added
                     LOG.warning(f'Could not find signal/procedure: {signal_name} - ignoring call')
-                    return code, local_decl
+                    return code, []
+                    
         if out_sig:
             dest_pid = out.get('toDest') or 'env'
             if isinstance(dest_pid, ogAST.PrimVariable):
                 _, dest_pid, _ = expression(dest_pid)
             else:
-                dest_pid = f'{ASN1SCC}{dest_pid}'  # enumerated value
+                dest_pid = f'{ASN1SCC}{dest_pid}'
             dest_pid = dest_pid.replace('-', '_')
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
-                    # If it is an output, there is a single parameter
                     param_type = out_sig['type']
                 except TypeError:
-                    # Else if it is a procedure, get the type
                     param_type = out_sig.fpar[idx]['type']
                     param_direction = out_sig.fpar[idx]['direction']
 
                 typename = type_name(param_type)
                 p_code, p_id, p_local = expression(param, readonly=1)
-                code.extend(p_code)
-                local_decl.extend(p_local)
-                # Create a temporary variable for input parameters only
-                # (If needed, i.e. if argument is not a local variable)
-                if param_direction == 'in' \
-                        and (not (isinstance(param, ogAST.PrimVariable)
-                        and p_id.startswith(LPREFIX))  # NO FIXME WITH CTXT
-                        or isinstance(param, ogAST.PrimFPAR)):
+                call_code.extend(p_code)
+                call_local.extend(p_local)
+                
+                if param_direction == 'in' and (not (isinstance(param, ogAST.PrimVariable) and p_id.startswith(LPREFIX)) or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = f'tmp{out["tmpVars"][idx]}'
-                    # local_decl.extend(debug_trace())
-                    local_decl.append(f'{tmp_id} : {typename};')
                     basic_param = find_basic_type(param_type)
                     if basic_param.kind.startswith('Integer'):
                         p_id = f"{typename} ({p_id})"
-                    if isinstance(param,
-                              (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                    
+                    if isinstance(param, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                         if basic_param.kind == 'IA5StringType':
                             p_id = ia5string_raw(param)
                         elif basic_param.kind.startswith('Integer'):
@@ -1499,100 +1508,103 @@ def _call_external_function(output, **kwargs):
                         else:
                             p_id = array_content(param, p_id, basic_param)
 
+                    call_local.append(f'{tmp_id} : {typename};')
                     if isinstance(param, ogAST.ExprAppend):
-                        # Process Append constructs properly when they are
-                        # used as raw params (e.g. callme(a//b//c))
-                        # TODO: ogAST.PrimSubstring seem to be missing
-                        # Check the template in def _conditional
                         app_len = append_size(param)
-                        code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
+                        call_code.append(f'{tmp_id}.Data (1 .. {app_len}) := {p_id};')
                         if basic_param.Min != basic_param.Max:
-                            # Append should only apply to this case, i.e.
-                            # types of varying length...
-                            code.append(f'{tmp_id}.Length := {app_len};')
+                            call_code.append(f'{tmp_id}.Length := {app_len};')
                     else:
-                        code.append(f'{tmp_id} := {p_id};')
+                        call_code.append(f'{tmp_id} := {p_id};')
                     list_of_params.append(tmp_id)
                 else:
-                    # Output parameters/local variables
                     list_of_params.append(p_id)
+                    
             name = out["outputName"]
             if list_of_params:
                 params = ', '.join(list_of_params)
                 if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
-                    code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
+                    call_code.append(f'RI{SEPARATOR}{name}({params}, Dest_PID => {dest_pid});')
                 else:
-                    code.append(f'RI{SEPARATOR}{name}({params});')
-
+                    call_code.append(f'RI{SEPARATOR}{name}({params});')
             else:
                 prefix = f'RI{SEPARATOR}' if need_prefix else ''
                 if dest_pid != f'{ASN1SCC}env' and 'PID' in TYPES:
-                    code.append(f'{prefix}{name}(Dest_PID => {dest_pid});')
+                    call_code.append(f'{prefix}{name}(Dest_PID => {dest_pid});')
                 else:
-                    code.append(f'{prefix}{name};')
+                    call_code.append(f'{prefix}{name};')
         else:
-            # inner procedure call without a RETURN statement
-            # retrieve the procedure signature
             ident = proc.inputString
-            p = [p for p in PROCEDURES
-                    if p.inputString.lower() == ident.lower()
-                    and not p.referenced][0]
+            p = [p for p in PROCEDURES if p.inputString.lower() == ident.lower() and not p.referenced][0]
 
-            list_of_params = []
             for idx, param in enumerate(out.get('params', [])):
-                # Expected basic type of the parameter
                 param_type = p.fpar[idx]['type']
                 basic_param = find_basic_type(param_type)
 
                 p_code, p_id, p_local = expression(param, readonly=1)
 
-                # We need to format strings properly, this depends on the expected
-                # type of the procedure parameter
-                if isinstance(param,
-                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                if isinstance(param, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                     if basic_param.kind == 'IA5StringType':
                         p_id = ia5string_raw(param)
                     elif basic_param.kind.startswith('Integer'):
                         p_id = str(param.numeric_value)
                     else:
                         p_id = array_content(param, p_id, basic_param)
-                    # Here at least we need a temporary variable, it's never
-                    # possible to send a raw string as a parameter
                     tmp_string = f'tmp{param.tmpVar}'
-                    local_decl.append(f'{tmp_string} : {type_name(param_type)} := {p_id};')
+                    call_local.append(f'{tmp_string} : {type_name(param_type)};')
+                    call_code.append(f'{tmp_string} := {p_id};')
                     p_id = tmp_string
 
-                code.extend(p_code)
-                local_decl.extend(p_local)
-                # no need to use temporary variables, we are in pure Ada
+                call_code.extend(p_code)
+                call_local.extend(p_local)
                 list_of_params.append(p_id)
+                
             if need_prefix:
                 full_name = f'p{SEPARATOR}{proc.inputString}'
             else:
                 full_name = proc.inputString
             if list_of_params:
-                code.append(f'{full_name}({", ".join(list_of_params)});')
+                call_code.append(f'{full_name}({", ".join(list_of_params)});')
             else:
-                code.append(f'{full_name};')
-    return code, local_decl
+                call_code.append(f'{full_name};')
+                
+        if call_local:
+            code.append('declare')
+            code.extend(call_local)
+            code.append('begin')
+            code.extend(call_code)
+            code.append('end;')
+        else:
+            code.extend(call_code)
+
+    return code, []
 
 
 @generate.register(ogAST.TaskAssign)
 def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    if task.comment:
-        code.extend(traceability(task.comment))
     for expr in task.elems:
-        code.extend(traceability(expr))
+        trace_comments = traceability(expr)
         # ExprAssign only returns code statements, no string
         try:
             code_assign, _, decl_assign = expression(expr)
         except TypeError as err:
             raise TypeError(f"{str(err)} - TaskAssign: '{task.inputString}' (please report this bug)")
-        code.extend(code_assign)
-        local_decl.extend(decl_assign)
-    return code, local_decl
+        if decl_assign:
+            code.extend(trace_comments)
+            code.append('declare')
+            code.extend(decl_assign)
+            code.append('begin')
+            code.extend(code_assign)
+            code.append('end;')
+        else:
+            code.extend(trace_comments)
+            code.extend(code_assign)
+            
+    if task.comment:
+        code = traceability(task.comment) + code
+    return code, []
 
 
 @generate.register(ogAST.TaskInformalText)
@@ -2390,7 +2402,14 @@ def _assign_expression(expr, **kwargs):
         leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
         rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
         if leftIsBitString and rightIsBoolean:
-            strings.append(f"{left_str} := (if {right_str} then 1 else 0);")
+            # If right is actually a boolean literal (true or false) set 1 or 0 directly
+            if right_str.strip().lower() == "true":
+                res = "1"
+            elif  right_str.strip().lower() == "false":
+                res = "0"
+            else:
+                res = f"(if {right_str} then 1 else 0)"
+            strings.append(f"{left_str} := {res};")
         else:
             strings.append(f"{left_str} := {right_str};")
     else:
@@ -2748,47 +2767,104 @@ def _mantissa_base_exp(primary, **kwargs):
 def _conditional(cond, **kwargs):
     ''' Return string and statements for conditional expressions '''
     stmts = []
+    local_decl = []
 
-    tmp_type = type_name(cond.exprType)
+    basic_cond = find_basic_type(cond.exprType)
+    actual_type = type_name(cond.exprType)
 
-    if tmp_type == 'String':
-        then_str = cond.value['then'].value.replace("'", '"')
-        else_str = cond.value['else'].value.replace("'", '"')
-        lens = [len(then_str), len(else_str)]
-        tmp_type = f'String (1 .. {max(lens) - 2})'
-        # Ada require fixed-length strings, adjust with spaces
-        if lens[0] < lens[1]:
-            then_str = then_str[0:-1] + ' ' * (lens[1] - lens[0]) + '"'
-        elif lens[1] < lens[0]:
-            else_str = else_str[0:-1] + ' ' * (lens[0] - lens[1]) + '"'
-
-    local_decl = [f'tmp{cond.value["tmpVar"]} : {tmp_type};']
     if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
-    if not tmp_type.startswith('String'):
-        then_stmts, then_str, then_local = expression(cond.value['then'],
-                                                      readonly=1)
-        else_stmts, else_str, else_local = expression(cond.value['else'],
-                                                      readonly=1)
-#       print "\nCONDITIONAL :", cond.inputString, tmp_type,
-#       print "THEN TYPE:", type_name(find_basic_type(cond.value['then'].exprType)),
-#       print "ELSE TYPE:", type_name(find_basic_type(cond.value['else'].exprType))
+
+    then_stmts, then_str, then_local = expression(cond.value['then'],
+                                                  readonly=1)
+    else_stmts, else_str, else_local = expression(cond.value['else'],
+                                                  readonly=1)
+    local_decl.extend(then_local)
+    local_decl.extend(else_local)
+
+    if actual_type == 'String' or basic_cond.kind == "IA5StringType":
+        # IA5String: generate two constant strings and use ternary operator
+        # to avoid uninitialized constrained string issue in Ada
+        max_size = basic_cond.Max
+        then_id = f'cond_then_{cond.value["tmpVar"]}'
+        else_id = f'cond_else_{cond.value["tmpVar"]}'
+        then_basic = find_basic_type(cond.value['then'].exprType)
+        else_basic = find_basic_type(cond.value['else'].exprType)
+
+        then_is_octet = False
+        then_decl_type = 'String'
+        if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
+            # For literals, use the string literal format directly
+            then_val = cond.value['then'].value.replace("'", '"')
+        else:
+            if then_basic.kind in ('OctetStringType', 'BitStringType'):
+                len_sep = "." if then_basic.Min != then_basic.Max else ".Data'"
+                then_val = f"(for I in 1 .. {then_str}{len_sep}Length => (Character'Val({then_str}.Data(I))))"
+                then_decl_type = f"String (1 .. {then_str}{len_sep}Length)"
+                then_is_octet = True
+            else:
+                then_val = then_str
+
+        else_is_octet = False
+        else_decl_type = 'String'
+        if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
+            # For literals, use the string literal format directly
+            else_val = cond.value['else'].value.replace("'", '"')
+        else:
+            if else_basic.kind in ('OctetStringType', 'BitStringType'):
+                len_sep = "." if else_basic.Min != else_basic.Max else ".Data'"
+                else_val = f"(for I in 1 .. {else_str}{len_sep}Length => (Character'Val({else_str}.Data(I))))"
+                else_decl_type = f"String (1 .. {else_str}{len_sep}Length)"
+                else_is_octet = True
+            else:
+                else_val = else_str
+
+
+        # We need a local declaration only for octet strings, otherwise use
+        # either the IA5String variable directly (with size limit) or raw string
+        if then_is_octet:
+            local_decl.append(f'{then_id} : constant {then_decl_type} := {then_val};')
+        else:
+            then_id = then_val
+            if then_basic.kind == "IA5StringType":
+                # if it's a variable, take the value until it finds a NUL
+                then_id = f"{then_id}(1 .. adaasn1rtl.GetStringSize({then_id}))"
+        if else_is_octet:
+            local_decl.append(f'{else_id} : constant {else_decl_type} := {else_val};')
+        else:
+            else_id = else_val
+            if else_basic.kind == "IA5StringType":
+                else_id = f"{else_id}(1 .. adaasn1rtl.GetStringSize({else_id}))"
+
         stmts.extend(then_stmts)
         stmts.extend(else_stmts)
-        local_decl.extend(then_local)
-        local_decl.extend(else_local)
+
+        # Note: if branches have different lengths, this will fail in Ada.
+        # But padding literals to Max might not be what the user wants if they
+        # asked for "as is". If lengths mismatch, the model might be invalid.
+        ada_string = f'(if {if_str} then {then_id} else {else_id})'
+        return stmts, str(ada_string), local_decl
+
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+
+        ada_string = f'(if {if_str} then {then_id} else {else_id})'
+        return stmts, str(ada_string), local_decl
+
+    # Non-String types (SequenceOf, OctetString, basic types)
+    local_decl.append(f'tmp{cond.value["tmpVar"]} : {actual_type};')
+    stmts.extend(then_stmts)
+    stmts.extend(else_stmts)
     stmts.append('if {if_str} then'.format(if_str=if_str))
 
     # the "then" or "else" part may be an iterator (Integer32),
-    # so a cast to the expected type (tmp_type) may be needed
-    basic_cond = find_basic_type(cond.exprType)
+    # so a cast to the expected type (actual_type) may be needed
     basic_then = find_basic_type(cond.value['then'].exprType)
     basic_else = find_basic_type(cond.value['else'].exprType)
 
     then_len = None
-    # CHECKME : I think the IA5String case is not handled properly here
-    if not tmp_type.startswith('String') and isinstance(cond.value['then'],
+    if isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         then_str = array_content(cond.value['then'], then_str, basic_then)
     if isinstance(cond.value['then'], ogAST.ExprAppend):
@@ -2802,7 +2878,7 @@ def _conditional(cond, **kwargs):
         if basic_then.Min != basic_then.Max:
             then_len = f"{then_str}'Length"
     else:
-        cast = basic_cond.kind != basic_then.kind and f" {tmp_type}" or ""
+        cast = basic_cond.kind != basic_then.kind and f" {actual_type}" or ""
         stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({then_str});')
     if then_len:
         stmts.append("tmp{idx}.Length := {then_len};"
@@ -2810,7 +2886,7 @@ def _conditional(cond, **kwargs):
 
     stmts.append('else')
     else_len = None
-    if not tmp_type.startswith('String') and isinstance(cond.value['else'],
+    if isinstance(cond.value['else'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         else_str = array_content(cond.value['else'], else_str, basic_else)
 
@@ -2825,7 +2901,7 @@ def _conditional(cond, **kwargs):
         if basic_else.Min != basic_else.Max:
             else_len = "{}'Length".format(else_str)
     else:
-        cast = basic_cond.kind != basic_else.kind and f" {tmp_type}" or ""
+        cast = basic_cond.kind != basic_else.kind and f" {actual_type}" or ""
         stmts.append(f'tmp{cond.value["tmpVar"]} :={cast} ({else_str});')
     if else_len:
         stmts.append("tmp{idx}.Length := {else_len};"
@@ -3364,7 +3440,7 @@ def _transition(tr, **kwargs):
             elif tr.terminator.kind == 'return':
                 string = ''
                 aggregate = False
-                if tr.terminator.substate: # XXX add to C generator
+                if tr.terminator.substate:
                     aggregate = True
                     # within a state aggregation, a return means that one
                     # of the parallel states becomes disabled, but it does
@@ -3383,6 +3459,7 @@ def _transition(tr, **kwargs):
                             for sib in tr.terminator.siblings
                             if sib.lower() != tr.terminator.substate.lower()]
                     code.append(f'if {" and ".join(conds)} then')
+
                 if tr.terminator.next_id == -1:
                     retexp = tr.terminator.return_expr
                     if retexp:
@@ -3423,7 +3500,7 @@ def _transition(tr, **kwargs):
                     #code.append(f'trId :=  {str(tr.terminator.next_id)};')
                     if not MONITORS:
                         # We have to check recursively if the next transition
-                        # ends with a JOIN to find the next branch to exectute
+                        # ends with a JOIN to find the next branch to execute
                         last_path = tr.terminator.path[-1].split()
                         if last_path[0] == 'STATE':
                             state_name = last_path[1]
@@ -3886,8 +3963,12 @@ def format_ada_code(stmts):
     indent = 0
     indent_pattern = '   '
     last_was_is = False
+    declare = False   # manage decrement before "begin" after a "declare"
     for line in stmts[:-1]:
         elems = line.strip().split()
+        if elems and elems[0] == "begin" and declare:
+            indent -= 1
+            declare = False
         if elems and elems[0].startswith(('when', 'end', 'elsif', 'else')):
             # Decrement the line, but the "when" will be incremented anyway
             # because of "last_was_is"
@@ -3912,6 +3993,8 @@ def format_ada_code(stmts):
                 yield indent_pattern * indented_level + line
         if elems and elems[-1] in ('then', 'loop', 'declare'):
             indent += 1
+        if elems and elems[-1] == 'declare':
+            declare = True
         if elems and elems[-1] == 'is':
             if elems[0] not in ('procedure', 'function'):
                 indent += 1

@@ -15,7 +15,7 @@ int main()
     int i;
     printf("[C Code] Running test\n");
     adainit();
-    orchestrator_initStates();
+//    orchestrator_initStates();
     toto = fixed_value(); 
 //    size = fixed_size();
 //    printf("Size=%d\n", size);

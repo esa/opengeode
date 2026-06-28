@@ -651,6 +651,7 @@ def check_call(name, params, context):
         returning the type of its result (value-returning functions only,
         i.e not signal sending
         Returns tuple: (expression type, warnings)
+        In case of a ternary param (PrimConditional) set the type in place
         '''
     warnings = []
 
@@ -662,7 +663,7 @@ def check_call(name, params, context):
             p_ty = p.exprType
             if is_numeric(p_ty) or is_boolean(p_ty) or is_string(p_ty) or \
                     is_enumerated(p_ty):
-                return (UNKNOWN_TYPE, warnings)
+                return
             raise TypeError('Type {} not supported in call to {}'.
                 format(type_name(p.exprType), name))
         for p in params:
@@ -682,7 +683,19 @@ def check_call(name, params, context):
                    is_string(p.value['else'].exprType) == True) or \
                    (is_enumerated(p.value['then'].exprType) ==
                    is_enumerated(p.value['else'].exprType) == True):
-                      p.exprType = p.value['then'].exprType
+                       # Change the type in place.For String types, since there
+                       # can be mixed IA5/OctetString/Raw string, it is not
+                       # possible to just take the type of the "then" value:
+                       # set a generic String type
+                       if is_string(p.value['then'].exprType):
+                           p.exprType = type('WriteString', (object,), {
+                               'kind': 'StringType',
+                               'Min': 0,
+                               'Max': 1000, # irrelevant
+                               'NumericValue': -1
+                               })
+                       else:
+                           p.exprType = p.value['then'].exprType
                 else:
                     raise TypeError('{}: both options must have the same type.'
                                     .format(name))
@@ -1294,7 +1307,7 @@ def check_type_compatibility(primary, type_ref, context):
 
     elif isinstance(primary, ogAST.PrimSequenceOf) \
             and basic_type.kind == 'BitStringType':
-        # a bit string can be assigned an SeqOf kind if the elements are
+        # a bit string can be assigned a SeqOf kind if the elements are
         # using named bits declared in the model
         # At this point the elements have been set as PrimVariable instances
         named_bits = [n.lower().replace('-', '_') for n in basic_type.NamedBits.keys()]
@@ -6059,8 +6072,10 @@ def connect_part(root, parent, context):
     # is not the case if we are parsing a connection below an instance of
     # a state type inside a nested state.
     # removed, this is done after the full model is parsed, and recursively
-    #errs = check_and_resolve_connect_part(conn, nested)
-    #errors.extend(errs)
+    # Added back: we still have to do it for non-instance states
+    if not parent.instance_of:
+        errs = check_and_resolve_connect_part(conn, nested)
+        errors.extend(errs)
 
     # Find duplicate CONNECT statements (except for instances of state type)
     if statename:
@@ -7248,11 +7263,8 @@ def assign(root, context):
         # to the same value as left in case of ExprAppend
         # Setting it - I did not see any place in the Ada backend where
         # this could cause a bug (and regression is OK)
-#       if isinstance(expr.right, ogAST.ExprAppend):
-#           fix_append_expression_type(expr.right, expr.left.exprType)
-#           # all append components must be of the same type, which is the
-#           # type of the left part of the expression. we must recursively
-#           # fix the right type, in case we have the for a//b//c
+        if isinstance(expr.right, ogAST.ExprAppend):
+            fix_append_expression_type(expr.right, expr.left.exprType)
 #           # that is handled as (a//b)//c
 #           def rec_append(inner_expr, set_type):
 #               for each in (inner_expr.left, inner_expr.right):
@@ -7881,6 +7893,15 @@ def parse_pr(files=None, string=None):
             errors.append([f'Nested state definition missing : {missing}',
                 [0, 0],
                 ['PROCESS {}'.format(process.processName)]])
+
+        process.only_procedures = False
+        if len(process.transitions) == 1:
+            startup_transition = process.transitions[0]
+            if len(startup_transition.actions) == 0:
+                if startup_transition.terminator and startup_transition.terminator.kind == 'next_state':
+                    next_state_name = startup_transition.terminator.inputString.lower()
+                    if next_state_name not in comp_states and not startup_transition.terminator.instance_of:
+                        process.only_procedures = True
     return og_ast, warnings, errors
 
 

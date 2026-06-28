@@ -31,7 +31,7 @@ test-ada: myfunction.ali dataview-uniq.o | test_ada.o
 	./test_ada | diff expected -
 
 test-c: myfunction.c | test_ada.o
-	$(CC) -o test_c myfunction.c test_c.c
+	$(CC) -g -o test_c myfunction.c test_c.c
 	./test_c | diff expected -
 
 test-if:

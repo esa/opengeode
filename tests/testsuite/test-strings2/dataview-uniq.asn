@@ -1,0 +1,15 @@
+TASTE-Dataview DEFINITIONS ::=
+BEGIN
+
+List ::= SEQUENCE(SIZE(5)) OF OCTET STRING(SIZE(1..6))
+
+OutStr ::= OCTET STRING (SIZE(0..255))
+
+FixedOctetString ::= OCTET STRING (SIZE (3))
+FixedIA5String ::= IA5String (SIZE (3))
+
+
+Textstring ::= IA5String (SIZE (0..100))
+
+END
+

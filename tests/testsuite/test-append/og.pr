@@ -1,5 +1,6 @@
 system og;
-    /* CIF TEXT (159, 221), (290, 200) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (267, 188) */
     -- Text area for declarations and comments
     
     use dv comment 'dataview-uniq.asn';
@@ -23,21 +24,30 @@ system og;
             from og to env with we;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process og;
-            /* CIF TEXT (74, 125), (321, 173) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (74, 125), (170, 140) */
             dcl foo, bar  SeqBool;
-            dcl idx myinteger := 3;
+            dcl idx myinteger := 2;
             /* CIF ENDTEXT */
             /* CIF START (556, 221), (70, 35) */
             START;
-                /* CIF task (470, 276), (242, 38) */
+                /* CIF task (472, 276), (236, 38) */
                 task foo := { true, false},
 bar := {false, true, true, false, false};
-                /* CIF task (503, 334), (176, 35) */
+                /* CIF task (510, 334), (161, 35) */
                 task foo := foo // bar (0, idx );
-                /* CIF NEXTSTATE (556, 384), (70, 35) */
+                /* CIF task (501, 389), (179, 53) */
+                task for i in range(length(foo)):
+  call write(foo(i), " ");
+endfor;
+                /* CIF PROCEDURECALL (534, 462), (112, 35) */
+                call writeln("END");
+                /* CIF NEXTSTATE (556, 512), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (826, 332), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
             endstate;
         endprocess og;

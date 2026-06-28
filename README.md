@@ -125,6 +125,27 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.5.2 (06/2026)**
+- Refactoring the C and Ada backend - various optimizations and aligments
+- Inline help now aligned with the Gitlab wiki
+
+**4.5.1 (06/2026)**
+- Optimize generation of exported proedures in C (don't copy input parameters to the stack)
+
+**4.5.0 (06/2026)**
+- Introduce support for instances in C backend
+
+**4.4.3 (06/2026)**
+- C backend improvements (aligment with Ada):
+    - generate separate functions for each branch (instead of goto)
+    - support bitstrings
+    - support parallel states (aggregations)
+    - support better strings in general
+    - regression suite passes except for instances
+
+**4.4.2 (06/2026)**
+- Ada backend: fix exit/connect support when returning from nested states
+
 **4.4.1 (03/2026)**
 - Fix support for paramless procedures in PROCESS TYPEs 
 - Update requirement widget version

@@ -36,6 +36,7 @@
 
 import logging
 import operator
+import traceback
 from collections import defaultdict
 from typing import List
 
@@ -57,9 +58,25 @@ class Expression:
         self.expr = None
 
         # exprType is an ASN.1 type (as exported by asn1scc)
-        self.exprType = None
+        self._exprType = None
+        self.expr_type_log = ""
         # Hint for code generators: intermediate storage identifier
         self.tmpVar = -1
+
+    @property
+    def exprType(self):
+        ''' Property for exprType - allows logging modifications '''
+        return self._exprType
+
+    @exprType.setter
+    def exprType(self, val):
+        ''' Log call stack each time exprType is modified '''
+        if not hasattr(self, 'expr_type_log'):
+            self.expr_type_log = ""
+        stack = traceback.extract_stack()[:-1]  # Exclude current setter
+        compact_stack = " -> ".join(f"{f.name}({f.lineno})" for f in stack[-5:])
+        self.expr_type_log += f"\n--- Set exprType to {val} ---\n{compact_stack}\n"
+        self._exprType = val
 
     def trace(self):
         ''' Debug output for an expression '''
@@ -275,17 +292,7 @@ class PrimConditional(Primary):
 
 class PrimStringLiteral(Primary):
     ''' Value is a string with quotes '''
-    @property
-    def exprType(self):
-        return self._exprType
-
-    @exprType.setter
-    def exprType(self, val):
-#       name = getattr(self, 'value', self.inputString)
-#       import traceback
-#       traceback.print_stack()
-#       print 'SET type of', name, 'to', val
-        self._exprType = val
+    pass
 
 
 class PrimOctetStringLiteral(PrimStringLiteral):
@@ -546,8 +553,24 @@ class ProcedureCall(Output):
     def __init__(self, defName=''):
         super().__init__(defName)
         # exprType is an ASN.1 type (as exported by asn1scc)
-        self.exprType = None
+        self._exprType = None
+        self.expr_type_log = ""
         self.is_raw = False
+
+    @property
+    def exprType(self):
+        ''' Property for exprType - allows logging modifications '''
+        return self._exprType
+
+    @exprType.setter
+    def exprType(self, val):
+        ''' Log call stack each time exprType is modified '''
+        if not hasattr(self, 'expr_type_log'):
+            self.expr_type_log = ""
+        stack = traceback.extract_stack()[:-1]  # Exclude current setter
+        compact_stack = " -> ".join(f"{f.name}({f.lineno})" for f in stack[-8:])
+        self.expr_type_log += f"\n--- Set exprType to {val} ---\n{compact_stack}\n"
+        self._exprType = val
 
 
 class Terminator:
@@ -1096,6 +1119,8 @@ class Process:
         self.parent = None
         # A process can be referenced (externally defined)
         self.referenced = False
+        # Flag indicating if there are no transitions in the model
+        self.only_procedures = False
         # variables: dictionary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)

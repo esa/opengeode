@@ -76,11 +76,22 @@ def generate(*args, **kwargs):
 
 
 @generate.register(ogAST.Process)
-def _process(process, **kwargs):
+def _process(process, instance=False, **kwargs):
     ''' Generate the code for a complete process (AST Top level) '''
 
     app_parameters = kwargs["options"]
-    process_name = process.processName
+
+    if not instance:
+        process.name = process.instance_of_name or process.processName
+        generic = process.instance_of_name
+        process_instance = process
+        process = process.instance_of_ref or process
+        process_name = process_instance.name
+    else:
+        process.name = process.processName
+        generic = False
+        process_instance = process
+        process_name = process.name
 
     LOG.info(f'Generating C code for process {process_name}')
 
@@ -90,11 +101,135 @@ def _process(process, **kwargs):
     global STRING_INCLUDE
     global LPREFIX
     global TIMER_VARIABLES
+    global IS_INSTANCE
     global PROCESS_NAME
 
     PROCESS_NAME = process_name
 
     TYPES = process.dataview
+    
+    IS_INSTANCE = bool(generic)
+    LPREFIX = '(*ctxt)' if IS_INSTANCE else 'ctxt'
+
+    if instance:
+        type_name_str = process.instance_of_name
+        # Generate the instance wrapper files and return
+        wrapper_c = [
+            f'/* Instance wrapper for {process_instance.processName} */',
+            f'#include "{process_instance.processName.lower()}.h"',
+            f'#include "{type_name_str.lower()}.c"'
+        ]
+        
+        wrapper_h = [
+            f'/* Instance header for {process_instance.processName} */',
+            f'#ifndef __GENERATED_{process_instance.processName.upper()}_H__',
+            f'#define __GENERATED_{process_instance.processName.upper()}_H__',
+            f'#include "{type_name_str.lower()}.h"',
+        ]
+
+        # Allocate the context
+        wrapper_c.append(f'static {ASN1SCC}{type_name_str.capitalize()}_Context ctxt = {{0}};\n')
+
+        # Startup wrapper
+        wrapper_c.append(f'void CInit{process_instance.processName}(void) {{')
+        wrapper_c.append(f'    CInit{type_name_str}(&ctxt);')
+        wrapper_c.append('}\n')
+        wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
+
+        # PI wrappers
+        for pi in process.input_signals:
+            if 'type' in pi:
+                pi_type = type_name(pi['type'])
+                sig = f'void {process_instance.processName}_PI_{pi["name"]}({pi_type} *param)'
+                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt, param)'
+            else:
+                sig = f'void {process_instance.processName}_PI_{pi["name"]}()'
+                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt)'
+            wrapper_c.append(f'{sig} {{')
+            wrapper_c.append(f'    {call};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig};\n')
+
+        # Timer wrappers
+        for timer in process.timers:
+            # set
+            sig_set = f'void {process_instance.processName}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_set = f'{type_name_str}_PI_set_{timer}(&ctxt, val)'
+            wrapper_c.append(f'{sig_set} {{')
+            wrapper_c.append(f'    {call_set};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig_set};\n')
+
+            # reset
+            sig_reset = f'void {process_instance.processName}_PI_reset_{timer}()'
+            call_reset = f'{type_name_str}_PI_reset_{timer}(&ctxt)'
+            wrapper_c.append(f'{sig_reset} {{')
+            wrapper_c.append(f'    {call_reset};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'{sig_reset};\n')
+
+        # RI forwarders (type calling instance)
+        for ri in process.output_signals:
+            if 'type' in ri:
+                ri_type = type_name(ri['type'])
+                sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
+                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
+                call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
+            else:
+                sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
+                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
+                call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
+            
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+
+        for proc in process.procedures:
+            if proc.external:
+                args, call_args = [], []
+                for param in proc.parameters:
+                    p_type = type_name(param["type"])
+                    args.append(f'{p_type} *{param["name"]}')
+                    call_args.append(param["name"])
+                
+                sig_type = f'void {type_name_str}_RI_{proc.inputString}({", ".join(args)})'
+                sig_inst = f'void {process_instance.processName}_RI_{proc.inputString}({", ".join(args)})'
+                call_inst = f'{process_instance.processName}_RI_{proc.inputString}({", ".join(call_args)})'
+
+                wrapper_c.append(f'{sig_type} {{')
+                wrapper_c.append(f'    {call_inst};')
+                wrapper_c.append('}\n')
+                wrapper_h.append(f'extern {sig_inst};\n')
+
+        for timer in process.timers:
+            # set
+            sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+
+            # reset
+            sig_type = f'void {type_name_str}_RI_reset_{timer}()'
+            sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
+            call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
+            wrapper_c.append(f'{sig_type} {{')
+            wrapper_c.append(f'    {call_inst};')
+            wrapper_c.append('}\n')
+            wrapper_h.append(f'extern {sig_inst};\n')
+            
+        wrapper_h.append('#endif\n')
+
+        with open(process_name.lower() + '.c', 'wb') as c_file:
+            c_file.write(u'\n'.join(wrapper_c).encode('latin1'))
+
+        with open(process_name.lower() + '.h', 'wb') as h_file:
+            h_file.write(u'\n'.join(wrapper_h).encode('latin1'))
+
+        return
 
     del OUT_SIGNALS[:]
     OUT_SIGNALS.extend(process.output_signals)
@@ -119,12 +254,16 @@ def _process(process, **kwargs):
         dump('preprocessed_ast.dump', process.parent.parent.ast)
 
     Helper.generate_asn1_datamodel(process)
-    
+
     VARIABLES.update(process.variables)
     MONITORS.update(process.monitors)
 
     del STATES[:]
     STATES.extend(process.mapping.keys())
+
+    # Insert labels before branches
+    Helper.add_labels_before_each_branch(process)
+    Helper.inner_labels_to_floating(process)
 
     beginning_of_include_guard_header_file_code, ending_of_include_guard_header_file_code = generate_header_file_include_guard(process)
     sdl_constants_code = generate_sdl_constants(process)
@@ -133,14 +272,12 @@ def _process(process, **kwargs):
     startup_header_file_code, startup_function_code = generating_startup_function(process, no_renames)
     aggreg_start_proc_code = generating_aggregate_start_funtions(process)
     run_transition_declaration_code = generating_run_transition_declaration(process)
-    nested_states_code = generating_nested_states(process)
+    #nested_states_code = generating_nested_states(process)
     inner_procedures_header_file_code, inner_procedures_declarations_code, inner_procedures_code = processing_inner_procedures(process)
     input_signals_header_file_code, input_signals_code = processing_input_signals(process)
     output_signals_header_file_code, output_signals_code = processing_output_signals(process)
     external_procedures_header_file_code = processing_external_procedures(process, output_signals_code)
     timers_header_file_code = processing_timers(process, output_signals_code)
-
-    Helper.inner_labels_to_floating(process)
 
     continuous_signals_header_file_code, transition_code = processing_transitions_and_floating_labels(process)
     includes_code = generating_includes(process)
@@ -148,36 +285,60 @@ def _process(process, **kwargs):
 
     generated_c_source_code = []
     generated_c_source_code.extend(includes_code)
-    generated_c_source_code.extend(nested_states_code)
+    #generated_c_source_code.extend(nested_states_code)
     generated_c_source_code.extend(sdl_constants_code)
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
-    generated_c_source_code.extend(run_transition_declaration_code)
-    generated_c_source_code.extend(aggreg_start_proc_code)
+    # run_transition_declaration_code is moved to header
+    if not process.only_procedures:
+        generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(startup_function_code)
-    generated_c_source_code.extend(input_signals_code)
+    if not process.only_procedures:
+        generated_c_source_code.extend(input_signals_code)
     generated_c_source_code.extend(output_signals_code)
     generated_c_source_code.extend(inner_procedures_code)
-    generated_c_source_code.extend(transition_code)
-    generated_c_source_code.extend(generate_current_state_to_str_code)
+    if not process.only_procedures:
+        generated_c_source_code.extend(transition_code)
+        generated_c_source_code.extend(generate_current_state_to_str_code)
 
     with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
 
     generated_h_source_code = []
     generated_h_source_code.extend(beginning_of_include_guard_header_file_code)
+    
+    for each in process.DV.asn1Files:
+        hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
+        generated_h_source_code.append(f'#include "{hname.split(os.sep)[-1]}"')
+
+    generated_h_source_code.append(f'#include \"{process.name.lower()}_datamodel.h\"\n')
+
+    if not process.only_procedures:
+        generated_h_source_code.extend(run_transition_declaration_code)
     generated_h_source_code.extend(startup_header_file_code)
     generated_h_source_code.extend(inner_procedures_header_file_code)
-    generated_h_source_code.extend(input_signals_header_file_code)
+    if not process.only_procedures:
+        generated_h_source_code.extend(input_signals_header_file_code)
     generated_h_source_code.extend(output_signals_header_file_code)
-    generated_h_source_code.extend(continuous_signals_header_file_code)
+    if not process.only_procedures:
+        generated_h_source_code.extend(continuous_signals_header_file_code)
     generated_h_source_code.extend(external_procedures_header_file_code)
     generated_h_source_code.extend(timers_header_file_code)
     generated_h_source_code.extend(ending_of_include_guard_header_file_code)
 
     with open(process_name.lower() + '.h', 'wb') as h_file:
         h_file.write(u'\n'.join(indent_c_code(generated_h_source_code)).encode('latin1'))
+
+    if process_instance is not process:
+        # Generate an instance of the process type, too.
+        # First copy the list of timers to the instance (otherwise the
+        # instance would miss some PIs and RIs to set the actual timers)
+        process_instance.timers = process.timers
+        # And for the same reason copy the continuous states, needed to
+        # determine if Check_Queue is needed
+        process_instance.cs_mapping = process.cs_mapping
+        generate(process_instance, instance=True, options=app_parameters)
 
 
 # Processing of the AST
@@ -309,7 +470,7 @@ def _decision(dec, **kwargs):
                     if isinstance(constant, (ogAST.PrimBitStringLiteral, ogAST.PrimOctetStringLiteral)):
                         ans_str = str(constant.numeric_value)
 
-                    exp = u'(({q}) {op} {ans})'.format(q=question_string, op='==' if op.operand == '=' else op.operand, ans=ans_str)
+                    exp = '(({q}) {op} {ans})'.format(q=question_string, op='==' if op.operand == '=' else op.operand, ans=ans_str)
 
                 stmts.append(sep + exp + ')')
                 stmts.append('{')
@@ -326,7 +487,10 @@ def _decision(dec, **kwargs):
                     for exit in exitcalls:
                         stmts.append(exit)
 
-                    stmts.append(f'trId = {branch_to};')
+                    if isinstance(branch_to, str):
+                        stmts.append(f'return {branch_to};')
+                    else:
+                        stmts.append(f'trId = {branch_to};')
 
                 #stmts.append('}')  not here
                 sep = '} else if('
@@ -384,31 +548,60 @@ def _decision(dec, **kwargs):
 
 @generate.register(ogAST.Floating_label)
 def _floating_label(label, **kwargs):
-    ''' Generate the code for a floating label (C label + transition) '''
+    ''' Generate the code for a floating label (C function or label) '''
 
     code = []
     local_decl = []
 
+    # Check if we are in a procedure
+    try:
+        context = label.path[-1]
+        is_procedure = 'PROCEDURE' in context
+    except Exception:
+        is_procedure = False
+
     # Add the traceability information
     code.extend(traceability(label))
-    code.append(u'{label}:'.format(label=label.inputString.lower()))
+    if is_procedure:
+        code.append(u'{label}:'.format(label=label.inputString.lower()))
+    else:
+        enum_name = f'{PROCESS_NAME}_Branches'
+        ctxt_arg = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_Context *ctxt' if IS_INSTANCE else 'void'
+        code.append(f'static enum {enum_name} branch_{label.inputString.lower()}({ctxt_arg})')
+        code.append('{')
 
     if label.transition:
         code_trans, local_trans = generate(label.transition)
-        code.extend(code_trans)
-        local_decl.extend(local_trans)
+        if is_procedure:
+            code.extend(code_trans)
+            local_decl.extend(local_trans)
+        else:
+            code.extend(set(local_trans))
+            code.extend(code_trans)
+            code.append('}')
     else:
-        code.append('return;')
+        if is_procedure:
+            code.append('return;')
+        else:
+            code.append('return continuous_signals;')
+            code.append('}')
 
-    return code, local_decl
+    return code, local_decl if is_procedure else []
 
 
 @generate.register(ogAST.Label)
 def _label(lab, **kwargs):
-    ''' Transition following labels are generated in a separate section
-        for visibility reasons
-    '''
-    return ['goto {label};'.format(label=lab.inputString.lower())], []
+    ''' Transition following labels '''
+    try:
+        context = lab.path[-1]
+        is_procedure = 'PROCEDURE' in context
+    except Exception:
+        is_procedure = False
+
+    if is_procedure:
+        return ['goto {label};'.format(label=lab.inputString.lower())], []
+    else:
+        return [f'return {lab.inputString.lower()};'], []
 
 
 @generate.register(ogAST.Output)
@@ -425,7 +618,7 @@ def _call_external_function(output, **kwargs):
     need_prefix = True
 
     # Add the traceability information
-    stmts.extend(traceability(output))
+    trace_stmts = traceability(output)
 
     for out in output.output:
         signal_name = out['outputName']
@@ -436,14 +629,24 @@ def _call_external_function(output, **kwargs):
             # but not yet complex ASN.1 structures (sequence/seqof/choice)
             for param in out['params'][:-1]:
                 write_stmts, _, local = write_statement(param, newline=False)
-                stmts.extend(write_stmts)
-                decls.extend(local)
+                if local:
+                    stmts.append('{')
+                    stmts.extend(local)
+                    stmts.extend(write_stmts)
+                    stmts.append('}')
+                else:
+                    stmts.extend(write_stmts)
 
             for param in out['params'][-1:]:
                 # Last parameter - add newline if necessary
                 write_stmts, _, local = write_statement(param, newline=True if signal_name.lower() == 'writeln' else False)
-                stmts.extend(write_stmts)
-                decls.extend(local)
+                if local:
+                    stmts.append('{')
+                    stmts.extend(local)
+                    stmts.extend(write_stmts)
+                    stmts.append('}')
+                else:
+                    stmts.extend(write_stmts)
 
             continue
         elif signal_name.lower() == 'reset_timer':
@@ -550,9 +753,16 @@ def _call_external_function(output, **kwargs):
                 # (If needed, i.e. if argument is not a local variable)
                 if param_direction == 'in' and (not (isinstance(param, ogAST.PrimVariable) and p_id.startswith(LPREFIX))  or isinstance(param, ogAST.PrimFPAR)):
                     tmp_id = 'tmp{}'.format(out['tmpVars'][idx])
+                    basic_param = find_basic_type(param_type)
+
+                    is_ground = not param_stmts and not p_local
 
                     if isinstance(param, ogAST.PrimStringLiteral):
                         decls.append('{sort} {tmp} = {init};'.format(tmp=tmp_id, sort=typename, init=array_content(param, p_id, find_basic_type(param_type))))
+                    elif is_ground:
+                        if isinstance(param, ogAST.PrimSequenceOf):
+                            p_id = array_content(param, p_id, find_basic_type(param_type))
+                        decls.append(f'{typename} {tmp_id} = ({typename}) {p_id};')
                     else:
                         decls.append('{sort} {tmp};'.format(tmp=tmp_id, sort=typename))
 
@@ -560,6 +770,12 @@ def _call_external_function(output, **kwargs):
                             p_id = array_content(param, p_id, find_basic_type(param_type))
 
                         stmts.append(f'{tmp_id} = ({typename}) {p_id};')
+                    if isinstance(param, ogAST.ExprAppend):
+                        # Compute the size of the append expression
+                        app_len = append_size(param)
+                        if basic_param.Min != basic_param.Max:
+                            stmts.append(f'{tmp_id}.nCount = {app_len};')
+
 
                     list_of_params.append("&{}{}".format(tmp_id,", sizeof({})".format(tmp_id) if is_out_sig else ""))
                 else:
@@ -599,13 +815,19 @@ def _call_external_function(output, **kwargs):
                 full_name = f'{SEPARATOR}{PROCESS_NAME.lower()}_{proc.inputString}'
             else:
                 full_name = f'{PROCESS_NAME.lower()}_PI_{proc.inputString}'
+                
+            if IS_INSTANCE:
+                list_of_params.insert(0, 'ctxt')
+                
             if list_of_params:
                 params=', '.join(list_of_params)
                 stmts.append(f'{full_name}({params});')
             else:
                 stmts.append(f'{full_name}();')
 
-    return stmts, decls
+    if decls:
+        return trace_stmts + ['{'] + decls + stmts + ['}'], []
+    return trace_stmts + stmts, decls
 
 
 @generate.register(ogAST.Procedure)
@@ -637,7 +859,7 @@ def _inner_procedure(proc, **kwargs):
         elem = {var['name']: (var['type'], None)}
         VARIABLES.update(elem)
         LOCAL_VARIABLES.update(elem)
-        if var.get('direction') == 'out':
+        if var.get('direction') == 'out' or (proc.exported and var.get('direction') == 'in'):
             LOCAL_OUT_VARIABLES.update(elem)
 
     if proc.external:
@@ -665,19 +887,6 @@ def _inner_procedure(proc, **kwargs):
         code.append(procedure_declaration)
         code.append('{')
 
-        if proc.exported:
-            # The input parameters of exported procedures are pointers,
-            # so they must be copied in local variables (the procedure
-            # statements do not expect pointers at this level
-            for fpar in proc.fpar:
-                typename = type_name(fpar['type'])
-                name = fpar.get('name').lower()
-                direction = fpar.get('direction')
-
-                if direction != 'in':
-                    continue
-
-                code.append(f'{typename} {name} = *in__{name};')
 
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
@@ -786,11 +995,16 @@ def _task_assign(task, **kwargs):
 
         # ExprAssign only returns code statements, no string
         code_assign, _, decl_assign = expression(expr)
-        
-        code.extend(code_assign)
-        local_decl.extend(decl_assign)
-        
-    return code, local_decl
+
+        if decl_assign:
+            code.append('{')
+            code.extend(decl_assign)
+            code.extend(code_assign)
+            code.append('}')
+        else:
+            code.extend(code_assign)
+
+    return code, []
 
 
 @generate.register(ogAST.TaskForLoop)
@@ -921,6 +1135,13 @@ def _transition(tr, **kwargs):
             if tr.terminator.label:
                 stmts.append(f'{ns}:')
 
+            # check if we are in a procedure using the path
+            try:
+                context = tr.terminator.path[-1]
+                is_procedure = 'PROCEDURE' in context
+            except Exception:
+                is_procedure = False
+
             next_state_id = find_state_in_states(tr.terminator.next_id)
             next_state_id_str = ''
 
@@ -944,18 +1165,27 @@ def _transition(tr, **kwargs):
                         stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
                                         f' {generate_state_name(tr.terminator.inputString)};')
                     # Call the START function of the state aggregation
-                    stmts.append(f'{tr.terminator.next_id}();')
-                    stmts.append('trId = -1;')
+                    stmts.append(f'{tr.terminator.next_id.lower()}();')
+                    if is_procedure:
+                        stmts.append('trId = -1;')
+                    else:
+                        stmts.append('return continuous_signals;')
 
                 elif not history:
-                    stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
-
                     if tr.terminator.next_id == -1:
                         if not tr.terminator.substate:
                             stmts.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
                         else:
                             stmts.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state ='
                                         f' {generate_state_name(tr.terminator.inputString)};')
+                    if is_procedure:
+                        stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
+                    else:
+                        if tr.terminator.next_id == -1:
+                            stmts.append(f'return continuous_signals;')
+                        else:
+                            stmts.append(f'return {str(tr.terminator.next_id).lower()};')
+
                 else:
                     if ns != "-*" and any(next_id
                             for next_id in tr.terminator.candidate_id.keys()
@@ -968,23 +1198,33 @@ def _transition(tr, **kwargs):
                                 for each in sta:
                                     stmts.append(f'case {generate_state_name(each)}:')
                                     stmts.append('{')
-                                    stmts.append(f'trId = {nid};')
+                                    if is_procedure:
+                                        stmts.append(f'trId = {nid};')
+                                    else:
+                                        stmts.append(f'return {nid.lower()};')
                                     stmts.append('break;')
                                     stmts.append('}')
 
-                        stmts.extend(['default:','{','trId = -1;','break;','}','}'])
+                        stmts.extend(['default:','{','trId = -1;' if is_procedure else 'return continuous_signals;','break;','}','}'])
                     else:
-                        stmts.append('trId = -1;')
+                        if is_procedure:
+                            stmts.append('trId = -1;')
+                        else:
+                            stmts.append('return continuous_signals;')
 
-                stmts.append('goto continuous_signals;')
+                if is_procedure:
+                    stmts.append('goto continuous_signals;')
             elif tr.terminator.kind == 'join':
-                stmts.append('goto {label};'.format(label=tr.terminator.inputString.lower()))
+                if is_procedure:
+                    stmts.append('goto {label};'.format(label=tr.terminator.inputString.lower()))
+                else:
+                    stmts.append(f'return {tr.terminator.inputString.lower()};')
             elif tr.terminator.kind == 'stop':
                 pass
                 # TODO
             elif tr.terminator.kind == 'return':
                 return_string = ''
-                
+
                 aggregate = False
                 if tr.terminator.substate:
                     aggregate = True
@@ -1008,20 +1248,69 @@ def _transition(tr, **kwargs):
                     stmts.append('{')
 
                 if tr.terminator.next_id == -1:
-                    if tr.terminator.return_expr:
-                        return_stmt, return_string, return_decls = expression(tr.terminator.return_expr)
+                    retexp = tr.terminator.return_expr
+                    if retexp:
+                        return_stmt, return_string, return_decls = expression(retexp)
                         stmts.extend(return_stmt)
                         decls.extend(return_decls)
 
-                    stmts.append('return{};'.format(' ' + return_string if return_string else ''))
+                        if retexp.is_raw and is_procedure:
+                            proc_name = context.split()[-1]
+                            proc = find_procedure_by_name(proc_name)
+                            if proc and proc.return_type:
+                                basic_return = find_basic_type(proc.return_type)
+                                if basic_return.kind == 'IA5StringType':
+                                    global VAR_COUNTER
+                                    var_name = f"_ret_{VAR_COUNTER}"
+                                    VAR_COUNTER += 1
+                                    t_name = type_name(proc.return_type)
+                                    val = retexp.value[1:-1].replace('"', '\\"')
+                                    init_val = f'"{val}"'
+                                    decls.append(f"static {t_name} {var_name} = {init_val};")
+                                    return_string = var_name
+
+                    if is_procedure:
+                        stmts.append('return{};'.format(' ' + return_string if return_string else ''))
+                    else:
+                        stmts.append(f'return branch_end;')
                 else:
-                    stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
-                    stmts.append('goto continuous_signals;')
+                    # next_id != -1, can be a return from an inner state
+                    if is_procedure:
+                        stmts.append('trId = {next_state};'.format(next_state=next_state_id_str))
+                        stmts.append('goto continuous_signals;')
+                    else:
+                        # from Ada backend
+                        # We have to check recursively if the next transition
+                        # ends with a JOIN to find the next branch to execute
+                        last_path = tr.terminator.path[-1].split()
+                        if last_path[0] == 'STATE':
+                            state_name = last_path[1]
+                            def find_a_label(trans):
+                                if not hasattr(trans, 'terminator'):
+                                    # Return in a parallel state
+                                    return "continuous_signals"
+                                if trans.terminator.kind == 'join':
+                                    return trans.terminator.inputString
+                                return find_a_label(trans.terminator.next_trans) # ?
+
+                            # If there are multiple next_trans, it's because
+                            # we are exiting an instance of a state type.
+                            # (not supported in C - check Ada backend when needed)
+                            if len(tr.terminator.next_trans) == 1:
+                                ret_branch = find_a_label(tr.terminator.next_trans[0])
+                                stmts.append(f'return {ret_branch.lower()};')
+                            else:
+                                ...
+
+                        #stmts.append(f'return {str(next_state_id_str).lower()}; // UGH2')
                 if aggregate:
                     stmts.append('} else')
                     stmts.append('{')
-                    stmts.append('trId = -1;')
-                    stmts.append('goto continuous_signals;')
+                    if is_procedure:
+                        stmts.append('trId = -1;')
+                        stmts.append('goto continuous_signals;')
+                    else:
+                        stmts.append('return continuous_signals;')
                     stmts.append('}')
 
     if empty_transition:
@@ -1031,7 +1320,7 @@ def _transition(tr, **kwargs):
 
 
 @singledispatch
-def expression(expr):
+def expression(expr, **kwargs):
     ''' Generate the code for Expression-classes, returning 3 things:
         - list of statements
         - useable string corresponding to the evaluation of the expression,
@@ -1042,7 +1331,7 @@ def expression(expr):
 
 
 @expression.register(ogAST.PrimVariable)
-def _primary_variable(prim):
+def _primary_variable(prim, **kwargs):
     ''' Single variable reference '''
 
     prim_variable_raw_value = prim.value[0]
@@ -1076,7 +1365,7 @@ def _primary_variable(prim):
 
 
 @expression.register(ogAST.PrimCall)
-def _prim_call(prim):
+def _prim_call(prim, **kwargs):
     global MATH_INCLUDE
 
     function_name = prim.value[0].lower()
@@ -1160,9 +1449,9 @@ def _prim_call(prim):
             ret_string += min_length
         else:
             if isinstance(exp, ogAST.PrimSubstring):
-                range_str = u"max_range_{var_counter} - min_range_{var_counter} + 1".format(var_counter=VAR_COUNTER)
+                range_str = "max_range_{var_counter} - min_range_{var_counter} + 1".format(var_counter=VAR_COUNTER)
             else:
-                range_str = u"{}.nCount".format(param_str)
+                range_str = f"{param_str}.nCount"
 
             ret_string += ('{}'.format(range_str))
 
@@ -1356,24 +1645,40 @@ def _prim_call(prim):
 
 
 @expression.register(ogAST.PrimIndex)
-def _prim_index(prim):
+def _prim_index(prim, **kwargs):
+    # readonly allows to check if we are assigning to or reading from the value
+    # it is especially useful here for BIT STRING elements as they are packed
+    # so reading a bit requires a bitwise operation
+
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
 
     receiver = prim.value[0]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
+    expr_bs = find_basic_type(receiver.exprType)
     string = receiver_string
 
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0])
-    string += u'.arr'
+    idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0], readonly=ro)
+    string += '.arr'
 
     if not isinstance(receiver, ogAST.PrimSubstring):
-        string += u'[{idx}]'.format(idx=idx_string)
+        if expr_bs.kind == 'BitStringType' and ro:
+            phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
+            # .arr is an array so we have to read the bit in the right byte
+            # depending on the size of the array
+            string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
+        elif expr_bs.kind == 'BitStringType' and not ro:
+            # It is for a write to a bit index: here we only compute the
+            # place in the byte array.
+            string += f'[{idx_string} / 8]'
+        else:
+            string += f'[{idx_string}]'
     else:
-        string += u'[{idx} + min_range_{var_counter}]'.format(idx=idx_string, var_counter=VAR_COUNTER)
+        string += f'[{idx_string} + min_range_{VAR_COUNTER}]'
 
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
@@ -1382,15 +1687,16 @@ def _prim_index(prim):
 
 
 @expression.register(ogAST.PrimSelector)
-def _prim_selector(prim):
+def _prim_selector(prim, **kwargs):
     ''' Selector (field access with '!' separation) '''
 
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
 
     receiver = prim.value[0]
     field_name = prim.value[1]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
     string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
@@ -1421,7 +1727,7 @@ def _prim_selector(prim):
 
 
 @expression.register(ogAST.PrimStateReference)
-def _primary_state_reference(prim):
+def _primary_state_reference(prim, **kwargs):
     ''' Reference to the current state '''
 
     error = 'To Be Implemented'
@@ -1439,13 +1745,13 @@ def _primary_state_reference(prim):
 @expression.register(ogAST.ExprLe)
 @expression.register(ogAST.ExprDiv)
 @expression.register(ogAST.ExprRem)
-def _basic_operators(expr):
+def _basic_operators(expr, **kwargs):
     ''' Expressions with two sides '''
 
     code, local_decl = [], []
 
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     operand = '%' if isinstance(expr, ogAST.ExprRem) else expr.operand
     string = u'({left} {op} {right})'.format(left=left_str, op=operand, right=right_str)
@@ -1460,12 +1766,12 @@ def _basic_operators(expr):
 
 
 @expression.register(ogAST.ExprMod)
-def _basic_operators(expr):
+def _basic_operators(expr, **kwargs):
     ''' Expressions with two sides '''
     code, local_decl = [], []
 
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     string = u'({left} % {right})'.format(left=left_str, op=expr.operand, right=right_str)
 
@@ -1480,12 +1786,12 @@ def _basic_operators(expr):
 
 @expression.register(ogAST.ExprEq)
 @expression.register(ogAST.ExprNeq)
-def _equality(expr):
+def _equality(expr, **kwargs):
     global VAR_COUNTER
     global VARIABLES
 
-    stmts, left_string, decls = expression(expr.left)
-    right_stmts, right_string, right_local = expression(expr.right)
+    stmts, left_string, decls = expression(expr.left, readonly=1)
+    right_stmts, right_string, right_local = expression(expr.right, readonly=1)
 
     stmts.extend(right_stmts)
     decls.extend(right_local)
@@ -1545,7 +1851,7 @@ def _equality(expr):
                 VAR_COUNTER = VAR_COUNTER + 1
 
                 if lbty.kind == 'IA5StringType':
-                    decls.append('static {ty} constant_{var_counter} = {{{values}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
+                    decls.append('static {ty} constant_{var_counter} = {init};'.format(ty=actual_type, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, lbty)))
                     right_string = 'constant_{var_counter}'.format(var_counter=VAR_COUNTER)
                 else:
                     decls.append('static {ty} constant_{var_counter} = ({ty}) {{{size}, {{{values}}}}};'.format(ty=actual_type, var_counter=VAR_COUNTER, size=rbty.Max, values=right_string))
@@ -1596,7 +1902,7 @@ def _equality(expr):
 
 
 @expression.register(ogAST.ExprAssign)
-def _assign_expression(expr):
+def _assign_expression(expr, **kwargs):
     LOG.debug('Expanding assignment: ' + expr.inputString)
 
     global LEFT_TYPE
@@ -1611,16 +1917,8 @@ def _assign_expression(expr):
     basic_right = find_basic_type(expr.right.exprType)
 
     LEFT_TYPE=type_name(expr.left.exprType)
-#   if variable_name in VARIABLES:
-#       LEFT_TYPE = type_name(VARIABLES[variable_name][0])
-#   else:
-#       if basic_left.__name__ == 'Subtype':  # numerical type
-#           breakpoint()
-#           LEFT_TYPE = ''
-#       else:
-#           LEFT_TYPE = 'asn1Scc' + basic_left.__name__[:-5].replace('-','_')
 
-    right_stmts, right_string, right_decls = expression(expr.right)
+    right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
     # If left side is a string/seqOf and right side is a substring, we must
     # assign the .arr and .Length parts properly
     stmts.extend(left_stmts)
@@ -1628,20 +1926,34 @@ def _assign_expression(expr):
     decls.extend(left_decls)
     decls.extend(right_decls)
 
-    if (basic_left.kind == 'IA5StringType' and isinstance(expr.right, ogAST.PrimStringLiteral)):
+    if basic_left.kind == 'IA5StringType':
         VAR_COUNTER = VAR_COUNTER + 1
-        decls.append('{ty} assign_var_{var_counter} = {{{init}}};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=right_string))
         decls.append('asn1SccUint var_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
-
-        stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_right.Max))
-        stmts.append('{')
-        stmts.append('{lvar}[var_counter_{var_counter}] = assign_var_{var_counter}[var_counter_{var_counter}];'.format(lvar=left_string, var_counter=VAR_COUNTER))
-        stmts.append('}')
-    elif basic_left.kind in ('SequenceOfType', 'OctetStringType'):
+        if isinstance(expr.right, ogAST.PrimStringLiteral):
+            decls.append('{ty} assign_var_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, basic_left)))
+            right_var = 'assign_var_{var_counter}'.format(var_counter=VAR_COUNTER)
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_left.Max))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
+        elif isinstance(expr.right, ogAST.PrimSubstring):
+            right_var = right_string
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} <= max_range_{var_counter} - min_range_{var_counter}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter} + min_range_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
+            stmts.append('if (var_counter_{var_counter} < {size}) {lvar}[var_counter_{var_counter}] = \'\\0\';'.format(lvar=left_string, var_counter=VAR_COUNTER, size=basic_left.Max))
+        else:
+            right_var = right_string
+            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_left.Max))
+            stmts.append('{')
+            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
+            stmts.append('}')
+    elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         rlen = "{}.nCount".format(right_string)
 
         if isinstance(expr.right, ogAST.PrimSubstring):
-            rlen = u'max_range_{var_counter} - min_range_{var_counter} + 1'.format(var_counter=VAR_COUNTER)
+            rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
 
             decls.append('asn1SccUint var_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
             stmts.append('{')
@@ -1652,8 +1964,9 @@ def _assign_expression(expr):
             stmts.append('}')
         elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             VAR_COUNTER = VAR_COUNTER + 1
-            decls.append('{ty} assign_var_{var_counter} = {init};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER, init=array_content(expr.right, right_string, basic_left)))
-            strings.append("{lvar} = assign_var_{var_counter};".format(lvar=left_string, var_counter=VAR_COUNTER))
+            decls.append(
+                    f'{LEFT_TYPE} assign_var_{VAR_COUNTER} = {array_content(expr.right, right_string, basic_left)};')
+            strings.append(f"{left_string} = assign_var_{VAR_COUNTER};")
             rlen = None
         elif isinstance(expr.right, ogAST.ExprNot) and isinstance(expr.right.expr, ogAST.PrimSequenceOf):
             strings.append("{ls} = ({ty}) {rs};".format(ls=left_string, ty=LEFT_TYPE, rs=right_string))
@@ -1665,16 +1978,22 @@ def _assign_expression(expr):
 
         if rlen and basic_left.Min != basic_left.Max:
             strings.append(u"{lvar}.nCount= {rlen};".format(lvar=left_string, rlen=rlen))
+    elif isinstance(expr.left, ogAST.PrimIndex):
+        # check if it is an assignment of a single bit of a BIT STRING
+        leftbs = find_basic_type(expr.left.value[0].exprType)
+        leftIsBitString = leftbs.kind == 'BitStringType'
+        if leftIsBitString:
+            _, bit_idx, _ = expression(expr.left.value[1]['index'][0])
+            bit = f'({leftbs.Max} - 1 - {bit_idx})'
+            res = f"({right_string} ? {left_string} | (1u << {bit} % 8) : {left_string} & ~(1u << {bit} % 8))"
+            strings.append(f"{left_string} = {res};")
+        else:
+            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // index assignment")
     else:
         if isinstance(expr.right, ogAST.PrimSequence):
-            # not sure why we need an intermediate variable here...removed it
-            #VAR_COUNTER = VAR_COUNTER + 1
-            #decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
-            #stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {right_string};')
-            #stmts.append('{ls} = constant_{var_counter};'.format(ls=left_string, var_counter=VAR_COUNTER))
             stmts.append(f'{left_string} = ({LEFT_TYPE}) {right_string};')
         else:
-            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};")
+            strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // default assignment")
 
     stmts.extend(strings)
     LOG.debug('Expanding assignment: ' + expr.inputString + ': DONE')
@@ -1686,12 +2005,12 @@ def _assign_expression(expr):
 @expression.register(ogAST.ExprAnd)
 @expression.register(ogAST.ExprXor)
 @expression.register(ogAST.ExprImplies)
-def _bitwise_operators(expr):
+def _bitwise_operators(expr, **kwargs):
     ''' Logical operators '''
 
     stmts, decls = [], []
-    left_stmts, left_string, left_local = expression(expr.left)
-    right_stmts, right_string, right_local = expression(expr.right)
+    left_stmts, left_string, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_string, right_local = expression(expr.right, readonly=1)
     basic_type = find_basic_type(expr.exprType)
 
     if basic_type.kind != 'BooleanType':
@@ -1752,7 +2071,7 @@ def _bitwise_operators(expr):
 
 
 @expression.register(ogAST.ExprNot)
-def _not_expression(expr):
+def _not_expression(expr, **kwargs):
     ''' Generate the code for a not expression '''
 
     stmts, decls = [], []
@@ -1762,7 +2081,7 @@ def _not_expression(expr):
         for each in expr.expr.value:
             each.value[0] = 'true' if each.value[0] == 'false' else 'false'
 
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
     stmts.extend(expr_stmts)
     decls.extend(expr_local)
 
@@ -1808,11 +2127,11 @@ def _not_expression(expr):
 
 
 @expression.register(ogAST.ExprNeg)
-def _neg_expression(expr):
+def _neg_expression(expr, **kwargs):
     ''' Generate the code for a negative expression '''
 
     code, local_decl = [], []
-    expr_stmts, expr_str, expr_local = expression(expr.expr)
+    expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
     string = u'(-{expr})'.format( expr=expr_str)
     code.extend(expr_stmts)
     local_decl.extend(expr_local)
@@ -1821,7 +2140,7 @@ def _neg_expression(expr):
 
 
 @expression.register(ogAST.ExprAppend)
-def _append(expr):
+def _append(expr, **kwargs):
     ''' Generate code for the APPEND construct: a // b '''
 
     LOG.debug(str(type(expr.left)) + str(type(expr.right)))
@@ -1834,14 +2153,15 @@ def _append(expr):
 
     lbty = find_basic_type(expr.left.exprType)
     rbty = find_basic_type(expr.right.exprType)
+    res_bty = find_basic_type(getattr(expr, 'expected_type', expr.exprType))
 
     stmts.append('{')
 
-    left_stmts, left_string, left_decls = expression(expr.left)
+    left_stmts, left_string, left_decls = expression(expr.left, readonly=1)
     stmts.extend(left_stmts)
     decls.extend(left_decls)
 
-    right_stmts, right_string, right_decls = expression(expr.right)
+    right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
     stmts.extend(right_stmts)
     decls.extend(right_decls)
 
@@ -1910,7 +2230,7 @@ def _append(expr):
         #stmts.append(f'memcpy_temp_{VAR_COUNTER} = {left_string};')
 
         #Then append the right part
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < {right_string}.nCount; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < {right_string}.nCount && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {res_bty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[memcpy_counter_{VAR_COUNTER}];')
         stmts.append('}')
@@ -1926,7 +2246,7 @@ def _append(expr):
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -1952,13 +2272,13 @@ def _append(expr):
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, ogAST.PrimVariable):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
+        decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
 
         LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -1973,7 +2293,7 @@ def _append(expr):
 
         #First copy left part in the result
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
@@ -1984,12 +2304,13 @@ def _append(expr):
         decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
         decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
         decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
+        stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount = 0; // initialize size before append')
         stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {{{rbty.Max}, {{{right_string}}}}};')
 
         LOCAL_VARIABLE_TYPES[f'memcpy_temp_{VAR_COUNTER}'] = LEFT_TYPE
 
         #First copy left part in the result
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {res_bty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter}] = {ls}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, ls=left_string))
         stmts.append('}')
@@ -2018,7 +2339,7 @@ def _append(expr):
         stmts.append(f'memcpy_temp_{VAR_COUNTER} = ({LEFT_TYPE}) {{{lbty.Max}, {{{left_string}}}}};')
 
         #Then append the right part (PrimSubString)
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1; memcpy_counter_{VAR_COUNTER}++)')
+        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {res_bty.Max}; memcpy_counter_{VAR_COUNTER}++)')
         stmts.append('{')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[min_range_{VAR_COUNTER-1} + memcpy_counter_{VAR_COUNTER}];')
         stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount++;')
@@ -2056,7 +2377,7 @@ def _append(expr):
 
         #Append right part single value
         if find_basic_type(expr.right.exprType).kind == 'SequenceOfType':
-            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string))
+            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
             stmts.append(u'{')
             stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
             stmts.append(u'}')
@@ -2075,7 +2396,7 @@ def _append(expr):
         stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
 
         #Then append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} <= (max_range_{var_counter1} - min_range_{var_counter1}); memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} <= (max_range_{var_counter1} - min_range_{var_counter1}) && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'
                 .format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, rs=right_string))
@@ -2100,7 +2421,7 @@ def _append(expr):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount && constant_left_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + constant_left_{var_counter}.nCount] = constant_right_{var_counter}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER))
         stmts.append(u'}\n')
@@ -2124,7 +2445,7 @@ def _append(expr):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < constant_right_{var_counter}.nCount && {left}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, left=left_string, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + {left}.nCount] = constant_right_{var_counter}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, left=left_string))
         stmts.append(u'}\n')
@@ -2148,25 +2469,26 @@ def _append(expr):
         stmts.append(u'}\n')
 
         # Append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right}.nCount; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right=right_string))
+        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right}.nCount && constant_left_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right=right_string, max_size=res_bty.Max))
         stmts.append(u'{')
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter} + constant_left_{var_counter}.nCount] = {right}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, right=right_string))
         stmts.append(u'}\n')
 
-        stmts.append(u'memcpy_temp_{var_counter}.nCount = constant_left_{var_counter}.nCount + {right}.nCount;'.format(var_counter=VAR_COUNTER, right=right_string))
+        stmts.append(u'memcpy_temp_{var_counter}.nCount = constant_left_{var_counter}.nCount + memcpy_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     else:
         LOG.error("Append expression not supported in C backend: " + expr.inputString)
         raise NotImplementedError(str(type(expr.left)) + ' and ' + str(type(expr.right)))
 
-    stmts.append(u'}')
+    #stmts.append(f'if ({string}.nCount > {lbty.Max}) {string}.nCount = {max_size};')
+    stmts.append('}')
 
     return stmts, string, decls
 
 
 @expression.register(ogAST.ExprIn)
-def _expr_in(expr):
+def _expr_in(expr, **kwargs):
     ''' IN expressions: check if item is in a SEQUENCE OF '''
 
     # Check if item is in a SEQUENCE OF
@@ -2175,8 +2497,8 @@ def _expr_in(expr):
 
     string = ''
     stmts, decls = [], []
-    left_stmts, left_str, left_local = expression(expr.left)
-    right_stmts, right_str, right_local = expression(expr.right)
+    left_stmts, left_str, left_local = expression(expr.left, readonly=1)
+    right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
@@ -2240,7 +2562,7 @@ def _expr_in(expr):
 
 
 @expression.register(ogAST.PrimEnumeratedValue)
-def _enumerated_value(primary):
+def _enumerated_value(primary, **kwargs):
     ''' Generate code for an enumerated value '''
 
     basic_type = find_basic_type(primary.exprType)
@@ -2266,7 +2588,7 @@ def _enumerated_value(primary):
 
 
 @expression.register(ogAST.PrimChoiceDeterminant)
-def _choice_determinant(primary):
+def _choice_determinant(primary, **kwargs):
     ''' Generate code for a choice determinant (enumerated) '''
 
     enumerant = primary.value[0].replace('_', '-').lower()
@@ -2282,7 +2604,7 @@ def _choice_determinant(primary):
 
 @expression.register(ogAST.PrimInteger)
 @expression.register(ogAST.PrimReal)
-def _integer(primary):
+def _integer(primary, **kwargs):
     ''' Generate code for a raw numerical value  '''
 
     string = primary.value[0]
@@ -2290,7 +2612,7 @@ def _integer(primary):
 
 
 @expression.register(ogAST.PrimBoolean)
-def _boolean(primary):
+def _boolean(primary, **kwargs):
     ''' Generate code for a raw boolean value  '''
 
     string = primary.value[0]
@@ -2306,7 +2628,7 @@ def _null(primary, **kwargs):
 
 
 @expression.register(ogAST.PrimEmptyString)
-def _empty_string(primary):
+def _empty_string(primary, **kwargs):
     ''' Generate code for an empty SEQUENCE OF: {} '''
 
     typename = type_name(primary.exprType)
@@ -2316,13 +2638,20 @@ def _empty_string(primary):
 
 
 @expression.register(ogAST.PrimStringLiteral)
-def _string_literal(primary):
+def _string_literal(primary, **kwargs):
     ''' Generate code for a string (Octet String) '''
-    
+
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
-    # as expected by the Ada type corresponding to Octet String
-    if isinstance(primary, ogAST.PrimOctetStringLiteral):
+    if isinstance(primary, ogAST.PrimBitStringLiteral):
+        # here we have a bit string literal and inside primary.bitarray
+        # we have something like ['0', '1']
+        # In C the representation is packed in a byte (for bitstings <= 8 bits)
+        # so we must set it using proper bitwise logic
+        bits = ''.join(primary.bit_array)
+        c_value = f"0b{bits}"
+        return [], c_value, []
+    elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
     else:
@@ -2333,14 +2662,14 @@ def _string_literal(primary):
 
 
 @expression.register(ogAST.PrimConstant)
-def _constant(primary):
+def _constant(primary, **kwargs):
     ''' Generate code for a reference to an ASN.1 constant '''
 
     return [], str(primary.constant_c_name), []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
-def _mantissa_base_exp(primary):
+def _mantissa_base_exp(primary, **kwargs):
     ''' Generate code for a Real with Mantissa-base-Exponent representation '''
 
     error = 'To Be Implemented'
@@ -2350,77 +2679,281 @@ def _mantissa_base_exp(primary):
 
 
 @expression.register(ogAST.PrimConditional)
-def _conditional(cond):
-    ''' Return string and statements for conditional expressions '''
-    # FIXME: this function is not fully aligned with Ada, many cases are missing
-
+def _conditional(cond, **kwargs):
+    ''' Return string and statements for conditional expressions
+        Aligned with the Ada generator: handles IA5String types with ternary,
+        uses C ternary (? :) for basic types, and if/else with tmp variable
+        only for complex compound types (ExprAppend, PrimSubstring).
+    '''
     stmts = []
-    tmp_type = type_name(cond.exprType)
-    local_decl = ['{tmpType} tmp{idx};'.format(idx=cond.value['tmpVar'], tmpType=tmp_type)]
-    if_stmts, if_str, if_local = expression(cond.value['if'])
+    local_decl = []
 
+    basic_cond = find_basic_type(cond.exprType)
+    actual_type = type_name(cond.exprType)   # may be char *
+
+    if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
 
-    then_stmts, then_str, then_local = expression(cond.value['then'])
-    else_stmts, else_str, else_local = expression(cond.value['else'])
+    then_stmts, then_str, then_local = expression(cond.value['then'], readonly=1)
+    then_vc = VAR_COUNTER
 
-    stmts.extend(then_stmts)
-    stmts.extend(else_stmts)
-
+    else_stmts, else_str, else_local = expression(cond.value['else'], readonly=1)
+    else_vc = VAR_COUNTER
     local_decl.extend(then_local)
     local_decl.extend(else_local)
 
-    if isinstance(cond.value['then'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        then_str = u'({tmpTyp}) {{{size}, {{{then_str}}}}}'.format(tmpTyp=tmp_type, then_str=then_str, size=len((cond.value['then'].value))-2)
-    
-    if isinstance(cond.value['else'], (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
-        else_str = u'({tmpTyp}) {{{size}, {{{else_str}}}}}'.format(tmpTyp=tmp_type, else_str=else_str, size=len((cond.value['else'].value))-2)
 
-    stmts.append('if ({if_str})'.format(if_str=if_str))
-    stmts.append('{')
-    # the following has to check if the expression is an Append or a Substring and generate the proper code.
-    # see the Ada backend to complete.
-    if isinstance(cond.value['then'], ogAST.PrimSubstring):
-       # assign the substring elements to the temporary storage
-       stmts.extend([
-           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
-           '{',
-           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {then_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];", 
-           '}'
-           ])
-       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
-       basic = find_basic_type(cond.exprType)
-       if basic.Min != basic.Max:
-           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+    if actual_type == "char *" or basic_cond.kind == 'IA5StringType':
+        # IA5String: generate two constant strings and use ternary operator
+        max_size = basic_cond.Max
+        then_id = f'cond_then_{cond.value["tmpVar"]}'
+        else_id = f'cond_else_{cond.value["tmpVar"]}'
+        then_basic = find_basic_type(cond.value['then'].exprType)
+        else_basic = find_basic_type(cond.value['else'].exprType)
+
+        # Process "then" value
+        then_is_octet = False
+        then_decl_type = 'char *'
+        if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
+            # For literals, use ia5string_raw to get C null-terminated byte array
+            #then_val = ia5string_raw(cond.value['then'])
+            then_val = cond.value['then'].value.replace("'", '"')
+        else:
+            if then_basic.kind in ('OctetStringType', 'BitStringType'):
+                # OctetString/BitString to IA5String conversion:
+                # need to copy bytes from .arr to a char array
+                len_sep = f"{then_str}.nCount" if then_basic.Min != then_basic.Max else f"{then_basic.Max}"
+                then_decl_type = f"char {then_id}[{len_sep} + 1];  // +1 for null-termination"
+                local_decl.append(then_decl_type)
+                then_stmts.extend([
+                f"for (size_t i = 0; i < {len_sep}; ++i)",
+                f"{{",
+                f"    {then_id}[i] = (char){then_str}.arr[i];",
+                f"}}",
+                f"{then_id}[{len_sep}] = '\\0';"])
+                then_is_octet = True
+                then_val = None
+            else:
+                # IA5String variable: use directly (already a char array)
+                then_val = then_str
+
+        # Process "else" value
+        else_is_octet = False
+        if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
+            #else_val = ia5string_raw(cond.value['else'])
+            else_val = cond.value['else'].value.replace("'", '"')
+        else:
+            if else_basic.kind in ('OctetStringType', 'BitStringType'):
+                # OctetString/BitString to IA5String conversion:
+                # need to copy bytes from .arr to a char array
+                len_sep = f"{else_str}.nCount" if else_basic.Min != else_basic.Max else f"{else_basic.Max}"
+                else_decl_type = f"char {else_id}[{len_sep} + 1];  // +1 for null-termination"
+                local_decl.append(else_decl_type)
+                else_stmts.extend([
+                f"for (size_t i = 0; i < {len_sep}; ++i)",
+                f"{{",
+                f"    {else_id}[i] = (char){else_str}.arr[i];",
+                f"}}",
+                f"{else_id}[{len_sep}] = '\\0';"])
+
+                else_is_octet = True
+                else_val = None
+            else:
+                else_val = else_str
+
+        # Build local declarations and setup statements for "then"
+        if not then_is_octet:
+            if then_val is not None and then_val.startswith('{'):
+                # Initializer from ia5string_raw: need a static declaration
+                local_decl.append(
+                    f'static const char {then_id}[{max_size} + 1] = {then_val};')
+            else:
+                # IA5String variable or other expression: use directly
+                then_id = then_val if then_val is not None else then_str
+
+        # Build local declarations and setup statements for "else"
+        if not else_is_octet:
+            if else_val is not None and else_val.startswith('{'):
+                local_decl.append(
+                    f'static const char {else_id}[{max_size} + 1] = {else_val};')
+            else:
+                else_id = else_val if else_val is not None else else_str
+
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+
+        c_string = f'(({if_str}) ? {then_id} : {else_id})'
+        return stmts, str(c_string), local_decl
+
+    # Non-IA5String types (SequenceOf, OctetString, basic types)
+    # the "then" or "else" part may be an iterator (Integer32),
+    # so a cast to the expected type (actual_type) may be needed
+    basic_then = find_basic_type(cond.value['then'].exprType)
+    basic_else = find_basic_type(cond.value['else'].exprType)
+
+    # Check if either branch requires multi-statement handling
+    # (ExprAppend and PrimSubstring need loops / multi-field assignments)
+    # OctetString/BitString types are structs and need if/else too
+    need_ifelse = (isinstance(cond.value['then'],
+                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                   isinstance(cond.value['else'],
+                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                   basic_cond.kind in ('OctetStringType', 'BitStringType',
+                                       'SequenceOfType'))
+
+    if need_ifelse:
+        # Complex compound types: use if/else with tmp variable
+        # (same approach as Ada for ExprAppend / PrimSubstring)
+        local_decl.append(f'{actual_type} tmp{cond.value["tmpVar"]};')
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
+        stmts.append(f'if ({if_str})')
+        stmts.append('{')
+
+        # -- Process "then" branch --
+        then_len = None
+        if isinstance(cond.value['then'], ogAST.PrimEmptyString):
+            # We need to declare a constant with the value because we cannot
+            # have an assignment with the _constant string generated by asn1scc
+            # outside from the initialisation
+            tmpdecl = f'const {actual_type} then_cond_{cond.value["tmpVar"]} = {then_str};'
+            local_decl.append(tmpdecl)
+            then_str = f'thene_cond_{cond.value["tmpVar"]}'
+
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_str = array_content(cond.value['then'], then_str, basic_then)
+
+        if isinstance(cond.value['then'], ogAST.ExprAppend):
+            then_len = append_size(cond.value['then'])
+            stmts.append(
+                f"tmp{cond.value['tmpVar']} = {then_str};")
+        elif isinstance(cond.value['then'], ogAST.PrimSubstring):
+            stmts.extend([
+                f'for(int var_counter_{then_vc} = 0; '
+                f'var_counter_{then_vc} <= max_range_{then_vc}'
+                f' - min_range_{then_vc}; var_counter_{then_vc}++)',
+                '{',
+                f"tmp{cond.value['tmpVar']}.arr[var_counter_{then_vc}]"
+                f" = {then_str}.arr[var_counter_{then_vc}"
+                f" + min_range_{then_vc}];",
+                '}'
+            ])
+            rlen = f'max_range_{then_vc} - min_range_{then_vc} + 1'
+            if basic_cond.Min != basic_cond.Max:
+                stmts.append(
+                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+        else:
+            if isinstance(cond.value['then'],
+                           (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                # Compound literal needed for brace-enclosed initializer
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]}'
+                    f' = ({actual_type}) {then_str};')
+            else:
+                cast = (f'({actual_type}) '
+                        if basic_cond.kind != basic_then.kind else '')
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]} = {cast}{then_str};')
+        if then_len:
+            stmts.append(
+                f"tmp{cond.value['tmpVar']}.nCount = {then_len};")
+
+        stmts.append('}')
+        stmts.append('else')
+        stmts.append('{')
+
+        # -- Process "else" branch --
+        else_len = None
+        if isinstance(cond.value['else'], ogAST.PrimEmptyString):
+            # We need to declare a constant with the value because we cannot
+            # have an assignment with the _constant string generated by asn1scc
+            # outside from the initialisation
+            tmpdecl = f'const {actual_type} else_cond_{cond.value["tmpVar"]} = {else_str};'
+            local_decl.append(tmpdecl)
+            else_str = f'else_cond_{cond.value["tmpVar"]}'
+
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_str = array_content(cond.value['else'], else_str, basic_else)
+
+        if isinstance(cond.value['else'], ogAST.ExprAppend):
+            else_len = append_size(cond.value['else'])
+            stmts.append(
+                f"tmp{cond.value['tmpVar']} = {else_str};")
+        elif isinstance(cond.value['else'], ogAST.PrimSubstring):
+            stmts.extend([
+                f'for(int var_counter_{else_vc} = 0; '
+                f'var_counter_{else_vc} <= max_range_{else_vc}'
+                f' - min_range_{else_vc}; var_counter_{else_vc}++)',
+                '{',
+                f"tmp{cond.value['tmpVar']}.arr[var_counter_{else_vc}]"
+                f" = {else_str}.arr[var_counter_{else_vc}"
+                f" + min_range_{else_vc}];",
+                '}'
+            ])
+            rlen = f'max_range_{else_vc} - min_range_{else_vc} + 1'
+            if basic_cond.Min != basic_cond.Max:
+                stmts.append(
+                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+        else:
+            if isinstance(cond.value['else'],
+                           (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]}'
+                    f' = ({actual_type}) {else_str};')
+            else:
+                cast = (f'({actual_type}) '
+                        if basic_cond.kind != basic_else.kind else '')
+                stmts.append(
+                    f'tmp{cond.value["tmpVar"]} = {cast}{else_str};')
+        if else_len:
+            stmts.append(
+                f"tmp{cond.value['tmpVar']}.nCount = {else_len};")
+
+        stmts.append('}')
+        c_string = f'tmp{cond.value["tmpVar"]}'
     else:
-       stmts.append('tmp{idx} = ({ty}) {then_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], then_str=then_str))
-    stmts.append('}')
-    stmts.append('else')
-    stmts.append('{')
-    if isinstance(cond.value['else'], ogAST.PrimSubstring):
-       # assign the substring elements to the temporary storage
-       stmts.extend([
-           f'for(int var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} <= max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER}; var_counter_{VAR_COUNTER}++)',
-           '{',
-           f"tmp{cond.value['tmpVar']}.arr[var_counter_{VAR_COUNTER}] = {else_str}.arr[var_counter_{VAR_COUNTER} + min_range_{VAR_COUNTER}];",
-           '}'
-           ])
-       rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
-       basic = find_basic_type(cond.exprType)
-       if basic.Min != basic.Max:
-           stmts.append(f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
-    else:
-        stmts.append('tmp{idx} = ({ty}) {else_str};'.format(ty=tmp_type, idx=cond.value['tmpVar'], else_str=else_str))
-    stmts.append('}')
+        # Simple case: use C ternary operator (? :)
+        stmts.extend(then_stmts)
+        stmts.extend(else_stmts)
 
-    string = u'tmp{idx}'.format(idx=cond.value['tmpVar'])
+        # Apply array_content transformation if needed
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_str = array_content(cond.value['then'], then_str, basic_then)
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_str = array_content(cond.value['else'], else_str, basic_else)
 
-    return stmts, str(string), local_decl
+        # Build ternary operands with appropriate casts:
+        # - Compound literals (from array_content, with braces) always need
+        #   the type prefix to form a valid C compound literal expression
+        # - Basic types get cast only when type kinds differ
+        if isinstance(cond.value['then'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            then_expr = f'({actual_type}) {then_str}'
+        elif basic_cond.kind != basic_then.kind:
+            then_expr = f'({actual_type}) ({then_str})'
+        else:
+            then_expr = then_str
+
+        if isinstance(cond.value['else'],
+                       (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+            else_expr = f'({actual_type}) {else_str}'
+        elif basic_cond.kind != basic_else.kind:
+            else_expr = f'({actual_type}) ({else_str})'
+        else:
+            else_expr = else_str
+
+        c_string = f'(({if_str}) ? {then_expr} : {else_expr})'
+
+    return stmts, str(c_string), local_decl
 
 
 @expression.register(ogAST.PrimSequence)
-def _sequence(seq):
+def _sequence(seq, **kwargs):
     ''' Return C string for an ASN.1 SEQUENCE '''
 
     stmts, local_decl = [], []
@@ -2500,7 +3033,7 @@ def _sequence(seq):
 
 
 @expression.register(ogAST.PrimSequenceOf)
-def _sequence_of(seqof):
+def _sequence_of(seqof, **kwargs):
     ''' Return C string for an ASN.1 SEQUENCE OF '''
 
     stmts, local_decl, tab = [], [], []
@@ -2537,7 +3070,7 @@ def _sequence_of(seqof):
 
 
 @expression.register(ogAST.PrimChoiceItem)
-def _choiceitem(choice):
+def _choiceitem(choice, **kwargs):
     ''' Return the c code for a CHOICE expression '''
 
     stmts, choice_str, local_decl = expression(choice.value['value'])
@@ -2570,19 +3103,20 @@ def _choiceitem(choice):
 
 
 @expression.register(ogAST.PrimSubstring)
-def _prim_substring(prim):
+def _prim_substring(prim, **kwargs):
     ''' Generate expression for SEQOF/OCT.STRING substrings, e.g. foo(1,2) '''
 
+    ro = kwargs.get("readonly", 0)
     stmts, string, local_decl = [], '', []
     receiver = prim.value[0]
 
-    receiver_stms, receiver_string, receiver_decl = expression(receiver)
+    receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
     string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
-    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0])
-    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1])
+    r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0], readonly=ro)
+    r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1], readonly=ro)
 
     global VAR_COUNTER
     VAR_COUNTER = VAR_COUNTER + 1
@@ -2676,7 +3210,8 @@ def processing_process_aliases(process, no_renames):
 def generating_context(process):
     context_code = ['//// Context']
     #context_code.append(f'__attribute__ ((persistent)) {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
-    context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context {LPREFIX} = {{0}};\n')
+    if not IS_INSTANCE:
+        context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context ctxt = {{0}};\n')
 
     return context_code
 
@@ -2685,10 +3220,10 @@ def generating_aggregate_start_funtions(process):
    # Declare start procedure for aggregate states
    # should create one START per "via" clause, TODO later
    for name, substates in process.aggregates.items():
-       proc_name = f'void {name}{SEPARATOR}START(void)'
+       proc_name = f'void {name}{SEPARATOR}start(void)'
        aggreg_start_proc.extend([f'{proc_name}',
                                  '{'])
-       aggreg_start_proc.extend(f'runTransition{process.processName} ({subname.statename}{SEPARATOR}START);'
+       aggreg_start_proc.extend(f'runTransition{process.processName} ({subname.statename}{SEPARATOR}start);'
                                 for subname in substates)
        aggreg_start_proc.extend(['}',
                                 '\n'])
@@ -2699,46 +3234,70 @@ def generating_aggregate_start_funtions(process):
 def generating_startup_function(process, no_renames):
     startup_header_file_code = [u'//// Startup']
 
-    generic = process.instance_of_name
+    ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else ''
 
-    if not generic:
+    if not IS_INSTANCE:
         startup_header_file_code.append(u'void {}_startup();'.format(process.processName.lower()))
+    else:
+        startup_header_file_code.append(f'void CInit{process.processName.lower()}({ctxt_arg});')
 
     startup_header_file_code.append(u'\n')
 
     # Generate the code of the start transition (if process not empty)
     startup_function_code = ['//// Startup']
-    startup_function_code.append(f'void CInit{process.processName.lower()}()')
+    startup_function_code.append(f'void CInit{process.processName.lower()}({ctxt_arg})')
     startup_function_code.append('{')
 
     processing_process_variables(process, no_renames, startup_function_code)
 
-    if process.transitions:
+    if process.transitions and not process.only_procedures:
         startup_function_code.append('\n')
-        startup_function_code.append(f'runTransition{process.processName}(0);')
+        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+        startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
 
     startup_function_code.append(f'{LPREFIX}.init_done = true;')
     startup_function_code.append('}\n')
 
-    startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
-    startup_function_code.append(f'void {process.processName.lower()}_startup()')
-    startup_function_code.append('{')
-    startup_function_code.append(f'CInit{process.processName.lower()}();')
-    startup_function_code.append('}\n')
+    if not IS_INSTANCE:
+        startup_function_code.append('// Required To Work With TASTE\'s Wrappers')
+        startup_function_code.append(f'void {process.processName.lower()}_startup()')
+        startup_function_code.append('{')
+        startup_function_code.append(f'CInit{process.processName.lower()}();')
+        startup_function_code.append('}\n')
 
     return startup_header_file_code, startup_function_code
 
 
 def generating_run_transition_declaration(process):
-    run_transition_declaration_code = [f'#define CS_Only {len(process.transitions)}']
+    all_labels = [lab.inputString.lower() for lab in process.content.floating_labels]
+    
+    branches = []
+    for label in all_labels:
+        if label not in branches:
+            branches.append(label)
+
+    if "startup_transition" not in branches and process.content.start:
+        branches.insert(0, "startup_transition")
+
+    if "continuous_signals" not in branches:
+        branches.append("continuous_signals")
+    if "branch_end" not in branches:
+        branches.append("branch_end")
+
+    enum_name = f'{process.processName}_Branches'
+    run_transition_declaration_code = [f'enum {enum_name} {{']
+    run_transition_declaration_code.append(', '.join(branches))
+    run_transition_declaration_code.append('};\n')
 
     if process.transitions:
-        run_transition_declaration_code.append(u'void runTransition{}(int Id);\n'.format(process.processName))
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+        run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
 
     return run_transition_declaration_code
 
 
 def generating_nested_states(process):
+    # MP, this code is useless there is an enum generated with the start transitions
     nested_states_code = [u'//// Nested States']
 
     for name, val in process.mapping.items():
@@ -2845,7 +3404,7 @@ def processing_inner_procedures(process):
 def processing_input_signals(process):
     input_signals_header_file_code = ['//// Input Signals\n']
     input_signals_code = ['//// Input Signals']
-    
+
     reduced_statelist = {s for s in process.full_statelist
             if s not in process.parallel_states}
 
@@ -2876,10 +3435,18 @@ def processing_input_signals(process):
         pi_header = f'void {name}'
 
         param_name = signal.get('param_name') or '{}_param'.format(signal['name'])
+        
+        args = []
+        if IS_INSTANCE:
+            args.append(f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt')
+
         # Add (optional) PI parameter (only one is possible in TASTE PI)
         if 'type' in signal:
             typename = type_name(signal['type'])
-            pi_header += '({tn} * {pn})'.format(tn=typename, pn=param_name)
+            args.append('{tn} * {pn}'.format(tn=typename, pn=param_name))
+            
+        if args:
+            pi_header += '(' + ', '.join(args) + ')'
         else:
             pi_header += '()'
 
@@ -2933,7 +3500,8 @@ def processing_input_signals(process):
                     dest.append(f'{LPREFIX}.{inp} = *{param_name};')
                 # Execute the corresponding transition
                 if input_def.transition:
-                    dest.append(f'runTransition{process.processName}({input_def.transition_id});')
+                    ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                    dest.append(f'runTransition{process.processName}({ctxt_param}{input_def.branch_label.lower()});')
                     dest.append('break;')
                     dest.append('}')
                 else:
@@ -2953,7 +3521,7 @@ def processing_input_signals(process):
                 to the current state
                 The input name is in signame
             '''
-            if state.endswith('START'):
+            if state.lower().endswith('start'):
                 return
             statecase = [f'case {generate_state_name(state)}:', '{']
             input_def = process.input_mapping[signal['name']].get(state)
@@ -2967,12 +3535,16 @@ def processing_input_signals(process):
                     if [a for a in sub.mapping.keys()
                             if a in process.input_mapping[signame].keys()]:
                         input_signals_code.append(f'switch ({LPREFIX}.{sub.statename}{SEPARATOR}state)')
-                        input_signals_code.append('{')
+                        input_signals_code.append('{ // switch aggregation')
                         for par in sub.mapping.keys():
                             case_state(par)
                         input_signals_code.append('default:')
-                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
-                        input_signals_code.append('}')
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
+                        input_signals_code.append('break;')
+                        input_signals_code.append('} // end switch aggregation')
+                        input_signals_code.append('break;')
+                        input_signals_code.append('} // end case')
                         break
                 else:
                     # Input is not managed in the state aggregation
@@ -2980,7 +3552,10 @@ def processing_input_signals(process):
                         # check if it is managed one level above
                         execute_transition(state, input_signals_code)
                     else:
-                        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
+                        input_signals_code.append('break;')
+                        input_signals_code.append('}')
             else:
                 if execute_transition(state, statecase):
                     input_signals_code.extend(statecase)
@@ -2990,7 +3565,8 @@ def processing_input_signals(process):
 
         input_signals_code.append('default:')
         input_signals_code.append('{')
-        input_signals_code.append(f'runTransition{process.processName}(CS_Only);')
+        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
         input_signals_code.append('break;')
         input_signals_code.append('}')
         input_signals_code.append('}')
@@ -3108,173 +3684,89 @@ def generating_includes(process):
 
 
 def processing_transitions_and_floating_labels(process):
-    continuous_signals_header_file_code = [u'//// Continuous Signals']
-    transition_code = [u'//// Definition Of Run Transition']
+    continuous_signals_header_file_code = ['//// Continuous Signals']
+    transition_code = ['//// Definition Of Run Transition']
 
     has_continuous_signals = any(process.cs_mapping.values())
+    enum_name = f'{process.processName}_Branches'
 
-    code_transitions = []
-    decl_transitions = []
+    all_labels = [lab.inputString.lower() for lab in process.content.floating_labels]
+
+    # Generate code for the floating labels (as functions)
     code_labels = []
-
-    for transition in process.transitions:
-        transition_stmts, transition_decls = generate(transition)
-        code_transitions.append(transition_stmts)
-        decl_transitions.extend(transition_decls)
-
-    # Generate code for the floating labels
     for label in process.content.floating_labels:
-        code_label, label_decl = generate(label)
-        decl_transitions.extend(label_decl)
+        code_label, _ = generate(label)
         code_labels.extend(code_label)
 
-    # Generate the code of the runTransition procedure, if needed
-    if process.transitions:
-        transition_code.append('void runTransition{}(int Id)'.format(process.processName))
-        transition_code.append('{')
-        transition_code.append('int trId = Id;')
+    if has_continuous_signals:
+        # Generate Branch_Continuous_Signals function
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else 'void'
+        cs_code = [f'static enum {enum_name} branch_continuous_signals({ctxt_arg})', '{']
+        if not MONITORS:
+            ctxt_param_decl = f'bool* has_pending_msg, {ASN1SCC}{process.processName.capitalize()}_Context *ctxt' if IS_INSTANCE else 'bool* has_pending_msg'
+            continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue({ctxt_param_decl});')
+            cs_code.append('bool message_pending = true;')
+            cs_code.append(f'if({LPREFIX}.init_done)')
+            cs_code.append('{')
+            ctxt_param_call = '&message_pending, ctxt' if IS_INSTANCE else '&message_pending'
+            cs_code.append(f'{process.processName.lower()}_check_queue({ctxt_param_call});')
+            cs_code.append('}')
+            cs_code.append('if (message_pending) return branch_end;')
+        else:
+            cs_code.append('// Observer: no message pending check')
+            cs_code.append('bool message_pending = false;')
 
-        if has_continuous_signals:
-            transition_code.append('flag message_pending = true;')
-
-        # Declare the local variables needed by the transitions in the template
-        transition_code.extend(set(decl_transitions))
-
-        # Generate a loop that ends when a next state is reached
-        # (there can be chained transition when entering a nested state)
-        transition_code.append('while (trId != -1)')
-        transition_code.append('{')
-
-        # Generate the switch-case on the transition id
-        transition_code.append('switch(trId)')
-        transition_code.append('{')
-
-        for idx, val in enumerate(code_transitions):
-            transition_code.append('case {idx}:'.format(idx=idx))
-            transition_code.append('{')
-            val = ['{line}'.format(line=l) for l in val]
-
-            if val:
-                transition_code.extend(val)
-
-            transition_code.append('break;')
-            transition_code.append('}')
-
-        transition_code.append('case CS_Only:')
-        transition_code.append('{')
-        transition_code.append('trId = -1;')
-        transition_code.append('goto continuous_signals;')
-        transition_code.append('}')
-        transition_code.append('default:')
-        transition_code.append('{')
-        transition_code.append('break;')
-        transition_code.append('}')
-        transition_code.append('}')
-
-        if code_labels:
-            # Due to nested states (chained transitions) jump over label code
-            # (NEXTSTATEs do not return from runTransition)
-            transition_code.append('goto continuous_signals;')
-
-        # Add the code for the floating labels
-        transition_code.extend(code_labels)
-
-        transition_code.append('continuous_signals:\n')
-
-        # After completing active transition(s), check continuous signals:
-        #     - Check current state(s)
-        #     - For each continuous signal generate code (test+transition)
-        if has_continuous_signals:
-            if not MONITORS:
-                continuous_signals_header_file_code.append(f'void {process.processName.lower()}_check_queue(bool* has_pending_msg);')
-
-                transition_code.append('// Process Continuous Signals')
-                transition_code.append(f'if({LPREFIX}.init_done)')
-                transition_code.append(u'{')
-                transition_code.append(f'{process.processName.lower()}_check_queue(&message_pending);')
-                transition_code.append(u'}\n')
-            else:
-                transition_code.append('// Process Observer Transitions')
-                transition_code.append("message_pending = false;\n")
-                
-        if has_continuous_signals:
-            transition_code.append(u'if(message_pending || trId != -1)')
-            transition_code.append(u'{')
-            transition_code.append(u'goto next_transition;')
-            transition_code.append(u'}\n')
-
-        # Process the continuous signals in state aggregations first
-        # (reminder: state aggregations = parallel states)
+        # Process the continuous signals
         done = []
         sep = 'if('
         last = ''
-
-        # flag indicating there are CS in nested states but not at root
         need_final_endif = False
         first_of_aggreg = True
         for cs, agg in product(process.cs_mapping.items(), process.aggregates.items()):
             (statename, cs_item)  = cs
             (agg_name, substates) = agg
-
             if not cs_item:
                 continue
-
             for each in substates:
                 if statename in each.cs_mapping and each.cs_mapping[statename]:
                     if first_of_aggreg:
-                        transition_code.append(f'if({LPREFIX}.state == {generate_state_name(agg_name)})')
-                        transition_code.append('{')
+                        cs_code.append(f'if({LPREFIX}.state == {generate_state_name(agg_name)})')
+                        cs_code.append('{')
                         first_of_aggreg = False
-
                     need_final_endif = True
-                    first = "} else" if done else ""
-                    transition_code.append(f'if({LPREFIX}.{each.statename}{SEPARATOR}state == {generate_state_name(statename)})')
-                    transition_code.append('{')
-
-                    # Change priority 0 (no priority set) to lowest priority
+                    cs_code.append(f'if({LPREFIX}.{each.statename}{SEPARATOR}state == {generate_state_name(statename)})')
+                    cs_code.append('{')
                     lowest_priority = max(item.priority for item in cs_item)
-                    for each in cs_item:
-                        if each.priority == 0:
-                            each.priority = lowest_priority + 1
-
+                    for item in cs_item:
+                        if item.priority == 0:
+                            item.priority = lowest_priority + 1
                     for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
-                        transition_code.append(f'// Priority {provided_clause.priority}')
-                        trId = process.transitions.index(provided_clause.transition)
                         code, loc = generate(provided_clause.trigger,
-                                            branch_to=trId,
+                                            branch_to=None,
                                             sep=sep, last=last)
-                        code.append('goto next_transition;')
+                        cs_code.extend(code)
                         sep='} else if('
-                        transition_code.extend(code)
-
                     done.append(statename)
-                    transition_code.append('}')  # inner if
-                    transition_code.append('}')  # substate if
+                    cs_code.append('}')  # inner if
+                    cs_code.append('}')  # substate if
                     sep = 'if('
                     break
 
-        count = 0
         for statename in process.cs_mapping.keys() - done:
             cs_item = process.cs_mapping[statename]
-
             if cs_item:
-                count += 1 
                 need_final_endif = False
                 first = "} else " if done else ""
-                transition_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
-                transition_code.append(u'{')
-
-            # Change priority 0 (no priority set) to lowest priority
-            if cs_item:
+                cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
+                cs_code.append('{')
                 lowest_priority = max(item.priority for item in cs_item)
 
-            for each in cs_item:
-                if each.priority == 0:
-                    each.priority = lowest_priority + 1
+            for item in cs_item:
+                if item.priority == 0:
+                    item.priority = lowest_priority + 1
 
             for provided_clause in sorted(cs_item, key=lambda itm: itm.priority):
-                transition_code.append(f'// Priority: {provided_clause.priority}')
-                trId = process.transitions.index(provided_clause.transition)
+                cs_code.append(f'//  Priority: {provided_clause.priority}')
 
                 # check if we are leaving a nested state with a CS
                 state_tree = statename.split(SEPARATOR)
@@ -3289,40 +3781,60 @@ def processing_transitions_and_floating_labels(process):
                         if current.lower() == comp.statename.lower():
                             if comp.exit_procedure:
                                 exitlist.append(current)
-
                             context = comp
                             current = current + SEPARATOR
                             break
 
-                trans = process.transitions[trId]
+                trans = provided_clause.transition
+
                 for each in reversed (exitlist):
                     if trans and all(each.startswith(trans_st)
                             for trans_st in trans.possible_states):
-                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit();") # should be tested and fixed
+                        exitcalls.append(f"p{SEPARATOR}{each}{SEPARATOR}exit();")
 
+                # generate the code of the transision
                 code, loc = generate(provided_clause.trigger,
-                                     branch_to=trId, sep=sep, last=last,
+                                     branch_to=None, sep=sep, last=last,
                                      exitcalls=exitcalls)
+                cs_code.extend(code)
                 sep='} else if('
-                transition_code.extend(code)
-
             if cs_item:
-                transition_code.append('} // inner if') # inner if
-                transition_code.append('} // current state') # current state
-
+                cs_code.append('}') # inner if
+                cs_code.append('}') # current state
             sep = 'if('
 
         if need_final_endif:
-            transition_code.append('}')
+            cs_code.append('}')
 
-        transition_code.append('next_transition:')
-        transition_code.append(';')
+        cs_code.append('return branch_end; // end of CS code')
+        cs_code.append('}')
+        code_labels.extend(cs_code)
+
+    # Generate the code of the runTransition procedure
+    if process.transitions:
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+        transition_code.append(f'void runTransition{process.processName}({ctxt_arg}enum {enum_name} Id)')
+        transition_code.append('{')
+        transition_code.append(f'enum {enum_name} trId = Id;')
+        transition_code.append('while (trId != branch_end)')
+        transition_code.append('{')
+        transition_code.append('switch (trId)')
+        transition_code.append('{')
+        for label in all_labels:
+            ctxt_param = 'ctxt' if IS_INSTANCE else ''
+            transition_code.append(f'case {label}: trId = branch_{label}({ctxt_param}); break;')
+        if has_continuous_signals:
+            ctxt_param = 'ctxt' if IS_INSTANCE else ''
+            transition_code.append(f'case continuous_signals: trId = branch_continuous_signals({ctxt_param}); break;')
+        else:
+            transition_code.append('case continuous_signals: trId = branch_end; break;')
+        transition_code.append('default: trId = branch_end; break;')
         transition_code.append('}')
         transition_code.append('}')
-        transition_code.append('\n')
+        transition_code.append('}')
 
+    transition_code = code_labels + transition_code
     continuous_signals_header_file_code.append(u'\n')
-
     return continuous_signals_header_file_code, transition_code
 
 
@@ -3368,24 +3880,29 @@ def procedure_args(proc):
     declaration_args = ''
     invoke_args = ''
 
-    if proc.fpar:
-        declaration_args_list = []
-        invoke_args_list = []
+    declaration_args_list = []
+    invoke_args_list = []
 
+    if IS_INSTANCE:
+        declaration_args_list.append(f'{ASN1SCC}{PROCESS_NAME.capitalize()}_Context *ctxt')
+        invoke_args_list.append('ctxt')
+
+    if proc.fpar:
         for fpar in proc.fpar:
             name = fpar['name'].lower()
             direction = fpar['direction']
             typename = type_name(fpar['type'])
             pointer = '*' if direction == 'out' or proc.exported else ''
 
-            if proc.exported and direction == 'in':
-                name = f'in__{name}'
 
             declaration_args_list.append(f'{typename} {pointer}{name}')
             invoke_args_list.append(name)
 
-        declaration_args = ', '.join(declaration_args_list)
-        invoke_args = ', '.join(invoke_args_list)
+    declaration_args = ', '.join(declaration_args_list)
+    invoke_args = ', '.join(invoke_args_list)
+
+    if not declaration_args:
+        declaration_args = 'void'
 
     return declaration_args, invoke_args
 
@@ -3396,6 +3913,10 @@ def procedure_header(procedure, noPrefix=False):
     # needed for inner external procedure (e.g. to link with math symbols)
 
     return_type = type_name(procedure.return_type) if procedure.return_type else None
+    if return_type:
+        basic_return = find_basic_type(procedure.return_type)
+        if basic_return.kind == 'IA5StringType':
+            return_type = 'char *'
     return_type = 'void' if not return_type else return_type
 
     external = 'extern ' if procedure.external else ''
@@ -3421,6 +3942,12 @@ def find_basic_type(a_type):
     return Helper.find_basic_type(TYPES, a_type)
 
 
+def ia5string_raw(prim: ogAST.PrimStringLiteral):
+    ''' IA5Strings are null-terminated C arrays '''
+    unsigned_8 = [str(ord(val)) for val in prim.value[1:-1]]
+    return '{{{values}{sep}0}}'.format(values=', '.join(unsigned_8), sep=', ' if unsigned_8 else '')
+
+
 def array_content(prim, values, asnty):
     ''' String literal and SEQOF are given as a sequence of elements '''
 
@@ -3428,20 +3955,35 @@ def array_content(prim, values, asnty):
         return values
 
     elif asnty.kind == 'IA5StringType':
-        return u'{{{values}}}'.format(values=values)
+        val = prim.value[1:-1].replace('"', '\\"')
+        return f'"{val}"'
+
+    elif asnty.kind == 'OctetStringType':
+        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+            hex_parts = [f"\\x{x:02X}" for x in prim.hexstring]
+        else:
+            hex_parts = [f"\\x{ord(x):02X}" for x in prim.value[1:-1]]
+        hex_string = f'"{ "".join(hex_parts) }"'
+        
+        if asnty.Min != asnty.Max:
+            return f'{{{len(hex_parts)}, {hex_string}}}'
+        else:
+            return f'{{{hex_string}}}'
 
     elif asnty.Min != asnty.Max:
         length = len(prim.value)
 
-        if isinstance(prim, ogAST.PrimOctetStringLiteral):
+        if isinstance(prim, ogAST.PrimBitStringLiteral):
+            length = len(prim.bit_array)
+        elif isinstance(prim, ogAST.PrimOctetStringLiteral):
             length = len(prim.hexstring)
         elif isinstance(prim, ogAST.PrimStringLiteral):
             # Quotes are kept in string literals
             length -= 2
 
-        return u'{{{length}, {{{values}}}}}'.format(length=length, values=values)
+        return f'{{{length}, {{{values}}}}}'
 
-    return u'{{{{{values}}}}}'.format(values=values)
+    return f'{{{{{values}}}}}'
 
 
 def type_name(a_type, use_prefix=True):
@@ -3456,7 +3998,9 @@ def type_name(a_type, use_prefix=True):
     elif a_type.kind == 'RealType':
         return u'asn1SccReal'
     elif a_type.kind.endswith('StringType'):
-        return u'asn1SccString'
+        # String types should normally come through as ReferenceType.
+        # When we get a basic string type, it has to be a raw string (char *)
+            return 'char *'
     elif a_type.kind == 'ChoiceEnumeratedType':
         return u'asn1SccSint'
     elif a_type.kind == 'StateEnumeratedType':
@@ -3529,7 +4073,7 @@ def find_var_in_timers(var):
     for timer_variable in TIMER_VARIABLES:
         if timer_variable.lower() == var_lower:
             return timer_variable
-        
+
     return None
 
 
@@ -3545,7 +4089,7 @@ def find_state_in_states(state):
     for state_variable in STATES:
         if state_variable.lower() == state_lower:
             return state_variable
-        
+
     return None
 
 
@@ -3561,7 +4105,7 @@ def append_size(append):
     if basic.Min == basic.Max:
         # Simple case when appending two fixed-length sizes
         return basic.Min
-    
+
     for each in (append.left, append.right):
         if result:
             result += ' + '
@@ -3577,7 +4121,7 @@ def append_size(append):
             else:
                 # Must be a variable of type SEQOF
                 _, inner, _ = expression(each)
-                result += '{}.Count'.format(inner)
+                result += '{}.nCount'.format(inner)
 
     return result
 
@@ -3703,21 +4247,18 @@ def write_statement(param, newline):
                     code.append('printf(\"%c\", {st}.arr[write_{var_counter}]);'.format(st=string, var_counter=VAR_COUNTER))
                     code.append('}')
             elif type_kind == 'IA5StringType' and isinstance(param, ogAST.PrimVariable): # should be fixed later
-                code.append(u'{')
-                code.append(u'asn1SccUint tmp_counter = 0;')
-                code.append(u'for(tmp_counter = 0; tmp_counter < {size} && {var}[tmp_counter] != \'\\0\'; tmp_counter++)'.format(size=basic_type.Max, var=string))
-                code.append(u'{')
-                code.append(u'printf(\"%c\", {var}[tmp_counter]);'.format(var=string))
-                code.append(u'}')
-                code.append(u'}')
+                # IA5String variables are just null-terminated: print as is
+                code.append(f'printf(\"%s\", {string});')
+            elif type_kind.endswith('StringType'):
+                code.append(f'printf(\"%s\", {string});')
             else:
-                code.append(u'{')
-                code.append(u'int tmp_counter = 0;')
-                code.append(u'for(tmp_counter = 0; tmp_counter < {st}.nCount; tmp_counter++)'.format(st=string))
-                code.append(u'{')
-                code.append(u'printf(\"%c\", {}.arr[tmp_counter]);'.format(string))
-                code.append(u'}')
-                code.append(u'}')
+                code.append('{')
+                code.append('int tmp_counter = 0;')
+                code.append('for(tmp_counter = 0; tmp_counter < {st}.nCount; tmp_counter++)'.format(st=string))
+                code.append('{')
+                code.append('printf(\"%c\", {}.arr[tmp_counter]);'.format(string))
+                code.append('}')
+                code.append('}')
     elif type_kind in ('IntegerType', 'RealType', 'BooleanType', 'Integer32Type',
             'IntegerU8Type'):
         code, string, local = expression(param)

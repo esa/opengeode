@@ -1,4 +1,5 @@
 /* CIF PROCESS (250, 150), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process Testbs;
     /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (933, 100), (182, 140) */
@@ -46,28 +47,8 @@ endfor;
         call Printbs(mybs2);
         /* CIF PROCEDURECALL (638, 568), (92, 35) */
         call writeln("  ");
-        /* CIF output (638, 618), (92, 35) */
-        output pong(mybs);
-        /* CIF NEXTSTATE (650, 668), (70, 35) */
+        /* CIF NEXTSTATE (650, 618), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF state (650, 668), (70, 35) */
-    /* CIF Keep Specific Geode Partition 'default' */
-    state Wait;
-        /* CIF input (633, 723), (91, 35) */
-        input hello(mybs);
-            /* CIF task (624, 778), (109, 35) */
-            task abit := mybs(3);
-            /* CIF output (633, 833), (92, 35) */
-            output pong(mybs);
-            /* CIF PROCEDURECALL (608, 888), (142, 35) */
-            call writeln("received: ");
-            /* CIF PROCEDURECALL (627, 943), (104, 35) */
-            call Printbs(mybs);
-            /* CIF PROCEDURECALL (575, 993), (208, 35) */
-            call writeln(" - size: ", length(mybs));
-            /* CIF NEXTSTATE (644, 1043), (70, 35) */
-            NEXTSTATE -;
-    endstate;
     /* CIF state (450, 10), (70, 35) */
     /* CIF Keep Specific Geode Partition 'default' */
     state Wait;
