@@ -3465,7 +3465,7 @@ def processing_input_signals(process):
             input_defs = process.input_mapping[signame].get(state)
             if not input_defs:
                 return False
-            input_def = input_defs[0] if isinstance(input_defs, list) else input_defs
+            first_input_def = input_defs[0] if isinstance(input_defs, list) else input_defs
             
             # Check for nested states to call optional exit procedures
             # (we may exit from more than one state, the exit procedures must
@@ -3474,7 +3474,7 @@ def processing_input_signals(process):
             context = process
             exitlist = []
             current = ''
-            trans = input_def and process.transitions[input_def.transition_id]
+            trans = first_input_def and process.transitions[first_input_def.transition_id]
             while state_tree:
                 current = current + state_tree.pop(0)
                 for comp in context.composite_states:
@@ -3496,21 +3496,39 @@ def processing_input_signals(process):
                                  for trans_st in trans.possible_states):
                     dest.append(f'{SEPARATOR}{process.processName}_{each}{SEPARATOR}exit();')
 
-            if input_def:
-                for inp in input_def.parameters:
+            if first_input_def:
+                for inp in first_input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     dest.append(f'{LPREFIX}.{inp} = *{param_name};')
-                # Execute the corresponding transition
-                if input_def.transition:
+                
+                if isinstance(input_defs, list) and len(input_defs) > 1:
+                    dest.append(f'switch ({LPREFIX}.state_instance) {{')
+                    for inp_def in input_defs:
+                        inst_name = inp_def.transition.possible_states[0]
+                        dest.append(f'    case {generate_state_name(inst_name)}:')
+                        if inp_def.transition:
+                            ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                            dest.append(f'        runTransition{process.processName}({ctxt_param}{inp_def.branch_label.lower()});')
+                            dest.append('        break;')
+                    dest.append('    default:')
                     ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
-                    dest.append(f'runTransition{process.processName}({ctxt_param}{input_def.branch_label.lower()});')
+                    dest.append(f'        runTransition{process.processName}({ctxt_param}continuous_signals);')
+                    dest.append('        break;')
+                    dest.append('}')
                     dest.append('break;')
                     dest.append('}')
                 else:
-                    dest.append('break;')
-                    dest.append('}')
-                    return False
+                    # Execute the corresponding transition
+                    if first_input_def.transition:
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        dest.append(f'runTransition{process.processName}({ctxt_param}{first_input_def.branch_label.lower()});')
+                        dest.append('break;')
+                        dest.append('}')
+                    else:
+                        dest.append('break;')
+                        dest.append('}')
+                        return False
             else:
                 dest.append('break;')
                 dest.append('}')
