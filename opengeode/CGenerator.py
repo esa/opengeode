@@ -3460,10 +3460,13 @@ def processing_input_signals(process):
         input_signals_code.append('{')
 
         def execute_transition(state, dest=[]):
-            ''' Aligned with Ada
-                Generate the code that triggers the transition for the current
+            ''' Generate the code that triggers the transition for the current
                 state/input combination '''
-            input_def = process.input_mapping[signame].get(state)
+            input_defs = process.input_mapping[signame].get(state)
+            if not input_defs:
+                return False
+            first_input_def = input_defs[0] if isinstance(input_defs, list) else input_defs
+            
             # Check for nested states to call optional exit procedures
             # (we may exit from more than one state, the exit procedures must
             #  be called in the right order)
@@ -3471,7 +3474,7 @@ def processing_input_signals(process):
             context = process
             exitlist = []
             current = ''
-            trans = input_def and process.transitions[input_def.transition_id]
+            trans = first_input_def and process.transitions[first_input_def.transition_id]
             while state_tree:
                 current = current + state_tree.pop(0)
                 for comp in context.composite_states:
@@ -3493,21 +3496,39 @@ def processing_input_signals(process):
                                  for trans_st in trans.possible_states):
                     dest.append(f'{SEPARATOR}{process.processName}_{each}{SEPARATOR}exit();')
 
-            if input_def:
-                for inp in input_def.parameters:
+            if first_input_def:
+                for inp in first_input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     dest.append(f'{LPREFIX}.{inp} = *{param_name};')
-                # Execute the corresponding transition
-                if input_def.transition:
+                
+                if isinstance(input_defs, list) and len(input_defs) > 1:
+                    dest.append(f'switch ({LPREFIX}.state_instance) {{')
+                    for inp_def in input_defs:
+                        inst_name = inp_def.transition.possible_states[0]
+                        dest.append(f'    case {generate_state_name(inst_name)}:')
+                        if inp_def.transition:
+                            ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                            dest.append(f'        runTransition{process.processName}({ctxt_param}{inp_def.branch_label.lower()});')
+                            dest.append('        break;')
+                    dest.append('    default:')
                     ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
-                    dest.append(f'runTransition{process.processName}({ctxt_param}{input_def.branch_label.lower()});')
+                    dest.append(f'        runTransition{process.processName}({ctxt_param}continuous_signals);')
+                    dest.append('        break;')
+                    dest.append('}')
                     dest.append('break;')
                     dest.append('}')
                 else:
-                    dest.append('break;')
-                    dest.append('}')
-                    return False
+                    # Execute the corresponding transition
+                    if first_input_def.transition:
+                        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+                        dest.append(f'runTransition{process.processName}({ctxt_param}{first_input_def.branch_label.lower()});')
+                        dest.append('break;')
+                        dest.append('}')
+                    else:
+                        dest.append('break;')
+                        dest.append('}')
+                        return False
             else:
                 dest.append('break;')
                 dest.append('}')
@@ -3757,7 +3778,31 @@ def processing_transitions_and_floating_labels(process):
             if cs_item:
                 need_final_endif = False
                 first = "} else " if done else ""
-                cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
+                
+                is_instance = False
+                comp_type = ''
+                for comp in process.composite_states:
+                    if statename.lower() in comp.instances:
+                        is_instance = True
+                        comp_type = comp.statename
+                        break
+
+                if is_instance:
+                    leaf_states = [s for s in process.mapping.keys() 
+                                   if s.lower().startswith(comp_type.lower() + SEPARATOR) 
+                                   and not s.endswith('START')]
+                    if not leaf_states:
+                        leaf_states = [comp_type]
+                    
+                    state_conds = [f'{LPREFIX}.state == {generate_state_name(s)}' for s in leaf_states]
+                    state_cond_str = ' || '.join(state_conds)
+                    if len(leaf_states) > 1:
+                        state_cond_str = f'({state_cond_str})'
+                    
+                    cond = f'{state_cond_str} && {LPREFIX}.state_instance == {generate_state_name(statename)}'
+                    cs_code.append(f'{first}if({cond})')
+                else:
+                    cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
                 cs_code.append('{')
                 lowest_priority = max(item.priority for item in cs_item)
 
@@ -4129,18 +4174,36 @@ def append_size(append):
 def indent_c_code(lines):
     indent = 0
     indent_pattern = '   '
+    previous_line = ''
 
-    for line in lines:
-        elems = line.strip().split()
+    # Flatten the lines to handle strings that contain \n
+    flat_lines = []
+    for chunk in lines:
+        flat_lines.extend(chunk.splitlines())
 
-        if elems and elems[0].startswith(('}')):
-            indent -=1
+    for line in flat_lines:
+        line_stripped = line.strip()
+        if not line_stripped:
+            if previous_line != '':
+                yield ''
+            previous_line = ''
+            continue
 
-        if line:
-            yield indent_pattern * indent + line
+        if line_stripped.startswith('}'):
+            indent -= 1
+            if indent < 0:
+                indent = 0
 
-        if elems and elems[0].startswith(('{')):
-            indent +=1
+        yield indent_pattern * indent + line_stripped
+
+        if line_stripped.endswith('{'):
+            indent += 1
+
+        if indent == 0 and line_stripped in ('}', '};'):
+            yield ''
+            previous_line = ''
+        else:
+            previous_line = line_stripped
 
 
 def traceability(symbol):

@@ -252,9 +252,34 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
         if cs_item:
             need_final_endif = False
             first = "els" if done else ""
-            cs_template.append(
-                    f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
-                    ' then')
+            
+            is_instance = False
+            comp_type = ''
+            for comp in process.composite_states:
+                if statename.lower() in comp.instances:
+                    is_instance = True
+                    comp_type = comp.statename
+                    break
+
+            if is_instance:
+                leaf_states = [s for s in process.mapping.keys() 
+                               if s.lower().startswith(comp_type.lower() + SEPARATOR) 
+                               and not s.endswith('START')]
+                if not leaf_states:
+                    leaf_states = [comp_type]
+                
+                state_conds = [f'{LPREFIX}.State = {ASN1SCC}{s}' for s in leaf_states]
+                state_cond_str = ' or '.join(state_conds)
+                if len(leaf_states) > 1:
+                    state_cond_str = f'({state_cond_str})'
+                
+                cond = f'{state_cond_str} and then {LPREFIX}.State_Instance = {ASN1SCC}{statename}'
+                cs_template.append(f'{first}if {cond} then')
+            else:
+                cs_template.append(
+                        f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
+                        ' then')
+
             # Change priority 0 (no priority set) to lowest priority
             lowest_priority = max(item.priority for item in cs_item)
 
@@ -849,7 +874,10 @@ package body {process.name}_RI is''']
         def execute_transition(state, dest=[]):
             ''' Generate the code that triggers the transition for the current
                 state/input combination '''
-            input_def = process.input_mapping[signame].get(state)
+            input_defs = process.input_mapping[signame].get(state)
+            if not input_defs:
+                return False
+
             # Check for nested states to call optional exit procedures
             # (we may exit from more than one state, the exit procedures must
             #  be called in the right order)
@@ -857,7 +885,8 @@ package body {process.name}_RI is''']
             context = process
             exitlist = []
             current = ''
-            trans = input_def and process.transitions[input_def.transition_id]
+            first_input_def = input_defs[0]
+            trans = first_input_def and process.transitions[first_input_def.transition_id]
             while state_tree:
                 current = current + state_tree.pop(0)
                 for comp in context.composite_states:
@@ -879,17 +908,28 @@ package body {process.name}_RI is''']
                                  for trans_st in trans.possible_states):
                     dest.append(f'p{SEPARATOR}{each}{SEPARATOR}exit;')
 
-            if input_def:
-                for inp in input_def.parameters:
+            if first_input_def:
+                for inp in first_input_def.parameters:
                     # Assign the (optional and unique) parameter
                     # to the corresponding process variable
                     dest.append(f'{LPREFIX}.{inp} := {param_name};')
-                # Execute the corresponding transition
-                if input_def.transition:
-                    # dest.append(f'Execute_Transition ({input_def.transition_id});')
-                    dest.append(f'Execute_Transition ({input_def.branch_label});')
+                
+                if len(input_defs) == 1:
+                    # Execute the corresponding transition
+                    if first_input_def.transition:
+                        dest.append(f'Execute_Transition ({first_input_def.branch_label});')
+                    else:
+                        return False
                 else:
-                    return False
+                    dest.append(f'case {LPREFIX}.State_Instance is')
+                    for inp_def in input_defs:
+                        inst_name = inp_def.transition.possible_states[0]
+                        dest.append(f'when {ASN1SCC}{inst_name} =>')
+                        if inp_def.transition:
+                            dest.append(f'Execute_Transition ({inp_def.branch_label});')
+                    dest.append('when others =>')
+                    dest.append('Execute_Transition (Continuous_Signals);')
+                    dest.append('end case;')
             else:
                 return False
             return True
@@ -1369,7 +1409,6 @@ def _call_external_function(output, **kwargs):
     
     # Add the traceability information
     code.extend(traceability(output))
-    with open("debug_ada.txt", "a") as f: f.write("output called\n")
     # code.extend(debug_trace())
 
     need_prefix = True
@@ -4000,6 +4039,8 @@ def format_ada_code(stmts):
                 indent += 1
             else:
                 last_was_is = True
-        if elems and elems[0] in ('begin', 'case', 'else', 'when'):
+        if elems and (elems[0] in ('begin', 'case', 'else', 'when') or (elems[0] == 'return' and elems[-1] == 'is')):
             indent += 1
+        if elems and elems[-1].endswith(');') and elems[0].startswith('when'):
+            indent = max(indent - 2, 0)
     yield stmts[-1]

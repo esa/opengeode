@@ -555,16 +555,15 @@ def tmp() -> int:
 
 def get_state_list(process_root):
     ''' Return the list of states of a process '''
-    # 1) get all STATE statements
+    state_list = []
     states = (child for child in process_root.getChildren()
-            if child.type == lexer.STATE)
-    # 2) keep only the ones containing a STATELIST token (i.e. no ASTERISK)
-    relevant = (child for state in states for child in state.getChildren()
-            if child.type == lexer.STATELIST)
-    # 3) extract the state list from each of them
-    state_list = [s.text.lower() for r in relevant for s in r.getChildren()]
-    # state_list.append('START')
-    # 4) create a set to remove duplicates
+              if child.type == lexer.STATE)
+    for state in states:
+        for child in state.getChildren():
+            if child.type == lexer.STATELIST:
+                state_list.extend(s.text.lower() for s in child.getChildren() if s)
+            elif child.type == lexer.ID:
+                state_list.append(child.text.lower())
     return set(state_list)
 
 
@@ -5818,6 +5817,7 @@ def state(root, parent, context):
                 # need to report here
                 pass
                 #stwarn.append(f'State definition missing - {str(err)}')
+            inp.statelist = state_def.statelist
             state_def.inputs.append(inp)
             if inp.inputString.strip() == '*':
                 asterisk_input = inp
@@ -5905,8 +5905,12 @@ def state(root, parent, context):
         inputs = context.mapping.get(statename.lower(), [])
         dupl = set()
         for a, b in combinations(inputs, 2):
+            # If the inputs were defined in different state instances, they are not duplicates
+            if hasattr(a, 'statelist') and hasattr(b, 'statelist'):
+                if not set(a.statelist).intersection(set(b.statelist)):
+                    continue
+
             duplicates = set(a.inputlist).intersection(set(b.inputlist))
-            #print(a.inputlist, " vs ", b.inputlist, " -> ", duplicates)
 
             if a.inputString.strip() != "*" and b.inputString.strip() != "*":
                 # Duplicates in non ASTERISK inputs

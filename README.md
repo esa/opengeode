@@ -125,6 +125,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.6.0 (06/2026)**
+- Support state type and instances both in C and Ada backends
+
 **4.5.2 (06/2026)**
 - Refactoring the C and Ada backend - various optimizations and aligments
 - Inline help now aligned with the Gitlab wiki
