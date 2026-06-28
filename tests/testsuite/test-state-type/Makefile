@@ -55,7 +55,9 @@ clean:
 		! -name "dv.asn" \
 		! -name "foo.pr" \
 		! -name "Makefile" \
+		! -name "expected" \
 		! -name "test_ada.ada" \
 		! -name "test_c.c" \
 		-delete
+	rm -rf x86
 .PHONY: all edit test-parse test-ada test-llvm coverage

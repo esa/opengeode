@@ -3460,10 +3460,13 @@ def processing_input_signals(process):
         input_signals_code.append('{')
 
         def execute_transition(state, dest=[]):
-            ''' Aligned with Ada
-                Generate the code that triggers the transition for the current
+            ''' Generate the code that triggers the transition for the current
                 state/input combination '''
-            input_def = process.input_mapping[signame].get(state)
+            input_defs = process.input_mapping[signame].get(state)
+            if not input_defs:
+                return False
+            input_def = input_defs[0] if isinstance(input_defs, list) else input_defs
+            
             # Check for nested states to call optional exit procedures
             # (we may exit from more than one state, the exit procedures must
             #  be called in the right order)

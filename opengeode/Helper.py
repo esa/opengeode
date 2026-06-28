@@ -133,7 +133,7 @@ def parallel_states(aggregates):
 
 
 def map_input_state(process):
-    ''' Create a mapping dict {input1: {state1: transition, ...}, ...} '''
+    ''' Create a mapping dict {input1: {state1: [transition, ...], ...}, ...} '''
     mapping = defaultdict(dict)
     input_signals = [sig['name'] for sig in process.input_signals]
     # Add timers to the mapping
@@ -145,7 +145,9 @@ def map_input_state(process):
                 for i in input_symbols:
                     if input_signal.lower() in (inp.lower() for
                                                 inp in i.inputlist):
-                        mapping[input_signal][state_name] = i
+                        if state_name not in mapping[input_signal]:
+                            mapping[input_signal][state_name] = []
+                        mapping[input_signal][state_name].append(i)
     return mapping
 
 
@@ -983,6 +985,20 @@ def add_labels_before_each_branch(
                 input_name = re.split(r'\W+', each.inputString)[0]
             if each.transition is not None and need_label(each.transition):
                 label_name += input_name
+                
+                # Check if the transition belongs to a state instance
+                is_instance = False
+                if getattr(process, 'has_instances', False):
+                    possible_states = list(set(each.transition.possible_states))
+                    if len(possible_states) == 1:
+                        st_name = possible_states[0]
+                        for comp in process.composite_states:
+                            if st_name in comp.instances:
+                                is_instance = True
+                                break
+                        if is_instance:
+                            label_name += "_" + st_name
+
                 label = ogAST.Label()
                 label.inputString = label_name
                 each.transition.actions.insert(0, label)
