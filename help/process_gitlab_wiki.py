@@ -135,7 +135,7 @@ for target_file in FILES_TO_PROCESS:
     <meta charset="utf-8">
     <title>{target_file.replace('.md', '').replace('_', ' ')}</title>
     <style>
-        body {{ font-family: sans-serif; line-height: 1.6; padding: 25px; color: #222; max-width: 900px; margin: 0 auto; }}
+        body {{ font-family: sans-serif; line-height: 1.3; padding: 25px; color: #222; max-width: 900px; margin: 0 auto; }}
         pre {{ background-color: #f6f8fa; border: 1px solid #e1e4e8; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 15px 0; }}
         code {{ font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; font-size: 14px; background-color: rgba(27,31,35,0.05); padding: 0.2em 0.4em; border-radius: 3px; }}
         pre code {{ background-color: transparent; padding: 0; border: 0; }}

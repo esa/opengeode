@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.5.2 (06/2026)**
+- Refactoring the C and Ada backend - various optimizations and aligments
+- Inline help now aligned with the Gitlab wiki
+
 **4.5.1 (06/2026)**
 - Optimize generation of exported proedures in C (don't copy input parameters to the stack)
 
