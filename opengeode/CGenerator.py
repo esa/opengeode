@@ -3778,7 +3778,31 @@ def processing_transitions_and_floating_labels(process):
             if cs_item:
                 need_final_endif = False
                 first = "} else " if done else ""
-                cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
+                
+                is_instance = False
+                comp_type = ''
+                for comp in process.composite_states:
+                    if statename.lower() in comp.instances:
+                        is_instance = True
+                        comp_type = comp.statename
+                        break
+
+                if is_instance:
+                    leaf_states = [s for s in process.mapping.keys() 
+                                   if s.lower().startswith(comp_type.lower() + SEPARATOR) 
+                                   and not s.endswith('START')]
+                    if not leaf_states:
+                        leaf_states = [comp_type]
+                    
+                    state_conds = [f'{LPREFIX}.state == {generate_state_name(s)}' for s in leaf_states]
+                    state_cond_str = ' || '.join(state_conds)
+                    if len(leaf_states) > 1:
+                        state_cond_str = f'({state_cond_str})'
+                    
+                    cond = f'{state_cond_str} && {LPREFIX}.state_instance == {generate_state_name(statename)}'
+                    cs_code.append(f'{first}if({cond})')
+                else:
+                    cs_code.append(f'{first}if({LPREFIX}.state == {generate_state_name(statename)})')
                 cs_code.append('{')
                 lowest_priority = max(item.priority for item in cs_item)
 

@@ -252,9 +252,34 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
         if cs_item:
             need_final_endif = False
             first = "els" if done else ""
-            cs_template.append(
-                    f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
-                    ' then')
+            
+            is_instance = False
+            comp_type = ''
+            for comp in process.composite_states:
+                if statename.lower() in comp.instances:
+                    is_instance = True
+                    comp_type = comp.statename
+                    break
+
+            if is_instance:
+                leaf_states = [s for s in process.mapping.keys() 
+                               if s.lower().startswith(comp_type.lower() + SEPARATOR) 
+                               and not s.endswith('START')]
+                if not leaf_states:
+                    leaf_states = [comp_type]
+                
+                state_conds = [f'{LPREFIX}.State = {ASN1SCC}{s}' for s in leaf_states]
+                state_cond_str = ' or '.join(state_conds)
+                if len(leaf_states) > 1:
+                    state_cond_str = f'({state_cond_str})'
+                
+                cond = f'{state_cond_str} and then {LPREFIX}.State_Instance = {ASN1SCC}{statename}'
+                cs_template.append(f'{first}if {cond} then')
+            else:
+                cs_template.append(
+                        f'{first}if {LPREFIX}.State = {ASN1SCC}{statename}'
+                        ' then')
+
             # Change priority 0 (no priority set) to lowest priority
             lowest_priority = max(item.priority for item in cs_item)
 
