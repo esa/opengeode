@@ -1209,20 +1209,18 @@ package body {process.name}_RI is''']
     # Generate the code for all transitions
     code_transitions = []
     local_decl_transitions = []
-    if not NO_CONTEXT:
-        for proc_tr in process.transitions:
-            code_tr, tr_local_decl = generate(proc_tr)
-            code_transitions.append(code_tr)
-            local_decl_transitions.extend(tr_local_decl)
+    for proc_tr in process.transitions:
+        code_tr, tr_local_decl = generate(proc_tr)
+        code_transitions.append(code_tr)
+        local_decl_transitions.extend(tr_local_decl)
 
     # Generate code for the floating labels as individual functions
     code_labels = []
-    if not NO_CONTEXT:
-        for label in process.content.floating_labels:
-            ads_template.append(
-                    f'function Branch_{label.inputString} return Branches;')
-            code_label, _ = generate(label)
-            taste_template.extend(code_label)
+    for label in process.content.floating_labels:
+        ads_template.append(
+                f'function Branch_{label.inputString} return Branches;')
+        code_label, _ = generate(label)
+        taste_template.extend(code_label)
 
     # Generate the code of the Execute_Transition procedure, if needed
     if process.transitions and not instance and not NO_CONTEXT:
