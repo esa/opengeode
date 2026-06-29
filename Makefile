@@ -49,7 +49,7 @@ update:
 	git pull
 
 # Define the expected version of the QtTaste widget
-export QTASTE_VERSION=2.0.2
+export QTASTE_VERSION=2.1.0
 
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
@@ -69,7 +69,7 @@ dependencies:
 	       cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install:
+install: help
 	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --upgrade .
 
 full-install: update
@@ -85,7 +85,9 @@ pytest:
 	python3 -m pip  install --user --upgrade pytest pytest-qt
 	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; PYTEST_QT_API=PySide6 py.test
 
-help:
+help: help/opengeode.qhc
+
+help/opengeode.qhc:
 	# Build the inline help by getting the content on the wiki and converting it to QtHelp format
 	cd help && ./SDL.sh
 
