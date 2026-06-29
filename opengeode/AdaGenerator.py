@@ -831,8 +831,6 @@ package body {process.name}_RI is''']
     # Generate the code for each input signal (provided interface) and timers
     for signal in process.input_signals + [
                         {'name': timer} for timer in process.timers]:
-        if getattr(process, 'only_procedures', False):
-            break
         if stop_condition:
             # dont generate anything in stop_condition functions
             break

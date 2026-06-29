@@ -291,17 +291,14 @@ def _process(process, instance=False, **kwargs):
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
     # run_transition_declaration_code is moved to header
-    if not process.only_procedures:
-        generated_c_source_code.extend(aggreg_start_proc_code)
+    generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
     generated_c_source_code.extend(startup_function_code)
-    if not process.only_procedures:
-        generated_c_source_code.extend(input_signals_code)
+    generated_c_source_code.extend(input_signals_code)
     generated_c_source_code.extend(output_signals_code)
     generated_c_source_code.extend(inner_procedures_code)
-    if not process.only_procedures:
-        generated_c_source_code.extend(transition_code)
-        generated_c_source_code.extend(generate_current_state_to_str_code)
+    generated_c_source_code.extend(transition_code)
+    generated_c_source_code.extend(generate_current_state_to_str_code)
 
     with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
@@ -316,12 +313,10 @@ def _process(process, instance=False, **kwargs):
     if not getattr(process, 'no_context', False):
         generated_h_source_code.append(f'#include "{process.name.lower()}_datamodel.h"\n')
 
-    if not process.only_procedures:
-        generated_h_source_code.extend(run_transition_declaration_code)
+    generated_h_source_code.extend(run_transition_declaration_code)
     generated_h_source_code.extend(startup_header_file_code)
     generated_h_source_code.extend(inner_procedures_header_file_code)
-    if not process.only_procedures:
-        generated_h_source_code.extend(input_signals_header_file_code)
+    generated_h_source_code.extend(input_signals_header_file_code)
     generated_h_source_code.extend(output_signals_header_file_code)
     if not process.only_procedures:
         generated_h_source_code.extend(continuous_signals_header_file_code)
@@ -3253,7 +3248,7 @@ def generating_startup_function(process, no_renames):
 
     processing_process_variables(process, no_renames, startup_function_code)
 
-    if process.transitions and not process.only_procedures:
+    if process.transitions:
         startup_function_code.append('\n')
         ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
         startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
@@ -3293,9 +3288,8 @@ def generating_run_transition_declaration(process):
     run_transition_declaration_code.append(', '.join(branches))
     run_transition_declaration_code.append('};\n')
 
-    if process.transitions:
-        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
-        run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
+    ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+    run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
 
     return run_transition_declaration_code
 
@@ -3861,27 +3855,26 @@ def processing_transitions_and_floating_labels(process):
         code_labels.extend(cs_code)
 
     # Generate the code of the runTransition procedure
-    if process.transitions:
-        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
-        transition_code.append(f'void runTransition{process.processName}({ctxt_arg}enum {enum_name} Id)')
-        transition_code.append('{')
-        transition_code.append(f'enum {enum_name} trId = Id;')
-        transition_code.append('while (trId != branch_end)')
-        transition_code.append('{')
-        transition_code.append('switch (trId)')
-        transition_code.append('{')
-        for label in all_labels:
-            ctxt_param = 'ctxt' if IS_INSTANCE else ''
-            transition_code.append(f'case {label}: trId = branch_{label}({ctxt_param}); break;')
-        if has_continuous_signals:
-            ctxt_param = 'ctxt' if IS_INSTANCE else ''
-            transition_code.append(f'case continuous_signals: trId = branch_continuous_signals({ctxt_param}); break;')
-        else:
-            transition_code.append('case continuous_signals: trId = branch_end; break;')
-        transition_code.append('default: trId = branch_end; break;')
-        transition_code.append('}')
-        transition_code.append('}')
-        transition_code.append('}')
+    ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+    transition_code.append(f'void runTransition{process.processName}({ctxt_arg}enum {enum_name} Id)')
+    transition_code.append('{')
+    transition_code.append(f'enum {enum_name} trId = Id;')
+    transition_code.append('while (trId != branch_end)')
+    transition_code.append('{')
+    transition_code.append('switch (trId)')
+    transition_code.append('{')
+    for label in all_labels:
+        ctxt_param = 'ctxt' if IS_INSTANCE else ''
+        transition_code.append(f'case {label}: trId = branch_{label}({ctxt_param}); break;')
+    if has_continuous_signals:
+        ctxt_param = 'ctxt' if IS_INSTANCE else ''
+        transition_code.append(f'case continuous_signals: trId = branch_continuous_signals({ctxt_param}); break;')
+    else:
+        transition_code.append('case continuous_signals: trId = branch_end; break;')
+    transition_code.append('default: trId = branch_end; break;')
+    transition_code.append('}')
+    transition_code.append('}')
+    transition_code.append('}')
 
     transition_code = code_labels + transition_code
     continuous_signals_header_file_code.append(u'\n')
