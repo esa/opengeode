@@ -3190,6 +3190,7 @@ def generate_sdl_constants(process):
         if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
             pass
         else:
+            sdl_constants_code.append(f"[[maybe_unused]]")
             sdl_constants_code.append(f"static const {ASN1SCC}{data_type} {sdl_constant.varName} = {val};")
 
     sdl_constants_code.append('\n')
