@@ -1293,14 +1293,17 @@ def _transition(tr, **kwargs):
 
                             # If there are multiple next_trans, it's because
                             # we are exiting an instance of a state type.
-                            # (not supported in C - check Ada backend when needed)
                             if len(tr.terminator.next_trans) == 1:
                                 ret_branch = find_a_label(tr.terminator.next_trans[0])
                                 stmts.append(f'return {ret_branch.lower()};')
                             else:
-                                ...
-
-                        #stmts.append(f'return {str(next_state_id_str).lower()}; // UGH2')
+                                stmts.append(f"switch ({LPREFIX}.state_instance) {{")
+                                for nt in tr.terminator.next_trans:
+                                    statename = nt.possible_states[0]
+                                    next_branch = find_a_label(nt)
+                                    stmts.append(f"case {generate_state_name(statename)}: return {next_branch.lower()}; break;")
+                                stmts.append("default: return continuous_signals; break;")
+                                stmts.append("}")
                 if aggregate:
                     stmts.append('} else')
                     stmts.append('{')
