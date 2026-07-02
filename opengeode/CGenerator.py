@@ -8,7 +8,7 @@
 
     Copyright (c) 2015-2020 Politecnico di Milano & ESA
     Copyright (c) 2020-2023 N7Space & ESA
-    Copyright (c) 2024 ESA
+    Copyright (c) 2024-2026 Maxime Perrotin / ESA
 
     Original design by Marco Lattuada
     Now maintained by ESA
@@ -1182,6 +1182,13 @@ def _transition(tr, **kwargs):
                         if tr.terminator.next_id == -1:
                             stmts.append(f'return continuous_signals;')
                         else:
+                            if tr.terminator.instance_of:
+                                stmts.append(f'//  Instance {tr.terminator.inputString}'
+                                             f' of state {tr.terminator.instance_of}')
+                                stmts.append(
+                                        f'{LPREFIX}.state_instance = '
+                                        f'{generate_state_name(tr.terminator.inputString)};')
+
                             stmts.append(f'return {str(tr.terminator.next_id).lower()};')
 
                 else:

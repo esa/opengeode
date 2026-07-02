@@ -3403,7 +3403,6 @@ def _transition(tr, **kwargs):
                     code.append(f'{tr.terminator.next_id};')
                     code.append('return Continuous_Signals;')
                 elif not history:
-                    # code.append(f'trId := {str(tr.terminator.next_id)};')
                     if tr.terminator.next_id == -1:
                         if not NO_CONTEXT:
                             if not tr.terminator.substate:
