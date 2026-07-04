@@ -3259,7 +3259,7 @@ def generating_startup_function(process, no_renames):
 
     processing_process_variables(process, no_renames, startup_function_code)
 
-    if process.transitions:
+    if process.transitions and not getattr(process, 'no_context', False):
         startup_function_code.append('\n')
         ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
         startup_function_code.append(f'runTransition{process.processName}({ctxt_param}startup_transition);')
@@ -3300,7 +3300,8 @@ def generating_run_transition_declaration(process):
     run_transition_declaration_code.append('};\n')
 
     ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
-    run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
+    if not getattr(process, 'no_context', False):
+        run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
 
     return run_transition_declaration_code
 
@@ -3437,6 +3438,10 @@ def processing_input_signals(process):
             # therefore it is renamed as it is not a regular PI
             fake_name = f'{PROCESS_NAME.lower()}_{signame.lower()}_transition'
 
+            has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
+            if not has_transition:
+                continue
+
         pn = process.processName
         pn = pn.lower()
         sig_name = signal['name']
@@ -3465,8 +3470,12 @@ def processing_input_signals(process):
 
         input_signals_code.append(pi_header)
         input_signals_code.append('{')
-        input_signals_code.append(f'switch({LPREFIX}.state)')
-        input_signals_code.append('{')
+        
+        has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
+        
+        if has_transition and not getattr(process, 'no_context', False):
+            input_signals_code.append(f'switch({LPREFIX}.state)')
+            input_signals_code.append('{')
 
         def execute_transition(state, dest=[]):
             ''' Generate the code that triggers the transition for the current
@@ -3590,16 +3599,17 @@ def processing_input_signals(process):
                 if execute_transition(state, statecase):
                     input_signals_code.extend(statecase)
 
-        for each_state in reduced_statelist:
-            case_state(each_state)
+        if has_transition and not getattr(process, 'no_context', False):
+            for each_state in reduced_statelist:
+                case_state(each_state)
 
-        input_signals_code.append('default:')
-        input_signals_code.append('{')
-        ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
-        input_signals_code.append(f'runTransition{process.processName}({ctxt_param}continuous_signals);')
-        input_signals_code.append('break;')
-        input_signals_code.append('}')
-        input_signals_code.append('}')
+            input_signals_code.append('    default:')
+            input_signals_code.append('    {')
+            ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
+            input_signals_code.append(f'        runTransition{process.processName}({ctxt_param}continuous_signals);')
+            input_signals_code.append('        break;')
+            input_signals_code.append('    }')
+            input_signals_code.append('}')
         input_signals_code.append('}')
 
     input_signals_code.append('\n\n')
@@ -3715,6 +3725,8 @@ def generating_includes(process):
 
 
 def processing_transitions_and_floating_labels(process):
+    if getattr(process, 'no_context', False):
+        return [], []
     continuous_signals_header_file_code = ['//// Continuous Signals']
     transition_code = ['//// Definition Of Run Transition']
 

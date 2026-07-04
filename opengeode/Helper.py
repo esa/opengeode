@@ -25,7 +25,7 @@
                                        branches / transitions, allowing to
                                        name them for better code traceability
 
-    Copyright (c) 2012-2025 European Space Agency
+    Copyright (c) 2012-2026 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 

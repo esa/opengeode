@@ -238,7 +238,6 @@ def generate_code_for_continuous_signals(process: ogAST.Process, generic: bool):
                                          #branch_to=trId,
                                          #branch_to=None,
                                          sep=sep, last=last)
-                    code.append('-- goto Next_Transition; (??)')
                     sep = 'elsif '
                     cs_template.extend(code)
 
@@ -857,6 +856,12 @@ package body {process.name}_RI is''']
             # exported procedures have been executed (synchronous PIs, or RPS)
             # therefore it is renamed as it is not a regular PI
             fake_name = f'{signame}_Transition'
+            
+            # If the user did not define a transition for this exported procedure in the state machine,
+            # we should not generate this _Transition procedure at all.
+            has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
+            if not has_transition:
+                continue
 
         if signame == 'START':
             continue
@@ -947,8 +952,10 @@ package body {process.name}_RI is''']
                 return False
             return True
 
+        has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
         if not instance:
-            taste_template.append(f'case {LPREFIX}.state is')
+            if has_transition and not getattr(process, 'no_context', False):
+                taste_template.append(f'case {LPREFIX}.state is')
 
         def case_state(state):
             ''' Recursive function (in case of state aggregation) to generate
@@ -995,17 +1002,20 @@ package body {process.name}_RI is''']
                     taste_template.extend(statecase)
 
         if not instance:
-            for each_state in reduced_statelist:
-                case_state(each_state)
-            taste_template.append('when others =>')
-            taste_template.append('Execute_Transition (Continuous_Signals);')
-            if simu:
-                if fake_name is False:
-                    # In simulation mode, the unhandled input is signaled
-                    # Not applicable to the transitions of synchronous calls
-                    # (using "fake_name")
-                    taste_template.append('raise Lost_Input;')
-            taste_template.append('end case;')
+            if has_transition and not getattr(process, 'no_context', False):
+                for each_state in reduced_statelist:
+                    case_state(each_state)
+                taste_template.append('when others =>')
+                taste_template.append('Execute_Transition (Continuous_Signals);')
+                if simu:
+                    if fake_name is False:
+                        # In simulation mode, the unhandled input is signaled
+                        # Not applicable to the transitions of synchronous calls
+                        # (using "fake_name")
+                        taste_template.append('raise Lost_Input;')
+                taste_template.append('end case;')
+            else:
+                taste_template.append('null;')
         elif not fake_name or instance:
             inst_call = f"{process.name}_Instance.{signame}"
             if 'type' in signal:
@@ -1215,6 +1225,7 @@ package body {process.name}_RI is''']
     # Generate code for the floating labels as individual functions
     code_labels = []
     for label in process.content.floating_labels:
+        if NO_CONTEXT: break
         ads_template.append(
                 f'function Branch_{label.inputString} return Branches;')
         code_label, _ = generate(label)
@@ -1248,15 +1259,6 @@ package body {process.name}_RI is''']
             taste_template.append(
                     f'when {label} => Next_Branch := Branch_{label};')
 
-#       for idx, val in enumerate(code_transitions):
-#           # Code trannsition should only be a single goto
-#           taste_template.append('when {idx} =>'.format(idx=idx))
-#           val = ['{line}'.format(line=lineno) for lineno in val]
-#           if val:
-#               taste_template.extend(val)
-#           else:
-#               taste_template.append('null;')
-
         if has_cs:
             taste_template.append(
                 'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
@@ -1265,28 +1267,21 @@ package body {process.name}_RI is''']
                 'when Continuous_Signals => Next_Branch := Branch_End;')
         taste_template.append(
                 'when Branch_End => null;')
-        # taste_template.append('trId := -1;')
-#       taste_template.append('Execute_Transition (Continuous_Signals);')
-        # taste_template.append('goto Continuous_Signals;')
-
-#       taste_template.append('when others =>')
-#       taste_template.append('null;')
 
         taste_template.append('end case;')
         if code_labels:
             # Due to nested states (chained transitions) jump over label code
             # (NEXTSTATEs do not return from Execute_Transition)
             if not MONITORS:
-                taste_template.append('goto Continuous_Signals;')
+                taste_template.append('return Continuous_Signals; -- DGB1')
             else:
                 # Observers only evaluate continuous signals once
                 # to avoid looping forever when remaining in the same state
-                taste_template.append('goto Next_Transition;')
+                taste_template.append('return Branch_end;  -- DBG2')
 
         # Add the code for the floating labels
         taste_template.extend(code_labels)
 
-        taste_template.append('<<Next_Transition>>')
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
@@ -3472,7 +3467,6 @@ def _transition(tr, **kwargs):
                         else:
                             # Observers only evaluate continuous signals once
                             # to avoid looping forever when remaining in the same state
-                            # code.append('goto Next_Transition; --  Until next observer step')
                             code.append('return Branch_End; --  Until next observer step')
             elif tr.terminator.kind == 'join':
                 if tr.terminator.path:
@@ -3591,7 +3585,6 @@ def _transition(tr, **kwargs):
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
-                        # code.append('goto Next_Transition; --  Until next observer step')
                         code.append('return Branch_End;  -- Until next observer step')
                 if aggregate:
                     code.append('else')
@@ -3601,7 +3594,6 @@ def _transition(tr, **kwargs):
                     else:
                         # Observers only evaluate continuous signals once
                         # to avoid looping forever when remaining in the same state
-                        #code.append('goto Next_Transition; --  Until next observer step')
                         code.append('return Branch_End;  -- Until next observer step')
                     code.append('end if;')
     if empty_transition:
