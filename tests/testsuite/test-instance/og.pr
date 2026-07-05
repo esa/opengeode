@@ -1,6 +1,8 @@
 /* CIF PROCESS (54, 46), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process type og_type;
-    /* CIF TEXT (2755, 9), (298, 286) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (2755, 9), (245, 263) */
     -- A Demo to test octet strings
     -- using various symbols.
     
@@ -19,188 +21,222 @@ process type og_type;
     
     dcl seqofbool seqBool := { true, true};
     /* CIF ENDTEXT */
+    /* CIF procedure (2524, 738), (189, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure TestExportedWithTransition;
+        /* CIF START (513, 132), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (410, 187), (274, 35) */
+            call writeln("Call to Exported With Transition");
+            /* CIF return (530, 242), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF procedure (2739, 651), (102, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    procedure TestExported;
+        /* CIF START (527, 101), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (439, 156), (245, 35) */
+            call writeln("Exported Procedure Called");
+            /* CIF return (544, 211), (35, 35) */
+            return ;
+    endprocedure;
     /* CIF START (1427, 35), (100, 50) */
     START;
-        /* CIF task (1370, 100), (214, 83) */
+        /* CIF task (1402, 100), (149, 68) */
         task test := 5,
 test := power(test, 1),
 test := abs(-4+1),
 test := abs(test)
-        /* CIF comment (1603, 123), (183, 35) */
+        /* CIF comment (1570, 115), (165, 35) */
         comment 'Task with unicode: voilà!';
-        /* CIF task (1375, 198), (204, 50) */
+        /* CIF task (1384, 183), (184, 35) */
         task first_msg := 'Say hello first!'
-        /* CIF comment (1599, 198), (148, 50) */
+        /* CIF comment (1589, 175), (129, 35) */
         comment 'String assignment';
-        /* CIF PROCEDURECALL (1388, 263), (177, 35) */
+        /* CIF PROCEDURECALL (1396, 233), (160, 35) */
         call writeln( first_msg(1,2));
-        /* CIF PROCEDURECALL (1373, 313), (207, 35) */
+        /* CIF PROCEDURECALL (1386, 283), (182, 35) */
         call writeln( not (not not true));
-        /* CIF task (1394, 363), (165, 50) */
+        /* CIF task (1404, 333), (145, 38) */
         task seq := default_seqof,
 seq := {1,2,3}
-        /* CIF comment (1579, 363), (204, 50) */
+        /* CIF comment (1569, 327), (184, 38) */
         comment 'default_seqof is a constant
 defined in the ASN.1 model';
-        /* CIF task (1345, 428), (263, 50) */
+        /* CIF task (1355, 386), (242, 35) */
         task seq := seq // {4, test} // default_seqof
-        /* CIF comment (1629, 428), (156, 50) */
+        /* CIF comment (1618, 378), (134, 38) */
         comment 'Concatenate
 two SEQUENCE OF';
-        /* CIF task (1408, 493), (137, 50) */
+        /* CIF task (1417, 436), (118, 35) */
         task 'seq(1) := seq(2)';
-        /* CIF task (1382, 558), (189, 50) */
+        /* CIF task (1390, 486), (173, 35) */
         task seq := seq(0,1) // seq(3, 4)
-        /* CIF comment (1590, 558), (166, 50) */
+        /* CIF comment (1582, 478), (145, 35) */
         comment 'Remove 3rd element';
-        /* CIF task (1407, 623), (140, 53) */
+        /* CIF task (1415, 536), (122, 53) */
         task for x in seq:
     call writeln(x);
 endfor;
-        /* CIF PROCEDURECALL (1395, 691), (164, 35) */
+        /* CIF PROCEDURECALL (1405, 604), (142, 35) */
         call writeln('test=', test);
-        /* CIF decision (1425, 741), (104, 70) */
+        /* CIF decision (1434, 654), (84, 50) */
         decision test in seq
-        /* CIF comment (1549, 756), (170, 39) */
+        /* CIF comment (1539, 659), (150, 38) */
         comment 'Test the "in" operator
 Unicode test: Ï';
-            /* CIF ANSWER (1335, 831), (100, 35) */
+            /* CIF ANSWER (1350, 724), (70, 23) */
             (TRUE):
-                /* CIF PROCEDURECALL (1308, 881), (154, 50) */
+                /* CIF PROCEDURECALL (1316, 762), (136, 35) */
                 call writeln('All OK (1)');
-            /* CIF ANSWER (1498, 831), (100, 35) */
+            /* CIF ANSWER (1513, 724), (70, 23) */
             (FALSE):
-                /* CIF PROCEDURECALL (1466, 881), (164, 50) */
+                /* CIF PROCEDURECALL (1473, 762), (148, 35) */
                 call writeln('NOT OK (1)')
-                /* CIF comment (1650, 888), (117, 35) */
+                /* CIF comment (1642, 761), (100, 35) */
                 comment 'Call UnicÔDË';
         enddecision;
-        /* CIF decision (1427, 946), (100, 70) */
+        /* CIF decision (1442, 833), (70, 50) */
         decision 3 in seq
-        /* CIF comment (1547, 963), (256, 35) */
+        /* CIF comment (1532, 839), (234, 35) */
         comment 'test==3 so it should also return true';
-            /* CIF ANSWER (1341, 1036), (100, 35) */
+            /* CIF ANSWER (1356, 903), (70, 23) */
             (TRUE):
-                /* CIF PROCEDURECALL (1309, 1086), (164, 50) */
+                /* CIF PROCEDURECALL (1319, 941), (142, 35) */
                 call writeln('ALL OK (2)');
-            /* CIF ANSWER (1513, 1036), (100, 35) */
+            /* CIF ANSWER (1528, 903), (70, 23) */
             (FALSE):
-                /* CIF PROCEDURECALL (1481, 1086), (164, 50) */
+                /* CIF PROCEDURECALL (1488, 941), (148, 35) */
                 call writeln('NOT OK (2)');
         enddecision;
-        /* CIF NEXTSTATE (1427, 1151), (100, 50) */
+        /* CIF NEXTSTATE (1442, 1012), (70, 35) */
         NEXTSTATE Wait;
-    /* CIF state (2204, 160), (100, 50) */
+    /* CIF state (2468, 528), (71, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state Running
+    /* CIF comment (2559, 527), (76, 35) */
+    comment 'Néxtaytè';
+        /* CIF input (2409, 583), (189, 35) */
+        input TestExportedWithTransition;
+            /* CIF PROCEDURECALL (2345, 638), (317, 35) */
+            call writeln("Transition aftr exported with Transition");
+            /* CIF NEXTSTATE (2469, 693), (70, 35) */
+            NEXTSTATE -;
+    endstate;
+    /* CIF state (2217, 160), (71, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Running;
-        /* CIF input (2204, 230), (100, 50) */
+        /* CIF input (2217, 215), (71, 35) */
         input go(msg)
-        /* CIF comment (2324, 237), (184, 35) */
+        /* CIF comment (2309, 214), (176, 35) */
         comment 'Comment on process type';
-            /* CIF PROCEDURECALL (2202, 300), (103, 35) */
+            /* CIF PROCEDURECALL (2203, 270), (100, 35) */
             call writeln(msg);
-            /* CIF decision (2202, 350), (103, 70) */
+            /* CIF decision (2218, 320), (70, 50) */
             decision msg
-            /* CIF comment (2326, 360), (111, 50) */
+            /* CIF comment (2309, 320), (91, 38) */
             comment 'Switch-case
 on strings';
-                /* CIF ANSWER (2454, 440), (100, 35) */
+                /* CIF ANSWER (1837, 390), (70, 23) */
+                ('end'):
+                    /* CIF output (1825, 428), (93, 38) */
+                    output rezult
+('Goodbye!');
+                    /* CIF NEXTSTATE (1837, 483), (70, 35) */
+                    NEXTSTATE Wait;
+                /* CIF ANSWER (2469, 390), (70, 23) */
                 ('egg'):
-                    /* CIF task (2433, 490), (141, 50) */
+                    /* CIF task (2445, 428), (117, 35) */
                     task msg := msg // '!!'
-                    /* CIF comment (2595, 490), (118, 50) */
+                    /* CIF comment (2583, 420), (97, 38) */
                     comment 'Concatenate
 strings';
-                    /* CIF output (2429, 555), (150, 50) */
+                    /* CIF output (2438, 478), (131, 35) */
                     output rezult(default_str)
-                    /* CIF comment (2594, 553), (161, 53) */
+                    /* CIF comment (2584, 468), (143, 53) */
                     comment 'Send a constant
 defined in the ASN.1
 model';
-                    /* CIF NEXTSTATE (2454, 620), (100, 50) */
+                    /* CIF NEXTSTATE (2468, 528), (71, 35) */
                     NEXTSTATE Running
-                    /* CIF comment (2574, 627), (96, 35) */
+                    /* CIF comment (2559, 527), (76, 35) */
                     comment 'Néxtaytè';
-                /* CIF ANSWER (1864, 440), (100, 35) */
-                ('end'):
-                    /* CIF output (1858, 490), (112, 50) */
-                    output rezult
-('Goodbye!');
-                    /* CIF NEXTSTATE (1864, 557), (100, 50) */
-                    NEXTSTATE Wait;
-                /* CIF ANSWER (2042, 440), (100, 35) */
+                /* CIF ANSWER (2000, 390), (70, 23) */
                 ELSE:
-                    /* CIF task (2021, 490), (141, 50) */
+                    /* CIF task (1978, 428), (114, 35) */
                     task msg := msg // '!'
-                    /* CIF comment (2183, 490), (118, 50) */
+                    /* CIF comment (2112, 420), (97, 38) */
                     comment 'Concatenate
 strings';
-                    /* CIF PROCEDURECALL (2008, 560), (167, 35) */
+                    /* CIF PROCEDURECALL (1953, 483), (163, 35) */
                     call writeln('msg//! = ', msg);
-                    /* CIF task (1994, 610), (195, 50) */
+                    /* CIF task (1944, 533), (181, 35) */
                     task msg := msg(3,4) // msg(1,2)
-                    /* CIF comment (2210, 610), (209, 53) */
+                    /* CIF comment (2146, 525), (187, 53) */
                     comment 'Concatenate two substrings
 (can be used to remove an
 element from a list)';
-                    /* CIF PROCEDURECALL (1980, 680), (224, 35) */
+                    /* CIF PROCEDURECALL (1930, 588), (209, 35) */
                     call writeln('msg(3,4)//(1,2) = ',msg);
-                    /* CIF task (2010, 730), (163, 50) */
+                    /* CIF task (1961, 638), (148, 35) */
                     task msg := first_msg(1, 2)
-                    /* CIF comment (2186, 727), (177, 53) */
+                    /* CIF comment (2121, 627), (156, 53) */
                     comment 'Substring
 TODO check range
 against current Length';
-                    /* CIF PROCEDURECALL (1992, 800), (200, 35) */
+                    /* CIF PROCEDURECALL (1936, 693), (198, 35) */
                     call writeln('first_msg(1,2)=',msg)
-                    /* CIF comment (2212, 800), (100, 35) */
+                    /* CIF comment (2154, 693), (97, 35) */
                     comment 'should be ay';
-                    /* CIF output (2038, 850), (108, 50) */
+                    /* CIF output (1990, 743), (90, 35) */
                     output rezult(msg);
-                    /* CIF NEXTSTATE (2042, 915), (100, 50) */
+                    /* CIF NEXTSTATE (1999, 793), (71, 35) */
                     NEXTSTATE Running;
             enddecision;
     endstate;
-    /* CIF state (1427, 1151), (100, 50) */
+    /* CIF state (1442, 1012), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Wait;
-        /* CIF input (1427, 1221), (100, 50) */
+        /* CIF input (1440, 1067), (71, 35) */
         input go(msg)
-        /* CIF comment (1547, 1228), (120, 35) */
+        /* CIF comment (1532, 1064), (103, 35) */
         comment 'Ïñpût unicode';
-            /* CIF decision (1420, 1286), (114, 70) */
+            /* CIF decision (1428, 1117), (96, 50) */
             decision msg = 'hello'
-            /* CIF comment (1554, 1296), (128, 50) */
+            /* CIF comment (1545, 1115), (109, 38) */
             comment 'Boolean test
 on string value';
-                /* CIF ANSWER (1638, 1376), (100, 35) */
+                /* CIF ANSWER (1653, 1187), (70, 23) */
                 (FALSE):
-                    /* CIF output (1618, 1426), (139, 50) */
+                    /* CIF output (1627, 1225), (121, 35) */
                     output rezult(first_msg)
-                    /* CIF comment (1777, 1433), (85, 35) */
+                    /* CIF comment (1768, 1222), (70, 35) */
                     comment 'OûtpUT';
-                    /* CIF NEXTSTATE (1638, 1491), (100, 50) */
+                    /* CIF NEXTSTATE (1653, 1275), (70, 35) */
                     NEXTSTATE Wait;
-                /* CIF ANSWER (1367, 1376), (100, 35) */
+                /* CIF ANSWER (1382, 1187), (70, 23) */
                 (TRUE):
-                    /* CIF output (1344, 1426), (145, 50) */
+                    /* CIF output (1353, 1225), (126, 35) */
                     output rezult('Welcome')
-                    /* CIF comment (1509, 1426), (95, 50) */
+                    /* CIF comment (1499, 1215), (77, 38) */
                     comment 'Send raw
 string';
-                    /* CIF decision (1368, 1491), (98, 50) */
+                    /* CIF decision (1374, 1275), (84, 50) */
                     decision 3 in {1,2,3};
-                        /* CIF ANSWER (1328, 1561), (88, 33) */
+                        /* CIF ANSWER (1333, 1345), (74, 23) */
                         (1 in {1,2}):
-                        /* CIF ANSWER (1418, 1561), (88, 33) */
+                        /* CIF ANSWER (1423, 1345), (74, 23) */
                         (0 in {1,2}):
                     enddecision;
-                    /* CIF decision (1368, 1609), (98, 50) */
+                    /* CIF decision (1374, 1384), (84, 50) */
                     decision 4 in {1,2,3};
-                        /* CIF ANSWER (1339, 1679), (66, 33) */
+                        /* CIF ANSWER (1337, 1454), (70, 23) */
                         (true):
-                        /* CIF ANSWER (1422, 1679), (70, 33) */
+                        /* CIF ANSWER (1422, 1454), (70, 23) */
                         (false):
                     enddecision;
-                    /* CIF NEXTSTATE (1367, 1727), (100, 50) */
+                    /* CIF NEXTSTATE (1381, 1493), (71, 35) */
                     NEXTSTATE Running;
             enddecision;
     endstate;

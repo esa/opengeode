@@ -8,6 +8,9 @@ SYSTEM og;
 	/* CIF Keep Specific Geode PARAMNAMES ze_rezult */
 	SIGNAL rezult (My_OctStr);
 
+        exported procedure TestExported; referenced;
+        exported procedure TestExportedWithTransition; referenced;
+
 	CHANNEL c
 		FROM ENV TO og WITH go;
 		FROM og TO ENV WITH rezult;

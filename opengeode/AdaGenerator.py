@@ -722,11 +722,15 @@ package body {process.name}_RI is''']
         # Add function allowing to trace current state as a string
         # This uses malloc and should be generated only for Linux
         # when Debug is ON
-        if reduced_statelist and not getattr(process, 'no_context', False):
+        if not NO_CONTEXT:
+            state_str = f"{LPREFIX}.State"
+        else:
+            state_str = '"No_State"'
+        if reduced_statelist:
             ads_template.append(
                 f"function Get_State return Chars_Ptr "
                 f"is ({process.name.title()}_RI.To_C_Pointer "
-                f"({ASN1SCC}{process.name}_States'Image ({LPREFIX}.State)))"
+                f"({ASN1SCC}{process.name}_States'Image ({state_str})))"
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process.name.lower()}_state";')
 
@@ -828,6 +832,7 @@ package body {process.name}_RI is''']
     Helper.inner_labels_to_floating(process)
 
     # Generate the code for each input signal (provided interface) and timers
+    generated_pis = set()
     for signal in process.input_signals + [
                         {'name': timer} for timer in process.timers]:
         if stop_condition:
@@ -840,6 +845,9 @@ package body {process.name}_RI is''']
             continue
 
         signame = signal.get('name', 'START')
+        if signame.lower() in generated_pis:
+            continue
+        generated_pis.add(signame.lower())
         fake_name = False
 
         # Check if there is an exported procedure with the name of the signal
@@ -856,11 +864,11 @@ package body {process.name}_RI is''']
             # exported procedures have been executed (synchronous PIs, or RPS)
             # therefore it is renamed as it is not a regular PI
             fake_name = f'{signame}_Transition'
-            
+
             # If the user did not define a transition for this exported procedure in the state machine,
             # we should not generate this _Transition procedure at all.
             has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
-            if not has_transition:
+            if not has_transition and not instance:
                 continue
 
         if signame == 'START':
@@ -1196,12 +1204,15 @@ package body {process.name}_RI is''']
         if ri_inst or has_context_params or 'PID' in TYPES:
             pkg_decl += ")"
         ads_template.append(f"{pkg_decl};")
-        if not getattr(process, 'no_context', False):
-            ads_template.append(
-                   f"function Get_State return chars_ptr "
-                   f"is ({process.name}_RI.To_C_Pointer ({process.name}_Instance.{LPREFIX}.State'Img))"
-                   f" with Export, Convention => C, "
-                   f'Link_Name => "{process.name.lower()}_state";')
+        if not NO_CONTEXT:
+            state_str = f"{process.name}_Instance.{LPREFIX}.State'Img"
+        else:
+            state_str = '"No_State"'
+        ads_template.append(
+               f"function Get_State return chars_ptr "
+               f"is ({process.name}_RI.To_C_Pointer ({state_str}))"
+               f" with Export, Convention => C, "
+               f'Link_Name => "{process.name.lower()}_state";')
 
         # Expose Execute_Transition, needed by the simulator to execute continuous signals
         if not NO_CONTEXT:

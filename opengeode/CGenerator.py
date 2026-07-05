@@ -138,7 +138,12 @@ def _process(process, instance=False, **kwargs):
         wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
 
         # PI wrappers
+        generated_pis = set()
         for pi in process.input_signals:
+            if pi["name"] in generated_pis:
+                continue
+            generated_pis.add(pi["name"])
+            
             if 'type' in pi:
                 pi_type = type_name(pi['type'])
                 sig = f'void {process_instance.processName}_PI_{pi["name"]}({pi_type} *param)'
@@ -679,6 +684,7 @@ def _call_external_function(output, **kwargs):
         proc, out_sig = None, None
         is_out_sig = False
 
+        is_transition_call = False
         try:
             out_sig, = [sig for sig in OUT_SIGNALS
                     if sig['name'].lower() == signal_name.lower()]
@@ -720,6 +726,7 @@ def _call_external_function(output, **kwargs):
                     if signal_name.lower() == f'{PROCESS_NAME.lower()}_{sig.inputString.lower()}_transition':
                         out_sig = sig
                         need_prefix = False
+                        is_transition_call = True
                         break
                 else:
                     # Not there? Impossible, the parser would have barked
@@ -784,6 +791,8 @@ def _call_external_function(output, **kwargs):
                 RIName = f"{PROCESS_NAME.lower()}_RI_{out['outputName']}"
             else:
                 RIName = out['outputName']
+            if is_transition_call and IS_INSTANCE:
+                list_of_params.insert(0, 'ctxt')
             if list_of_params:
                 params = ', '.join(list_of_params)
                 stmts.append(f'{RIName}({params});')
@@ -3418,11 +3427,16 @@ def processing_input_signals(process):
     reduced_statelist = {s for s in process.full_statelist
             if s not in process.parallel_states}
 
+    generated_pis = set()
     for signal in process.input_signals + [{'name': timer} for timer in process.timers]:
         signame = signal.get('name', 'START')
 
         if signame == 'START':
             continue
+
+        if signame.lower() in generated_pis:
+            continue
+        generated_pis.add(signame.lower())
 
         fake_name = False
 
@@ -3439,7 +3453,7 @@ def processing_input_signals(process):
             fake_name = f'{PROCESS_NAME.lower()}_{signame.lower()}_transition'
 
             has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
-            if not has_transition:
+            if not has_transition and not IS_INSTANCE:
                 continue
 
         pn = process.processName
