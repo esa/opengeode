@@ -723,14 +723,14 @@ package body {process.name}_RI is''']
         # This uses malloc and should be generated only for Linux
         # when Debug is ON
         if not NO_CONTEXT:
-            state_str = f"{LPREFIX}.State"
+            state_str = f"{ASN1SCC}{process.name}_States'Image({LPREFIX}.State)"
         else:
             state_str = '"No_State"'
         if reduced_statelist:
             ads_template.append(
                 f"function Get_State return Chars_Ptr "
                 f"is ({process.name.title()}_RI.To_C_Pointer "
-                f"({ASN1SCC}{process.name}_States'Image ({state_str})))"
+                f"({state_str}))"
                 f" with Export, Convention => C, "
                 f'Link_Name => "{process.name.lower()}_state";')
 
