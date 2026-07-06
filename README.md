@@ -125,6 +125,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+**4.6.2 (07/2026)**
+- Fix call to the _transition procedure when continuous signals exist at process level
+- (Resolve issue with taste model checker - "observe" procedure did not trigger the transition)
+
 **4.6.1 (07/2026)**
 - State instance support in C backend bugfix
 

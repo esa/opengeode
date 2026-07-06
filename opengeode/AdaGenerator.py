@@ -867,7 +867,8 @@ package body {process.name}_RI is''']
 
             # If the user did not define a transition for this exported procedure in the state machine,
             # we should not generate this _Transition procedure at all.
-            has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
+            # Unless there are continuous signals at sytem level !
+            has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys()) or has_cs
             if not has_transition and not instance:
                 continue
 
@@ -1022,6 +1023,8 @@ package body {process.name}_RI is''']
                         # (using "fake_name")
                         taste_template.append('raise Lost_Input;')
                 taste_template.append('end case;')
+            elif has_cs:
+                taste_template.append("Execute_Transition (Continuous_Signals);")
             else:
                 taste_template.append('null;')
         elif not fake_name or instance:
@@ -3741,7 +3744,13 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
         # Look for labels in the diagram and transform them in floating labels
         Helper.inner_labels_to_floating(proc)
 
-        has_transition = any(proc.inputString.lower() == k.lower() for k in PROCESS.input_mapping.keys())
+        # Check if the top level process has continuous signals. This is also
+        # taken into account to decide if there is need to call the _Transition
+        # procedure.
+        process_has_cs = any(PROCESS.cs_mapping.values())
+
+        has_transition = any(proc.inputString.lower() == k.lower()
+                             for k in PROCESS.input_mapping.keys()) or process_has_cs
         if proc.exported and proc.content.start is not None and is_rpc and has_transition:
             # Exported procedure end calling the corresponding transition
             # procedure that allows user to change state after RPC call
