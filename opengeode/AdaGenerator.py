@@ -1174,6 +1174,9 @@ package body {process.name}_RI is''']
     all_labels = [lab.inputString for lab in process.content.floating_labels]
     if not instance and not NO_CONTEXT:
         ads_template.append(f'type Branches is ({", ".join(all_labels)}, Continuous_Signals, Branch_End);')
+        if simu:
+            ads_template.append('type Branch_Coverage_Array is array (Branches) of Boolean;')
+            ads_template.append('Branch_Coverage : Branch_Coverage_Array := (others => False);')
 
     if instance:
         # Instance of a process type, all the RIs (including timers) must
@@ -1270,8 +1273,12 @@ package body {process.name}_RI is''']
         taste_template.append('case Next_Branch is')
 
         for label in all_labels:
-            taste_template.append(
-                    f'when {label} => Next_Branch := Branch_{label};')
+            if simu:
+                taste_template.append(
+                        f'when {label} => Branch_Coverage ({label}) := True; Next_Branch := Branch_{label};')
+            else:
+                taste_template.append(
+                        f'when {label} => Next_Branch := Branch_{label};')
 
         if has_cs:
             taste_template.append(
