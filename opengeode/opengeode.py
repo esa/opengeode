@@ -871,9 +871,13 @@ class SDL_Scene(QGraphicsScene):
     @Slot(Sdl_toolbar)
     def set_selection(self, toolbar):
         ''' When the selection has changed, update menu, etc '''
-        toolbar.update_menu(self)
-        for item in self.selected_symbols:
-            item.grabber.display()
+        try:
+            toolbar.update_menu(self)
+            for item in self.selected_symbols:
+                item.grabber.display()
+        except RuntimeError:
+            # Underlyings C++ object might be deleted on app exit/teardown
+            pass
 
     def syntax_errors(self, symb):
         ''' Parse a symbol and return a list of syntax errors '''
@@ -1863,9 +1867,8 @@ class SDL_View(QGraphicsView):
                 bar_items=ACTIONS.get(self.scene().context, []))
 
         # Connect toolbar actions
-        self.scene().menuslot = partial(self.scene().set_selection, self.toolbar)
-        if not self.scene().menuslot:
-            # avoid multiple connections. it causes Pyside bugs on app exit
+        if not hasattr(self.scene(), 'menuslot'):
+            self.scene().menuslot = partial(self.scene().set_selection, self.toolbar)
             self.scene().selectionChanged.connect(self.scene().menuslot)
         for item in self.toolbar.actions.keys():
             self.toolbar.actions[item].triggered.connect(
