@@ -3758,6 +3758,29 @@ def gui(options):
     app.setApplicationName('OpenGEODE')
     app.setWindowIcon(QIcon(':icons/input.png'))
 
+    # Force light mode palette to override any system dark theme
+    light_palette = QPalette()
+    light_palette.setColor(QPalette.Window, QColor(239, 239, 239))
+    light_palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Base, QColor(255, 255, 255))
+    light_palette.setColor(QPalette.AlternateBase, QColor(233, 231, 227))
+    light_palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 220))
+    light_palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Text, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Button, QColor(239, 239, 239))
+    light_palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+    light_palette.setColor(QPalette.Link, QColor(0, 0, 255))
+    light_palette.setColor(QPalette.Highlight, QColor(48, 140, 198))
+    light_palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+    light_palette.setColor(QPalette.PlaceholderText, QColor(128, 128, 128))
+    # Disabled state
+    light_palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(190, 190, 190))
+    light_palette.setColor(QPalette.Disabled, QPalette.Text, QColor(190, 190, 190))
+    light_palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(190, 190, 190))
+    app.setPalette(light_palette)
+    app.setStyle("Fusion")
+
     # Set all encodings to utf-8 in Qt
     # This was removed in Qt5, the consequences are unclear
     #QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
