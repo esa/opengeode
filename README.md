@@ -126,6 +126,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.6.4 (07/2026)**
+- C backend improvements: bitwise operators, equality checks, Decision any
+
 **4.6.3 (07/2026)**
 - Fix graphical glitches (mutiple cursors blinking, dynamic menu update, jumps of the symbols after reopening, light palette when system dark mode is enabled)
 - Fix compilation of QtWidget
