@@ -2107,17 +2107,15 @@ def _bitwise_operators(expr, **kwargs):
             # left and right are numbers
             string = f'({left_string} {get_bitwise_operator(expr.operand)} {right_string})'
         else:
-            if not isinstance(expr.left, ogAST.PrimVariable):
-                raise NotImplementedError(str(type(expr.left)))
-
             global VAR_COUNTER
             VAR_COUNTER = VAR_COUNTER + 1
 
-            variable_name = left_string[len(LPREFIX)+1:] if left_string.startswith(LPREFIX) else left_string
-            decls.append(u'{ty} expr_{var_counter};'.format(ty=type_name(VARIABLES[variable_name][0]), var_counter=VAR_COUNTER))
+            ty = type_name(expr.exprType)
+            decls.append(u'{ty} expr_{var_counter};'.format(ty=ty, var_counter=VAR_COUNTER))
             decls.append(u'asn1SccUint expr_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
 
             if basic_type.Min != basic_type.Max:
+                stmts.append(f'expr_{VAR_COUNTER}.nCount = {left_string}.nCount;')
                 stmts.append(u'for(expr_counter_{var_counter} = 0; expr_counter_{var_counter} < {ls}.nCount; expr_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, ls=left_string))
             else:
                 stmts.append(u'for(expr_counter_{var_counter} = 0; expr_counter_{var_counter} < {size}; expr_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_type.Max))
@@ -2174,11 +2172,12 @@ def _not_expression(expr, **kwargs):
 
         if isinstance(expr.expr, ogAST.PrimSequenceOf):
             string = array_content(expr.expr, expr_str, bty_outer)
-        elif isinstance(expr.expr, ogAST.PrimVariable):
+        else:
             global VAR_COUNTER
             VAR_COUNTER = VAR_COUNTER + 1
 
-            decls.append(u'{ASN1SCC}{ty} not_{var_counter};'.format(ASN1SCC=ASN1SCC, ty=bty_outer.__name__[:-5].replace('-','_'), var_counter=VAR_COUNTER))
+            ty = type_name(expr.exprType)
+            decls.append(u'{ty} not_{var_counter};'.format(ty=ty, var_counter=VAR_COUNTER))
             decls.append(u'asn1SccUint not_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
             stmts.append(u'{')
             stmts.append(u'for(not_counter_{var_counter} = 0; not_counter_{var_counter} < {size_expr}; not_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size_expr=size_expr))
@@ -2191,11 +2190,6 @@ def _not_expression(expr, **kwargs):
 
             stmts.append(u'}')
             string = (u'not_{var_counter}'.format(var_counter=VAR_COUNTER))
-        elif isinstance(expr.expr, ogAST.PrimCall):
-            string = f'!{expr_str}'
-        else:
-            raise NotImplementedError(u'Not of a ' + str(type(expr.expr)))
-            string = u'{{{{! {expr_str} }}, {size_expr} }})'.format(expr_str=expr_str.replace(',',',!'), size_expr=size_expr)
     else:
         string = u'!{expr}'.format(expr=expr_str.replace(',',',!'))
 
