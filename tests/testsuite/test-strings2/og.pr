@@ -26,6 +26,7 @@ system og;
             dcl ia5 TextString := 'hello';
             dcl fixed FixedOctetString := 'FoO';
             dcl fixedIA5 FixedIA5String := 'BaR';
+            dcl listia ListOfIa5 := {"Hello", "you!" };
             /* CIF ENDTEXT */
             /* CIF START (284, 274), (70, 35) */
             START;
@@ -57,11 +58,25 @@ system og;
                 call writeln(if true then fixed else fixedia5 fi)
                 /* CIF comment (470, 649), (70, 35) */
                 comment 'FoO';
-                /* CIF PROCEDURECALL (159, 704), (319, 35) */
+                /* CIF PROCEDURECALL (156, 704), (324, 35) */
                 call writeln(if true then fixedia5 else "Not expected" fi)
-                /* CIF comment (498, 704), (70, 35) */
+                /* CIF comment (500, 704), (70, 35) */
                 comment 'BaR';
-                /* CIF NEXTSTATE (284, 754), (70, 35) */
+                /* CIF task (247, 759), (142, 53) */
+                task for each in listia:
+    call writeln(each);
+endfor
+                /* CIF comment (410, 768), (86, 35) */
+                comment 'Hello Man!';
+                /* CIF task (155, 842), (327, 35) */
+                task listia := if false then listia else {"Not", "Possible!"} fi;
+                /* CIF task (247, 897), (142, 53) */
+                task for each in listia:
+    call writeln(each);
+endfor
+                /* CIF comment (410, 906), (100, 35) */
+                comment 'Not Possible!';
+                /* CIF NEXTSTATE (284, 965), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (165, 194), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
