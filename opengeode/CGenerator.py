@@ -62,6 +62,10 @@ MATH_INCLUDE = False
 # True if string.h has to be included
 STRING_INCLUDE = False
 
+# True if stdlib.h has to be included
+STDLIB_INCLUDE = False
+
+
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -99,6 +103,7 @@ def _process(process, instance=False, **kwargs):
     global STDIO_INCLUDE
     global MATH_INCLUDE
     global STRING_INCLUDE
+    global STDLIB_INCLUDE
     global LPREFIX
     global TIMER_VARIABLES
     global IS_INSTANCE
@@ -249,6 +254,7 @@ def _process(process, instance=False, **kwargs):
     STDIO_INCLUDE = False
     MATH_INCLUDE = False
     STRING_INCLUDE = False
+    STDLIB_INCLUDE = False
 
     # Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
@@ -354,12 +360,37 @@ def _decision(dec, **kwargs):
     last      = kwargs['last']      if 'last'      in kwargs else '} //last'
 
     global VAR_COUNTER
+    global STDLIB_INCLUDE
     stmts, decls = [], []
 
     if dec.kind == 'any':
-        error = 'C backend does not support the "Decision ANY" statement'
-        LOG.error(error)
-        raise TypeError(error)
+        STDLIB_INCLUDE = True
+        nb = len(dec.answers)
+        stmts.extend(traceability(dec))
+        stmts.append(f'switch (rand() % {nb})')
+        stmts.append('{')
+        for idx, answer in enumerate(dec.answers):
+            stmts.extend(traceability(answer))
+            stmts.append(f'case {idx}:')
+            stmts.append('{')
+            if not branch_to:
+                if answer.transition:
+                    transition_stmts, transition_decls = generate(answer.transition)
+                else:
+                    transition_stmts, transition_decls = [';'], []
+                stmts.extend(transition_stmts)
+                decls.extend(transition_decls)
+            else:
+                for exit in exitcalls:
+                    stmts.append(exit)
+                if isinstance(branch_to, str):
+                    stmts.append(f'return {branch_to};')
+                else:
+                    stmts.append(f'trId = {branch_to};')
+            stmts.append('break;')
+            stmts.append('}')
+        stmts.append('}')
+        return stmts, decls
     elif dec.kind == 'informal_text':
         LOG.warning('Informal decision ignored')
         stmts.append('// Informal decision was ignored: {}'.format(dec.inputString))
@@ -3738,6 +3769,9 @@ def generating_includes(process):
 
     if STRING_INCLUDE == True:
         includes_code.append(u'#include <string.h>')
+
+    if STDLIB_INCLUDE == True:
+        includes_code.append(u'#include <stdlib.h>')
 
     for each in process.DV.asn1Files:
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
