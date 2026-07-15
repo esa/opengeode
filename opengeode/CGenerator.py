@@ -1053,7 +1053,7 @@ def _task_assign(task, **kwargs):
 @generate.register(ogAST.TaskForLoop)
 def _task_forloop(task, **kwargs):
     ''' Return the code corresponding to a for loop. Two forms are possible: '''
-
+    global VAR_COUNTER
     stmts, decls = [], []
     local_scope = dict(LOCAL_VARIABLES)
 
@@ -1101,6 +1101,7 @@ def _task_forloop(task, **kwargs):
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
 
+            elem_bty = find_basic_type(loop['type'])
             if basic_type.Min == basic_type.Max:
                 stmts.extend(list_stmt)
                 decls.extend(list_local)
@@ -1108,7 +1109,15 @@ def _task_forloop(task, **kwargs):
                 stmts.append('{} {};'.format(type_name(loop['type']), loop['var']))
                 stmts.append('for({it}_idx = 0; {it}_idx < {length}; {it}_idx++)'.format(it=loop['var'], length=basic_type.Min))
                 stmts.append('{')
-                stmts.append('{it} = {var}.arr[{it}_idx];'.format(it=loop['var'], var=list_str))
+                if elem_bty.kind == 'IA5StringType':
+                    VAR_COUNTER += 1
+                    decls.append(f'asn1SccUint var_counter_{VAR_COUNTER};')
+                    stmts.append(f'for(var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} < {elem_bty.Max}; var_counter_{VAR_COUNTER}++)')
+                    stmts.append('{')
+                    stmts.append(f'    {loop["var"]}[var_counter_{VAR_COUNTER}] = {list_str}.arr[{loop["var"]}_idx][var_counter_{VAR_COUNTER}];')
+                    stmts.append('}')
+                else:
+                    stmts.append('{it} = {var}.arr[{it}_idx];'.format(it=loop['var'], var=list_str))
             else:
                 stmts.extend(list_stmt)
                 decls.extend(list_local)
@@ -1116,7 +1125,15 @@ def _task_forloop(task, **kwargs):
                 stmts.append('{} {};'.format(type_name(loop['type']), loop['var']))
                 stmts.append('for({it}_idx = 0; {it}_idx < {ls}.nCount; {it}_idx++)'.format(it=loop['var'],ls=list_str))
                 stmts.append('{')
-                stmts.append('{it} = {var}.arr[{it}_idx];'.format(it=loop['var'], var=list_str))
+                if elem_bty.kind == 'IA5StringType':
+                    VAR_COUNTER += 1
+                    decls.append(f'asn1SccUint var_counter_{VAR_COUNTER};')
+                    stmts.append(f'for(var_counter_{VAR_COUNTER} = 0; var_counter_{VAR_COUNTER} < {elem_bty.Max}; var_counter_{VAR_COUNTER}++)')
+                    stmts.append('{')
+                    stmts.append(f'    {loop["var"]}[var_counter_{VAR_COUNTER}] = {list_str}.arr[{loop["var"]}_idx][var_counter_{VAR_COUNTER}];')
+                    stmts.append('}')
+                else:
+                    stmts.append('{it} = {var}.arr[{it}_idx];'.format(it=loop['var'], var=list_str))
 
         code_trans, local_trans = generate(loop['transition'])
 
@@ -2671,6 +2688,13 @@ def _conditional(cond, **kwargs):
     basic_cond = find_basic_type(cond.exprType)
     actual_type = type_name(cond.exprType)   # may be char *
 
+    if hasattr(cond, 'expected_type') and cond.expected_type:
+        cond.value['then'].expected_type = cond.expected_type
+        cond.value['else'].expected_type = cond.expected_type
+    else:
+        cond.value['then'].expected_type = cond.exprType
+        cond.value['else'].expected_type = cond.exprType
+
     if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
@@ -2803,7 +2827,7 @@ def _conditional(cond, **kwargs):
 
         if isinstance(cond.value['then'],
                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            then_str = array_content(cond.value['then'], then_str, basic_then)
+            then_str = array_content(cond.value['then'], then_str, basic_cond)
 
         if isinstance(cond.value['then'], ogAST.ExprAppend):
             then_len = append_size(cond.value['then'])
@@ -2842,7 +2866,7 @@ def _conditional(cond, **kwargs):
 
         if isinstance(cond.value['else'],
                        (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            else_str = array_content(cond.value['else'], else_str, basic_else)
+            else_str = array_content(cond.value['else'], else_str, basic_cond)
 
         if isinstance(cond.value['else'], ogAST.ExprAppend):
             else_len = append_size(cond.value['else'])
@@ -3008,8 +3032,20 @@ def _sequence_of(seqof, **kwargs):
         temp = ''
         item_stmts, item_str, local_var = expression(seqof.value[i])
 
+        # FIXME Test SEQUENCE OF IA5String, I think it is not handled here
         if isinstance(seqof.value[i], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            item_str = array_content(seqof.value[i], item_str, asn_type or find_basic_type(seqof.value[i].exprType))
+            elem_bty = None
+            if hasattr(seqof_ty, 'type') and seqof_ty.type:
+                elem_bty = find_basic_type(seqof_ty.type)
+            elif asn_type:
+                if hasattr(asn_type, 'type') and asn_type.type:
+                    elem_bty = find_basic_type(asn_type.type)
+                else:
+                    elem_bty = asn_type
+            if not elem_bty:
+                elem_bty = find_basic_type(seqof.value[i].exprType)
+
+            item_str = array_content(seqof.value[i], item_str, elem_bty)
 
         temp += item_str
 

@@ -101,6 +101,7 @@ SEPARATOR = "_0_"
 LPREFIX = 'ctxt'
 ASN1SCC = 'asn1Scc'
 NO_CONTEXT = False
+VAR_COUNTER = 0
 
 
 def is_numeric(string) -> bool:
@@ -1366,20 +1367,11 @@ def write_statement(param, newline):
         code.extend(st2)
         local.extend(lcl1)
         local.extend(lcl2)
-    elif type_kind == 'IA5StringType':
-        # IA5String are null-terminated to match the C representation
+    elif type_kind == 'IA5StringType' or (type_kind == 'StringType' and not isinstance(param, ogAST.PrimStringLiteral)):
+        # IA5String and String are null-terminated to match the C representation
         # ASN1SCC API offers the getStringSize function to read the actual size
         code, string, local = expression(param, readonly=1)
-        # the experession can be a ternary evaluating to IA5String, in which
-        # case it has to be rendered as is. However if it is a pure IA5String
-        # variable, then its actual length has to be computed as it is
-        # null-terminated to memory match the C representation.
-        if isinstance(param, ogAST.PrimVariable): # and basic_type.Min != basic_type.Max:
-            # (removed the test for fixed size: Asn1scc generates strings with
-            # one extra char to store the null termination character)
-            code.append(f'Put ({string}(1 .. adaasn1rtl.GetStringSize ({string})));')
-        else:
-            code.append(f'Put ({string});')
+        code.append(f'Put ({string}(1 .. adaasn1rtl.GetStringSize ({string})));')
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
             # Octet string or bit string
@@ -2844,6 +2836,13 @@ def _conditional(cond, **kwargs):
     basic_cond = find_basic_type(cond.exprType)
     actual_type = type_name(cond.exprType)
 
+    if hasattr(cond, 'expected_type') and cond.expected_type:
+        cond.value['then'].expected_type = cond.expected_type
+        cond.value['else'].expected_type = cond.expected_type
+    else:
+        cond.value['then'].expected_type = cond.exprType
+        cond.value['else'].expected_type = cond.exprType
+
     if_stmts, if_str, if_local = expression(cond.value['if'], readonly=1)
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
@@ -2864,11 +2863,15 @@ def _conditional(cond, **kwargs):
         then_basic = find_basic_type(cond.value['then'].exprType)
         else_basic = find_basic_type(cond.value['else'].exprType)
 
+        global VAR_COUNTER
+        VAR_COUNTER = VAR_COUNTER + 1
+        subtype_name = f"Subtype_{VAR_COUNTER}"
+        local_decl.append(f"subtype {subtype_name} is String (1 .. {max_size});")
+
         then_is_octet = False
         then_decl_type = 'String'
         if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
-            # For literals, use the string literal format directly
-            then_val = cond.value['then'].value.replace("'", '"')
+            then_val = f"{subtype_name}'({ia5string_raw(cond.value['then'])})"
         else:
             if then_basic.kind in ('OctetStringType', 'BitStringType'):
                 len_sep = "." if then_basic.Min != then_basic.Max else ".Data'"
@@ -2881,8 +2884,7 @@ def _conditional(cond, **kwargs):
         else_is_octet = False
         else_decl_type = 'String'
         if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
-            # For literals, use the string literal format directly
-            else_val = cond.value['else'].value.replace("'", '"')
+            else_val = f"{subtype_name}'({ia5string_raw(cond.value['else'])})"
         else:
             if else_basic.kind in ('OctetStringType', 'BitStringType'):
                 len_sep = "." if else_basic.Min != else_basic.Max else ".Data'"
@@ -2912,16 +2914,9 @@ def _conditional(cond, **kwargs):
         stmts.extend(then_stmts)
         stmts.extend(else_stmts)
 
-        # Note: if branches have different lengths, this will fail in Ada.
-        # But padding literals to Max might not be what the user wants if they
-        # asked for "as is". If lengths mismatch, the model might be invalid.
-        ada_string = f'(if {if_str} then {then_id} else {else_id})'
-        return stmts, str(ada_string), local_decl
-
-        stmts.extend(then_stmts)
-        stmts.extend(else_stmts)
-
-        ada_string = f'(if {if_str} then {then_id} else {else_id})'
+        tmp_id = f'tmp_cond_{cond.value["tmpVar"]}'
+        local_decl.append(f'{tmp_id} : constant String := (if {if_str} then {then_id} else {else_id});')
+        ada_string = tmp_id
         return stmts, str(ada_string), local_decl
 
     # Non-String types (SequenceOf, OctetString, basic types)
@@ -2938,7 +2933,7 @@ def _conditional(cond, **kwargs):
     then_len = None
     if isinstance(cond.value['then'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-        then_str = array_content(cond.value['then'], then_str, basic_then)
+        then_str = array_content(cond.value['then'], then_str, basic_cond)
     if isinstance(cond.value['then'], ogAST.ExprAppend):
         then_len = append_size(cond.value['then'])
         stmts.append("tmp{idx}.Data(1..{then_len}) := {then_str};"
@@ -2960,7 +2955,7 @@ def _conditional(cond, **kwargs):
     else_len = None
     if isinstance(cond.value['else'],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-        else_str = array_content(cond.value['else'], else_str, basic_else)
+        else_str = array_content(cond.value['else'], else_str, basic_cond)
 
     if isinstance(cond.value['else'], ogAST.ExprAppend):
         else_len = append_size(cond.value['else'])
@@ -3080,8 +3075,30 @@ def _sequence_of(seqof, **kwargs):
         # FIXME Test SEQUENCE OF IA5String, I think it is not handled here
         if isinstance(seqof.value[i],
                               (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            item_str = array_content(seqof.value[i], item_str, asn_type or
-                    find_basic_type(seqof.value[i].exprType))
+            elem_bty = None
+            if hasattr(seqof_ty, 'type') and seqof_ty.type:
+                elem_bty = find_basic_type(seqof_ty.type)
+            elif asn_type:
+                if hasattr(asn_type, 'type') and asn_type.type:
+                    elem_bty = find_basic_type(asn_type.type)
+                else:
+                    elem_bty = asn_type
+            if not elem_bty:
+                elem_bty = find_basic_type(seqof.value[i].exprType)
+
+            if elem_bty.kind == 'IA5StringType' and isinstance(seqof.value[i], ogAST.PrimStringLiteral):
+                elem_type_name = 'String'
+                if hasattr(seqof_ty, 'type') and seqof_ty.type:
+                    elem_type_name = type_name(seqof_ty.type)
+                elif asn_type and hasattr(asn_type, 'type') and asn_type.type:
+                    elem_type_name = type_name(asn_type.type)
+
+                if elem_type_name == 'String':
+                    item_str = f"String (1 .. {elem_bty.Max})'({ia5string_raw(seqof.value[i])})"
+                else:
+                    item_str = f"{elem_type_name}'({ia5string_raw(seqof.value[i])})"
+            else:
+                item_str = array_content(seqof.value[i], item_str, elem_bty)
         elif isinstance(seqof.value[i], ogAST.PrimSubstring):
             # Put substring elements in a local variable, otherwise they may
             # not work well with some operators (e.g. Append)
@@ -3861,7 +3878,11 @@ def array_content(prim, values, asnty):
         _, df, _ = expression(prim.value[0], readonly=1)
         if isinstance(prim.value[0], (ogAST.PrimSequenceOf,
                                       ogAST.PrimStringLiteral)):
-            df = array_content(prim.value[0], df, asnty.type)
+            elem_bty = find_basic_type(asnty.type)
+            if elem_bty.kind == 'IA5StringType' and isinstance(prim.value[0], ogAST.PrimStringLiteral):
+                df = ia5string_raw(prim.value[0])
+            else:
+                df = array_content(prim.value[0], df, asnty.type)
     return "(Data => ({}{}others => {}){})".format(values,
                                                     ', ' if values else '',
                                                     df, rlen)
