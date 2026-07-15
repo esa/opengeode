@@ -164,6 +164,8 @@ class EditableText(QGraphicsTextItem):
                     (hlink=hyperlink, text=text.replace('\n', '<br>')))
         else:
             self.setPlainText(text)
+        self._updating_flags = False
+        self._is_editable = False
         self.setTextInteractionFlags( Qt.TextSelectableByMouse
                                      | Qt.TextEditable
                                      | Qt.TextSelectableByKeyboard
@@ -189,6 +191,14 @@ class EditableText(QGraphicsTextItem):
         # Removed - does not render text properly (eats up the right part)
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self.force_focus = False
+
+    def setTextInteractionFlags(self, flags):
+        super().setTextInteractionFlags(flags)
+        if not getattr(self, '_updating_flags', False):
+            if flags & Qt.TextEditable:
+                self._is_editable = True
+            else:
+                self._is_editable = False
 
     def set_text_alignment(self):
         ''' Apply the required text alignment within the text box '''
@@ -379,7 +389,12 @@ class EditableText(QGraphicsTextItem):
             that got the focus.
         '''
         if not self.editing:
-            return super().focusOutEvent(event)
+            super().focusOutEvent(event)
+            if getattr(self, '_is_editable', False):
+                self._updating_flags = True
+                self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
+                self._updating_flags = False
+            return
         if self.completer and not self.completer_has_focus:
             self.completer.hide()
             self.completer.resize(0, 0)
@@ -388,6 +403,7 @@ class EditableText(QGraphicsTextItem):
             # the editable text. It is not right to leave the focus in that
             # case, as this would generate a syntax check while in fact
             # user is not done editing text
+            super().focusOutEvent(event)
             self.setFocus()
             self.force_focus = False
             return
@@ -409,6 +425,7 @@ class EditableText(QGraphicsTextItem):
                 # Call syntax checker from item containing the text (if any)
                 if self.scene().check_syntax(self.parent):
                     # Keep focus
+                    super().focusOutEvent(event)
                     self.setFocus()
                     return
                 # Update class completion list
@@ -434,10 +451,22 @@ class EditableText(QGraphicsTextItem):
         for each in zValueItems(self.parent):
             each.setZValue(each.zValue() - 1)
         super().focusOutEvent(event)
+        if getattr(self, '_is_editable', False):
+            self._updating_flags = True
+            self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
+            self._updating_flags = False
 
     # pylint: disable=C0103
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
+        if getattr(self, '_is_editable', False):
+            self._updating_flags = True
+            self.setTextInteractionFlags( Qt.TextSelectableByMouse
+                                         | Qt.TextEditable
+                                         | Qt.TextSelectableByKeyboard
+                                         | Qt.LinksAccessibleByMouse
+                                         | Qt.LinksAccessibleByKeyboard)
+            self._updating_flags = False
         super().focusInEvent(event)
         # Change the Z-value of items to make sure the
         # completer is always be on top of other symbols

@@ -1394,6 +1394,11 @@ class SDL_Scene(QGraphicsScene):
 
     def place_symbol(self, item_type, parent, pos=None, rect=None):
         ''' Draw a symbol on the scene '''
+        focus_item = self.focusItem()
+        if focus_item and hasattr(focus_item, 'editing') and focus_item.editing:
+            focus_item.clearFocus()
+            if self.focusItem() == focus_item:
+                return None
         item = item_type()
         if rect is not None:
             # Optionally size the new item
