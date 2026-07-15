@@ -1861,30 +1861,22 @@ def _equality(expr, **kwargs):
         string = f'({left_string} {operand} {right_string})'
     else:
         if asn1_type in TYPES:
-            if isinstance(expr.left, ogAST.PrimSelector):
+            # Determine left side address
+            if lbty.kind == 'IA5StringType':
+                left_string = left_string
+            elif isinstance(expr.left, ogAST.PrimVariable):
+                left_string = '&' + left_string
+            elif isinstance(expr.left, ogAST.PrimSelector) and not isinstance(expr.right, ogAST.PrimStringLiteral):
+                left_string = '&' + left_string
+            elif isinstance(expr.left, (ogAST.PrimSelector, ogAST.PrimSubstring, ogAST.PrimConditional, ogAST.PrimCall, ogAST.ExprAppend)):
                 VAR_COUNTER = VAR_COUNTER + 1
-                if isinstance(expr.right, ogAST.PrimStringLiteral):
-                    decls.append(u'{ty} selector_{var_counter} = {{0}};'.format(ty=actual_type, var_counter=VAR_COUNTER))
-                    decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-                    stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right_size=rbty.Max))
-                    stmts.append(u'{')
-                    stmts.append(u'selector_{var_counter}[memcpy_counter_{var_counter}] = {left}[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, left=left_string))
-                    stmts.append(u'}')
-                    left_string = u'selector_{var_counter}'.format(var_counter=VAR_COUNTER)
-                else:
-                    decls.append(u'{ty} selector_{var_counter};'.format(ty=actual_type, var_counter=VAR_COUNTER))
-                    stmts.append(u'selector_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-                    left_string = u'&selector_{var_counter}'.format(var_counter=VAR_COUNTER)
-            elif not (isinstance(expr.left, ogAST.PrimVariable) or 
-                      isinstance(expr.left, ogAST.ExprAnd) or 
-                      isinstance(expr.left, ogAST.ExprOr) or 
-                      isinstance(expr.left, ogAST.ExprXor) or 
-                      isinstance(expr.left, ogAST.ExprImplies) or 
-                      isinstance(expr.left, ogAST.ExprNot)):
-                raise NotImplementedError(str(type(expr.left)) + ' in left part of comparison')
+                decls.append(f'{actual_type} cmp_l_{VAR_COUNTER};')
+                stmts.append(f'cmp_l_{VAR_COUNTER} = {left_string};')
+                left_string = f'&cmp_l_{VAR_COUNTER}'
             else:
                 left_string = '&' + left_string
 
+            # Determine right side address/value
             if isinstance(expr.right, ogAST.PrimReal):
                 VAR_COUNTER = VAR_COUNTER + 1
                 decls.append(f'static {actual_type} constant_{VAR_COUNTER} = {right_string};')
@@ -1912,8 +1904,15 @@ def _equality(expr, **kwargs):
                 decls.append(f'static {actual_type} constant_{VAR_COUNTER};')
                 stmts.append(f'constant_{VAR_COUNTER} = ({actual_type}) {right_string};')
                 right_string = '&constant_{var_counter}'.format(var_counter=VAR_COUNTER)
-            elif not (isinstance(expr.right, ogAST.PrimVariable)):
-                raise NotImplementedError(str(type(expr.right)) + f' in right part of comparison ({expr.inputString})')
+            elif lbty.kind == 'IA5StringType':
+                right_string = right_string
+            elif isinstance(expr.right, ogAST.PrimVariable):
+                right_string = '&' + right_string
+            elif isinstance(expr.right, (ogAST.PrimSelector, ogAST.PrimSubstring, ogAST.PrimConditional, ogAST.ExprAppend)):
+                VAR_COUNTER = VAR_COUNTER + 1
+                decls.append(f'{actual_type} cmp_r_{VAR_COUNTER};')
+                stmts.append(f'cmp_r_{VAR_COUNTER} = {right_string};')
+                right_string = f'&cmp_r_{VAR_COUNTER}'
             else:
                 right_string = '&' + right_string
 
