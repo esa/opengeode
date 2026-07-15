@@ -1940,12 +1940,15 @@ class SDL_View(QGraphicsView):
         #LOG.debug('view refresh done')
         self.refresh_requested = False
         self.scene().refresh()
+        self.update_phantom_rect(refresh=False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
-
-    def update_phantom_rect(self):
+ 
+    def update_phantom_rect(self, refresh=True):
         LOG.debug("Update phantom rect")
         scene_rect = self.scene().itemsBoundingRect()
+        scene_rect.setLeft(min(0.0, scene_rect.left()))
+        scene_rect.setTop(min(0.0, scene_rect.top()))
         view_size = self.size()
         scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
         scene_rect.setHeight(max(scene_rect.height(), view_size.height()))
@@ -1956,7 +1959,8 @@ class SDL_View(QGraphicsView):
                     pen=QPen(QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
         self.phantom_rect.hide()
-        self.refresh()
+        if refresh:
+            self.refresh()
 
     # pylint: disable=C0103
     def resizeEvent(self, event):
@@ -2454,6 +2458,7 @@ clean:
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(process.processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
+        self.update_phantom_rect()
         self.refresh()
         self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
