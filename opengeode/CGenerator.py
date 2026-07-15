@@ -1101,15 +1101,7 @@ def _task_forloop(task, **kwargs):
             list_stmt, list_str, list_local = expression(loop['list'])
             basic_type = find_basic_type(loop['list'].exprType)
 
-            if isinstance(loop['list'], ogAST.PrimSubstring):
-                stmts.extend(list_stmt)
-                decls.extend(list_local)
-                stmts.append('asn1SccUint ' + loop['var'] + '_idx;')
-                stmts.append('{} {};'.format(type_name(loop['type']), loop['var']))
-                stmts.append('for({it}_idx = min_range_{var_counter}; {it}_idx <= max_range_{var_counter}; {it}_idx++)'.format(it=loop['var'], var_counter=VAR_COUNTER))
-                stmts.append('{')
-                stmts.append('{it} = {var}.arr[{it}_idx];'.format(it=loop['var'], var=list_str))
-            elif basic_type.Min == basic_type.Max:
+            if basic_type.Min == basic_type.Max:
                 stmts.extend(list_stmt)
                 decls.extend(list_local)
                 stmts.append('asn1SccUint ' + loop['var'] + '_idx;')
@@ -1718,20 +1710,17 @@ def _prim_index(prim, **kwargs):
     idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0], readonly=ro)
     string += '.arr'
 
-    if not isinstance(receiver, ogAST.PrimSubstring):
-        if expr_bs.kind == 'BitStringType' and ro:
-            phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
-            # .arr is an array so we have to read the bit in the right byte
-            # depending on the size of the array
-            string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
-        elif expr_bs.kind == 'BitStringType' and not ro:
-            # It is for a write to a bit index: here we only compute the
-            # place in the byte array.
-            string += f'[{idx_string} / 8]'
-        else:
-            string += f'[{idx_string}]'
+    if expr_bs.kind == 'BitStringType' and ro:
+        phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
+        # .arr is an array so we have to read the bit in the right byte
+        # depending on the size of the array
+        string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
+    elif expr_bs.kind == 'BitStringType' and not ro:
+        # It is for a write to a bit index: here we only compute the
+        # place in the byte array.
+        string += f'[{idx_string} / 8]'
     else:
-        string += f'[{idx_string} + min_range_{VAR_COUNTER}]'
+        string += f'[{idx_string}]'
 
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
@@ -1964,6 +1953,60 @@ def _assign_expression(expr, **kwargs):
     stmts, decls = [], []
     strings = []
 
+    if isinstance(expr.left, ogAST.PrimSubstring):
+        # Assigning to a substring (slice), e.g. foo(1, 2) := bar;
+        receiver = expr.left.value[0]
+        rec_stmts, rec_str, rec_decls = expression(receiver)
+        
+        r1_stmts, r1_str, r1_decls = expression(expr.left.value[1]['substring'][0])
+        r2_stmts, r2_str, r2_decls = expression(expr.left.value[1]['substring'][1])
+        
+        right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
+        
+        stmts.extend(rec_stmts)
+        stmts.extend(r1_stmts)
+        stmts.extend(r2_stmts)
+        stmts.extend(right_stmts)
+        
+        decls.extend(rec_decls)
+        decls.extend(r1_decls)
+        decls.extend(r2_decls)
+        decls.extend(right_decls)
+        
+        bty_left = find_basic_type(expr.left.exprType)
+        bty_right = find_basic_type(expr.right.exprType)
+        
+        global VAR_COUNTER
+        VAR_COUNTER = VAR_COUNTER + 1
+        
+        if isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral, ogAST.PrimConstant)):
+            decls.append(f'{type_name(expr.right.exprType)} right_tmp_{VAR_COUNTER} = {array_content(expr.right, right_string, bty_right)};')
+            right_string = f'right_tmp_{VAR_COUNTER}'
+            
+        loop_counter = f'loop_counter_{VAR_COUNTER}'
+        min_range = f'min_range_{VAR_COUNTER}'
+        max_range = f'max_range_{VAR_COUNTER}'
+        
+        decls.append(f'asn1SccUint {loop_counter};')
+        decls.append(f'asn1SccUint {min_range};')
+        decls.append(f'asn1SccUint {max_range};')
+        
+        stmts.append(f'{min_range} = {r1_str};')
+        stmts.append(f'{max_range} = {r2_str};')
+        
+        if bty_left.kind == 'IA5StringType':
+            stmts.append(f'for({loop_counter} = 0; {loop_counter} <= {max_range} - {min_range} && {loop_counter} < {bty_left.Max}; {loop_counter}++)')
+            stmts.append('{')
+            stmts.append(f'    {rec_str}[{loop_counter} + {min_range}] = {right_string}[{loop_counter}];')
+            stmts.append('}')
+        else:
+            stmts.append(f'for({loop_counter} = 0; {loop_counter} <= {max_range} - {min_range} && {loop_counter} < {bty_left.Max}; {loop_counter}++)')
+            stmts.append('{')
+            stmts.append(f'    {rec_str}.arr[{loop_counter} + {min_range}] = {right_string}.arr[{loop_counter}];')
+            stmts.append('}')
+            
+        return stmts, '', decls
+
     left_stmts, left_string, left_decls = expression(expr.left)
     variable_name = left_string[len(LPREFIX)+1:] if left_string.startswith(LPREFIX) else left_string
     basic_left = find_basic_type(expr.left.exprType)
@@ -1972,8 +2015,6 @@ def _assign_expression(expr, **kwargs):
     LEFT_TYPE=type_name(expr.left.exprType)
 
     right_stmts, right_string, right_decls = expression(expr.right, readonly=1)
-    # If left side is a string/seqOf and right side is a substring, we must
-    # assign the .arr and .Length parts properly
     stmts.extend(left_stmts)
     stmts.extend(right_stmts)
     decls.extend(left_decls)
@@ -1989,13 +2030,6 @@ def _assign_expression(expr, **kwargs):
             stmts.append('{')
             stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
             stmts.append('}')
-        elif isinstance(expr.right, ogAST.PrimSubstring):
-            right_var = right_string
-            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} <= max_range_{var_counter} - min_range_{var_counter}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER))
-            stmts.append('{')
-            stmts.append('{lvar}[var_counter_{var_counter}] = {rvar}[var_counter_{var_counter} + min_range_{var_counter}];'.format(lvar=left_string, rvar=right_var, var_counter=VAR_COUNTER))
-            stmts.append('}')
-            stmts.append('if (var_counter_{var_counter} < {size}) {lvar}[var_counter_{var_counter}] = \'\\0\';'.format(lvar=left_string, var_counter=VAR_COUNTER, size=basic_left.Max))
         else:
             right_var = right_string
             stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} < {size}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size=basic_left.Max))
@@ -2005,17 +2039,7 @@ def _assign_expression(expr, **kwargs):
     elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         rlen = "{}.nCount".format(right_string)
 
-        if isinstance(expr.right, ogAST.PrimSubstring):
-            rlen = f'max_range_{VAR_COUNTER} - min_range_{VAR_COUNTER} + 1'
-
-            decls.append('asn1SccUint var_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
-            stmts.append('{')
-            stmts.append('for(var_counter_{var_counter} = 0; var_counter_{var_counter} <= max_range_{var_counter} - min_range_{var_counter}; var_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rvar=right_string))
-            stmts.append('{')
-            stmts.append('{lvar}.arr[var_counter_{var_counter}] =  {rvar}.arr[var_counter_{var_counter} + min_range_{var_counter}];'.format(lvar=left_string, rvar=right_string, var_counter=VAR_COUNTER))
-            stmts.append('}')
-            stmts.append('}')
-        elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+        if isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             VAR_COUNTER = VAR_COUNTER + 1
             decls.append(
                     f'{LEFT_TYPE} assign_var_{VAR_COUNTER} = {array_content(expr.right, right_string, basic_left)};')
@@ -2250,7 +2274,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount = 2;'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector)) and isinstance(expr.right, ogAST.PrimSequenceOf):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector, ogAST.PrimSubstring)) and isinstance(expr.right, ogAST.PrimSequenceOf):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
         decls.append(u'{ty} right_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
@@ -2269,7 +2293,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {right_size};'.format(var_counter=VAR_COUNTER, right_size=rbty.Max))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, ogAST.PrimVariable):
+    elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimSubstring)):
         # e.g. in foo := { bar } // baz
         # LEFT_TYPE is the type of the result of the append (here: type of foo)
         decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
@@ -2291,7 +2315,7 @@ def _append(expr, **kwargs):
 
         string = f'memcpy_temp_{VAR_COUNTER}'
 
-    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector)) and isinstance(expr.right, ogAST.PrimVariable):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSelector, ogAST.PrimSubstring)) and isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimSubstring)):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
@@ -2306,7 +2330,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {rs}.nCount;'.format(var_counter=VAR_COUNTER, rs=right_string))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimStringLiteral):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSubstring)) and isinstance(expr.right, ogAST.PrimStringLiteral):
         decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
@@ -2323,7 +2347,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {rsize};'.format(var_counter=VAR_COUNTER, rsize=rbty.Max))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, ogAST.PrimVariable):
+    elif isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimSubstring)):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
 
@@ -2338,7 +2362,7 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {rs}.nCount;'.format(var_counter=VAR_COUNTER, rs=right_string))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimVariable) and isinstance(expr.right, ogAST.PrimConditional):
+    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimSubstring)) and isinstance(expr.right, ogAST.PrimConditional):
         decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
         decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
 
@@ -2351,110 +2375,6 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
         stmts.append(u'}')
         stmts.append(u'memcpy_temp_{var_counter}.nCount += {rs}.nCount;'.format(var_counter=VAR_COUNTER, rs=right_string))
-
-        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimSubstring) and isinstance(expr.right, ogAST.PrimSequenceOf):
-        decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
-        decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
-        decls.append(f'static {LEFT_TYPE} constant_{VAR_COUNTER};')
-        stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount = 0; // initialize size before append')
-        stmts.append(f'constant_{VAR_COUNTER} = ({LEFT_TYPE}) {{{rbty.Max}, {{{right_string}}}}};')
-
-        LOCAL_VARIABLE_TYPES[f'memcpy_temp_{VAR_COUNTER}'] = LEFT_TYPE
-
-        #First copy left part in the result
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {res_bty.Max}; memcpy_counter_{VAR_COUNTER}++)')
-        stmts.append('{')
-        stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter}] = {ls}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, ls=left_string))
-        stmts.append('}')
-        stmts.append(u'memcpy_temp_{var_counter}.nCount = (max_range_{var_counter1} - min_range_{var_counter1} + 1);'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1))
-
-        #Then append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {right_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, right_size=rbty.Max))
-        stmts.append(u'{')
-        stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = constant_{var_counter}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER))
-        stmts.append(u'}')
-        stmts.append(u'memcpy_temp_{var_counter}.nCount += {right_size};'.format(var_counter=VAR_COUNTER, right_size=rbty.Max))
-
-        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, ogAST.PrimSequenceOf) and isinstance(expr.right, ogAST.PrimSubstring):
-        decls.append(f'asn1SccUint memcpy_counter_{VAR_COUNTER} = 0;')
-
-        # Result container
-        decls.append(f'{LEFT_TYPE} memcpy_temp_{VAR_COUNTER};')
-
-        # Resulting string
-        string = f'memcpy_temp_{VAR_COUNTER}'
-
-        LOCAL_VARIABLE_TYPES[f'memcpy_temp_{VAR_COUNTER}'] = LEFT_TYPE
-
-        #First copy left part (PrimSequenceOf) in the result
-        stmts.append(f'memcpy_temp_{VAR_COUNTER} = ({LEFT_TYPE}) {{{lbty.Max}, {{{left_string}}}}};')
-
-        #Then append the right part (PrimSubString)
-        stmts.append(f'for(memcpy_counter_{VAR_COUNTER} = 0; memcpy_counter_{VAR_COUNTER} < (max_range_{VAR_COUNTER-1} - min_range_{VAR_COUNTER-1}) + 1 && memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER} < {res_bty.Max}; memcpy_counter_{VAR_COUNTER}++)')
-        stmts.append('{')
-        stmts.append(f'memcpy_temp_{VAR_COUNTER}.arr[memcpy_temp_{VAR_COUNTER}.nCount + memcpy_counter_{VAR_COUNTER}] = {right_string}.arr[min_range_{VAR_COUNTER-1} + memcpy_counter_{VAR_COUNTER}];')
-        stmts.append(f'memcpy_temp_{VAR_COUNTER}.nCount++;')
-        stmts.append('}')
-
-    elif isinstance(expr.left, ogAST.PrimSubstring) and isinstance(expr.right, ogAST.PrimSubstring):
-        decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER-1))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER-1))
-
-        LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER-1)] = LEFT_TYPE
-
-        #First copy left part in the result
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < (max_range_{var_counter1} - min_range_{var_counter1}) + 1; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER-1, var_counter1=VAR_COUNTER-2))
-        stmts.append(u'{')
-        stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_counter_{var_counter}] = {ls}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER-1, var_counter1=VAR_COUNTER-2, ls=left_string))
-        stmts.append(u'}\n')
-        stmts.append(u'memcpy_temp_{var_counter}.nCount = (max_range_{var_counter1} - min_range_{var_counter1} + 1);\n'.format(var_counter=VAR_COUNTER-1, var_counter1=VAR_COUNTER-2))
-
-        #Then append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < (max_range_{var_counter} - min_range_{var_counter} + 1); memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER-1))
-        stmts.append(u'{')
-        stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[min_range_{var_counter} + memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER-1, rs=right_string))
-        stmts.append(u'}\n')
-        stmts.append(u'memcpy_temp_{var_counter}.nCount += (max_range_{var_counter} - min_range_{var_counter} + 1);'.format(var_counter=VAR_COUNTER-1))
-
-        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER-1)
-    elif (isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, ogAST.PrimConstant)):
-        decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
-
-        LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
-
-        #First copy left part in the result
-        stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-
-        #Append right part single value
-        if find_basic_type(expr.right.exprType).kind == 'SequenceOfType':
-            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
-            stmts.append(u'{')
-            stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
-            stmts.append(u'}')
-            stmts.append(u'memcpy_temp_{var_counter}.nCount = {rs}.nCount;'.format(var_counter=VAR_COUNTER, rs=right_string))
-        else:
-            stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount] = {rs};'.format(var_counter=VAR_COUNTER, rs=right_string))
-            stmts.append(u'memcpy_temp_{var_counter}.nCount += 1;'.format(var_counter=VAR_COUNTER))
-
-        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
-    elif isinstance(expr.left, (ogAST.PrimVariable, ogAST.ExprAppend)) and isinstance(expr.right, ogAST.PrimSubstring):
-        decls.append(u'asn1SccUint memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
-        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
-
-        LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
-
-        stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
-
-        #Then append the right part
-        stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} <= (max_range_{var_counter1} - min_range_{var_counter1}) && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, max_size=res_bty.Max))
-        stmts.append(u'{')
-        stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[min_range_{var_counter1} + memcpy_counter_{var_counter}];'
-                .format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1, rs=right_string))
-        stmts.append(u'}\n')
-        stmts.append(u'memcpy_temp_{var_counter}.nCount += max_range_{var_counter1} - min_range_{var_counter1} + 1;'.format(var_counter=VAR_COUNTER, var_counter1=VAR_COUNTER-1))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr.left, ogAST.PrimStringLiteral) and isinstance(expr.right, ogAST.PrimStringLiteral):
@@ -2530,6 +2450,27 @@ def _append(expr, **kwargs):
         stmts.append(u'memcpy_temp_{var_counter}.nCount = constant_left_{var_counter}.nCount + memcpy_counter_{var_counter};'.format(var_counter=VAR_COUNTER))
 
         string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
+    elif (isinstance(expr.left, ogAST.ExprAppend) and isinstance(expr.right, ogAST.PrimConstant)):
+        decls.append(u'int memcpy_counter_{var_counter} = 0;'.format(var_counter=VAR_COUNTER))
+        decls.append(u'{ty} memcpy_temp_{var_counter};'.format(ty=LEFT_TYPE, var_counter=VAR_COUNTER))
+
+        LOCAL_VARIABLE_TYPES[u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)] = LEFT_TYPE
+
+        #First copy left part in the result
+        stmts.append(u'memcpy_temp_{var_counter} = {ls};'.format(var_counter=VAR_COUNTER, ls=left_string))
+
+        #Append right part single value
+        if find_basic_type(expr.right.exprType).kind == 'SequenceOfType':
+            stmts.append(u'for(memcpy_counter_{var_counter} = 0; memcpy_counter_{var_counter} < {rs}.nCount && memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter} < {max_size}; memcpy_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, rs=right_string, max_size=res_bty.Max))
+            stmts.append(u'{')
+            stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount + memcpy_counter_{var_counter}] = {rs}.arr[memcpy_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, rs=right_string))
+            stmts.append(u'}')
+            stmts.append(u'memcpy_temp_{var_counter}.nCount = {rs}.nCount;'.format(var_counter=VAR_COUNTER, rs=right_string))
+        else:
+            stmts.append(u'memcpy_temp_{var_counter}.arr[memcpy_temp_{var_counter}.nCount] = {rs};'.format(var_counter=VAR_COUNTER, rs=right_string))
+            stmts.append(u'memcpy_temp_{var_counter}.nCount += 1;'.format(var_counter=VAR_COUNTER))
+
+        string = u'memcpy_temp_{var_counter}'.format(var_counter=VAR_COUNTER)
     else:
         LOG.error("Append expression not supported in C backend: " + expr.inputString)
         raise NotImplementedError(str(type(expr.left)) + ' and ' + str(type(expr.right)))
@@ -2584,12 +2525,8 @@ def _expr_in(expr, **kwargs):
     else:
         string = f'tmp{expr.tmpVar}'
         decls.append(f'_Bool {string} = false;')
-        if isinstance(expr.left, ogAST.PrimSubstring):
-            len_str = f"{left_str}'Length"  # XXX UNTESTED TERRITORY
-            #raise NotImplementedError('Looking for substring in string')
-        else:
-            len_str = f'{left_str}.nCount'
-            left_str += '.arr'
+        len_str = f'{left_str}.nCount'
+        left_str += '.arr'
 
         if left_type.Min != left_type.Max:
             decls.append(u'int for_{var_counter};'.format(var_counter=VAR_COUNTER))
@@ -2600,10 +2537,7 @@ def _expr_in(expr, **kwargs):
 
         stmts.append(u'{')
 
-        if isinstance(expr.left, ogAST.PrimSubstring):
-            stmts.append(u'if ({container}.arr[for_{var_counter}] == {pattern})'.format(container=left_str, pattern=right_str, var_counter=VAR_COUNTER))
-        else:
-            stmts.append(u'if ({container}[for_{var_counter}] == {pattern})'.format(container=left_str, pattern=right_str, var_counter=VAR_COUNTER))
+        stmts.append(u'if ({container}[for_{var_counter}] == {pattern})'.format(container=left_str, pattern=right_str, var_counter=VAR_COUNTER))
 
         stmts.append(u'{')
         stmts.append(u'{} = true;'.format(string))
@@ -2849,9 +2783,9 @@ def _conditional(cond, **kwargs):
     # (ExprAppend and PrimSubstring need loops / multi-field assignments)
     # OctetString/BitString types are structs and need if/else too
     need_ifelse = (isinstance(cond.value['then'],
-                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                              ogAST.ExprAppend) or
                    isinstance(cond.value['else'],
-                              (ogAST.ExprAppend, ogAST.PrimSubstring)) or
+                              ogAST.ExprAppend) or
                    basic_cond.kind in ('OctetStringType', 'BitStringType',
                                        'SequenceOfType'))
 
@@ -2882,21 +2816,7 @@ def _conditional(cond, **kwargs):
             then_len = append_size(cond.value['then'])
             stmts.append(
                 f"tmp{cond.value['tmpVar']} = {then_str};")
-        elif isinstance(cond.value['then'], ogAST.PrimSubstring):
-            stmts.extend([
-                f'for(int var_counter_{then_vc} = 0; '
-                f'var_counter_{then_vc} <= max_range_{then_vc}'
-                f' - min_range_{then_vc}; var_counter_{then_vc}++)',
-                '{',
-                f"tmp{cond.value['tmpVar']}.arr[var_counter_{then_vc}]"
-                f" = {then_str}.arr[var_counter_{then_vc}"
-                f" + min_range_{then_vc}];",
-                '}'
-            ])
-            rlen = f'max_range_{then_vc} - min_range_{then_vc} + 1'
-            if basic_cond.Min != basic_cond.Max:
-                stmts.append(
-                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+
         else:
             if isinstance(cond.value['then'],
                            (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
@@ -2935,21 +2855,7 @@ def _conditional(cond, **kwargs):
             else_len = append_size(cond.value['else'])
             stmts.append(
                 f"tmp{cond.value['tmpVar']} = {else_str};")
-        elif isinstance(cond.value['else'], ogAST.PrimSubstring):
-            stmts.extend([
-                f'for(int var_counter_{else_vc} = 0; '
-                f'var_counter_{else_vc} <= max_range_{else_vc}'
-                f' - min_range_{else_vc}; var_counter_{else_vc}++)',
-                '{',
-                f"tmp{cond.value['tmpVar']}.arr[var_counter_{else_vc}]"
-                f" = {else_str}.arr[var_counter_{else_vc}"
-                f" + min_range_{else_vc}];",
-                '}'
-            ])
-            rlen = f'max_range_{else_vc} - min_range_{else_vc} + 1'
-            if basic_cond.Min != basic_cond.Max:
-                stmts.append(
-                    f"tmp{cond.value['tmpVar']}.nCount = {rlen};")
+
         else:
             if isinstance(cond.value['else'],
                            (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
@@ -3163,28 +3069,56 @@ def _prim_substring(prim, **kwargs):
     stmts, string, local_decl = [], '', []
     receiver = prim.value[0]
 
+    # Get receiver expression
     receiver_stms, receiver_string, receiver_decl = expression(receiver, readonly=ro)
-    string = receiver_string
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
+    # Get bounds
     r1_stmts, r1_string, r1_local = expression(prim.value[1]['substring'][0], readonly=ro)
     r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1], readonly=ro)
+    
+    stmts.extend(r1_stmts)
+    stmts.extend(r2_stmts)
+    local_decl.extend(r1_local)
+    local_decl.extend(r2_local)
 
     global VAR_COUNTER
     VAR_COUNTER = VAR_COUNTER + 1
+    
+    tmp_var = f'sub_{VAR_COUNTER}'
+    min_range = f'min_range_{VAR_COUNTER}'
+    max_range = f'max_range_{VAR_COUNTER}'
+    loop_idx = f'loop_idx_{VAR_COUNTER}'
+    
+    local_decl.append(f'asn1SccUint {min_range};')
+    local_decl.append(f'asn1SccUint {max_range};')
+    local_decl.append(f'asn1SccUint {loop_idx};')
+    
+    stmts.append(f'{min_range} = {r1_string};')
+    stmts.append(f'{max_range} = {r2_string};')
 
-    stmts.extend(r1_stmts)
-    stmts.append(f'min_range_{VAR_COUNTER} = {r1_string};')
-    stmts.extend(r2_stmts)
-    stmts.append(f'max_range_{VAR_COUNTER} = {r2_string};')
-
-    local_decl.extend(r1_local)
-    local_decl.append(f'asn1SccUint min_range_{VAR_COUNTER};')
-    local_decl.extend(r2_local)
-    local_decl.append(f'asn1SccUint max_range_{VAR_COUNTER};')
-
-    return stmts, str(string), local_decl
+    receiver_bty = find_basic_type(receiver.exprType)
+    bty = find_basic_type(prim.exprType)
+    actual_type = type_name(prim.exprType)
+    
+    if bty.kind == 'IA5StringType':
+        local_decl.append(f'{actual_type} {tmp_var};')
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} <= {max_range} - {min_range} && {loop_idx} + {min_range} < {receiver_bty.Max}; {loop_idx}++)')
+        stmts.append('{')
+        stmts.append(f'    {tmp_var}[{loop_idx}] = {receiver_string}[{loop_idx} + {min_range}];')
+        stmts.append('}')
+        stmts.append(f'if ({loop_idx} < {receiver_bty.Max}) {tmp_var}[{loop_idx}] = \'\\0\';')
+    else:
+        local_decl.append(f'{actual_type} {tmp_var};')
+        if receiver_bty.Min != receiver_bty.Max:
+            stmts.append(f'{tmp_var}.nCount = {max_range} - {min_range} + 1;')
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} <= {max_range} - {min_range} && {loop_idx} + {min_range} < {receiver_bty.Max}; {loop_idx}++)')
+        stmts.append('{')
+        stmts.append(f'    {tmp_var}.arr[{loop_idx}] = {receiver_string}.arr[{loop_idx} + {min_range}];')
+        stmts.append('}')
+        
+    return stmts, str(tmp_var), local_decl
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -4365,16 +4299,7 @@ def write_statement(param, newline):
 
             if type_kind == 'OctetStringType':
                 # Octet string -> convert to Ada string
-                if isinstance(param, ogAST.PrimSubstring):
-                    local.append(u'asn1SccUint write_{var_counter};'.format(var_counter=VAR_COUNTER))
-
-                    code.append('{')
-                    code.append('for(write_{var_counter} = min_range_{var_counter}; write_{var_counter} <= max_range_{var_counter}; write_{var_counter}++)'.format(var_counter=VAR_COUNTER))
-                    code.append('{')
-                    code.append('printf(\"%c\", {st}.arr[write_{var_counter}]);'.format(st=string, var_counter=VAR_COUNTER))
-                    code.append('}')
-                    code.append('}')
-                elif basic_type.Min == basic_type.Max:
+                if basic_type.Min == basic_type.Max:
                     VAR_COUNTER = VAR_COUNTER + 1
 
                     local.append(u'asn1SccUint write_{var_counter};'.format(var_counter=VAR_COUNTER))
