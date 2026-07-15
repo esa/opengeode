@@ -125,6 +125,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.6.3 (07/2026)**
+- Fix graphical glitches (mutiple cursors blinking, dynamic menu update, jumps of the symbols after reopening, light palette when system dark mode is enabled)
+- Fix compilation of QtWidget
+- Introuce support for branch coverage collection (model checking)
+
 **4.6.2 (07/2026)**
 - Fix call to the _transition procedure when continuous signals exist at process level
 - (Resolve issue with taste model checker - "observe" procedure did not trigger the transition)
