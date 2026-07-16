@@ -3308,8 +3308,7 @@ def generating_run_transition_declaration(process):
     run_transition_declaration_code.append('};\n')
 
     ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
-    if not getattr(process, 'no_context', False):
-        run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
+    run_transition_declaration_code.append(u'void runTransition{}({}enum {} Id);\n'.format(process.processName, ctxt_arg, enum_name))
 
     return run_transition_declaration_code
 
@@ -3748,10 +3747,16 @@ def generating_includes(process):
 
 
 def processing_transitions_and_floating_labels(process):
-    if getattr(process, 'no_context', False):
-        return [], []
     continuous_signals_header_file_code = ['//// Continuous Signals']
     transition_code = ['//// Definition Of Run Transition']
+    enum_name = f'{process.processName}_Branches'
+
+    if getattr(process, 'no_context', False):
+        ctxt_arg = f'{ASN1SCC}{process.processName.capitalize()}_Context *ctxt, ' if IS_INSTANCE else ''
+        transition_code.append(f'void runTransition{process.processName}({ctxt_arg}enum {enum_name} Id)')
+        transition_code.append('{')
+        transition_code.append('}')
+        return continuous_signals_header_file_code, transition_code
 
     has_continuous_signals = any(process.cs_mapping.values())
     enum_name = f'{process.processName}_Branches'
