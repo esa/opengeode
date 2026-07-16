@@ -1866,6 +1866,13 @@ class SDL_View(QGraphicsView):
         via a signal sent by the undo stack of the scene (indexChanged)'''
         self.something_changed = True
 
+    def update_window_modified(self, clean_state):
+        ''' Update window modified state, catching RuntimeError if already deleted '''
+        try:
+            self.wrapping_window.setWindowModified(not clean_state)
+        except RuntimeError:
+            pass
+
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
         self.toolbar.set_actions(
@@ -2040,10 +2047,8 @@ class SDL_View(QGraphicsView):
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
         self.update_datadict.emit()
-        self.scene().undo_stack.cleanChanged.connect(
-                lambda x: self.wrapping_window.setWindowModified(not x))
-        self.scene().undo_stack.indexChanged.connect(lambda idx :
-                    self.change_cleanliness(idx))
+        self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
+        self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
         self.update_partition_arrows()
 
     def go_down(self, scene, name=''):
@@ -2108,10 +2113,8 @@ class SDL_View(QGraphicsView):
         self.view_refresh()
         self.scene().scene_left.emit()
         self.update_datadict.emit()
-        self.scene().undo_stack.cleanChanged.connect(
-                lambda x: self.wrapping_window.setWindowModified(not x))
-        self.scene().undo_stack.indexChanged.connect(lambda idx :
-                    self.change_cleanliness(idx))
+        self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
+        self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
         self.update_partition_arrows()
 
 
@@ -2783,10 +2786,8 @@ class OG_MainWindow(QMainWindow):
             scene.messages_window = self.view.messages_window
             self.view.setScene(scene)
             self.view.refresh()
-            scene.undo_stack.cleanChanged.connect(lambda x :
-                lambda x: self.view.wrapping_window.setWindowModified(not x))
-            scene.undo_stack.indexChanged.connect(lambda idx :
-                    self.view.change_cleanliness(idx))
+            scene.undo_stack.cleanChanged.connect(self.view.update_window_modified)
+            scene.undo_stack.indexChanged.connect(self.view.change_cleanliness)
             scene.context_change.connect(self.update_datadict_window)
             scene.word_under_cursor.connect(self.select_in_datadict_window)
             scene.setup_partitions_in_datadict.connect(self.setup_partitions)
