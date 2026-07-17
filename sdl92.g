@@ -818,6 +818,9 @@ transition
         ->      ^(TRANSITION action+ label? terminator_statement?)
                 | terminator_statement
         ->      ^(TRANSITION terminator_statement)
+                /* Fix: Support transition that is just a label (e.g. at the end of a decision answer) */
+                | label
+        ->      ^(TRANSITION label)
         ;
 
 
