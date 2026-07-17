@@ -8,5 +8,10 @@ BEGIN
     }
    MyDets ::= ENUMERATED { a, b }  -- match the CHOICE options
    MyInt2 ::= INTEGER
+   SomeOtherType ::= ENUMERATED {
+       a2,
+       b2
+   }
+   
 
 END

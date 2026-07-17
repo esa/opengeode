@@ -86,7 +86,7 @@ from PySide6 import QtSvg
 from PySide6.QtPrintSupport import QPrinter
 
 from . import version
-from .asn1_editor import ASN1TextEdit, ASN1Highlighter, ASN1LSPClient, LSPSignalEmitter
+from .asn1_editor import ASN1TextEdit, ASN1Highlighter, ASN1LSPClient, LSPSignalEmitter, VimLineEdit
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
                         Output,
@@ -2775,6 +2775,7 @@ class OG_MainWindow(QMainWindow):
         self.statechart_mdi = None
         self.current_window = None
         self.datadict = None
+        self.messages_window = None
         # Command line flags (set in the start method)
         self.options = None
 
@@ -2871,6 +2872,7 @@ class OG_MainWindow(QMainWindow):
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
+        self.messages_window = messages
         self.view.messages_window = messages
         self.view.scene().messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
@@ -3248,26 +3250,44 @@ class OG_MainWindow(QMainWindow):
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         
         self.edit_btn = QPushButton("Edit ASN.1", self)
+        self.vim_btn = QPushButton("Vim Mode: Off", self)
+        self.vim_btn.setCheckable(True)
         self.check_btn = QPushButton("Check syntax", self)
         self.save_btn = QPushButton("Save ASN.1", self)
         self.cancel_btn = QPushButton("Cancel", self)
         
         self.edit_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.vim_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.check_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.save_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.cancel_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
         buttons_layout.addWidget(self.edit_btn)
+        buttons_layout.addWidget(self.vim_btn)
         buttons_layout.addWidget(self.check_btn)
         buttons_layout.addWidget(self.save_btn)
         buttons_layout.addWidget(self.cancel_btn)
         
+        # Create Vim status/command line bar
+        self.vim_bar = QWidget(self)
+        vim_bar_layout = QHBoxLayout(self.vim_bar)
+        vim_bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.vim_status = QLabel("-- NORMAL --", self.vim_bar)
+        self.vim_input = VimLineEdit(self.vim_bar)
+        self.vim_input.setPlaceholderText("Vim command...")
+        self.vim_input.returnPressed.connect(self.execute_vim_command)
+        vim_bar_layout.addWidget(self.vim_status)
+        vim_bar_layout.addWidget(self.vim_input)
+        self.vim_bar.hide()
+        
         # Add widgets to parent grid layout
         layout.addWidget(self.asn1_editor, 0, 0)
-        layout.addWidget(self.asn1_buttons_widget, 1, 0)
+        layout.addWidget(self.vim_bar, 1, 0)
+        layout.addWidget(self.asn1_buttons_widget, 2, 0)
         
         # Connect signals
         self.edit_btn.clicked.connect(self.enter_asn1_edit_mode)
+        self.vim_btn.toggled.connect(self.toggle_vim_mode)
         self.check_btn.clicked.connect(self.check_asn1_syntax_button_clicked)
         self.save_btn.clicked.connect(self.save_asn1_changes)
         self.cancel_btn.clicked.connect(self.cancel_asn1_edit)
@@ -3285,6 +3305,7 @@ class OG_MainWindow(QMainWindow):
         # Start in view mode
         self.current_asn1_file = None
         self.edit_btn.setEnabled(False)
+        self.vim_btn.hide()
         self.cancel_asn1_edit()
 
     def enter_asn1_edit_mode(self):
@@ -3309,10 +3330,15 @@ class OG_MainWindow(QMainWindow):
             self.asn1_browser.hide()
             self.asn1_editor.show()
             self.edit_btn.hide()
+            self.vim_btn.show()
             self.check_btn.show()
             self.save_btn.show()
             self.cancel_btn.show()
             self.asn1_editor.setFocus()
+            
+            # Show vim bar if vim mode is checked
+            if self.vim_btn.isChecked():
+                self.vim_bar.show()
             
             # Start LSP client
             try:
@@ -3390,8 +3416,15 @@ class OG_MainWindow(QMainWindow):
         ''' Slot for Check Syntax button '''
         success, err = self.check_asn1_syntax()
         if success:
+            self.messages_window.clear()
+            self.messages_window.addItem("[ASN.1] ASN.1 model has no errors")
             QMessageBox.information(self, "Syntax Check", "ASN.1 Syntax is OK!")
         else:
+            self.messages_window.clear()
+            self.messages_window.addItem("[ASN.1 ERROR] Syntax errors found:")
+            for line in err.splitlines():
+                if line.strip():
+                    self.messages_window.addItem(line.strip())
             msg_box = QMessageBox(self)
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle("ASN.1 Syntax Errors")
@@ -3445,8 +3478,10 @@ class OG_MainWindow(QMainWindow):
         self.statusBar().clearMessage()
         
         self.asn1_editor.hide()
+        self.vim_bar.hide()
         self.asn1_browser.show()
         self.edit_btn.show()
+        self.vim_btn.hide()
         self.check_btn.hide()
         self.save_btn.hide()
         self.cancel_btn.hide()
@@ -3458,17 +3493,117 @@ class OG_MainWindow(QMainWindow):
     def handle_lsp_diagnostics(self, diagnostics):
         error_lines = []
         error_msgs = []
+        
+        # Clear previous messages to show current live LSP diagnostics
+        self.messages_window.clear()
+        
         for diag in diagnostics:
             line = diag["line"]
             msg = diag["message"]
             error_lines.append(line)
             error_msgs.append(f"Line {line+1}: {msg}")
             
+            item = QListWidgetItem(f"[ASN.1 ERROR] Line {line+1}: {msg}")
+            self.messages_window.addItem(item)
+            
         self.asn1_editor.setErrorLines(error_lines)
         if error_msgs:
             self.statusBar().showMessage("; ".join(error_msgs), 5000)
         else:
             self.statusBar().clearMessage()
+
+    def toggle_vim_mode(self, enabled):
+        self.asn1_editor.vim_mode_enabled = enabled
+        if enabled:
+            self.vim_btn.setText("Vim Mode: On")
+            self.vim_bar.show()
+            self.asn1_editor.set_vim_state("NORMAL")
+            self.statusBar().showMessage("Vim mode enabled. Esc to NORMAL mode, : to run commands.", 3000)
+        else:
+            self.vim_btn.setText("Vim Mode: Off")
+            self.vim_bar.hide()
+            self.statusBar().showMessage("Vim mode disabled.", 3000)
+            self.asn1_editor.set_vim_state("NORMAL")
+            
+    def update_vim_status(self, state):
+        if state == "NORMAL":
+            self.vim_status.setText("-- NORMAL --")
+        elif state == "INSERT":
+            self.vim_status.setText("-- INSERT --")
+        elif state == "VISUAL":
+            self.vim_status.setText("-- VISUAL --")
+        elif state == "PENDING":
+            self.vim_status.setText("-- PENDING --")
+
+    def show_vim_input(self, prefix):
+        self.vim_status.setText(prefix)
+        self.vim_input.setText("")
+        self.vim_bar.show()
+        self.vim_input.setFocus()
+
+    def execute_vim_command(self):
+        cmd = self.vim_input.text()
+        prefix = self.vim_status.text()
+        self.vim_bar.hide()
+        self.asn1_editor.setFocus()
+        
+        # Reset editor to NORMAL state
+        self.asn1_editor.set_vim_state("NORMAL")
+        
+        # Show vim_bar again if Vim mode is still active
+        if self.vim_btn.isChecked():
+            self.vim_bar.show()
+            self.vim_status.setText("-- NORMAL --")
+            self.vim_input.clear()
+            
+        if prefix == ":":
+            self.process_colon_command(cmd)
+        elif prefix == "/":
+            self.process_search_command(cmd)
+
+    def process_search_command(self, pattern):
+        if not pattern:
+            return
+        self.asn1_editor.last_search_pattern = pattern
+        cursor = self.asn1_editor.document().find(pattern, self.asn1_editor.textCursor())
+        if not cursor.isNull():
+            self.asn1_editor.setTextCursor(cursor)
+        else:
+            # Wrap around search
+            cursor = self.asn1_editor.document().find(pattern, 0)
+            if not cursor.isNull():
+                self.asn1_editor.setTextCursor(cursor)
+            else:
+                self.statusBar().showMessage(f"Pattern not found: {pattern}", 3000)
+
+    def process_colon_command(self, cmd):
+        if cmd.startswith("%s/") or cmd.startswith("s/"):
+            parts = cmd.split('/')
+            if len(parts) >= 3:
+                old_val = parts[1]
+                new_val = parts[2]
+                flags = parts[3] if len(parts) > 3 else ""
+                
+                content = self.asn1_editor.toPlainText()
+                import re
+                try:
+                    if 'g' in flags:
+                        new_content, count = re.subn(old_val, new_val, content)
+                    else:
+                        new_content, count = re.subn(old_val, new_val, content, count=1)
+                    
+                    self.asn1_editor.setPlainText(new_content)
+                    self.statusBar().showMessage(f"Substituted {count} occurrence(s).", 3000)
+                except Exception as e:
+                    self.statusBar().showMessage(f"Substitution error: {e}", 3000)
+            else:
+                self.statusBar().showMessage("Invalid substitution syntax. Use: %s/old/new/g", 3000)
+        elif cmd == "w":
+            self.save_asn1_changes()
+        elif cmd == "q":
+            self.cancel_asn1_edit()
+        elif cmd == "wq":
+            self.save_asn1_changes()
 
     def select_in_datadict_window(self, str):
         ''' This function is called upon reception of a signal emitted by

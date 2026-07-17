@@ -36,7 +36,7 @@ system og;
                 decision bar;
                     /* CIF ANSWER (338, 397), (70, 23) */
                     (b):
-                        /* CIF PROCEDURECALL (310, 435), (127, 35) */
+                        /* CIF PROCEDURECALL (309, 435), (127, 35) */
                         call writeln ('ERR (1)');
                     /* CIF ANSWER (86, 391), (70, 23) */
                     (a):

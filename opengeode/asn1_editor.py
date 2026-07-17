@@ -2,15 +2,16 @@
 
 """
     OpenGEODE - ASN.1 File Editor extension
-    Provides syntax highlighting, line numbers, autocompletion, and LSP diagnostics for ASN.1 files.
+    Provides syntax highlighting, line numbers, autocompletion, LSP diagnostics,
+    and a toggleable Vim mode for ASN.1 files.
 """
 
 import os
 import json
 import subprocess
 import threading
-from PySide6.QtWidgets import QPlainTextEdit, QCompleter, QWidget, QTextEdit
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QTextCursor, QKeyEvent, QPainter, QTextFormat
+from PySide6.QtWidgets import QPlainTextEdit, QCompleter, QWidget, QTextEdit, QLineEdit
+from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QTextCursor, QKeyEvent, QPainter, QTextFormat, QTextDocument
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QRect, QSize, QObject, Signal
 
 class ASN1Highlighter(QSyntaxHighlighter):
@@ -85,11 +86,40 @@ class LineNumberArea(QWidget):
         self.codeEditor.lineNumberAreaPaintEvent(event)
 
 
+class VimLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.clear()
+            if self.parentWidget():
+                self.parentWidget().hide()
+            main_win = self.window()
+            if hasattr(main_win, 'asn1_editor') and main_win.asn1_editor:
+                main_win.asn1_editor.setFocus()
+                main_win.asn1_editor.set_vim_state("NORMAL")
+            e.accept()
+            return
+        super().keyPressEvent(e)
+
+
 class ASN1TextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._completer = None
         self.error_lines = set()
+        
+        # Vim mode properties
+        self.vim_mode_enabled = False
+        self.vim_state = "NORMAL" # NORMAL, INSERT, VISUAL, PENDING
+        self.vim_pending_key = None
+        self.yank_buffer = ""
+        self.yank_is_line = False
+        self.visual_anchor_cursor = None
+        self.indent_size = 3
+        self.last_search_pattern = ""
+        
         self.setFont(QFont('UbuntuMono', 12))
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
         
@@ -139,27 +169,121 @@ class ASN1TextEdit(QPlainTextEdit):
             self._completer.setWidget(self)
         super().focusInEvent(e)
 
+    def event(self, e):
+        from PySide6.QtCore import QEvent
+        if e.type() == QEvent.ShortcutOverride:
+            if e.modifiers() == Qt.ControlModifier and e.key() == Qt.Key_N:
+                e.accept()
+                return True
+        return super().event(e)
+
     def keyPressEvent(self, e: QKeyEvent):
+        # 1. If completer popup is visible, handle selection override first
         if self._completer and self._completer.popup().isVisible():
-            if e.key() in (Qt.Key_Enter, Qt.Key_Return, Qt.Key_Escape, Qt.Key_Tab, Qt.Key_Backtab):
+            if e.modifiers() == Qt.ControlModifier and e.key() == Qt.Key_N:
+                popup = self._completer.popup()
+                current_row = popup.currentIndex().row()
+                next_row = (current_row + 1) % popup.model().rowCount()
+                popup.setCurrentIndex(popup.model().index(next_row, 0))
+                e.accept()
+                return
+            if e.key() == Qt.Key_Escape:
+                if self.vim_mode_enabled:
+                    self.set_vim_state("NORMAL")
+                self._completer.popup().hide()
+                e.accept()
+                return
+            if e.key() in (Qt.Key_Enter, Qt.Key_Return, Qt.Key_Tab, Qt.Key_Backtab):
                 e.ignore()
                 return
 
-        # Insert 4 spaces on Tab instead of a literal tab character
-        if e.key() == Qt.Key_Tab:
-            self.insertPlainText("    ")
+        # 2. If Vim mode is enabled and we are not in INSERT mode, handle keys via Vim emulation
+        if self.vim_mode_enabled and self.vim_state != "INSERT":
+            key = e.key()
+            
+            # Universal Escape to Normal Mode
+            if key == Qt.Key_Escape:
+                cursor = self.textCursor()
+                cursor.clearSelection()
+                self.setTextCursor(cursor)
+                self.set_vim_state("NORMAL")
+                e.accept()
+                return
+                
+            # Allow arrow keys to navigate even in NORMAL/VISUAL mode
+            if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                if self.vim_state == "VISUAL":
+                    self.handle_visual_mode_key(e)
+                else:
+                    self.handle_normal_mode_key(e)
+                e.accept()
+                return
+                
+            if self.vim_state == "VISUAL":
+                self.handle_visual_mode_key(e)
+            elif self.vim_state == "PENDING":
+                self.handle_pending_mode_key(e)
+            else:
+                self.handle_normal_mode_key(e)
+            e.accept()
             return
 
-        isShortcut = ((e.modifiers() & Qt.ControlModifier) and e.key() == Qt.Key_E)
+        # 2. Escape from INSERT mode back to NORMAL mode
+        if self.vim_mode_enabled and self.vim_state == "INSERT" and e.key() == Qt.Key_Escape:
+            self.set_vim_state("NORMAL")
+            e.accept()
+            return
+
+        # Auto-dedent on typing closing brackets/parentheses
+        if not self.vim_mode_enabled or self.vim_state == "INSERT":
+            if e.text() in ('}', ')', ']'):
+                cursor = self.textCursor()
+                block = cursor.block()
+                line_text = block.text()
+                col = cursor.positionInBlock()
+                prefix = line_text[:col]
+                if prefix.strip() == "":
+                    dedent_size = min(len(prefix), self.indent_size)
+                    if dedent_size > 0:
+                        cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, dedent_size)
+                        cursor.removeSelectedText()
+                        cursor.insertText(e.text())
+                        self.setTextCursor(cursor)
+                        e.accept()
+                        return
+
+        # Auto-indent on pressing Enter/Return
+        if not self.vim_mode_enabled or self.vim_state == "INSERT":
+            if e.key() in (Qt.Key_Return, Qt.Key_Enter):
+                self.perform_auto_indent()
+                e.accept()
+                return
+
+
+
+        if e.key() == Qt.Key_Tab:
+            self.insertPlainText(" " * self.indent_size)
+            return
+
+        isShortcut = ((e.modifiers() & Qt.ControlModifier) and e.key() in (Qt.Key_E, Qt.Key_N))
         if not self._completer or not isShortcut:
             super().keyPressEvent(e)
 
+        if self.vim_mode_enabled and self.vim_state == "INSERT" and not isShortcut:
+            if self._completer and not self._completer.popup().isVisible():
+                self._completer.popup().hide()
+                return
+
         ctrlOrShift = e.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier)
-        if not self._completer or (ctrlOrShift and e.text() == ""):
+        if not self._completer or (ctrlOrShift and e.text() == "" and not isShortcut):
             return
 
         eow = "~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="
         hasModifier = (e.modifiers() != Qt.NoModifier) and not ctrlOrShift
+        
+        # Dynamically harvest buffer words and update completer model
+        self.update_completer_words()
+        
         completionPrefix = self.textUnderCursor()
 
         if not isShortcut and (hasModifier or e.text() == "" or len(completionPrefix) < 2 or e.text()[-1] in eow):
@@ -173,6 +297,329 @@ class ASN1TextEdit(QPlainTextEdit):
         cr = self.cursorRect()
         cr.setWidth(self._completer.popup().sizeHintForColumn(0) + self._completer.popup().verticalScrollBar().sizeHint().width())
         self._completer.complete(cr)
+
+    # Vim Mode State Machine
+    def set_vim_state(self, state):
+        self.vim_state = state
+        if state in ("NORMAL", "INSERT"):
+            self.vim_pending_key = None
+        main_win = self.window()
+        if hasattr(main_win, 'update_vim_status'):
+            main_win.update_vim_status(state)
+
+    def handle_normal_mode_key(self, e):
+        text = e.text()
+        
+        key = e.key()
+        
+        # Movements
+        if text == 'h' or key == Qt.Key_Left:
+            self.moveCursor(QTextCursor.Left)
+        elif text == 'j' or key == Qt.Key_Down:
+            self.moveCursor(QTextCursor.Down)
+        elif text == 'k' or key == Qt.Key_Up:
+            self.moveCursor(QTextCursor.Up)
+        elif text == 'l' or key == Qt.Key_Right:
+            self.moveCursor(QTextCursor.Right)
+            
+        # Entering other modes
+        elif text == 'i':
+            self.set_vim_state("INSERT")
+        elif text == 'a':
+            self.moveCursor(QTextCursor.Right)
+            self.set_vim_state("INSERT")
+        elif text == 'o':
+            cursor = self.textCursor()
+            indent = self.get_indentation_for_new_line(cursor.block())
+            cursor.movePosition(QTextCursor.EndOfLine)
+            cursor.insertText("\n" + indent)
+            self.setTextCursor(cursor)
+            self.set_vim_state("INSERT")
+        elif text == 'O':
+            cursor = self.textCursor()
+            indent = self.get_indentation_for_new_line(cursor.block())
+            cursor.movePosition(QTextCursor.StartOfLine)
+            cursor.insertText(indent + "\n")
+            cursor.movePosition(QTextCursor.Up)
+            self.setTextCursor(cursor)
+            self.set_vim_state("INSERT")
+        elif text == 'v':
+            self.set_vim_state("VISUAL")
+            # Store visual anchor cursor
+            self.visual_anchor_cursor = self.textCursor()
+            
+        # Commands
+        elif text == 'u':
+            self.undo()
+        elif text == 'p':
+            self.vim_paste()
+        elif text == 'G':
+            self.moveCursor(QTextCursor.End)
+        elif text == 'n':
+            self.search_forward(self.last_search_pattern)
+        elif text == 'N':
+            self.search_backward(self.last_search_pattern)
+        elif text == '*':
+            word = self.textUnderCursor()
+            if word:
+                self.last_search_pattern = word
+                self.search_forward(word)
+        elif text == '#':
+            word = self.textUnderCursor()
+            if word:
+                self.last_search_pattern = word
+                self.search_backward(word)
+            
+        # Pending triggers: d, y, g, c, f
+        elif text in ('d', 'y', 'g', 'c', 'f'):
+            self.vim_pending_key = text
+            self.set_vim_state("PENDING")
+            
+        # Command line mode triggers
+        elif text == ':':
+            main_win = self.window()
+            if hasattr(main_win, 'show_vim_input'):
+                main_win.show_vim_input(":")
+        elif text == '/':
+            main_win = self.window()
+            if hasattr(main_win, 'show_vim_input'):
+                main_win.show_vim_input("/")
+
+    def setPlainText(self, text):
+        super().setPlainText(text)
+        self.indent_size = self.detect_indent_size()
+
+    def detect_indent_size(self):
+        text = self.toPlainText()
+        lines = text.splitlines()
+        space_counts = []
+        for line in lines:
+            stripped = line.lstrip()
+            if not stripped:
+                continue
+            count = len(line) - len(stripped)
+            if count > 0:
+                space_counts.append(count)
+        if not space_counts:
+            return 3
+        diffs = []
+        for i in range(1, len(space_counts)):
+            d = abs(space_counts[i] - space_counts[i-1])
+            if d > 0 and d <= 8:
+                diffs.append(d)
+        if diffs:
+            from collections import Counter
+            most_common = Counter(diffs).most_common(1)
+            if most_common:
+                return most_common[0][0]
+        from collections import Counter
+        most_common = Counter(space_counts).most_common(1)
+        if most_common:
+            val = most_common[0][0]
+            for c in (4, 3, 2, 8):
+                if val % c == 0:
+                    return c
+            return val
+        return 3
+
+    def get_indentation_for_new_line(self, block):
+        line_text = block.text()
+        leading_spaces_count = len(line_text) - len(line_text.lstrip(' '))
+        indent = " " * leading_spaces_count
+        stripped_line = line_text.strip()
+        if stripped_line and stripped_line[-1] in ('{', '(', '['):
+            indent += " " * self.indent_size
+        return indent
+
+    def perform_auto_indent(self):
+        cursor = self.textCursor()
+        block = cursor.block()
+        line_text = block.text()
+        col = cursor.positionInBlock()
+        
+        prefix = line_text[:col]
+        suffix = line_text[col:]
+        
+        leading_spaces_count = len(prefix) - len(prefix.lstrip(' '))
+        indent = " " * leading_spaces_count
+        
+        stripped_prefix = prefix.strip()
+        increase_indent = False
+        if stripped_prefix and stripped_prefix[-1] in ('{', '(', '['):
+            increase_indent = True
+            
+        if increase_indent:
+            indent += " " * self.indent_size
+            
+        stripped_suffix = suffix.strip()
+        if increase_indent and stripped_suffix and stripped_suffix[0] in ('}', ')', ']'):
+            cursor.insertText("\n" + indent + "\n" + (" " * leading_spaces_count))
+            cursor.movePosition(QTextCursor.Up)
+            cursor.movePosition(QTextCursor.EndOfLine)
+            self.setTextCursor(cursor)
+            return
+            
+        cursor.insertText("\n" + indent)
+        self.setTextCursor(cursor)
+
+    def update_completer_words(self):
+        if not self._completer:
+            return
+        model = self._completer.model()
+        existing_words = []
+        if model:
+            if hasattr(model, 'stringList'):
+                existing_words = list(model.stringList())
+            else:
+                for r in range(model.rowCount()):
+                    existing_words.append(model.data(model.index(r, 0)))
+        import re
+        content = self.toPlainText()
+        buffer_words = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_-]*\b', content)
+        all_words = sorted(list(set(existing_words + buffer_words)))
+        if model and hasattr(model, 'setStringList'):
+            model.setStringList(all_words)
+        else:
+            new_model = QStringListModel(all_words, self._completer)
+            self._completer.setModel(new_model)
+
+    def search_forward(self, pattern):
+        if not pattern:
+            return
+        cursor = self.document().find(pattern, self.textCursor())
+        if not cursor.isNull():
+            self.setTextCursor(cursor)
+        else:
+            cursor = self.document().find(pattern, 0)
+            if not cursor.isNull():
+                self.setTextCursor(cursor)
+            else:
+                main_win = self.window()
+                if hasattr(main_win, 'statusBar'):
+                    main_win.statusBar().showMessage(f"Pattern not found: {pattern}", 3000)
+
+    def search_backward(self, pattern):
+        if not pattern:
+            return
+        cursor = self.document().find(pattern, self.textCursor(), QTextDocument.FindBackward)
+        if not cursor.isNull():
+            self.setTextCursor(cursor)
+        else:
+            end_cursor = self.textCursor()
+            end_cursor.movePosition(QTextCursor.End)
+            cursor = self.document().find(pattern, end_cursor, QTextDocument.FindBackward)
+            if not cursor.isNull():
+                self.setTextCursor(cursor)
+            else:
+                main_win = self.window()
+                if hasattr(main_win, 'statusBar'):
+                    main_win.statusBar().showMessage(f"Pattern not found: {pattern}", 3000)
+
+    def handle_pending_mode_key(self, e):
+        text = e.text()
+        first = self.vim_pending_key
+        self.set_vim_state("NORMAL") # Reset by default
+        
+        if first == 'd' and text == 'd':
+            self.vim_delete_line()
+        elif first == 'd' and text == 'w':
+            self.vim_delete_word()
+        elif first == 'y' and text == 'y':
+            self.vim_yank_line()
+        elif first == 'g' and text == 'g':
+            self.moveCursor(QTextCursor.Start)
+        elif first == 'c' and text == 'w':
+            self.vim_delete_word()
+            self.set_vim_state("INSERT")
+        elif first == 'f' and len(text) == 1:
+            self.vim_find_char(text)
+
+    def handle_visual_mode_key(self, e):
+        text = e.text()
+        key = e.key()
+        cursor = self.textCursor()
+        
+        if text == 'h' or key == Qt.Key_Left:
+            cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor)
+        elif text == 'j' or key == Qt.Key_Down:
+            cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+        elif text == 'k' or key == Qt.Key_Up:
+            cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
+        elif text == 'l' or key == Qt.Key_Right:
+            cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor)
+        elif text == 'G':
+            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            
+        # Editing commands in Visual Mode
+        elif text == 'd':
+            if cursor.hasSelection():
+                self.yank_buffer = cursor.selectedText()
+                self.yank_is_line = False
+                cursor.removeSelectedText()
+            self.set_vim_state("NORMAL")
+        elif text == 'y':
+            if cursor.hasSelection():
+                self.yank_buffer = cursor.selectedText()
+                self.yank_is_line = False
+            cursor.clearSelection()
+            self.set_vim_state("NORMAL")
+            
+        self.setTextCursor(cursor)
+
+    # Vim Operations
+    def vim_delete_line(self):
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+        if not cursor.hasSelection():
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+        self.yank_buffer = cursor.selectedText()
+        self.yank_is_line = True
+        cursor.removeSelectedText()
+        self.setTextCursor(cursor)
+
+    def vim_delete_word(self):
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+        while True:
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+            char = cursor.selectedText()[-1:]
+            if char != " ":
+                cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+                break
+        self.yank_buffer = cursor.selectedText()
+        self.yank_is_line = False
+        cursor.removeSelectedText()
+        self.setTextCursor(cursor)
+
+    def vim_yank_line(self):
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+        self.yank_buffer = cursor.selectedText() + "\n"
+        self.yank_is_line = True
+        cursor.clearSelection()
+        self.setTextCursor(cursor)
+
+    def vim_paste(self):
+        if not self.yank_buffer:
+            return
+        cursor = self.textCursor()
+        if self.yank_is_line:
+            cursor.movePosition(QTextCursor.EndOfLine)
+            cursor.insertText("\n" + self.yank_buffer.rstrip("\n"))
+        else:
+            cursor.insertText(self.yank_buffer)
+        self.setTextCursor(cursor)
+
+    def vim_find_char(self, char):
+        cursor = self.textCursor()
+        current_line = cursor.block().text()
+        pos = cursor.positionInBlock()
+        idx = current_line.find(char, pos + 1)
+        if idx != -1:
+            cursor.setPosition(cursor.block().position() + idx)
+            self.setTextCursor(cursor)
 
     # Line numbering helper methods
     def lineNumberAreaWidth(self):
