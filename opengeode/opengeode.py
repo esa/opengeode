@@ -86,6 +86,7 @@ from PySide6 import QtSvg
 from PySide6.QtPrintSupport import QPrinter
 
 from . import version
+from .asn1_editor import ASN1TextEdit, ASN1Highlighter, ASN1LSPClient, LSPSignalEmitter
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
                         Output,
@@ -2898,6 +2899,8 @@ class OG_MainWindow(QMainWindow):
         self.tabifyDockWidget(asn1_dock, help_dock)
         self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
+        if not options.taste_target:
+            self.setup_asn1_editor()
         #self.help_browser = self.findChild(OG_HelpBrowser, 'help_browser')
         # Set up the content of the Help tab: use a splitter to have an
         # area with Index/Contents/Search and an area with the actual html
@@ -3149,6 +3152,17 @@ class OG_MainWindow(QMainWindow):
         self.asn1_browser.setHtml(html_content)
         self.asn1_browser.setFont(QFont('UbuntuMono', 12))
 
+        # Check if the edit button is present and update its status
+        if hasattr(self, 'edit_btn') and self.edit_btn is not None:
+            if hasattr(ast, 'DV') and ast.DV and ast.DV.asn1Files:
+                self.edit_btn.setEnabled(True)
+                self.current_asn1_file = ast.DV.asn1Files[0]
+                self.current_asn1_ast = ast
+            else:
+                self.edit_btn.setEnabled(False)
+                self.current_asn1_file = None
+                self.current_asn1_ast = None
+
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
         item_types.takeChildren() # remove old children
@@ -3202,6 +3216,259 @@ class OG_MainWindow(QMainWindow):
         partitions = self.datadict.topLevelItem(9)
         partitions.setExpanded(True)
         self.datadict.resizeColumnToContents(0)
+
+    def setup_asn1_editor(self):
+        ''' Set up the ASN.1 editor and buttons '''
+        if not self.asn1_browser:
+            return
+        
+        layout = self.asn1_browser.parentWidget().layout()
+        if not layout:
+            return
+            
+        # Predefined keywords for autocomplete
+        self.asn1_keywords = [
+            "BEGIN", "END", "DEFINITIONS", "IMPORTS", "EXPORTS", "FROM", "CHOICE", "SEQUENCE", "OF",
+            "INTEGER", "BOOLEAN", "OCTET", "STRING", "REAL", "ENUMERATED", "SIZE", "WITH", "COMPONENTS",
+            "TRUE", "FALSE"
+        ]
+        
+        # Create the text editor widget
+        self.asn1_editor = ASN1TextEdit(self)
+        self.asn1_highlighter = ASN1Highlighter(self.asn1_editor.document())
+        
+        # Create the completer
+        self.asn1_completer = QCompleter(self)
+        self.asn1_completer.setModel(QStringListModel(self.asn1_keywords, self.asn1_completer))
+        self.asn1_editor.setCompleter(self.asn1_completer)
+        
+        # Create buttons widget
+        self.asn1_buttons_widget = QWidget(self)
+        buttons_layout = QHBoxLayout(self.asn1_buttons_widget)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.edit_btn = QPushButton("Edit ASN.1", self)
+        self.check_btn = QPushButton("Check syntax", self)
+        self.save_btn = QPushButton("Save ASN.1", self)
+        self.cancel_btn = QPushButton("Cancel", self)
+        
+        self.edit_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.check_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.save_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.cancel_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        buttons_layout.addWidget(self.edit_btn)
+        buttons_layout.addWidget(self.check_btn)
+        buttons_layout.addWidget(self.save_btn)
+        buttons_layout.addWidget(self.cancel_btn)
+        
+        # Add widgets to parent grid layout
+        layout.addWidget(self.asn1_editor, 0, 0)
+        layout.addWidget(self.asn1_buttons_widget, 1, 0)
+        
+        # Connect signals
+        self.edit_btn.clicked.connect(self.enter_asn1_edit_mode)
+        self.check_btn.clicked.connect(self.check_asn1_syntax_button_clicked)
+        self.save_btn.clicked.connect(self.save_asn1_changes)
+        self.cancel_btn.clicked.connect(self.cancel_asn1_edit)
+        
+        # Setup LSP signals and debounce timer
+        self.lsp_signal_emitter = LSPSignalEmitter()
+        self.lsp_signal_emitter.diagnostics_received.connect(self.handle_lsp_diagnostics)
+        
+        self.lsp_debounce_timer = QTimer(self)
+        self.lsp_debounce_timer.setSingleShot(True)
+        self.lsp_debounce_timer.setInterval(300)
+        self.lsp_debounce_timer.timeout.connect(self.send_lsp_changes)
+        self.asn1_editor.textChanged.connect(self.lsp_debounce_timer.start)
+        
+        # Start in view mode
+        self.current_asn1_file = None
+        self.edit_btn.setEnabled(False)
+        self.cancel_asn1_edit()
+
+    def enter_asn1_edit_mode(self):
+        ''' Read dataview ASN.1 file and open it in the editor '''
+        if not self.current_asn1_file:
+            return
+        try:
+            with open(self.current_asn1_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.asn1_editor.setPlainText(content)
+            
+            # Dynamic keywords from active model types
+            words = list(self.asn1_keywords)
+            if hasattr(self.view, 'scene') and self.view.scene():
+                scene = self.view.scene()
+                if hasattr(scene, 'ast') and scene.ast:
+                    words.extend(list(scene.ast.dataview.keys()))
+            words = sorted(list(set(words)))
+            model = QStringListModel(words, self.asn1_completer)
+            self.asn1_completer.setModel(model)
+            
+            self.asn1_browser.hide()
+            self.asn1_editor.show()
+            self.edit_btn.hide()
+            self.check_btn.show()
+            self.save_btn.show()
+            self.cancel_btn.show()
+            self.asn1_editor.setFocus()
+            
+            # Start LSP client
+            try:
+                import shutil
+                from distutils import spawn
+                path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+                if path_to_asn1scc:
+                    server_path = os.path.join(os.path.dirname(path_to_asn1scc), "Server")
+                    if os.path.exists(server_path):
+                        self.lsp_client = ASN1LSPClient(server_path, self.current_asn1_file, self.lsp_signal_emitter)
+                        self.lsp_client.start()
+                        self.lsp_client.did_open(content)
+            except Exception as lsp_err:
+                LOG.warning(f"Could not start ASN.1 LSP server: {lsp_err}")
+        except Exception as err:
+            LOG.error(f"Failed to read ASN.1 file: {err}")
+            QMessageBox.critical(self, "Error", f"Failed to read ASN.1 file:\n{err}")
+
+    def check_asn1_syntax(self):
+        ''' Run asn1scc on the current editor content and return status and error messages '''
+        if not self.current_asn1_file or not hasattr(self, 'current_asn1_ast') or not self.current_asn1_ast:
+            return True, ""
+            
+        ast = self.current_asn1_ast
+        if not hasattr(ast, 'DV') or not ast.DV:
+            return True, ""
+            
+        asn1_files = list(ast.DV.asn1Files)
+        if not asn1_files:
+            return True, ""
+            
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.asn', delete=False, encoding='utf-8') as tmp_file:
+            tmp_file.write(self.asn1_editor.toPlainText())
+            tmp_file_path = tmp_file.name
+            
+        try:
+            import shutil
+            from distutils import spawn
+            path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+            if not path_to_asn1scc:
+                return False, "ASN.1 Compiler (asn1scc) not found in PATH"
+                
+            args = ['-typePrefix', 'asn1Scc', '-equal']
+            for file_path in asn1_files:
+                if os.path.abspath(file_path) == os.path.abspath(self.current_asn1_file):
+                    args.append(tmp_file_path)
+                else:
+                    args.append(file_path)
+                    
+            from PySide6.QtCore import QProcess
+            process = QProcess()
+            process.start(path_to_asn1scc, args)
+            
+            if not process.waitForStarted():
+                return False, "Could not start asn1scc compiler"
+                
+            if not process.waitForFinished(10000):
+                return False, "Compiler syntax check timed out"
+                
+            exit_code = process.exitCode()
+            err_output = bytes(process.readAllStandardError()).decode('utf-8', errors='replace')
+            std_output = bytes(process.readAllStandardOutput()).decode('utf-8', errors='replace')
+            
+            if exit_code == 0:
+                return True, ""
+            else:
+                return False, err_output or std_output or f"Unknown error (exit code {exit_code})"
+        except Exception as err:
+            return False, str(err)
+        finally:
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+    def check_asn1_syntax_button_clicked(self):
+        ''' Slot for Check Syntax button '''
+        success, err = self.check_asn1_syntax()
+        if success:
+            QMessageBox.information(self, "Syntax Check", "ASN.1 Syntax is OK!")
+        else:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("ASN.1 Syntax Errors")
+            msg_box.setText("Syntax errors were found in the ASN.1 file:")
+            msg_box.setDetailedText(err)
+            msg_box.exec()
+
+    def save_asn1_changes(self):
+        ''' Save content to the file and trigger parsing '''
+        if not self.current_asn1_file:
+            return
+            
+        # Check syntax first
+        success, err = self.check_asn1_syntax()
+        if not success:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle("ASN.1 Syntax Errors")
+            msg_box.setText("Syntax errors were found in the ASN.1 file. Saving with syntax errors will break the type rendering.\n\nAre you sure you want to save anyway?")
+            msg_box.setDetailedText(err)
+            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
+            res = msg_box.exec()
+            if res == QMessageBox.Cancel:
+                return
+
+        try:
+            content = self.asn1_editor.toPlainText()
+            with open(self.current_asn1_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # Exit edit mode and reload
+            self.cancel_asn1_edit()
+            self.view.check_model()
+        except Exception as err:
+            LOG.error(f"Failed to save ASN.1 file: {err}")
+            QMessageBox.critical(self, "Error", f"Failed to save ASN.1 file:\n{err}")
+
+    def cancel_asn1_edit(self):
+        ''' Exit edit mode, restoring previous display '''
+        if hasattr(self, 'lsp_client') and self.lsp_client:
+            try:
+                self.lsp_client.stop()
+            except Exception as e:
+                LOG.warning(f"Error stopping LSP client: {e}")
+            self.lsp_client = None
+            
+        if hasattr(self, 'lsp_debounce_timer'):
+            self.lsp_debounce_timer.stop()
+            
+        self.asn1_editor.setErrorLines([])
+        self.statusBar().clearMessage()
+        
+        self.asn1_editor.hide()
+        self.asn1_browser.show()
+        self.edit_btn.show()
+        self.check_btn.hide()
+        self.save_btn.hide()
+        self.cancel_btn.hide()
+
+    def send_lsp_changes(self):
+        if hasattr(self, 'lsp_client') and self.lsp_client:
+            self.lsp_client.did_change(self.asn1_editor.toPlainText())
+
+    def handle_lsp_diagnostics(self, diagnostics):
+        error_lines = []
+        error_msgs = []
+        for diag in diagnostics:
+            line = diag["line"]
+            msg = diag["message"]
+            error_lines.append(line)
+            error_msgs.append(f"Line {line+1}: {msg}")
+            
+        self.asn1_editor.setErrorLines(error_lines)
+        if error_msgs:
+            self.statusBar().showMessage("; ".join(error_msgs), 5000)
+        else:
+            self.statusBar().clearMessage()
 
     def select_in_datadict_window(self, str):
         ''' This function is called upon reception of a signal emitted by
