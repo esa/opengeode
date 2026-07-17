@@ -2140,17 +2140,29 @@ def _bitwise_operators(expr, **kwargs):
             stmts.append(u'{')
 
             if isinstance(expr, ogAST.ExprImplies):
-                stmts.append(u'expr_{var_counter}.arr[expr_counter_{var_counter}] = ({ls}.arr[expr_counter_{var_counter}] && {rs}.arr[expr_counter_{var_counter}]) || !{ls}.arr[expr_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, ls=left_string, rs=right_string))
+                if basic_type.kind in ('OctetStringType', 'BitStringType'):
+                    stmts.append(u'expr_{var_counter}.arr[expr_counter_{var_counter}] = ({ls}.arr[expr_counter_{var_counter}] & {rs}.arr[expr_counter_{var_counter}]) | ~{ls}.arr[expr_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, ls=left_string, rs=right_string))
+                else:
+                    stmts.append(u'expr_{var_counter}.arr[expr_counter_{var_counter}] = ({ls}.arr[expr_counter_{var_counter}] && {rs}.arr[expr_counter_{var_counter}]) || !{ls}.arr[expr_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, ls=left_string, rs=right_string))
             else:
-                op = '||' if isinstance(expr, ogAST.ExprOr) else '&&' if isinstance(expr, ogAST.ExprAnd) else '!='
+                if basic_type.kind in ('OctetStringType', 'BitStringType'):
+                    op = get_bitwise_operator(expr.operand)
+                else:
+                    op = '||' if isinstance(expr, ogAST.ExprOr) else '&&' if isinstance(expr, ogAST.ExprAnd) else '!='
                 stmts.append(u'expr_{var_counter}.arr[expr_counter_{var_counter}] = {ls}.arr[expr_counter_{var_counter}] {op} {rs}.arr[expr_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, ls=left_string, op=op, rs=right_string))
 
             stmts.append(u'}')
             string = u'expr_{var_counter}'.format(var_counter=VAR_COUNTER)
     elif isinstance(expr, ogAST.ExprImplies):
-        string = u'(({left} && {right}) || !{left})'.format(left=left_string, right=right_string)
+        if basic_type.kind in ('OctetStringType', 'BitStringType'):
+            string = u'(({left} & {right}) | ~{left})'.format(left=left_string, right=right_string)
+        else:
+            string = u'(({left} && {right}) || !{left})'.format(left=left_string, right=right_string)
     else:
-        op = '||' if isinstance(expr, ogAST.ExprOr) else '&&' if isinstance(expr, ogAST.ExprAnd) else '!='
+        if basic_type.kind in ('OctetStringType', 'BitStringType'):
+            op = get_bitwise_operator(expr.operand)
+        else:
+            op = '||' if isinstance(expr, ogAST.ExprOr) else '&&' if isinstance(expr, ogAST.ExprAnd) else '!='
         string = u'({left} {op} {right})'.format(left=left_string, op=op, right=right_string)
 
     stmts.extend(left_stmts)
@@ -2199,7 +2211,8 @@ def _not_expression(expr, **kwargs):
             stmts.append(u'{')
             stmts.append(u'for(not_counter_{var_counter} = 0; not_counter_{var_counter} < {size_expr}; not_counter_{var_counter}++)'.format(var_counter=VAR_COUNTER, size_expr=size_expr))
             stmts.append(u'{')
-            stmts.append(u'not_{var_counter}.arr[not_counter_{var_counter}] = !{right_var}.arr[not_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, right_var=expr_str))
+            op = '~' if bty_outer.kind in ('OctetStringType', 'BitStringType') else '!'
+            stmts.append(u'not_{var_counter}.arr[not_counter_{var_counter}] = {op}{right_var}.arr[not_counter_{var_counter}];'.format(var_counter=VAR_COUNTER, op=op, right_var=expr_str))
             stmts.append(u'}')
 
             if bty_outer.Min != bty_outer.Max:
