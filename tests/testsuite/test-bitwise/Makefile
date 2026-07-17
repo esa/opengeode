@@ -30,13 +30,13 @@ test-ada:
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	cp test_ada.ada test_ada.adb
 	gnat make test_ada
-	./test_ada
+	./test_ada | diff expected -
 
 test-c: 
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
 	$(CC) -O$(O) -o test_c *.c
-	./test_c
+	./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr
