@@ -4388,8 +4388,10 @@ def write_statement(param, newline):
     elif type_kind == 'EnumeratedType':
         code, string, local = expression(param)
         code.append(f'switch({string}) {{')
+        is_selection = type_name(param.exprType).endswith('_Selection') if param.exprType else False
         for name, enumid in basic_type.EnumValues.items():
-            code.append(f'case {enumid.EnumID}: printf("{name.upper()}"); break;')
+            printed_name = f"{name.upper()}_PRESENT" if is_selection else name.upper()
+            code.append(f'case {enumid.EnumID}: printf("{printed_name}"); break;')
         code.append('}')
     else:
         error = (u'Unsupported parameter in write call ' + param.inputString)

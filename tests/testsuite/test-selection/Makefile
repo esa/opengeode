@@ -29,12 +29,14 @@ test-ada:
 	#make -f Makefile.og
 	$(OPENGEODE) og.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
-	gnat make og
+	gnat make check.ada
+	./check | diff expected -
 
 test-c:
 	$(OPENGEODE) og.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
-	$(CC) -O$(O) -c *.c
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
+	$(CC) -O$(O) -o test_c *.c
+	./test_c | diff expected -
 
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)

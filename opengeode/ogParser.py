@@ -1539,7 +1539,7 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     # there is another case where we can consider that the types are the same,
     # in some mathematical operations like power, that can return either
     # signed or unsigned value, according to what they are used with.
-    if any(sort.__name__ == 'Power' for sort in (type_a, type_b)):
+    if any(sort.__name__ in ('Power', 'choice_to_int') for sort in (type_a, type_b)):
         is_same_type = True
 
     type_a = find_basic_type(type_a)

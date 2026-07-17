@@ -1,9 +1,11 @@
 TASTE-Dataview DEFINITIONS ::=
 BEGIN
 
+    MyInt ::= INTEGER (0..255)
     MyChoice ::= CHOICE {
         a BOOLEAN,
-        b INTEGER(0..255)
+        b MyInt
     }
+   MyDets ::= ENUMERATED { a, b }  -- match the CHOICE options
 
 END
