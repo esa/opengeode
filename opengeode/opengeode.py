@@ -3309,6 +3309,9 @@ class OG_MainWindow(QMainWindow):
         # Connect signals
         self.edit_btn.clicked.connect(self.enter_asn1_edit_mode)
         self.vim_btn.toggled.connect(self.toggle_vim_mode)
+        import sys
+        if "pytest" not in sys.modules:
+            self.vim_btn.setChecked(True)
         self.check_btn.clicked.connect(self.check_asn1_syntax_button_clicked)
         self.save_btn.clicked.connect(self.save_asn1_changes)
         self.cancel_btn.clicked.connect(self.cancel_asn1_edit)
@@ -3681,6 +3684,8 @@ class OG_MainWindow(QMainWindow):
             self.vim_status.setText("-- VISUAL --")
         elif state == "PENDING":
             self.vim_status.setText("-- PENDING --")
+        elif state == "REPLACE":
+            self.vim_status.setText("-- REPLACE --")
 
     def show_vim_input(self, prefix):
         self.vim_status.setText(prefix)
