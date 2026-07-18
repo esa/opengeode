@@ -257,3 +257,53 @@ class MoveSymbol(QUndoCommand):
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:
             pass
+
+
+class InsertConnection(QUndoCommand):
+    ''' Undo/Redo command for inserting a new connection (Channel or Signalroute) '''
+    def __init__(self, connection, scene):
+        super().__init__()
+        self.connection = connection
+        self.scene = scene
+        self.parent = connection.parent
+        self.child = getattr(connection, 'child', None)
+        
+    def undo(self):
+        from . import Connectors
+        self.connection.hide()
+        if not isinstance(self.connection, Connectors.Channel):
+            if getattr(self.parent, 'connection', None) is self.connection:
+                self.parent.connection = None
+                
+    def redo(self):
+        from . import Connectors
+        self.connection.show()
+        if not isinstance(self.connection, Connectors.Channel):
+            self.parent.connection = self.connection
+        self.connection.reshape()
+
+
+class DeleteConnection(QUndoCommand):
+    ''' Undo/Redo command for deleting a connection (Channel or Signalroute) '''
+    def __init__(self, connection, scene):
+        super().__init__()
+        self.connection = connection
+        self.scene = scene
+        self.parent = connection.parent
+        self.child = getattr(connection, 'child', None)
+        
+    def undo(self):
+        from . import Connectors
+        self.connection.show()
+        if not isinstance(self.connection, Connectors.Channel):
+            self.parent.connection = self.connection
+        self.connection.reshape()
+        
+    def redo(self):
+        from . import Connectors
+        self.connection.hide()
+        if not isinstance(self.connection, Connectors.Channel):
+            if getattr(self.parent, 'connection', None) is self.connection:
+                self.parent.connection = None
+
+

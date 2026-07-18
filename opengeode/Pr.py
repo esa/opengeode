@@ -50,48 +50,81 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
         # (2) get signal directions from the connection of the process to env
         # (3) generate all the text
         processes = list(scene.processes)
-        system_name = str(processes[0]) if processes else 'OpenGEODE'
+        system_name = 'sys'
+        block_name = 'block1'
+        ast_obj = getattr(scene, 'ast', None)
+        if ast_obj is not None:
+            if ast_obj.__class__.__name__ == 'Block':
+                block_name = ast_obj.name or 'block1'
+                if getattr(ast_obj, 'parent', None) is not None:
+                    system_name = ast_obj.parent.name or 'sys'
+            elif getattr(ast_obj, 'systems', None):
+                try:
+                    system = ast_obj.systems[0]
+                    system_name = system.name or 'sys'
+                    if system.blocks:
+                        block_name = system.blocks[0].name or 'block1'
+                except (IndexError, AttributeError):
+                    pass
+        else:
+            system_name = str(processes[0]) if processes else 'OpenGEODE'
+            block_name = system_name
+
         pr_data.append('system {};'.format(system_name))
-        Indent.indent += 1
+        Indent.indent = 1
+        pr_data.append('signal dummy;')
         channels, routes = Indent(), Indent()
         for each in scene.texts:
             # Parse text areas to retrieve signal names USELESS
            pr = generate(each)
            pr_data.extend(pr)
-        for pro in processes:
-            if isinstance(pro, sdlSymbols.ProcessType) or not pro.connection:
-                # process type does not have connections
-                continue
-            to_env = pro.connection.out_sig
-            from_env = pro.connection.in_sig
-            if to_env or from_env:
-                channels.append('channel c')
-                Indent.indent += 1
+        # Get all Signalroute and Channel connections in the scene
+        all_connections = [item for item in scene.items() if isinstance(item, Connectors.Signalroute)]
 
-                routes.append('signalroute r')
-                if from_env:
-                    from_txt = 'from env to {} with {};'\
-                               .format(system_name, from_env)
-                    channels.append(from_txt)
-                    Indent.indent += 1
-                    routes.append(from_txt)
-                    Indent.indent -= 1
-                if to_env:
-                    to_txt = 'from {} to env with {};'\
-                              .format(system_name, to_env)
-                    channels.append(to_txt)
-                    Indent.indent += 1
-                    routes.append(to_txt)
-                    Indent.indent -= 1
+        channel_idx = 1
+        route_idx = 1
+        for conn in all_connections:
+            if isinstance(conn, Connectors.Channel):
+                # Channel between two processes (only generated at block level as signalroute)
+                Indent.indent = 2
+                routes.append(f'signalroute r{route_idx}')
+                Indent.indent += 1
+                out_sig = conn.out_sig or 'dummy'
+                in_sig = conn.in_sig or 'dummy'
+                routes.append(f'from {str(conn.parent)} to {str(conn.child)} with {out_sig};')
+                routes.append(f'from {str(conn.child)} to {str(conn.parent)} with {in_sig};')
+                Indent.indent = 1
+                route_idx += 1
+            else:
+                # Signalroute to environment
+                to_env = conn.out_sig or 'dummy'
+                from_env = conn.in_sig or 'dummy'
+                chan_name = f'c{channel_idx}'
+                rout_name = f'r{route_idx}'
+                
+                Indent.indent = 1
+                channels.append(f'channel {chan_name}')
+                Indent.indent += 1
+                channels.append(f'from env to {block_name} with {from_env};')
+                channels.append(f'from {block_name} to env with {to_env};')
                 Indent.indent -= 1
                 channels.append('endchannel;')
+                
+                Indent.indent = 2
+                routes.append(f'signalroute {rout_name}')
                 Indent.indent += 1
-                routes.append('connect c and r;')
-            Indent.indent -= 1
+                routes.append(f'from env to {str(conn.parent)} with {from_env};')
+                routes.append(f'from {str(conn.parent)} to env with {to_env};')
+                Indent.indent -= 1
+                routes.append(f'connect {chan_name} and {rout_name};')
+                Indent.indent = 1
+                
+                channel_idx += 1
+                route_idx += 1
 
         pr_data.extend(channels)
-        pr_data.append('block {};'.format(system_name))
-        Indent.indent += 1
+        pr_data.append('block {};'.format(block_name))
+        Indent.indent = 2
         pr_data.extend(routes)
         for each in processes:
             pr_data.extend(generate(each))
@@ -120,7 +153,9 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
                 [], [], [], [], [], dict()
 
         if scene.context == 'process':
-            for part in scene.partitions.values():
+            partitions = scene.partitions.values() if getattr(scene, 'partitions', None) else [scene]
+            for part in partitions:
+
                 # this includes the current scene
                 texts.extend(part.texts)
                 procs.extend(part.procs)
@@ -568,13 +603,24 @@ def _channel(symbol, recursive=True, **kwargs):
     result = Indent()
     result.append('signalroute c')
     Indent.indent += 1
-    if symbol.out_sig:
+    if isinstance(symbol, Connectors.Channel):
+        out_sig = symbol.out_sig or 'dummy'
+        in_sig = symbol.in_sig or 'dummy'
+        result.append('from {} to {} with {};'.format(str(symbol.parent),
+                                                       str(symbol.child),
+                                                       out_sig))
+        result.append('from {} to {} with {};'.format(str(symbol.child),
+                                                       str(symbol.parent),
+                                                       in_sig))
+    else:
+        out_sig = symbol.out_sig or 'dummy'
+        in_sig = symbol.in_sig or 'dummy'
         result.append('from {} to env with {};'.format(str(symbol.parent),
-                                                       symbol.out_sig))
-    if symbol.in_sig:
+                                                       out_sig))
         result.append('from env to {} with {};'.format(str(symbol.parent),
-                                                       symbol.in_sig))
+                                                       in_sig))
     Indent.indent -= 1
     return result
+
 
 

@@ -779,7 +779,7 @@ class Symbol(QObject, QGraphicsPathItem):
         self.updateConnectionPoints()
         # If any, update movable end points of connections
         for point in self.movable_points:
-            point.edge.end_connection.update_position()
+            point.update_position()
         if self.mode == 'Resize':
             # Define the resizing based on where item has been grabbed
             if self.grabber.resize_mode.endswith('right'):

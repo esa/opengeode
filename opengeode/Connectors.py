@@ -108,6 +108,16 @@ class Connection(QGraphicsPathItem):
         else:
             self.selected = False
             self.setPen(self.default_pen)
+        if hasattr(self, 'source_connection') and self.source_connection:
+            if selected:
+                self.source_connection.show()
+            else:
+                self.source_connection.hide()
+        if hasattr(self, 'end_connection') and self.end_connection:
+            if selected:
+                self.end_connection.show()
+            else:
+                self.end_connection.hide()
         self.update()   # force a repaint
 
     def angle_arrow(self, path, origin='head'):
@@ -296,33 +306,57 @@ class SignalList(EditableText):
 
 class Signalroute(Connection):
     ''' Subclass of Connection used to draw channels between processes '''
-    in_sig = out_sig = None
+    _class_in_sig = _class_out_sig = None
     completion_list = set()
+
+    @property
+    def in_sig(self):
+        if hasattr(self, '_in_sig') and self._in_sig is not None:
+            return self._in_sig
+        return Signalroute._class_in_sig
+
+    @in_sig.setter
+    def in_sig(self, value):
+        self._in_sig = value
+        Signalroute._class_in_sig = value
+
+    @property
+    def out_sig(self):
+        if hasattr(self, '_out_sig') and self._out_sig is not None:
+            return self._out_sig
+        return Signalroute._class_out_sig
+
+    @out_sig.setter
+    def out_sig(self, value):
+        self._out_sig = value
+        Signalroute._class_out_sig = value
 
     def __init__(self, parent, child=None):
         ''' Set generic parameters from Connection class '''
+        self._in_sig = ''
+        self._out_sig = ''
+        self._start_point = None
+        self._end_point = None
         super().__init__(parent, child or parent)
         self.parser = ogParser
         self.blackbold = ()
         self.redbold = ()
         self.label_in = SignalList(parent=self)
         self.label_out = SignalList(parent=self)
-        if not Signalroute.in_sig:
-            # keep at class level as long as only one process is supported
-            # when copy-pasting a process the channel in/out signal lists
-            # are not parsed. Workaround is to keep the list "global"
-            # to allow a copy of both process and channel
-            # Needed for the image exporter, that copies the scene to a
-            # temporary one
-            Signalroute.in_sig = ',\n'.join(sig['name'] for sig in parent.input_signals)
-            Signalroute.out_sig = ',\n'.join(sig['name'] for sig in parent.output_signals)
-        self.label_in.setPlainText(f'[{self.in_sig}]')
-        self.label_out.setPlainText(f'[{self.out_sig}]')
+        self.label_in.setPlainText('[]')
+        self.label_out.setPlainText('[]')
         self.label_in.document().contentsChanged.connect(self.change_siglist)
         self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
             each.show()
-        #self.reshape()
+        from . import sdlSymbols
+        if not sdlSymbols.TASTE_TARGET:
+            self.setFlags(QGraphicsItem.ItemIsSelectable)
+            self.source_connection = ChannelConnectionpoint(
+                self.start_point, self, is_start=True, symbol=self.parent
+            )
+            self.source_connection.hide()
+            self.parent.movable_points.append(self.source_connection)
 
     @Slot()
     def change_siglist(self):
@@ -333,31 +367,77 @@ class Signalroute(Connection):
                     each.setPlainText(f'[{str(each)}')
                 if not str(each).endswith(']'):
                     each.setPlainText(f'{str(each)}]')
-        Signalroute.in_sig = str(self.label_in)[1:-1]
-        Signalroute.out_sig = str(self.label_out)[1:-1]
-
+        self.in_sig = str(self.label_in)[1:-1]
+        self.out_sig = str(self.label_out)[1:-1]
 
     @property
     def start_point(self):
         ''' Compute connection origin - redefined function '''
+        if getattr(self, '_start_point', None) is not None:
+            return self._start_point
+        if getattr(self, 'child', None) is not None and self.child != self.parent:
+            # Channel: project child center onto parent border
+            try:
+                c_center = self.child.sceneBoundingRect().center()
+                return self.parent.mapFromScene(self.scene().border_point(self.parent, c_center))
+            except AttributeError:
+                pass
         parent_rect = self.parent.boundingRect()
         return QPointF(parent_rect.x(), parent_rect.height() / 2)
+
+    @start_point.setter
+    def start_point(self, scene_coord : QPointF):
+        ''' value is in scene coordinates '''
+        self._start_point = self.parent.mapFromScene(scene_coord)
 
     @property
     def end_point(self):
         ''' Compute connection end point - redefined function '''
-        # Arrow always bumps at the screen edge
+        if self.child != self.parent:
+            # Channel (process-to-process)
+            if getattr(self, '_end_point', None) is not None:
+                return self.parent.mapFromScene(self._end_point)
+            try:
+                p_center = self.parent.sceneBoundingRect().center()
+                return self.parent.mapFromScene(self.scene().border_point(self.child, p_center))
+            except AttributeError:
+                return QPointF(self.start_point.x() + 300, self.start_point.y())
+
+        # Signalroute (process-to-env)
         try:
             view = self.scene().views()[0]
-            #view.update_phantom_rect()
-            # view_pos is the position of the view relative to the scene
-            view_pos = view.mapToScene(
-                           view.viewport().geometry()).boundingRect().topLeft()
-            scene_pos_x = self.mapFromScene(view_pos).x()
-            return QPointF(scene_pos_x, self.start_point.y())
+            rect = view.mapToScene(view.viewport().geometry()).boundingRect()
+            
+            ref_y = self.start_point.y()
+            if getattr(self, '_end_point', None) is not None:
+                ref_y = self.parent.mapFromScene(self._end_point).y()
+                click_x = self._end_point.x()
+            else:
+                # Default: snap to left edge
+                click_x = rect.left()
+                
+            if abs(click_x - rect.left()) < abs(click_x - rect.right()):
+                target_scene = QPointF(rect.left(), self.parent.mapToScene(QPointF(0, ref_y)).y())
+            else:
+                target_scene = QPointF(rect.right(), self.parent.mapToScene(QPointF(0, ref_y)).y())
+                
+            return self.parent.mapFromScene(target_scene)
         except (IndexError, AttributeError):
-            # In case there is no view (e.g. Export PNG from cmd line)
+            if getattr(self, '_end_point', None) is not None:
+                return self.parent.mapFromScene(self._end_point)
             return QPointF(self.start_point.x() - 300, self.start_point.y())
+
+    @end_point.setter
+    def end_point(self, scene_coord : QPointF):
+        ''' value is in scene coordinates '''
+        self._end_point = scene_coord
+
+    @Slot(float, float)
+    def parent_moved(self, delta_x, delta_y):
+        ''' When the connection parent moves - redefine in subclasses '''
+        super().parent_moved(delta_x, delta_y)
+        self.reshape()
+        self.update()
 
     def reshape(self):
         ''' Redefine shape function to add the text areas '''
@@ -370,6 +450,12 @@ class Signalroute(Connection):
         self.label_in.setY(self.start_point.y() - height_in - 5)
         self.label_out.setX(self.end_point.x() + 10)
         self.label_out.setY(self.end_point.y() + 5)
+
+        # Update grabber positions (in local coordinates)
+        if hasattr(self, 'source_connection') and self.source_connection:
+            self.source_connection.setPos(self.start_point)
+        if hasattr(self, 'end_connection') and self.end_connection:
+            self.end_connection.setPos(self.end_point)
 
     def check_syntax(self, text):
         ''' Check the syntax of the IN and OUT signal lists '''
@@ -439,6 +525,18 @@ class Channel(Signalroute):
     start, middle and end point are redefined. They are stored with
     scene coordinates '''
 
+    def __init__(self, parent, child=None):
+        super().__init__(parent, child)
+        self._ratios = []
+        from . import sdlSymbols
+        if not sdlSymbols.TASTE_TARGET:
+            if self.child:
+                self.end_connection = ChannelConnectionpoint(
+                    self.end_point, self, is_start=False, symbol=self.child
+                )
+                self.end_connection.hide()
+                self.child.movable_points.append(self.end_connection)
+
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefined function '''
@@ -454,7 +552,8 @@ class Channel(Signalroute):
         middle_points = list(self.middle_points)
 
         self._middle_points = []
-        for ratio, point in zip(self._ratios, middle_points):
+        ratios = getattr(self, '_ratios', [])
+        for ratio, point in zip(ratios, middle_points):
             fact_x, fact_y = ratio
             sp = self.start_point
             new_x = (sp.x() + new_dist_x * fact_x) if 0 <= fact_x <= 1 \
@@ -473,25 +572,6 @@ class Channel(Signalroute):
         self.reshape()
         self.update() # force a repaint
 
-    @property
-    def start_point(self):
-        ''' Compute connection origin - redefined function '''
-        return self._start_point
-
-    @start_point.setter
-    def start_point(self, scene_coord : QPointF):
-        ''' value is in scene coordinates '''
-        self._start_point = self.parent.mapFromScene(scene_coord)
-
-    @property
-    def end_point(self):
-        ''' Compute connection end point - redefined function '''
-        return self.parent.mapFromScene(self._end_point)
-
-    @end_point.setter
-    def end_point(self, scene_coord : QPointF):
-        ''' value is in scene coordinates '''
-        self._end_point = scene_coord
 
     @property
     def middle_points(self):
@@ -530,6 +610,42 @@ class Channel(Signalroute):
         painter.setRenderHint(QPainter.Antialiasing, True)
         super().paint(painter, _, ___)
 
+
+
+class ChannelConnectionpoint(QGraphicsPathItem):
+    ''' Grabber for moving the start or end of a Channel/Signalroute around a process '''
+    def __init__(self, pos, edge, is_start, symbol):
+        super().__init__(parent=edge)
+        self.edge = edge
+        self.is_start = is_start
+        self.symbol = symbol
+        path = QPainterPath()
+        path.addRect(-4, -4, 8, 8)
+        self.setPath(path)
+        self.setBrush(QBrush(QColor(100, 150, 255)))
+        self.setPen(QPen(Qt.blue, 1))
+        self.setPos(pos)
+        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
+
+    @property
+    def center(self):
+        return self.pos()
+
+    def update_position(self):
+        if not self.symbol:
+            return
+        pos_symb = self.symbol.mapFromScene(self.scenePos())
+        nearest_x, nearest_y = self.symbol.closest_connection_point(pos_symb)
+        self.moveBy(-nearest_x, -nearest_y)
+        if self.is_start:
+            self.edge.start_point = self.scenePos()
+        else:
+            self.edge.end_point = self.scenePos()
+        self.edge.reshape()
+
+    def mouseMoveEvent(self, event):
+        super().mouseMoveEvent(event)
+        self.update_position()
 
 
 class Controlpoint(QGraphicsPathItem):

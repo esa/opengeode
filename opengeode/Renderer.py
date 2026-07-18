@@ -35,7 +35,7 @@ from itertools import chain
 from functools import singledispatch
 
 from .ogParser import type_name
-from . import ogAST, sdlSymbols, genericSymbols
+from . import ogAST, sdlSymbols, genericSymbols, Connectors
 
 
 LOG = logging.getLogger(__name__)
@@ -65,44 +65,130 @@ def render(ast, scene, parent, states, terminators=None):
 @render.register(ogAST.Block)
 def _block(ast, scene):
     ''' Render a block, containing a set of process symbols '''
-    top_level = []
-    for each in ast.processes:
-        top_level.append(render(each, scene))
-        if each.instance_of_ref:
-            top_level.append(render(each.instance_of_ref, scene))
-    for each in ast.parent.text_areas:
-        # System level may contain text areas with signal definitions, etc.
-        top_level.append(render(each, scene))
-    if not ast.parent.text_areas:
-        # If signals are declared outside from a textbox, create one
-        signals = ["signal {si[name]}{param};\n".format(si=sig,
-           param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
-                 if 'type' in sig else '')
-             for sig in ast.parent.signals]
-        procedures = ["{exported}procedure {proc.inputString};\n{optfpar}{external};\n"
-                      .format(proc=proc,
-                              exported="exported " if proc.exported else "",
-                              external="referenced" if proc.referenced else "external",
-                              optfpar="fpar\n    " + ",\n    ".join
-                              (["{direc} {fp[name]} {asn1}"
-                                .format(fp=fpar,
-                                        direc="in"
-                                           if fpar['direction']=='in'
-                                           else 'in/out',
-                                        asn1=getattr(fpar['type'],
-                                           'ReferencedTypeName', 'TYPE_ERROR')
-                                           .replace('-', '_'))
-                                for fpar in proc.fpar]) + ';\n'
-                                    if proc.fpar else '')
-                        for proc in ast.parent.procedures]
-        if signals or procedures:
-            text_area = ogAST.TextArea()
-            text_area.inputString = "{}\n\n{}".format('\n'.join(signals),
-                                                      '\n'.join(procedures))
-            text_area.pos_x = scene.itemsBoundingRect().width()
-            text_area.pos_y = scene.itemsBoundingRect().y() + 10
-            top_level.append(render(text_area, scene))
-    return top_level
+    sdlSymbols.DISABLE_AUTO_CONNECTION = True
+    try:
+        top_level = []
+        rendered_processes = {}
+        for each in ast.processes:
+            symbol = render(each, scene)
+            top_level.append(symbol)
+            rendered_processes[each.processName.lower()] = symbol
+            if each.instance_of_ref:
+                top_level.append(render(each.instance_of_ref, scene))
+        for each in ast.parent.text_areas:
+            # System level may contain text areas with signal definitions, etc.
+            top_level.append(render(each, scene))
+        if not ast.parent.text_areas:
+            # If signals are declared outside from a textbox, create one
+            signals = ["signal {si[name]}{param};\n".format(si=sig,
+               param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
+                     if 'type' in sig else '')
+                 for sig in ast.parent.signals]
+            procedures = ["{exported}procedure {proc.inputString};\n{optfpar}{external};\n"
+                          .format(proc=proc,
+                                  exported="exported " if proc.exported else "",
+                                  external="referenced" if proc.referenced else "external",
+                                  optfpar="fpar\n    " + ",\n    ".join
+                                  (["{direc} {fp[name]} {asn1}"
+                                    .format(fp=fpar,
+                                            direc="in"
+                                               if fpar['direction']=='in'
+                                               else 'in/out',
+                                            asn1=getattr(fpar['type'],
+                                               'ReferencedTypeName', 'TYPE_ERROR')
+                                               .replace('-', '_'))
+                                    for fpar in proc.fpar]) + ';\n'
+                                        if proc.fpar else '')
+                            for proc in ast.parent.procedures]
+            if signals or procedures:
+                text_area = ogAST.TextArea()
+                text_area.inputString = "{}\n\n{}".format('\n'.join(signals),
+                                                          '\n'.join(procedures))
+                text_area.pos_x = scene.itemsBoundingRect().width()
+                text_area.pos_y = scene.itemsBoundingRect().y() + 10
+                top_level.append(render(text_area, scene))
+
+        # Render channels and routes between processes/env
+        for channel in getattr(ast, 'signalroutes', []):
+            for route in channel.get('routes', []):
+                source = route.get('source', '').lower()
+                dest = route.get('dest', '').lower()
+                signals = [s for s in route.get('signals', []) if s.lower() != 'dummy']
+                
+                if source == 'env' and dest in rendered_processes:
+                    proc = rendered_processes[dest]
+                    if not proc.connection:
+                        conn = Connectors.Signalroute(parent=proc)
+                        conn.in_sig = ',\n'.join(signals)
+                        conn.label_in.setPlainText(f'[{conn.in_sig}]')
+                        conn.out_sig = ''
+                        conn.label_out.setPlainText('[]')
+                        proc.connection = conn
+                        if conn.scene() is not scene:
+                            scene.addItem(conn)
+                        conn.reshape()
+                elif dest == 'env' and source in rendered_processes:
+                    proc = rendered_processes[source]
+                    if not proc.connection:
+                        conn = Connectors.Signalroute(parent=proc)
+                        conn.out_sig = ',\n'.join(signals)
+                        conn.label_out.setPlainText(f'[{conn.out_sig}]')
+                        conn.in_sig = ''
+                        conn.label_in.setPlainText('[]')
+                        proc.connection = conn
+                        if conn.scene() is not scene:
+                            scene.addItem(conn)
+                        conn.reshape()
+                    else:
+                        conn = proc.connection
+                        conn.out_sig = ',\n'.join(signals)
+                        conn.label_out.setPlainText(f'[{conn.out_sig}]')
+                        conn.reshape()
+                elif source in rendered_processes and dest in rendered_processes:
+                    parent_proc = rendered_processes[source]
+                    child_proc = rendered_processes[dest]
+                    
+                    existing_channel = None
+                    for item in scene.items():
+                        if isinstance(item, Connectors.Channel):
+                            if (item.parent == parent_proc and item.child == child_proc) or \
+                               (item.parent == child_proc and item.child == parent_proc):
+                                existing_channel = item
+                                break
+                                
+                    if existing_channel:
+                        if existing_channel.parent == parent_proc:
+                            existing_channel.out_sig = ',\n'.join(signals)
+                            existing_channel.label_out.setPlainText(f'[{existing_channel.out_sig}]')
+                        else:
+                            existing_channel.in_sig = ',\n'.join(signals)
+                            existing_channel.label_in.setPlainText(f'[{existing_channel.in_sig}]')
+                        existing_channel.reshape()
+                    else:
+                        conn = Connectors.Channel(parent=parent_proc, child=child_proc)
+                        conn.out_sig = ',\n'.join(signals)
+                        conn.label_out.setPlainText(f'[{conn.out_sig}]')
+                        conn.in_sig = ''
+                        conn.label_in.setPlainText('[]')
+                        
+                        p_rect = parent_proc.sceneBoundingRect()
+                        c_rect = child_proc.sceneBoundingRect()
+                        p_center = p_rect.center()
+                        c_center = c_rect.center()
+                        
+                        start_pt = scene.border_point(parent_proc, c_center)
+                        end_pt = scene.border_point(child_proc, p_center)
+                        
+                        conn.start_point = start_pt
+                        conn.end_point = end_pt
+                        
+                        if conn.scene() is not scene:
+                            scene.addItem(conn)
+                        conn.reshape()
+        return top_level
+    finally:
+        sdlSymbols.DISABLE_AUTO_CONNECTION = False
+
 
 
 @render.register(ogAST.Process)

@@ -752,46 +752,38 @@ class SDL_Scene(QGraphicsScene):
         recursive_render(ast, self)
 
         # We now need to create partition scenes and distribute symbols inside
-        partition_names = {}
-        process_scene = self  # by default, if we are not in a block
-        for each in self.processes:
-            process_scene = each.nested_scene
-            if process_scene:
-                break
+        def partition_scene(proc_scene, parent_scene):
+            partition_names = {}
+            for item in proc_scene.start:
+                proc_scene.partition_name = item.ast.partition
+                partition_names[item.ast.partition] = proc_scene
 
-        for item in process_scene.start:
-            # first partition is the one with the start symbol
-            process_scene.partition_name = item.ast.partition
-            partition_names[item.ast.partition] = process_scene
+            for item in list(proc_scene.floating_symb):
+                if isinstance(item, Start):
+                    continue
+                if not proc_scene.partition_name:
+                    proc_scene.partition_name = item.ast.partition
+                    partition_names[item.ast.partition] = proc_scene
+                elif item.ast.partition != proc_scene.partition_name:
+                    if item.ast.partition not in partition_names.keys():
+                        subscene = self.create_subscene('process', parent_scene)
+                        subscene.partition_name = item.ast.partition
+                        subscene.addItem(item)
+                        partition_names[item.ast.partition] = subscene
+                    else:
+                        partition_names[item.ast.partition].addItem(item)
+            if not partition_names:
+                partition_names['default'] = proc_scene
+            proc_scene.partitions = partition_names
 
-        for item in process_scene.floating_symb:
-            if isinstance(item, Start):
-                # already processed the start
-                continue
-            if not process_scene.partition_name:
-                # perhaps there was no start symbol in the model
-                process_scene.partition_name = item.ast.partition
-                partition_names[item.ast.partition] = process_scene
-            elif item.ast.partition != process_scene.partition_name:
-                if item.ast.partition not in partition_names.keys():
-                    # unmet name, create a new scene
-                    subscene = self.create_subscene('process', self)
-                    subscene.partition_name = item.ast.partition
-                    subscene.addItem(item)
-                    partition_names[item.ast.partition] = subscene
-                else:
-                    # scene already exist, just move the item into it
-                    partition_names[item.ast.partition].addItem(item)
-        # It can be that no partition was created, if the model was empty
-        # (nothing inside the process scene). In that case we must still
-        # set the default partition.
-        if not partition_names:
-            partition_names['default'] = process_scene
+        if self.context == 'block':
+            for each in self.processes:
+                if each.nested_scene:
+                    partition_scene(each.nested_scene, each.nested_scene)
+            self.partitions = {}
+        else:
+            partition_scene(self, self)
 
-        # set the list of partitions at top-level scene, so that it will be
-        # picked up when the datadict is set up
-
-        self.partitions = partition_names
         self.setup_partitions_in_datadict.emit()
 
     def refresh(self):
@@ -876,6 +868,11 @@ class SDL_Scene(QGraphicsScene):
             toolbar.update_menu(self)
             for item in self.selected_symbols:
                 item.grabber.display()
+            # Sync visual state of all connection lines in the scene
+            from .Connectors import Signalroute
+            for item in self.items():
+                if isinstance(item, Signalroute):
+                    item.select(item.isSelected())
         except RuntimeError:
             # Underlyings C++ object might be deleted on app exit/teardown
             pass
@@ -1138,6 +1135,14 @@ class SDL_Scene(QGraphicsScene):
                 item.branchEntryPoint.parent.updateConnectionPoints()
             except AttributeError:
                 pass
+        # Also check for selected connections
+        from .Connectors import Signalroute
+        for item in self.selectedItems():
+            if isinstance(item, Signalroute):
+                if not item.scene():
+                    continue
+                undo_cmd = undoCommands.DeleteConnection(item, self)
+                self.undo_stack.push(undo_cmd)
         self.undo_stack.endMacro()
 
     def copy_selected_symbols(self):
@@ -1359,10 +1364,12 @@ class SDL_Scene(QGraphicsScene):
         items = self.items(
                 QRectF(pos.x() - dist, pos.y() - dist, 2 * dist, 2 * dist))
         for item in items:
-            if((selectable_only and item.flags() &
-                    QGraphicsItem.ItemIsSelectable)
-                    or not selectable_only):
-                return item.parent if isinstance(item, Cornergrabber) else item
+            actual_item = item.parent if isinstance(item, Cornergrabber) else item
+            if isinstance(actual_item, Symbol):
+                if((selectable_only and item.flags() &
+                        QGraphicsItem.ItemIsSelectable)
+                        or not selectable_only):
+                    return actual_item
 
     def can_insert(self, pos, item_type):
         ''' Check if we can add an item type at a given position '''
@@ -1482,9 +1489,9 @@ class SDL_Scene(QGraphicsScene):
                 if point.y() <= center.y()
                 else symb.pos_y + symb.boundingRect().height())
         if h_dist < v_dist:
-            res.setX(point.x())
+            res.setX(center.x())
         else:
-            res.setY(point.y())
+            res.setY(center.y())
         return res
 
     # pylint: disable=C0103
@@ -1530,21 +1537,23 @@ class SDL_Scene(QGraphicsScene):
                             item.bezier_set_visible(False)
                         except AttributeError:
                             pass
-            elif symb.user_can_connect and symb.in_start_zone(event.pos().toPoint()):
-                # TODO check if symbol can have more than
-                # one connection if there is already one, if start
-                # and end can be on the same symbol, etc.
-                # DISABLE CONNECTIONS FOR NOW
-                pass
-#               self.mode = 'wait_next_connection_point'
-#               click_point = event.scenePos()
-#               point = self.border_point(symb, click_point)
-#               self.edge_points = [point]
-#               self.temp_lines.append(self.addLine(point.x(),
-#                                                   point.y(),
-#                                                   click_point.x(),
-#                                                   click_point.y()))
-#               self.connection_start = symb
+            elif symb.user_can_connect and (event.modifiers() & Qt.ControlModifier):
+                if not sdlSymbols.TASTE_TARGET:
+                    self.mode = 'wait_next_connection_point'
+                    click_point = event.scenePos()
+                    point = self.border_point(symb, click_point)
+                    self.edge_points = [point]
+                    self.temp_lines.append(self.addLine(point.x(),
+                                                        point.y(),
+                                                        click_point.x(),
+                                                        click_point.y()))
+                    self.connection_start = symb
+                else:
+                    # TODO check if symbol can have more than
+                    # one connection if there is already one, if start
+                    # and end can be on the same symbol, etc.
+                    # DISABLE CONNECTIONS FOR NOW
+                    pass
 
         elif self.mode == 'wait_placement':
             try:
@@ -1664,12 +1673,12 @@ class SDL_Scene(QGraphicsScene):
             valid = (symb and symb.__class__.__name__
                      in self.connection_start._conn_sources and
                      self.connection_start.__class__.__name__
-                     in symb._conn_targets)# and
-                     #len(self.edge_points) > 2)
-                     # (The above was commented because it prevented
-                     # direct lines between two blocks)
-            # "valid" could also check if it's allowed to connect
-            # a symbol to itself.
+                     in symb._conn_targets)
+            if not sdlSymbols.TASTE_TARGET:
+                # Forbid connecting a symbol to itself
+                if symb == self.connection_start:
+                    valid = False
+
             if symb and valid:
                 nb_segments = len(self.edge_points) - 1
                 for each in self.temp_lines[-nb_segments:]:
@@ -1678,14 +1687,33 @@ class SDL_Scene(QGraphicsScene):
                 # Clicked on a symbol: create the actual connector
                 # Use a Channel type by default, but this could be something
                 # else in a different context
-                connector = Channel(parent=self.connection_start, child=symb)
+                connector = Connectors.Channel(parent=self.connection_start, child=symb)
                 # Set start and end points first, so that the distance can
                 # be computed when storing the middle points's relative
                 # positions
-                connector.start_point = self.edge_points[0]
-                connector.end_point = self.border_point(symb, point)
+                connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
+                connector.end_point = self.border_point(symb, self.edge_points[-2])
                 connector.middle_points = self.edge_points[1:-1]
+                connector.hide()
+                self.undo_stack.push(undoCommands.InsertConnection(connector, self))
                 self.cancel()
+            elif not symb and not sdlSymbols.TASTE_TARGET:
+                # Clicked on empty space: connect to the screen edge (ENV) only if near viewport borders
+                try:
+                    view = self.views()[0]
+                    rect = view.mapToScene(view.viewport().geometry()).boundingRect()
+                    near_left = abs(point.x() - rect.left()) < 80
+                    near_right = abs(point.x() - rect.right()) < 80
+                except (IndexError, AttributeError):
+                    near_left = near_right = False
+                if near_left or near_right:
+                    connector = Connectors.Signalroute(parent=self.connection_start)
+                    connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
+                    connector.end_point = point
+                    connector.hide()
+                    self.undo_stack.push(undoCommands.InsertConnection(connector, self))
+                    self.cancel()
+
 
         super().mouseReleaseEvent(event)
 
@@ -1851,6 +1879,7 @@ class SDL_View(QGraphicsView):
 
     # Check both the stack and the RIDs/Requirement status
     is_model_clean = lambda self: genericSymbols.g_rids_or_reqs_clean \
+            and self.top_scene().undo_stack.isClean() \
             and not any(not sc.undo_stack.isClean() for sc in self.all_scenes())
 
     def all_scenes(self):
@@ -2387,6 +2416,7 @@ clean:
                 with open(f"{pr_path}/Makefile.{prj_name}", 'w') as f:
                     f.write(template_makefile)
                 self.scene().clear_focus()
+                self.top_scene().undo_stack.setClean()
                 for each in self.all_scenes():
                     each.undo_stack.setClean()
             else:
@@ -2426,6 +2456,8 @@ clean:
             LOG.error("No PROCESS was parsed in the input file(s)")
             process = ogAST.Process()
             process.processName = "Syntax_Error"
+            block = ogAST.Block()
+            block.processes = [process]
         elif len(ast.processes) == 1:
             process,         = ast.processes
             if not process.instance_of_name:
@@ -2437,20 +2469,34 @@ clean:
                 self.messages_window.addItem("Could not parse model")
                 return
             self.readonly_pr = ast.pr_files - {self.filename}
+            try:
+                syst, = ast.systems
+                block, = syst.blocks
+                if block.processes[0].referenced:
+                    LOG.debug('[Load file] Process is referenced')
+                    block.processes = [process]
+            except ValueError:
+                # No System/Block hierarchy, creating single block
+                block = ogAST.Block()
+                block.processes = [process]
         else:
             # More than one process
-            LOG.error("More than one process is not supported")
-            return
-        try:
-            syst, = ast.systems
-            block, = syst.blocks
-            if block.processes[0].referenced:
-                LOG.debug('[Load file] Process is referenced')
-                block.processes = [process]
-        except ValueError:
-            # No System/Block hierarchy, creating single block
-            block = ogAST.Block()
-            block.processes = [process]
+            if sdlSymbols.TASTE_TARGET:
+                LOG.error("More than one process is not supported")
+                return
+            else:
+                self.filename = list(ast.processes)[0].filename if ast.processes else None
+                self.readonly_pr = set()
+                try:
+                    syst, = ast.systems
+                    block, = syst.blocks
+                    if block.processes[0].referenced:
+                        LOG.debug('[Load file] Process is referenced')
+                        block.processes = list(ast.processes)
+                except ValueError:
+                    # No System/Block hierarchy, creating single block
+                    block = ogAST.Block()
+                    block.processes = list(ast.processes)
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
         log_errors(self.messages_window, errors, warnings)
@@ -2460,7 +2506,7 @@ clean:
             LOG.debug("[Rendering] " + str(err))
         self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
-        self.scene().name = 'block {}[*]'.format(process.processName)
+        self.scene().name = 'block {}[*]'.format(block.name or list(ast.processes)[0].processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.update_phantom_rect()
         self.refresh()
@@ -2746,7 +2792,8 @@ clean:
             else:
                 self.messages_window.addItem('Generating Ada code')
                 try:
-                    AdaGenerator.generate(process)
+                    for proc in ast.processes:
+                        AdaGenerator.generate(proc)
                     self.messages_window.addItem('Done')
                 except (TypeError, ValueError, NameError) as err:
                     err=str(err).encode('utf8')
@@ -4399,6 +4446,7 @@ def opengeode():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     options = parse_args()
+    sdlSymbols.TASTE_TARGET = options.taste_target
 
     init_logging(options)
 

@@ -4836,12 +4836,11 @@ def block_definition(root, parent):
     block = ogAST.Block()
     block.parent = parent
     parent.blocks.append(block)
-    # blocks have signalroutes but since we have systems with a single
-    # block and a single process, it is better to set the routes with the
-    # same values as the channels from the system-level channels
-    # The reason is that some signals may have added to the channels to
-    # support RPCs' transitions
-    block.signalroutes = parent.channels
+    from . import sdlSymbols
+    if sdlSymbols.TASTE_TARGET:
+        block.signalroutes = parent.channels
+    else:
+        block.signalroutes = []
     for child in root.getChildren():
         if child.type == lexer.ID:
             block.name = child.text
@@ -4851,8 +4850,13 @@ def block_definition(root, parent):
             warnings.extend(warn)
             block.signals.append(sig)
         elif child.type == lexer.CONNECTION:
-            block.connections.append({'channel': cnx[0].text,
-              'signalroute': cnx[1].text} for cnx in child.getChildren())
+            try:
+                block.connections.append({
+                    'channel': child.children[0].text,
+                    'signalroute': child.children[1].text
+                })
+            except (IndexError, AttributeError):
+                pass
         elif child.type == lexer.BLOCK:
             block, err, warn = block_definition(child, parent=block)
             errors.extend(err)
@@ -4867,8 +4871,9 @@ def block_definition(root, parent):
             proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
-            # ignored (see comment above)
-            #block.signalroutes.append(sigroute)
+            from . import sdlSymbols
+            if not sdlSymbols.TASTE_TARGET:
+                block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
                 str(child.type))
