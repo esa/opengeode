@@ -3150,7 +3150,7 @@ class OG_MainWindow(QMainWindow):
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        html_content = ast.DV.html
+        html_content = ast.DV.html if (hasattr(ast, 'DV') and ast.DV) else ""
         self.asn1_browser.setHtml(html_content)
         self.asn1_browser.setFont(QFont('UbuntuMono', 12))
 
@@ -3160,10 +3160,18 @@ class OG_MainWindow(QMainWindow):
                 self.edit_btn.setEnabled(True)
                 self.current_asn1_file = ast.DV.asn1Files[0]
                 self.current_asn1_ast = ast
+                if hasattr(self, 'no_asn1_widget'):
+                    self.no_asn1_widget.hide()
+                    self.asn1_browser.show()
+                    self.edit_btn.show()
             else:
                 self.edit_btn.setEnabled(False)
                 self.current_asn1_file = None
                 self.current_asn1_ast = None
+                if hasattr(self, 'no_asn1_widget'):
+                    self.no_asn1_widget.show()
+                    self.asn1_browser.hide()
+                    self.edit_btn.hide()
 
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
@@ -3280,10 +3288,23 @@ class OG_MainWindow(QMainWindow):
         vim_bar_layout.addWidget(self.vim_input)
         self.vim_bar.hide()
         
+        # Create widget for no ASN.1 file loaded state
+        self.no_asn1_widget = QWidget(self)
+        no_asn1_layout = QVBoxLayout(self.no_asn1_widget)
+        no_asn1_layout.setContentsMargins(0, 0, 0, 0)
+        self.btn_create_asn1 = QPushButton("Create ASN.1 file", self)
+        self.btn_add_existing_asn1 = QPushButton("Add existing ASN.1 file", self)
+        self.btn_create_asn1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.btn_add_existing_asn1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        no_asn1_layout.addWidget(self.btn_create_asn1)
+        no_asn1_layout.addWidget(self.btn_add_existing_asn1)
+        no_asn1_layout.addStretch()
+        
         # Add widgets to parent grid layout
         layout.addWidget(self.asn1_editor, 0, 0)
         layout.addWidget(self.vim_bar, 1, 0)
         layout.addWidget(self.asn1_buttons_widget, 2, 0)
+        layout.addWidget(self.no_asn1_widget, 0, 0)
         
         # Connect signals
         self.edit_btn.clicked.connect(self.enter_asn1_edit_mode)
@@ -3291,6 +3312,8 @@ class OG_MainWindow(QMainWindow):
         self.check_btn.clicked.connect(self.check_asn1_syntax_button_clicked)
         self.save_btn.clicked.connect(self.save_asn1_changes)
         self.cancel_btn.clicked.connect(self.cancel_asn1_edit)
+        self.btn_create_asn1.clicked.connect(self.create_asn1_file_clicked)
+        self.btn_add_existing_asn1.clicked.connect(self.add_existing_asn1_file_clicked)
         
         # Setup LSP signals and debounce timer
         self.lsp_signal_emitter = LSPSignalEmitter()
@@ -3307,6 +3330,120 @@ class OG_MainWindow(QMainWindow):
         self.edit_btn.setEnabled(False)
         self.vim_btn.hide()
         self.cancel_asn1_edit()
+        
+        if self.current_asn1_file:
+            self.no_asn1_widget.hide()
+            self.asn1_browser.show()
+            self.edit_btn.show()
+        else:
+            self.no_asn1_widget.show()
+            self.asn1_browser.hide()
+            self.edit_btn.hide()
+        self.vim_btn.hide()
+        self.cancel_asn1_edit()
+
+    def associate_asn1_file_and_save(self, filename):
+        ''' Add a TextSymbol referencing the ASN.1 file to the diagram and save '''
+        from PySide6.QtCore import QPointF
+        pos = QPointF(50, 50)
+        text_content = f"use datamodel comment '{filename}';"
+        text_symbol = self.view.scene().place_symbol(item_type=sdlSymbols.TextSymbol, parent=None, pos=pos)
+        if text_symbol:
+            text_symbol.text.setPlainText(text_content)
+            text_symbol.ast.inputString = text_content
+            text_symbol.text.try_resize()
+
+        # Invoke model save
+        self.view.save_diagram()
+
+    def create_asn1_file_clicked(self):
+        ''' Slot for Create ASN.1 file button '''
+        if not hasattr(self.view, 'filename') or not self.view.filename:
+            if not self.view.save_diagram():
+                return
+
+        # Determine process name
+        process_name = None
+        if hasattr(self.view, 'scene') and self.view.scene():
+            for each in self.view.scene().processes:
+                if not isinstance(each, sdlSymbols.ProcessType):
+                    process_name = str(each.text).strip()
+                    break
+
+        import os
+        base_dir = os.path.dirname(self.view.filename)
+        if not base_dir:
+            base_dir = "."
+            
+        module_name = process_name
+        
+        while True:
+            if not module_name:
+                from PySide6.QtWidgets import QInputDialog
+                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:")
+                if not ok or not name.strip():
+                    return
+                module_name = name.strip()
+
+            # Ensure first letter of module name is uppercase
+            module_name = module_name[0].upper() + module_name[1:] if len(module_name) > 0 else ""
+
+            # Ensure first letter of file name is lowercase
+            file_prefix = module_name[0].lower() + module_name[1:] if len(module_name) > 0 else ""
+            filename = f"{file_prefix}.asn"
+            filepath = os.path.join(base_dir, filename)
+
+            if os.path.exists(filepath):
+                from PySide6.QtWidgets import QMessageBox
+                reply = QMessageBox.question(
+                    self, 
+                    "File Already Exists",
+                    f"The file '{filename}' already exists.\n\nDo you want to associate this existing file with the diagram?",
+                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                    QMessageBox.Yes
+                )
+                if reply == QMessageBox.Yes:
+                    self.associate_asn1_file_and_save(filename)
+                    return
+                elif reply == QMessageBox.Cancel:
+                    return
+                else:
+                    module_name = None
+                    continue
+            else:
+                content = f"{module_name} DEFINITIONS ::=\nBEGIN\n\nMyInt ::= INTEGER (0..255)\n\nEND\n"
+                try:
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to create ASN.1 file:\n{e}")
+                    return
+
+                self.associate_asn1_file_and_save(filename)
+                return
+
+    def add_existing_asn1_file_clicked(self):
+        ''' Slot for Add existing ASN.1 file button '''
+        if not hasattr(self.view, 'filename') or not self.view.filename:
+            if not self.view.save_diagram():
+                return
+
+        import os
+        base_dir = os.path.dirname(self.view.filename)
+        if not base_dir:
+            base_dir = "."
+
+        # Let user choose file
+        from PySide6.QtWidgets import QFileDialog
+        filename_path, _ = QFileDialog.getOpenFileName(self, "Add Existing ASN.1 File", base_dir, "ASN.1 Files (*.asn *.asn1)")
+        if not filename_path:
+            return
+
+        # Compute relative path
+        rel_path = os.path.relpath(filename_path, base_dir)
+
+        # Add textbox referencing it and save
+        self.associate_asn1_file_and_save(rel_path)
 
     def enter_asn1_edit_mode(self):
         ''' Read dataview ASN.1 file and open it in the editor '''
@@ -3479,12 +3616,21 @@ class OG_MainWindow(QMainWindow):
         
         self.asn1_editor.hide()
         self.vim_bar.hide()
-        self.asn1_browser.show()
-        self.edit_btn.show()
         self.vim_btn.hide()
         self.check_btn.hide()
         self.save_btn.hide()
         self.cancel_btn.hide()
+        
+        if self.current_asn1_file:
+            self.asn1_browser.show()
+            self.edit_btn.show()
+            if hasattr(self, 'no_asn1_widget'):
+                self.no_asn1_widget.hide()
+        else:
+            self.asn1_browser.hide()
+            self.edit_btn.hide()
+            if hasattr(self, 'no_asn1_widget'):
+                self.no_asn1_widget.show()
 
     def send_lsp_changes(self):
         if hasattr(self, 'lsp_client') and self.lsp_client:
@@ -3524,6 +3670,7 @@ class OG_MainWindow(QMainWindow):
             self.vim_bar.hide()
             self.statusBar().showMessage("Vim mode disabled.", 3000)
             self.asn1_editor.set_vim_state("NORMAL")
+        self.asn1_editor.setFocus()
             
     def update_vim_status(self, state):
         if state == "NORMAL":

@@ -119,6 +119,8 @@ class ASN1TextEdit(QPlainTextEdit):
         self.visual_anchor_cursor = None
         self.indent_size = 3
         self.last_search_pattern = ""
+        self.vim_count = ""
+        self.vim_pending_count = ""
         
         self.setFont(QFont('UbuntuMono', 12))
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
@@ -303,24 +305,61 @@ class ASN1TextEdit(QPlainTextEdit):
         self.vim_state = state
         if state in ("NORMAL", "INSERT"):
             self.vim_pending_key = None
+            self.vim_count = ""
+            self.vim_pending_count = ""
         main_win = self.window()
         if hasattr(main_win, 'update_vim_status'):
             main_win.update_vim_status(state)
 
     def handle_normal_mode_key(self, e):
         text = e.text()
-        
         key = e.key()
         
+        # Ignore modifier keys alone
+        if key in (Qt.Key_Control, Qt.Key_Shift, Qt.Key_Alt, Qt.Key_Meta, Qt.Key_AltGr, Qt.Key_CapsLock):
+            return
+            
+        # Check if key is a digit for count prefix
+        if text.isdigit():
+            if text == '0' and not self.vim_count:
+                # '0' without a count prefix is a movement command (start of line)
+                cursor = self.textCursor()
+                cursor.movePosition(QTextCursor.StartOfLine)
+                self.setTextCursor(cursor)
+                return
+            else:
+                self.vim_count += text
+                return
+                
+        # Non-digit: consume the accumulated count prefix
+        has_count = bool(self.vim_count)
+        count = int(self.vim_count) if has_count else 1
+        
+        # We only clear self.vim_count here if this is NOT a pending trigger
+        # (since pending commands like "d", "y" need the count inside PENDING state)
+        if text not in ('d', 'y', 'g', 'c', 'f'):
+            self.vim_count = ""
+            
+        # Check Ctrl-R for Redo
+        if e.modifiers() == Qt.ControlModifier and key == Qt.Key_R:
+            self.vim_count = ""
+            for _ in range(count):
+                self.redo()
+            return
+
         # Movements
         if text == 'h' or key == Qt.Key_Left:
-            self.moveCursor(QTextCursor.Left)
+            for _ in range(count):
+                self.moveCursor(QTextCursor.Left)
         elif text == 'j' or key == Qt.Key_Down:
-            self.moveCursor(QTextCursor.Down)
+            for _ in range(count):
+                self.moveCursor(QTextCursor.Down)
         elif text == 'k' or key == Qt.Key_Up:
-            self.moveCursor(QTextCursor.Up)
+            for _ in range(count):
+                self.moveCursor(QTextCursor.Up)
         elif text == 'l' or key == Qt.Key_Right:
-            self.moveCursor(QTextCursor.Right)
+            for _ in range(count):
+                self.moveCursor(QTextCursor.Right)
             
         # Entering other modes
         elif text == 'i':
@@ -332,14 +371,16 @@ class ASN1TextEdit(QPlainTextEdit):
             cursor = self.textCursor()
             indent = self.get_indentation_for_new_line(cursor.block())
             cursor.movePosition(QTextCursor.EndOfLine)
-            cursor.insertText("\n" + indent)
+            for _ in range(count):
+                cursor.insertText("\n" + indent)
             self.setTextCursor(cursor)
             self.set_vim_state("INSERT")
         elif text == 'O':
             cursor = self.textCursor()
             indent = self.get_indentation_for_new_line(cursor.block())
             cursor.movePosition(QTextCursor.StartOfLine)
-            cursor.insertText(indent + "\n")
+            for _ in range(count):
+                cursor.insertText(indent + "\n")
             cursor.movePosition(QTextCursor.Up)
             self.setTextCursor(cursor)
             self.set_vim_state("INSERT")
@@ -350,25 +391,41 @@ class ASN1TextEdit(QPlainTextEdit):
             
         # Commands
         elif text == 'u':
-            self.undo()
+            for _ in range(count):
+                self.undo()
         elif text == 'p':
-            self.vim_paste()
+            for _ in range(count):
+                self.vim_paste()
         elif text == 'G':
-            self.moveCursor(QTextCursor.End)
+            if has_count:
+                cursor = self.textCursor()
+                target_block = max(0, count - 1)
+                target_block = min(target_block, self.document().blockCount() - 1)
+                block = self.document().findBlockByNumber(target_block)
+                cursor.setPosition(block.position())
+                self.setTextCursor(cursor)
+            else:
+                self.moveCursor(QTextCursor.End)
         elif text == 'n':
-            self.search_forward(self.last_search_pattern)
+            for _ in range(count):
+                self.search_forward(self.last_search_pattern)
         elif text == 'N':
-            self.search_backward(self.last_search_pattern)
+            for _ in range(count):
+                self.search_backward(self.last_search_pattern)
         elif text == '*':
             word = self.textUnderCursor()
             if word:
                 self.last_search_pattern = word
                 self.search_forward(word)
+                for _ in range(count - 1):
+                    self.search_forward(word)
         elif text == '#':
             word = self.textUnderCursor()
             if word:
                 self.last_search_pattern = word
                 self.search_backward(word)
+                for _ in range(count - 1):
+                    self.search_backward(word)
             
         # Pending triggers: d, y, g, c, f
         elif text in ('d', 'y', 'g', 'c', 'f'):
@@ -517,22 +574,50 @@ class ASN1TextEdit(QPlainTextEdit):
 
     def handle_pending_mode_key(self, e):
         text = e.text()
+        
+        # Accumulate count if digit is typed in pending state
+        if text.isdigit():
+            self.vim_pending_count += text
+            self.set_vim_state("PENDING")
+            return
+            
         first = self.vim_pending_key
+        
+        # If first is 'd' and user presses 'f' or 't', wait for target char
+        if first == 'd' and text in ('f', 't'):
+            self.vim_pending_key = 'd' + text
+            self.set_vim_state("PENDING")
+            return
+            
+        # Combine counts
+        count = 1
+        if self.vim_count:
+            count *= int(self.vim_count)
+        if self.vim_pending_count:
+            count *= int(self.vim_pending_count)
+            
         self.set_vim_state("NORMAL") # Reset by default
         
         if first == 'd' and text == 'd':
-            self.vim_delete_line()
+            self.vim_delete_line(count=count)
         elif first == 'd' and text == 'w':
-            self.vim_delete_word()
+            self.vim_delete_word(count=count)
         elif first == 'y' and text == 'y':
-            self.vim_yank_line()
+            self.vim_yank_line(count=count)
         elif first == 'g' and text == 'g':
-            self.moveCursor(QTextCursor.Start)
+            cursor = self.textCursor()
+            target_block = max(0, count - 1)
+            target_block = min(target_block, self.document().blockCount() - 1)
+            block = self.document().findBlockByNumber(target_block)
+            cursor.setPosition(block.position())
+            self.setTextCursor(cursor)
         elif first == 'c' and text == 'w':
-            self.vim_delete_word()
+            self.vim_delete_word(count=count)
             self.set_vim_state("INSERT")
         elif first == 'f' and len(text) == 1:
-            self.vim_find_char(text)
+            self.vim_find_char(text, count=count)
+        elif (first == 'df' or first == 'dt') and len(text) == 1:
+            self.vim_delete_to_char(text, include_char=(first == 'df'), count=count)
 
     def handle_visual_mode_key(self, e):
         text = e.text()
@@ -567,10 +652,11 @@ class ASN1TextEdit(QPlainTextEdit):
         self.setTextCursor(cursor)
 
     # Vim Operations
-    def vim_delete_line(self):
+    def vim_delete_line(self, count=1):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.StartOfLine)
-        cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+        for _ in range(count):
+            cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
         if not cursor.hasSelection():
             cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
         self.yank_buffer = cursor.selectedText()
@@ -578,28 +664,53 @@ class ASN1TextEdit(QPlainTextEdit):
         cursor.removeSelectedText()
         self.setTextCursor(cursor)
 
-    def vim_delete_word(self):
+    def vim_delete_to_char(self, char, include_char=True, count=1):
         cursor = self.textCursor()
-        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
-        while True:
-            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
-            char = cursor.selectedText()[-1:]
-            if char != " ":
-                cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+        current_line = cursor.block().text()
+        pos = cursor.positionInBlock()
+        idx = pos
+        for _ in range(count):
+            idx = current_line.find(char, idx + 1)
+            if idx == -1:
                 break
+        if idx != -1:
+            target_pos = cursor.block().position() + idx
+            if include_char:
+                target_pos += 1
+            cursor.setPosition(target_pos, QTextCursor.KeepAnchor)
+            self.yank_buffer = cursor.selectedText()
+            self.yank_is_line = False
+            cursor.removeSelectedText()
+            self.setTextCursor(cursor)
+
+    def vim_delete_word(self, count=1):
+        cursor = self.textCursor()
+        for _ in range(count):
+            cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+            while True:
+                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+                char = cursor.selectedText()[-1:]
+                if char != " ":
+                    cursor.movePosition(QTextCursor.PreviousCharacter, QTextCursor.KeepAnchor)
+                    break
         self.yank_buffer = cursor.selectedText()
         self.yank_is_line = False
         cursor.removeSelectedText()
         self.setTextCursor(cursor)
 
-    def vim_yank_line(self):
+    def vim_yank_line(self, count=1):
+        original_cursor = self.textCursor()
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.StartOfLine)
-        cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
-        self.yank_buffer = cursor.selectedText() + "\n"
+        for _ in range(count):
+            cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+        if not cursor.hasSelection() or cursor.block().blockNumber() == self.document().blockCount() - 1:
+            cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+        self.yank_buffer = cursor.selectedText()
+        if not self.yank_buffer.endswith("\n") and not self.yank_buffer.endswith("\u2029"):
+            self.yank_buffer += "\n"
         self.yank_is_line = True
-        cursor.clearSelection()
-        self.setTextCursor(cursor)
+        self.setTextCursor(original_cursor)
 
     def vim_paste(self):
         if not self.yank_buffer:
@@ -612,11 +723,15 @@ class ASN1TextEdit(QPlainTextEdit):
             cursor.insertText(self.yank_buffer)
         self.setTextCursor(cursor)
 
-    def vim_find_char(self, char):
+    def vim_find_char(self, char, count=1):
         cursor = self.textCursor()
         current_line = cursor.block().text()
         pos = cursor.positionInBlock()
-        idx = current_line.find(char, pos + 1)
+        idx = pos
+        for _ in range(count):
+            idx = current_line.find(char, idx + 1)
+            if idx == -1:
+                break
         if idx != -1:
             cursor.setPosition(cursor.block().position() + idx)
             self.setTextCursor(cursor)
