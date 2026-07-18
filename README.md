@@ -126,6 +126,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.7.0 (07/2026)**
+- Add ASN.1 editor with LSP and vim mode (for use without taste)
+- Fix OCTET STRING xor OCTET STRING support (C and Ada)
+
+
 **4.6.4 (07/2026)**
 - C backend improvements: bitwise operators, equality checks, Decision any
 
