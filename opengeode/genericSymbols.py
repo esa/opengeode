@@ -224,7 +224,11 @@ class Symbol(QObject, QGraphicsPathItem):
     def set_valid_pos(self, pos):
         ''' Hook that can be redefined by sub classes to forbid wrong
         placements on the fly, before calling the actual setPos() from Qt '''
+        old_pos = self.pos()
         self.setPos(pos)
+        delta = old_pos - pos
+        if delta.x() != 0 or delta.y() != 0:
+            self.moved.emit(delta.x(), delta.y())
 
     # The "position" property cannot be defined as a standard Python
     # property because it is used in a QPropertyAnimation, which only

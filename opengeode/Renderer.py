@@ -33,6 +33,7 @@
 import logging
 from itertools import chain
 from functools import singledispatch
+from PySide6.QtCore import QPointF
 
 from .ogParser import type_name
 from . import ogAST, sdlSymbols, genericSymbols, Connectors
@@ -124,6 +125,13 @@ def _block(ast, scene):
                         conn.out_sig = ''
                         conn.label_out.setPlainText('[]')
                         proc.connection = conn
+                        
+                        coords = channel.get('coordinates', [])
+                        if coords:
+                            conn.start_point = QPointF(*coords[0])
+                            conn.end_point = QPointF(*coords[-1])
+                            conn.middle_points = [QPointF(*pt) for pt in coords[1:-1]]
+                        
                         if conn.scene() is not scene:
                             scene.addItem(conn)
                         conn.reshape()
@@ -136,6 +144,13 @@ def _block(ast, scene):
                         conn.in_sig = ''
                         conn.label_in.setPlainText('[]')
                         proc.connection = conn
+                        
+                        coords = channel.get('coordinates', [])
+                        if coords:
+                            conn.start_point = QPointF(*coords[0])
+                            conn.end_point = QPointF(*coords[-1])
+                            conn.middle_points = [QPointF(*pt) for pt in coords[1:-1]]
+                        
                         if conn.scene() is not scene:
                             scene.addItem(conn)
                         conn.reshape()
@@ -171,16 +186,22 @@ def _block(ast, scene):
                         conn.in_sig = ''
                         conn.label_in.setPlainText('[]')
                         
-                        p_rect = parent_proc.sceneBoundingRect()
-                        c_rect = child_proc.sceneBoundingRect()
-                        p_center = p_rect.center()
-                        c_center = c_rect.center()
-                        
-                        start_pt = scene.border_point(parent_proc, c_center)
-                        end_pt = scene.border_point(child_proc, p_center)
-                        
-                        conn.start_point = start_pt
-                        conn.end_point = end_pt
+                        coords = channel.get('coordinates', [])
+                        if coords:
+                            conn.start_point = QPointF(*coords[0])
+                            conn.end_point = QPointF(*coords[-1])
+                            conn.middle_points = [QPointF(*pt) for pt in coords[1:-1]]
+                        else:
+                            p_rect = parent_proc.sceneBoundingRect()
+                            c_rect = child_proc.sceneBoundingRect()
+                            p_center = p_rect.center()
+                            c_center = c_rect.center()
+                            
+                            start_pt = scene.border_point(parent_proc, c_center)
+                            end_pt = scene.border_point(child_proc, p_center)
+                            
+                            conn.start_point = start_pt
+                            conn.end_point = end_pt
                         
                         if conn.scene() is not scene:
                             scene.addItem(conn)

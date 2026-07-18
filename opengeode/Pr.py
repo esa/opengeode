@@ -79,16 +79,26 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
            pr = generate(each)
            pr_data.extend(pr)
         # Get all Signalroute and Channel connections in the scene
-        all_connections = [item for item in scene.items() if isinstance(item, Connectors.Signalroute)]
+        all_connections = [item for item in scene.items()
+                           if isinstance(item, Connectors.Signalroute) and item.isVisible()]
 
         channel_idx = 1
         route_idx = 1
         for conn in all_connections:
+            # Map coordinates to scene space
+            start_scene = conn.parent.mapToScene(conn.start_point)
+            end_scene = conn.parent.mapToScene(conn.end_point)
+            mids_scene = [conn.parent.mapToScene(pt) for pt in conn.middle_points]
+            pts = [start_scene] + mids_scene + [end_scene]
+            pts_str = ' '.join(f'({int(pt.x())}, {int(pt.y())})' for pt in pts)
+            cif_route = f'/* CIF Keep Specific Geode ROUTE {pts_str} */'
+
             if isinstance(conn, Connectors.Channel):
                 # Channel between two processes (only generated at block level as signalroute)
                 Indent.indent = 2
                 routes.append(f'signalroute r{route_idx}')
                 Indent.indent += 1
+                routes.append(cif_route)
                 out_sig = conn.out_sig or 'dummy'
                 in_sig = conn.in_sig or 'dummy'
                 routes.append(f'from {str(conn.parent)} to {str(conn.child)} with {out_sig};')
@@ -105,6 +115,7 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
                 Indent.indent = 1
                 channels.append(f'channel {chan_name}')
                 Indent.indent += 1
+                channels.append(cif_route)
                 channels.append(f'from env to {block_name} with {from_env};')
                 channels.append(f'from {block_name} to env with {to_env};')
                 Indent.indent -= 1
@@ -113,6 +124,7 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
                 Indent.indent = 2
                 routes.append(f'signalroute {rout_name}')
                 Indent.indent += 1
+                routes.append(cif_route)
                 routes.append(f'from env to {str(conn.parent)} with {from_env};')
                 routes.append(f'from {str(conn.parent)} to env with {to_env};')
                 Indent.indent -= 1

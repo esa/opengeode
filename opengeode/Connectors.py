@@ -432,6 +432,15 @@ class Signalroute(Connection):
         ''' value is in scene coordinates '''
         self._end_point = scene_coord
 
+    @property
+    def middle_points(self):
+        for each in self._middle_points:
+            yield self.parent.mapFromScene(each)
+
+    @middle_points.setter
+    def middle_points(self, points_scene_coord):
+        self._middle_points = points_scene_coord
+
     @Slot(float, float)
     def parent_moved(self, delta_x, delta_y):
         ''' When the connection parent moves - redefine in subclasses '''

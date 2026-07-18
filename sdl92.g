@@ -160,6 +160,7 @@ tokens {
         EVENTUALLY;
         FILTER_OUT;
         N7S_SCL;
+        ROUTE_COORDS;
 }
 
 
@@ -223,9 +224,10 @@ signal_declaration
 
 channel
         :       CHANNEL channel_id
+                cif*
                 route+
                 ENDCHANNEL end
-        ->      ^(CHANNEL channel_id route+)
+        ->      ^(CHANNEL channel_id cif* route+)
         ;
 
 
@@ -260,8 +262,9 @@ entity_in_block
 // syntax checker in the tool.
 signalroute
         :       SIGNALROUTE route_id end?
+                cif*
                 route*
-        ->      ^(SIGNALROUTE route_id route*)
+        ->      ^(SIGNALROUTE route_id cif* route*)
         ;
 
 
@@ -1454,6 +1457,11 @@ cif_paramnames
    as a CIF extension linked to a USE clause.
    CIF Extensions are valid SDL constructs (ITU-T Z106)
 */
+cif_point
+        :       L_PAREN x=signed COMMA y=signed R_PAREN
+        ->      ^(POINT $x $y)
+        ;
+
 cif_specific
         :       HYPERLINK STRING        -> ^(HYPERLINK STRING)
         |       REQ_SERVER STRING       -> ^(REQ_SERVER STRING)
@@ -1463,6 +1471,7 @@ cif_specific
         |       PARTITION STRING        -> ^(PARTITION STRING)
         |       PARAMNAMES field_name+  -> ^(PARAMNAMES field_name+)
         |       ASNFILENAME STRING      -> ^(ASN1 STRING)
+        |       ROUTE_CIF cif_point+    -> ^(ROUTE_COORDS cif_point+)
         ;
 
 /* OpenGEODE specific: Boolean condition that can be used in simulators
@@ -1620,6 +1629,7 @@ PARAMNAMES      :       P A R A M N A M E S;
 SPECIFIC        :       S P E C I F I C;
 GEODE           :       G E O D E;
 HYPERLINK       :       H Y P E R L I N K;
+ROUTE_CIF       :       R O U T E;
 REQ_SERVER      :       '_' R E Q S E R V E R '_';
 RID_SERVER      :       '_' R I D S E R V E R '_';
 PARTITION       :       P A R T I T I O N;

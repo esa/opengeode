@@ -4827,6 +4827,16 @@ def signalroute(root, parent=None, context=None):
                     break
             else:
                 edge['routes'].append(route)
+        elif child.type == lexer.ROUTE_COORDS:
+            edge['coordinates'] = []
+            for point_node in child.getChildren():
+                if point_node.type == lexer.POINT:
+                    try:
+                        x = int(point_node.getChild(0).text)
+                        y = int(point_node.getChild(1).text)
+                        edge['coordinates'].append((x, y))
+                    except (ValueError, TypeError, IndexError, AttributeError):
+                        pass
     return edge, [], []
 
 

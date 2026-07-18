@@ -1381,9 +1381,6 @@ class Process(HorizontalSymbol):
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
             self.position = QPointF(new_x, new_y)
-            # Signal the move to the connections
-            self.moved.emit(event.lastPos().x() - event.pos().x(),
-                            event.lastPos().y() - event.pos().y())
 
 
     def update_completion_list(self, pr_text):
