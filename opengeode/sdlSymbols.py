@@ -388,6 +388,8 @@ class Decision(VerticalSymbol):
 
     def update_connections(self):
         ''' Redefined - update arrows shape below connection point '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
         super().update_connections()
         for branch in self.branches():
             for cnx in branch.last_branch_item.connections():
@@ -405,37 +407,29 @@ class Decision(VerticalSymbol):
             last = branch.last_branch_item
             try:
                 # To compute the branch length, we must keep only the symbols,
-                # so we must remove the last connection (if any)
+                # so we must ignore the last connection (if any)
                 last_cnx, = (c for c in last.childItems() if
                     isinstance(c, Connection) and not
                     isinstance(c.child, (Comment, HorizontalSymbol)))
-                # Don't set parent item to None to avoid Qt segfault
-                # The bug with setParentItem is a Qt bug documented here:
-                # https://bugreports.qt.io/browse/QTBUG-18616
-                # the crash may happen if the scene of the new parent
-                # is different from the scene of the object. the doc says
-                # it is allowed but an assert in the code makes it crash
-                # workaround: first put the item manually in the right scene
-                # then call setParentItem
                 if self.scene() != last_cnx.scene():
                     self.scene().addItem(last_cnx)
                 last_cnx.setParentItem(self)
             except ValueError:
                 pass
-            branch_len = branch.y() + (
-                    branch.boundingRect() |
-                    branch.childrenBoundingRect()).height()
-            try:
-                if last.scene() != last_cnx.scene():
-                    last.scene().addItem(last_cnx) # workaround Qt's bug 18616
-                last_cnx.setParentItem(last)
-            except AttributeError:
-                pass
             # If last item was a decision, use its connection point
-            # position to get the length of the branch:
-            try:
+            # position to get the length of the branch (much faster than childrenBoundingRect):
+            if hasattr(last, 'connectionPoint'):
                 branch_len = (last.connectionPoint.y() +
                         self.mapFromScene(0, last.scenePos().y()).y())
+            else:
+                branch_len = branch.y() + (
+                        branch.boundingRect() |
+                        branch.childrenBoundingRect()).height()
+
+            try:
+                if last.scene() != last_cnx.scene():
+                    last.scene().addItem(last_cnx)
+                last_cnx.setParentItem(last)
             except AttributeError:
                 pass
             # Rounded with int() -> mandatory when view scale has changed

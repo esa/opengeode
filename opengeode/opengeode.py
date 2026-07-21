@@ -653,8 +653,13 @@ class SDL_Scene(QGraphicsScene):
 
             try:
                 # Render top-level items and their children:
+                dest_scene.mass_updating = True
+                import opengeode.genericSymbols as gs
+                gs.Symbol.mass_updating = True
                 for each in Renderer.render(content, dest_scene):
                     G_SYMBOLS.add(each)
+                dest_scene.mass_updating = False
+                gs.Symbol.mass_updating = False
 
                 # find errors in the scene
                 for s in dest_scene.visible_symb:
@@ -713,8 +718,11 @@ class SDL_Scene(QGraphicsScene):
                             fix_pos_from_ast(branch)
                         fix_pos_from_ast(symbol.next_aligned_symbol())
                         fix_pos_from_ast(symbol.comment)
+                import opengeode.genericSymbols as gs
+                gs.Symbol.mass_updating_no_bubble = True
                 for each in dest_scene.floating_symb:
                     fix_pos_from_ast(each)
+                gs.Symbol.mass_updating_no_bubble = False
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -732,10 +740,10 @@ class SDL_Scene(QGraphicsScene):
 
                 already_created.append(each.nested_scene)
                 subscene.name = str(each)
-                #LOG.debug('Created scene: {}'.format(subscene.name))
-                recursive_render(each.nested_scene.content, subscene)
+                LOG.debug('Created scene: {}'.format(subscene.name))
+                #recursive_render(each.nested_scene.content, subscene)
                 # uncomment for profiling:
-                #LOG.debug(f'{subscene.name} : ' + str(timeit.timeit(partial(recursive_render, each.nested_scene.content, subscene), number=1)))
+                LOG.debug(f'{subscene.name} : ' + str(timeit.timeit(partial(recursive_render, each.nested_scene.content, subscene), number=1)))
                 each.nested_scene = subscene
 
             # Make sure all composite states are initially up to date
@@ -797,6 +805,9 @@ class SDL_Scene(QGraphicsScene):
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
         self.refresh_requested = False
+        self.mass_updating = True
+        import opengeode.genericSymbols as gs
+        gs.Symbol.mass_updating = True
         for symbol in self.editable_texts:
             # EditableText refreshing - design explanation:
             # The first one is tricky: at symbol initialization,
@@ -820,8 +831,15 @@ class SDL_Scene(QGraphicsScene):
             symbol.set_text_alignment()
             # connect the signal that is emitted when text edit changes word
             symbol.word_under_cursor.connect(self.word_under_cursor.emit)
-        # Already called by try_resize for all editable texts
-        #    symbol.update_connections()
+        
+        self.mass_updating = False
+        gs.Symbol.mass_updating = False
+        self.mass_updating_no_bubble = True
+        gs.Symbol.mass_updating_no_bubble = True
+        for symbol in self.visible_symb:
+            symbol.update_connections()
+        self.mass_updating_no_bubble = False
+        gs.Symbol.mass_updating_no_bubble = False
 
     def set_cursor(self, follower):
         ''' Set the cursor shape depending on the selected menu item '''

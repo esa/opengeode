@@ -155,8 +155,7 @@ class EditableText(QGraphicsTextItem):
         super().__init__(parent)
         self.parent = parent
         self.setFont(QFont('Ubuntu', 10))
-        self.completer = Completer(self)
-        self.completer.widget().itemActivated.connect(self.completion_selected)
+        self._completer = None
         self.hyperlink = hyperlink
         self.setOpenExternalLinks(True)
         if hyperlink:
@@ -260,6 +259,13 @@ class EditableText(QGraphicsTextItem):
         self.parent.resize_item(parent_rect)
         self.set_textbox_position()
 
+    @property
+    def completer(self):
+        if self._completer is None:
+            self._completer = Completer(self)
+            self._completer.widget().itemActivated.connect(self.completion_selected)
+        return self._completer
+
     @Slot(QListWidgetItem)
     def completion_selected(self, item):
         '''
@@ -319,10 +325,10 @@ class EditableText(QGraphicsTextItem):
             self.clearFocus()
             return
         # When completer is displayed, give it the focus with down key
-        if self.completer.isVisible() and event.key() == Qt.Key_Down:
+        if self._completer and self._completer.isVisible() and event.key() == Qt.Key_Down:
             self.completer_has_focus = True
-            self.completer.setFocusProxy(None)
-            self.completer.widget().setFocus()
+            self._completer.setFocusProxy(None)
+            self._completer.widget().setFocus()
             return
         self.try_resize()
         text_cursor = self.textCursor()
@@ -364,9 +370,10 @@ class EditableText(QGraphicsTextItem):
             self.completer.setFocusProxy(self)
             self.setTabChangesFocus(True)
         else:
-            self.completer.setFocusProxy(None)
-            self.completer.hide()
-            self.completer.resize(0, 0)
+            if self._completer:
+                self._completer.setFocusProxy(None)
+                self._completer.hide()
+                self._completer.resize(0, 0)
             self.setFocus()
         self.completer_has_focus = False
 
@@ -375,9 +382,9 @@ class EditableText(QGraphicsTextItem):
             If the completer box is active while the user clicks on another
             area of the text box, make it disappear first
         '''
-        if self.completer.isVisible():
-            self.completer.hide()
-            self.completer.resize(0, 0)
+        if self._completer and self._completer.isVisible():
+            self._completer.hide()
+            self._completer.resize(0, 0)
         super().mousePressEvent(event)
 
 
@@ -395,9 +402,9 @@ class EditableText(QGraphicsTextItem):
                 self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
                 self._updating_flags = False
             return
-        if self.completer and not self.completer_has_focus:
-            self.completer.hide()
-            self.completer.resize(0, 0)
+        if self._completer and not self.completer_has_focus:
+            self._completer.hide()
+            self._completer.resize(0, 0)
         if self.force_focus:
             # when user double-clicks on the Completer, it may be out of
             # the editable text. It is not right to leave the focus in that
@@ -407,7 +414,7 @@ class EditableText(QGraphicsTextItem):
             self.setFocus()
             self.force_focus = False
             return
-        if not self.completer or not self.completer.isVisible():
+        if not self._completer or not self._completer.isVisible():
             # Trigger a select - side effect makes the toolbar update
             try:
                 self.parent.select(True)

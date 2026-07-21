@@ -731,12 +731,19 @@ class Symbol(QObject, QGraphicsPathItem):
            When symbol moves or is resized, update the shape of all
            its connections - can be redefined in subclasses
         '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
+            
         for cnx in self.connections():
             cnx.reshape()
         try:
             self.connection_to_parent().reshape()
         except AttributeError:
             pass
+            
+        if getattr(self.scene(), 'mass_updating_no_bubble', False) or getattr(self, 'mass_updating_no_bubble', False):
+            return
+            
         try:
             self.branch_entrypoint.parent.update_connections()
         except AttributeError as err:
@@ -1278,12 +1285,29 @@ class HorizontalSymbol(Symbol):
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
         #self.cam(self.position, self.position)
+        # After insertion, refresh all ancestor symbols (e.g., Decision chain) so branching connections update automatically
+        if parent:
+            current = parent
+            visited = set()
+            while current and id(current) not in visited:
+                visited.add(id(current))
+                try:
+                    current.update_connections()
+                except Exception:
+                    pass
+                current = getattr(current, 'parent', None)
+        # Force a full scene repaint to ensure all connections are rendered immediately
+        if self.scene():
+            self.scene().update()
+        return
 
     def update_connections(self):
         '''
            Redefined from Symbol class
            Horizontal symbols may have siblings - check their shape.
         '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
         super().update_connections()
         try:
             for sibling in self.siblings():
@@ -1314,6 +1338,7 @@ class HorizontalSymbol(Symbol):
     def mouse_move(self, event):
         ''' Horizontal symbols: prevent move from being above the parent '''
         if self.mode == 'Move':
+            if self.hasParent: return
             event_pos = event.pos()
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
@@ -1521,10 +1546,26 @@ class VerticalSymbol(Symbol):
             # if called before text is initialized - or if no textbox
             pass
 
+        # After insertion, refresh all ancestor symbols (e.g., Decision chain) so branching connections update automatically
+        if parent:
+            current = parent
+            visited = set()
+            while current and id(current) not in visited:
+                visited.add(id(current))
+                try:
+                    current.update_connections()
+                except Exception:
+                    pass
+                current = getattr(current, 'parent', None)
+        # Force a full scene repaint to ensure all connections are rendered immediately
+        if self.scene():
+            self.scene().update()
+
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
         super().mouse_move(event)
         if self.mode == 'Move':
+            if self.hasParent: return
             new_y = self.pos_y + event.pos().y() - event.lastPos().y()
             new_x = self.pos_x + event.pos().x() - event.lastPos().x()
             self.position = QPointF(new_x, new_y)
