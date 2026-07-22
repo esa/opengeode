@@ -451,9 +451,14 @@ def get_interfaces(ast, process_name):
     undeclared_signals = []
     for each in process_parent.signalroutes:
         for route in each['routes']:
-            if route['source'] == process_name:
+            src = route['source'].lower()
+            dst = route['dest'].lower()
+            p_name = process_name.lower()
+            single_proc = (len(getattr(process_parent, 'processes', [])) == 1)
+            
+            if src == p_name or (src != 'env' and single_proc):
                 direction = 'out'
-            elif route['dest'] == process_name:
+            elif dst == p_name or (dst != 'env' and single_proc):
                 direction = 'in'
             else:
                 continue
@@ -463,7 +468,8 @@ def get_interfaces(ast, process_name):
                     found, = [dict(sig) for sig in all_signals
                               if sig['name'].lower() == sig_id.lower()]
                     found['direction'] = direction
-                    async_signals.append(found)
+                    if not any(s['name'].lower() == found['name'].lower() and s['direction'] == direction for s in async_signals):
+                        async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
                 except (KeyError, AttributeError) as err:
@@ -4846,11 +4852,7 @@ def block_definition(root, parent):
     block = ogAST.Block()
     block.parent = parent
     parent.blocks.append(block)
-    from . import sdlSymbols
-    if sdlSymbols.TASTE_TARGET:
-        block.signalroutes = parent.channels
-    else:
-        block.signalroutes = []
+    block.signalroutes = list(getattr(parent, 'channels', []))
     for child in root.getChildren():
         if child.type == lexer.ID:
             block.name = child.text
@@ -4881,9 +4883,7 @@ def block_definition(root, parent):
             proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
-            from . import sdlSymbols
-            if not sdlSymbols.TASTE_TARGET:
-                block.signalroutes.append(sigroute)
+            block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
                 str(child.type))

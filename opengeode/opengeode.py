@@ -740,10 +740,10 @@ class SDL_Scene(QGraphicsScene):
 
                 already_created.append(each.nested_scene)
                 subscene.name = str(each)
-                LOG.debug('Created scene: {}'.format(subscene.name))
-                #recursive_render(each.nested_scene.content, subscene)
+                #LOG.debug('Created scene: {}'.format(subscene.name))
+                recursive_render(each.nested_scene.content, subscene)
                 # uncomment for profiling:
-                LOG.debug(f'{subscene.name} : ' + str(timeit.timeit(partial(recursive_render, each.nested_scene.content, subscene), number=1)))
+                #LOG.debug(f'{subscene.name} : ' + str(timeit.timeit(partial(recursive_render, each.nested_scene.content, subscene), number=1)))
                 each.nested_scene = subscene
 
             # Make sure all composite states are initially up to date

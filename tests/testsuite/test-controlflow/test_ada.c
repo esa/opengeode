@@ -7,13 +7,13 @@ extern void controlflow_PI_run();
 
 void controlflow_RI_assert(asn1SccBoolean *res, asn1SccCharString *msg) {
     if (!*res) {
-        fprintf(stderr, "%.*s\n", (int)msg->nCount, msg->arr);
+        fprintf(stderr, "%s\n",  msg);
         exit(1);
     }
 }
 
 void controlflow_RI_fail(asn1SccCharString *msg) {
-    fprintf(stderr, "%.*s\n", (int)msg->nCount, msg->arr);
+    fprintf(stderr, "%s\n", msg);
     exit(1);
 }
 

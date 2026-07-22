@@ -1,5 +1,7 @@
 /* CIF PROCESS (151, 149), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process controlflow;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (663, 97), (281, 140) */
     -- Declare your variables
     
@@ -14,7 +16,34 @@ process controlflow;
     START;
         /* CIF NEXTSTATE (290, 50), (70, 35) */
         NEXTSTATE Wait;
+    /* CIF label (291, 1904), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    connection label2:
+        /* CIF PROCEDURECALL (266, 1954), (118, 35) */
+        call writeln('label2');
+        /* CIF label (291, 2004), (70, 35) */
+        label3:
+        /* CIF PROCEDURECALL (266, 2054), (118, 35) */
+        call writeln('label3');
+        /* CIF decision (291, 2109), (70, 50) */
+        decision true;
+            /* CIF ANSWER (246, 2179), (70, 23) */
+            (true):
+                /* CIF label (240, 2222), (81, 35) */
+                innerLab1:
+                /* CIF PROCEDURECALL (221, 2277), (118, 35) */
+                call writeln('label4');
+            /* CIF ANSWER (351, 2179), (70, 23) */
+            (false):
+        enddecision;
+        /* CIF PROCEDURECALL (272, 2328), (107, 35) */
+        call writeln('END');
+        /* CIF NEXTSTATE (291, 2378), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF End Label */
+    endconnection;
     /* CIF label (35, 1747), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     connection label1:
         /* CIF PROCEDURECALL (10, 1797), (118, 35) */
         call writeln('label1');
@@ -22,19 +51,8 @@ process controlflow;
         join label2;
     /* CIF End Label */
     endconnection;
-    /* CIF label (291, 1904), (70, 35) */
-    connection label2:
-        /* CIF PROCEDURECALL (267, 1954), (118, 35) */
-        call writeln('label2');
-        /* CIF label (291, 2004), (70, 35) */
-        label3:
-        /* CIF PROCEDURECALL (267, 2054), (118, 35) */
-        call writeln('label3');
-        /* CIF NEXTSTATE (291, 2104), (70, 35) */
-        NEXTSTATE wait;
-    /* CIF End Label */
-    endconnection;
     /* CIF state (290, 50), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Wait;
         /* CIF input (290, 105), (70, 35) */
         input run;

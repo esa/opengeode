@@ -116,8 +116,11 @@ def _block(ast, scene):
                 dest = route.get('dest', '').lower()
                 signals = [s for s in route.get('signals', []) if s.lower() != 'dummy']
                 
-                if source == 'env' and dest in rendered_processes:
-                    proc = rendered_processes[dest]
+                source_proc = rendered_processes.get(source) or (list(rendered_processes.values())[0] if source != 'env' and len(rendered_processes) == 1 else None)
+                dest_proc = rendered_processes.get(dest) or (list(rendered_processes.values())[0] if dest != 'env' and len(rendered_processes) == 1 else None)
+                
+                if source == 'env' and dest_proc:
+                    proc = dest_proc
                     if not proc.connection:
                         conn = Connectors.Signalroute(parent=proc)
                         conn.in_sig = ',\n'.join(signals)
@@ -135,8 +138,17 @@ def _block(ast, scene):
                         if conn.scene() is not scene:
                             scene.addItem(conn)
                         conn.reshape()
-                elif dest == 'env' and source in rendered_processes:
-                    proc = rendered_processes[source]
+                    else:
+                        conn = proc.connection
+                        existing_sigs = [s.strip() for s in conn.in_sig.split(',\n') if s.strip()]
+                        for sig in signals:
+                            if sig not in existing_sigs:
+                                existing_sigs.append(sig)
+                        conn.in_sig = ',\n'.join(existing_sigs)
+                        conn.label_in.setPlainText(f'[{conn.in_sig}]')
+                        conn.reshape()
+                elif dest == 'env' and source_proc:
+                    proc = source_proc
                     if not proc.connection:
                         conn = Connectors.Signalroute(parent=proc)
                         conn.out_sig = ',\n'.join(signals)
@@ -156,7 +168,11 @@ def _block(ast, scene):
                         conn.reshape()
                     else:
                         conn = proc.connection
-                        conn.out_sig = ',\n'.join(signals)
+                        existing_sigs = [s.strip() for s in conn.out_sig.split(',\n') if s.strip()]
+                        for sig in signals:
+                            if sig not in existing_sigs:
+                                existing_sigs.append(sig)
+                        conn.out_sig = ',\n'.join(existing_sigs)
                         conn.label_out.setPlainText(f'[{conn.out_sig}]')
                         conn.reshape()
                 elif source in rendered_processes and dest in rendered_processes:
