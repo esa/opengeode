@@ -36,7 +36,7 @@ test-c:
 	$(OPENGEODE) toto.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
 	$(CC) -g -O$(O) -o test_c *.c
-	./test_c | diff expected_c -
+	./test_c | diff expected -
 	
 test-if:
 	sdl2if toto.pr
