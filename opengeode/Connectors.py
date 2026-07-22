@@ -311,6 +311,19 @@ class Signalroute(Connection):
     _class_in_sig = _class_out_sig = None
     completion_list = set()
 
+    def hide(self):
+        super().hide()
+        for label in (getattr(self, 'label_in', None), getattr(self, 'label_out', None)):
+            if label:
+                label.hide()
+        if hasattr(self, 'source_connection') and self.source_connection:
+            self.source_connection.hide()
+
+    def show(self):
+        super().show()
+        for label in (getattr(self, 'label_in', None), getattr(self, 'label_out', None)):
+            if label:
+                label.show()
     @property
     def in_sig(self):
         if hasattr(self, '_in_sig') and self._in_sig is not None:
