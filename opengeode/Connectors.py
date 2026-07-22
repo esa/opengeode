@@ -52,6 +52,8 @@ class Connection(QGraphicsPathItem):
         self.childRect = child.sceneBoundingRect()
         # Activate cache mode to boost rendering by calling paint less often
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        # Ensure connections and labels draw above symbols (zValue > symbol zValue)
+        self.setZValue(100)
         # When the parent or child move, the connection may need
         # to adjust the end point: done upon signal reception
         self.child.moved.connect(self.child_moved)
@@ -345,6 +347,8 @@ class Signalroute(Connection):
         self.label_out = SignalList(parent=self)
         self.label_in.setPlainText('[]')
         self.label_out.setPlainText('[]')
+        self.label_in.setZValue(100)
+        self.label_out.setZValue(100)
         self.label_in.document().contentsChanged.connect(self.change_siglist)
         self.label_out.document().contentsChanged.connect(self.change_siglist)
         for each in (self.label_in, self.label_out):
@@ -355,6 +359,7 @@ class Signalroute(Connection):
             self.source_connection = ChannelConnectionpoint(
                 self.start_point, self, is_start=True, symbol=self.parent
             )
+            self.source_connection.setZValue(101)
             self.source_connection.hide()
             self.parent.movable_points.append(self.source_connection)
 
@@ -452,19 +457,55 @@ class Signalroute(Connection):
         ''' Redefine shape function to add the text areas '''
         super().reshape()
 
-        width_in = self.label_in.boundingRect().width()
-        height_in = self.label_in.boundingRect().height()
+        scene = self.scene()
+        if scene:
+            for label in (self.label_in, self.label_out):
+                if label.scene() is not scene:
+                    scene.addItem(label)
+                    label.setParentItem(None)
+                    label.setZValue(100)
+                elif label.parentItem() is not None:
+                    label.setParentItem(None)
+                    label.setZValue(100)
 
-        self.label_in.setX(self.start_point.x() - width_in)
-        self.label_in.setY(self.start_point.y() - height_in - 5)
-        self.label_out.setX(self.end_point.x() + 10)
-        self.label_out.setY(self.end_point.y() + 5)
+            start_scene = self.parent.mapToScene(self.start_point)
+            end_scene = self.parent.mapToScene(self.end_point)
+            width_in = self.label_in.boundingRect().width()
+            height_in = self.label_in.boundingRect().height()
 
-        # Update grabber positions (in local coordinates)
+            self.label_in.setPos(start_scene.x() - width_in, start_scene.y() - height_in - 5)
+            self.label_out.setPos(end_scene.x() + 10, end_scene.y() + 5)
+        else:
+            width_in = self.label_in.boundingRect().width()
+            height_in = self.label_in.boundingRect().height()
+            self.label_in.setX(self.start_point.x() - width_in)
+            self.label_in.setY(self.start_point.y() - height_in - 5)
+            self.label_out.setX(self.end_point.x() + 10)
+            self.label_out.setY(self.end_point.y() + 5)
+
+        # Update grabber positions (in scene coordinates as top-level items)
+        start_scene = self.parent.mapToScene(self.start_point)
+        end_scene = self.parent.mapToScene(self.end_point)
+
         if hasattr(self, 'source_connection') and self.source_connection:
-            self.source_connection.setPos(self.start_point)
+            conn = self.source_connection
+            if scene and conn.scene() is not scene:
+                scene.addItem(conn)
+                conn.setParentItem(None)
+            elif conn.parentItem() is not None:
+                conn.setParentItem(None)
+            conn.setZValue(1000)
+            conn.setPos(start_scene)
+
         if hasattr(self, 'end_connection') and self.end_connection:
-            self.end_connection.setPos(self.end_point)
+            conn = self.end_connection
+            if scene and conn.scene() is not scene:
+                scene.addItem(conn)
+                conn.setParentItem(None)
+            elif conn.parentItem() is not None:
+                conn.setParentItem(None)
+            conn.setZValue(1000)
+            conn.setPos(end_scene)
 
     def check_syntax(self, text):
         ''' Check the syntax of the IN and OUT signal lists '''
@@ -536,6 +577,7 @@ class Channel(Signalroute):
 
     def __init__(self, parent, child=None):
         super().__init__(parent, child)
+        self.setZValue(100)
         self._ratios = []
         from . import sdlSymbols
         if not sdlSymbols.TASTE_TARGET:
@@ -543,6 +585,7 @@ class Channel(Signalroute):
                 self.end_connection = ChannelConnectionpoint(
                     self.end_point, self, is_start=False, symbol=self.child
                 )
+                self.end_connection.setZValue(101)
                 self.end_connection.hide()
                 self.child.movable_points.append(self.end_connection)
 
@@ -629,11 +672,12 @@ class ChannelConnectionpoint(QGraphicsPathItem):
         self.is_start = is_start
         self.symbol = symbol
         path = QPainterPath()
-        path.addRect(-4, -4, 8, 8)
+        path.addRect(-7, -7, 14, 14)
         self.setPath(path)
         self.setBrush(QBrush(QColor(100, 150, 255)))
-        self.setPen(QPen(Qt.blue, 1))
+        self.setPen(QPen(Qt.blue, 2))
         self.setPos(pos)
+        self.setZValue(101)
         self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
 
     @property
@@ -641,15 +685,14 @@ class ChannelConnectionpoint(QGraphicsPathItem):
         return self.pos()
 
     def update_position(self):
-        if not self.symbol:
+        if not self.symbol or not self.scene():
             return
-        pos_symb = self.symbol.mapFromScene(self.scenePos())
-        nearest_x, nearest_y = self.symbol.closest_connection_point(pos_symb)
-        self.moveBy(-nearest_x, -nearest_y)
+        pos_scene = self.scenePos()
+        nearest_point = self.scene().border_point(self.symbol, pos_scene)
         if self.is_start:
-            self.edge.start_point = self.scenePos()
+            self.edge.start_point = nearest_point
         else:
-            self.edge.end_point = self.scenePos()
+            self.edge.end_point = nearest_point
         self.edge.reshape()
 
     def mouseMoveEvent(self, event):

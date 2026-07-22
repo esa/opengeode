@@ -48,8 +48,9 @@ class Completer(QGraphicsProxyWidget):
 
     def set_completer_list(self):
         ''' Set list of items for the autocompleter popup '''
-        compl = [item.replace('-', '_') for item in
-                 self.parent.parentItem().completion_list]
+        parent_item = (self.parent.parentItem() if hasattr(self.parent, 'parentItem') else None) or getattr(self.parent, 'parent', None)
+        compl_list = getattr(parent_item, 'completion_list', [])
+        compl = [item.replace('-', '_') for item in compl_list]
         self.string_list.setStringList(compl)
         self._completer.setModel(self.string_list)
 
@@ -75,7 +76,9 @@ class Completer(QGraphicsProxyWidget):
     def keyPressEvent(self, e):
         super().keyPressEvent(e)
         if e.key() == Qt.Key_Escape:
-            self.parentItem().setFocus()
+            target = self.parentItem() or getattr(self, 'parent', None)
+            if target:
+                target.setFocus()
         # Consume the event so that it is not repeated at EditableText level
         e.accept()
 
@@ -85,7 +88,9 @@ class Completer(QGraphicsProxyWidget):
         super().focusOutEvent(event)
         self.hide()
         self.resize(0, 0)
-        self.parentItem().setFocus()
+        target = self.parentItem() or getattr(self, 'parent', None)
+        if target:
+            target.setFocus()
 
 
 # pylint: disable=R0904
@@ -436,7 +441,9 @@ class EditableText(QGraphicsTextItem):
                     self.setFocus()
                     return
                 # Update class completion list
-                self.scene().update_completion_list(self.parentItem())
+                target = self.parentItem() or getattr(self, 'parent', None)
+                if target:
+                    self.scene().update_completion_list(target)
                 # Create undo command, including possible CAM
                 with undoCommands.UndoMacro(self.scene().undo_stack, 'Text'):
                     undo_cmd = undoCommands.ResizeSymbol(

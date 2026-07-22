@@ -1494,23 +1494,31 @@ class SDL_Scene(QGraphicsScene):
     def border_point(self, symb, point):
         ''' Find the closest point on the border of a symbol '''
         rect = symb.sceneBoundingRect()
-        center = rect.center()
-        h_dist = min(point.y() - rect.y(),
-                     rect.y() + rect.height() - point.y())
-        v_dist = min(point.x() - rect.x(),
-                     rect.x() + rect.width() - point.x())
-        res = QPointF()
-        res.setX(symb.pos_x
-                if point.x() <= center.x()
-                else symb.pos_x + symb.boundingRect().width())
-        res.setY(symb.pos_y
-                if point.y() <= center.y()
-                else symb.pos_y + symb.boundingRect().height())
-        if h_dist < v_dist:
-            res.setX(center.x())
+        if rect.width() == 0 or rect.height() == 0:
+            return point
+        px = max(rect.left(), min(point.x(), rect.right()))
+        py = max(rect.top(), min(point.y(), rect.bottom()))
+
+        q_left = QPointF(rect.left(), py)
+        q_right = QPointF(rect.right(), py)
+        q_top = QPointF(px, rect.top())
+        q_bottom = QPointF(px, rect.bottom())
+
+        d2_left = (point.x() - q_left.x())**2 + (point.y() - q_left.y())**2
+        d2_right = (point.x() - q_right.x())**2 + (point.y() - q_right.y())**2
+        d2_top = (point.x() - q_top.x())**2 + (point.y() - q_top.y())**2
+        d2_bottom = (point.x() - q_bottom.x())**2 + (point.y() - q_bottom.y())**2
+
+        min_d2 = min(d2_left, d2_right, d2_top, d2_bottom)
+
+        if min_d2 == d2_left:
+            return q_left
+        elif min_d2 == d2_right:
+            return q_right
+        elif min_d2 == d2_top:
+            return q_top
         else:
-            res.setY(center.y())
-        return res
+            return q_bottom
 
     # pylint: disable=C0103
     def mousePressEvent(self, event):
@@ -1542,7 +1550,9 @@ class SDL_Scene(QGraphicsScene):
                 nearby_connection.mousePressEvent(event)
                 connection_selected = True
             symb = self.symbol_near(event.scenePos(), dist=1)
-            if not symb:
+            clicked_grabber = any(isinstance(item, (Connectors.ChannelConnectionpoint, Cornergrabber, Connectors.Controlpoint))
+                                  for item in self.items(event.scenePos()))
+            if not symb and not clicked_grabber:
                 self.mode = 'select_items'
                 self.orig_pos = event.scenePos()
                 self.select_rect = self.addRect(
@@ -1555,7 +1565,7 @@ class SDL_Scene(QGraphicsScene):
                             item.bezier_set_visible(False)
                         except AttributeError:
                             pass
-            elif symb.user_can_connect and (event.modifiers() & Qt.ControlModifier):
+            elif symb and symb.user_can_connect and (event.modifiers() & Qt.ControlModifier):
                 if not sdlSymbols.TASTE_TARGET:
                     self.mode = 'wait_next_connection_point'
                     click_point = event.scenePos()
@@ -1709,9 +1719,13 @@ class SDL_Scene(QGraphicsScene):
                 # Set start and end points first, so that the distance can
                 # be computed when storing the middle points's relative
                 # positions
-                connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
-                connector.end_point = self.border_point(symb, self.edge_points[-2])
-                connector.middle_points = self.edge_points[1:-1]
+                if len(self.edge_points) > 2:
+                    connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
+                    connector.end_point = self.border_point(symb, self.edge_points[-2])
+                    connector.middle_points = self.edge_points[1:-1]
+                else:
+                    connector.start_point = self.edge_points[0]
+                    connector.end_point = self.border_point(symb, self.edge_points[-1])
                 connector.hide()
                 self.undo_stack.push(undoCommands.InsertConnection(connector, self))
                 self.cancel()
