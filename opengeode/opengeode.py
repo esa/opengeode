@@ -2596,8 +2596,25 @@ clean:
         self.scene().name = 'block {}[*]'.format(block.name or list(ast.processes)[0].processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.update_phantom_rect()
+        
+        # Reshape environment connections now that phantom rect is correct
+        for item in self.scene().items():
+            if isinstance(item, Connectors.Signalroute) and not isinstance(item, Connectors.Channel):
+                item.reshape()
+
         self.refresh()
-        self.centerOn(self.sceneRect().topLeft())
+
+        # Center on a process symbol instead of the top left
+        processes = list(self.scene().processes)
+        if processes:
+            target_process = processes[0]
+            for p in processes:
+                if getattr(p, 'connections', lambda: [])():
+                    target_process = p
+                    break
+            self.centerOn(target_process)
+        else:
+            self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
         # Emit a signal for the application to update the ASN.1 scene
         self.update_asn1_dock.emit(ast)
