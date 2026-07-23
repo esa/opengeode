@@ -1520,6 +1520,32 @@ class SDL_Scene(QGraphicsScene):
         else:
             return q_bottom
 
+    def start_reconnect_connection(self, edge, is_start, pos_scene):
+        ''' Called by a connection grabber to detach and redraw the line '''
+        # Save old signal data
+        self.preserved_in_sig = getattr(edge, 'in_sig', '')
+        self.preserved_out_sig = getattr(edge, 'out_sig', '')
+        
+        # Hide the old edge using the undo stack so this action can be cleanly undone
+        undo_cmd = undoCommands.DeleteConnection(edge, self)
+        self.undo_stack.push(undo_cmd)
+        
+        # Transition to drawing mode
+        self.mode = 'wait_next_connection_point'
+        
+        if is_start:
+            # User is dragging the START point. The fixed anchor is the DESTINATION (child)
+            self.connection_start = getattr(edge, 'child', edge.parent)
+            self.drawing_backwards = True
+            anchor_point = edge.parent.mapToScene(edge.end_point)
+        else:
+            # User is dragging the END point. The fixed anchor is the SOURCE (parent)
+            self.connection_start = edge.parent
+            self.drawing_backwards = False
+            anchor_point = edge.parent.mapToScene(edge.start_point)
+        self.edge_points = [anchor_point]
+        self.temp_lines.append(self.addLine(anchor_point.x(), anchor_point.y(), pos_scene.x(), pos_scene.y()))
+
     # pylint: disable=C0103
     def mousePressEvent(self, event):
         '''
@@ -1576,6 +1602,9 @@ class SDL_Scene(QGraphicsScene):
                                                         click_point.x(),
                                                         click_point.y()))
                     self.connection_start = symb
+                    self.drawing_backwards = False
+                    self.preserved_in_sig = ''
+                    self.preserved_out_sig = ''
                 else:
                     # TODO check if symbol can have more than
                     # one connection if there is already one, if start
@@ -1654,6 +1683,9 @@ class SDL_Scene(QGraphicsScene):
         for each in self.temp_lines:
             each.setVisible(False)
         self.mode = 'idle'
+        self.drawing_backwards = False
+        self.preserved_in_sig = ''
+        self.preserved_out_sig = ''
 
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
@@ -1715,17 +1747,40 @@ class SDL_Scene(QGraphicsScene):
                 # Clicked on a symbol: create the actual connector
                 # Use a Channel type by default, but this could be something
                 # else in a different context
-                connector = Connectors.Channel(parent=self.connection_start, child=symb)
+                if getattr(self, 'drawing_backwards', False):
+                    connector = Connectors.Channel(parent=symb, child=self.connection_start)
+                else:
+                    connector = Connectors.Channel(parent=self.connection_start, child=symb)
+                    
+                if hasattr(self, 'preserved_in_sig'):
+                    connector.in_sig = self.preserved_in_sig
+                    if self.preserved_in_sig:
+                        connector.label_in.setPlainText(f'[{self.preserved_in_sig}]')
+                if hasattr(self, 'preserved_out_sig'):
+                    connector.out_sig = self.preserved_out_sig
+                    if self.preserved_out_sig:
+                        connector.label_out.setPlainText(f'[{self.preserved_out_sig}]')
                 # Set start and end points first, so that the distance can
                 # be computed when storing the middle points's relative
                 # positions
                 if len(self.edge_points) > 2:
-                    connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
-                    connector.end_point = self.border_point(symb, self.edge_points[-2])
-                    connector.middle_points = self.edge_points[1:-1]
+                    start_pt = self.border_point(self.connection_start, self.edge_points[1])
+                    end_pt = self.border_point(symb, self.edge_points[-2])
+                    mid_pts = self.edge_points[1:-1]
                 else:
-                    connector.start_point = self.edge_points[0]
-                    connector.end_point = self.border_point(symb, self.edge_points[-1])
+                    start_pt = self.edge_points[0]
+                    end_pt = self.border_point(symb, self.edge_points[-1])
+                    mid_pts = []
+
+                if getattr(self, 'drawing_backwards', False):
+                    connector.start_point = end_pt
+                    connector.end_point = start_pt
+                    connector.middle_points = list(reversed(mid_pts))
+                else:
+                    connector.start_point = start_pt
+                    connector.end_point = end_pt
+                    connector.middle_points = mid_pts
+                    
                 connector.hide()
                 self.undo_stack.push(undoCommands.InsertConnection(connector, self))
                 self.cancel()

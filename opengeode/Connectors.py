@@ -63,6 +63,12 @@ class Connection(QGraphicsPathItem):
         # Flag to choose the bold pen when painting the edge if selected
         self.selected = False
 
+    def shape(self):
+        ''' Redefine shape to enlarge the selection/detection area '''
+        stroker = QPainterPathStroker()
+        stroker.setWidth(15)  # Enlarge detection zone
+        return stroker.createStroke(self.path())
+
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefine in subclasses '''
@@ -702,6 +708,14 @@ class ChannelConnectionpoint(QGraphicsPathItem):
             return
         pos_scene = self.scenePos()
         nearest_point = self.scene().border_point(self.symbol, pos_scene)
+        
+        distance = QLineF(pos_scene, nearest_point).length()
+        if distance > 30:
+            self.ungrabMouse()
+            if hasattr(self.scene(), 'start_reconnect_connection'):
+                self.scene().start_reconnect_connection(self.edge, self.is_start, pos_scene)
+            return
+            
         if self.is_start:
             self.edge.start_point = nearest_point
         else:
