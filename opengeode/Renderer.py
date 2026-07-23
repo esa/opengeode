@@ -111,6 +111,8 @@ def _block(ast, scene):
 
         # Render channels and routes between processes/env
         for channel in getattr(ast, 'signalroutes', []):
+            if channel.get('type') == 'channel':
+                continue
             for route in channel.get('routes', []):
                 source = route.get('source', '').lower()
                 dest = route.get('dest', '').lower()

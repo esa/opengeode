@@ -69,6 +69,10 @@ class Connection(QGraphicsPathItem):
         stroker.setWidth(15)  # Enlarge detection zone
         return stroker.createStroke(self.path())
 
+    def boundingRect(self):
+        ''' Ensure boundingRect covers the enlarged shape to prevent ghost artifacts when moving '''
+        return self.shape().boundingRect()
+
     @Slot(float, float)
     def child_moved(self, delta_x, delta_y):
         ''' When the connection child moves - redefine in subclasses '''
@@ -469,6 +473,12 @@ class Signalroute(Connection):
     def parent_moved(self, delta_x, delta_y):
         ''' When the connection parent moves - redefine in subclasses '''
         super().parent_moved(delta_x, delta_y)
+        for pt in getattr(self, '_middle_points', []):
+            pt.setX(pt.x() - delta_x)
+            pt.setY(pt.y() - delta_y)
+        if getattr(self, '_end_point', None) is not None:
+            self._end_point.setX(self._end_point.x() - delta_x)
+            self._end_point.setY(self._end_point.y() - delta_y)
         self.reshape()
         self.update()
 
@@ -609,28 +619,54 @@ class Channel(Signalroute):
                 self.child.movable_points.append(self.end_connection)
 
     @Slot(float, float)
-    def child_moved(self, delta_x, delta_y):
-        ''' When the connection child moves - redefined function '''
-        # compute the distance between the start and end points
-        dist_x = abs(self.end_point.x() - self.start_point.x())
-        dist_y = abs(self.end_point.y() - self.start_point.y())
-        new_dist_x = dist_x - delta_x
-        new_dist_y = dist_y - delta_y
+    def update_middle_points(self, delta_x, delta_y, moved_end):
+        ''' Unified logic to scale or shift intermediate points when an endpoint moves '''
+        # 1. Update the appropriate fixed endpoint
+        if moved_end == 'child':
+            if getattr(self, '_end_point', None) is not None:
+                self._end_point.setX(self._end_point.x() - delta_x)
+                self._end_point.setY(self._end_point.y() - delta_y)
+        elif moved_end == 'parent':
+            if getattr(self, '_start_point', None) is not None:
+                # _start_point in Channel is stored as LOCAL coord to parent.
+                # If parent moves, local coord remains same visually relative to parent?
+                # No, if parent moves, we want the start_point to stick to parent, so local is unchanged.
+                # But _start_point in Signalroute is stored as LOCAL coord!
+                # Wait, start_point setter: self._start_point = self.parent.mapFromScene(scene_coord)
+                # So it IS local. If parent moves, _start_point stays the same locally, so it moves with the parent automatically!
+                pass
 
-        self._end_point.setX(self._end_point.x() - delta_x)
-        self._end_point.setY(self._end_point.y() - delta_y)
-        x_shift, y_shift = [], []
+        # 2. Recompute scaling factors based on the NEW bounding box.
+        # Since _start_point or _end_point have been updated, start_point and end_point
+        # properties now yield the new local coordinates!
+        dist_x = self.end_point.x() - self.start_point.x()
+        dist_y = self.end_point.y() - self.start_point.y()
+        
         middle_points = list(self.middle_points)
-
         self._middle_points = []
         ratios = getattr(self, '_ratios', [])
+        
         for ratio, point in zip(ratios, middle_points):
             fact_x, fact_y = ratio
             sp = self.start_point
-            new_x = (sp.x() + new_dist_x * fact_x) if 0 <= fact_x <= 1 \
-                    else point.x() - delta_x
-            new_y = (sp.y() + new_dist_y * fact_y) if 0 <= fact_y <= 1 \
-                    else point.y() - delta_y
+            
+            # Points between start and end (0 <= fact <= 1) stretch proportionally.
+            # Points behind start (fact < 0) are rigidly attached to start (parent).
+            # Points past end (fact > 1) are rigidly attached to end (child).
+            if 0 <= fact_x <= 1:
+                new_x = sp.x() + dist_x * fact_x
+            elif fact_x < 0:
+                new_x = point.x() - delta_x if moved_end == 'parent' else point.x()
+            else:
+                new_x = point.x() - delta_x if moved_end == 'child' else point.x()
+
+            if 0 <= fact_y <= 1:
+                new_y = sp.y() + dist_y * fact_y
+            elif fact_y < 0:
+                new_y = point.y() - delta_y if moved_end == 'parent' else point.y()
+            else:
+                new_y = point.y() - delta_y if moved_end == 'child' else point.y()
+                    
             self._middle_points.append(
                     self.parent.mapToScene(QPointF(new_x, new_y)))
 
@@ -638,10 +674,14 @@ class Channel(Signalroute):
         self.update() # force a repaint
 
     @Slot(float, float)
+    def child_moved(self, delta_x, delta_y):
+        ''' When the connection child moves '''
+        self.update_middle_points(delta_x, delta_y, 'child')
+
+    @Slot(float, float)
     def parent_moved(self, delta_x, delta_y):
-        ''' When the connection parent moves - redefined function '''
-        self.reshape()
-        self.update() # force a repaint
+        ''' When the connection parent moves '''
+        self.update_middle_points(delta_x, delta_y, 'parent')
 
 
     @property
@@ -655,21 +695,36 @@ class Channel(Signalroute):
         ''' Redefined function: also store the relative position (percentage)
             to the line length, in order to ensure proper dimensioning of
             the connection when blocks are moved '''
-        # compute the distance between the start and end points
-        dist_x = abs(self.end_point.x() - self.start_point.x())
-        dist_y = abs(self.end_point.y() - self.start_point.y())
-        # Compute the distance ratio
+        # compute the signed distance between the start and end points
+        dist_x = self.end_point.x() - self.start_point.x()
+        dist_y = self.end_point.y() - self.start_point.y()
+        # Compute the algebraic distance ratio
         self._ratios = []
-        for point in points_scene_coord:
+        for idx, point in enumerate(points_scene_coord):
             pCoord = self.parent.mapFromScene(point)
-            len_x = abs(pCoord.x() - self.start_point.x())
-            len_y = abs(pCoord.y() - self.start_point.y())
-            fact_x = 1 if dist_x == 0 else len_x / dist_x
-            fact_y = 1 if dist_y == 0 else len_y / dist_y
-            if pCoord.y() < self.start_point.y():
-                fact_y = -fact_y
-            if pCoord.x() < self.start_point.x():
-                fact_x = -fact_x
+            len_x = pCoord.x() - self.start_point.x()
+            len_y = pCoord.y() - self.start_point.y()
+            
+            if dist_x == 0:
+                if len_x > 0:
+                    fact_x = float('inf')
+                elif len_x < 0:
+                    fact_x = -float('inf')
+                else:
+                    fact_x = 1.0 if idx >= len(points_scene_coord)/2.0 else 0.0
+            else:
+                fact_x = len_x / dist_x
+                
+            if dist_y == 0:
+                if len_y > 0:
+                    fact_y = float('inf')
+                elif len_y < 0:
+                    fact_y = -float('inf')
+                else:
+                    fact_y = 1.0 if idx >= len(points_scene_coord)/2.0 else 0.0
+            else:
+                fact_y = len_y / dist_y
+                
             self._ratios.append((fact_x, fact_y))
         self._middle_points = points_scene_coord
 

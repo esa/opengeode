@@ -4883,6 +4883,7 @@ def block_definition(root, parent):
             proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
+            sigroute['type'] = 'signalroute'
             block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
@@ -4910,6 +4911,7 @@ def system_definition(root, parent):
             procedures.append(child)
         elif child.type == lexer.CHANNEL:
             channel, _, _ = signalroute(child)
+            channel['type'] = 'channel'
             system.channels.append(channel)
         elif child.type == lexer.BLOCK:
             blocks.append(child)
