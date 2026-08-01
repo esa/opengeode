@@ -32,6 +32,15 @@ test-ada:
 	gnat make test_ada.ada
 	./test_ada | diff expected -
 
+test-simu:
+	$(MAKE) clean
+	$(OPENGEODE) *.pr --taste --simu --toAda
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	cp ris.ada ris.ads && cp ris_adb.ada ris.adb
+	cp foo_ri.ada foo_ri.ads
+	gnat make -g test_simu.ada
+	./test_simu
+
 test-c: 
 	$(OPENGEODE) *.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
@@ -61,6 +70,8 @@ clean:
 		! -name "ris.ada" \
 		! -name "ris_adb.ada" \
 		! -name "test_c.c" \
+		! -name "foo_ri.ada" \
+		! -name "test_simu.ada" \
 		-delete
 	rm -rf x86
 .PHONY: all edit test-parse test-ada test-llvm coverage

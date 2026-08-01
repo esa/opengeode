@@ -69,6 +69,17 @@ class Connection(QGraphicsPathItem):
         stroker.setWidth(15)  # Enlarge detection zone
         return stroker.createStroke(self.path())
 
+
+    def contextMenuEvent(self, event):
+        ''' Right-click context menu for connections '''
+        from PySide6.QtWidgets import QMenu
+        menu = QMenu()
+        auto_layout_action = menu.addAction("Automatic connection layout")
+        action = menu.exec(event.screenPos())
+        if action == auto_layout_action:
+            import opengeode.AutoRouter as AutoRouter
+            dialog = AutoRouter.AutoLayoutDialog(self, parent=self.scene().views()[0])
+            dialog.exec()
     def boundingRect(self):
         ''' Ensure boundingRect covers the enlarged shape to prevent ghost artifacts when moving '''
         return self.shape().boundingRect()
