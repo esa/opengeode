@@ -370,6 +370,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
     TYPES = process.dataview
     del OUT_SIGNALS[:]
     del PROCEDURES[:]
+    simu_pi_ads_decl = []
     OUT_SIGNALS.extend(process.output_signals)
     PROCEDURES.extend(process.procedures)
     global LPREFIX
@@ -904,7 +905,7 @@ package body {process.name}_RI is''']
         taste_template.append(pi_header)
         taste_template.append('begin')
 
-        def execute_transition(state, dest=[]):
+        def execute_transition(state, dest=[], simu_step=False):
             ''' Generate the code that triggers the transition for the current
                 state/input combination '''
             input_defs = process.input_mapping[signame].get(state)
@@ -950,7 +951,10 @@ package body {process.name}_RI is''']
                 if len(input_defs) == 1:
                     # Execute the corresponding transition
                     if first_input_def.transition:
-                        dest.append(f'Execute_Transition ({first_input_def.branch_label});')
+                        if simu_step:
+                            dest.append(f'return {first_input_def.branch_label};')
+                        else:
+                            dest.append(f'Execute_Transition ({first_input_def.branch_label});')
                     else:
                         return False
                 else:
@@ -959,9 +963,15 @@ package body {process.name}_RI is''']
                         inst_name = inp_def.transition.possible_states[0]
                         dest.append(f'when {ASN1SCC}{inst_name} =>')
                         if inp_def.transition:
-                            dest.append(f'Execute_Transition ({inp_def.branch_label});')
+                            if simu_step:
+                                dest.append(f'return {inp_def.branch_label};')
+                            else:
+                                dest.append(f'Execute_Transition ({inp_def.branch_label});')
                     dest.append('when others =>')
-                    dest.append('Execute_Transition (Continuous_Signals);')
+                    if simu_step:
+                        dest.append('return Continuous_Signals;')
+                    else:
+                        dest.append('Execute_Transition (Continuous_Signals);')
                     dest.append('end case;')
             else:
                 return False
@@ -972,7 +982,7 @@ package body {process.name}_RI is''']
             if has_transition and not getattr(process, 'no_context', False):
                 taste_template.append(f'case {LPREFIX}.state is')
 
-        def case_state(state):
+        def case_state(state, dest, simu_step=False):
             ''' Recursive function (in case of state aggregation) to generate
                 the code that calls the proper transition according
                 to the current state
@@ -983,43 +993,49 @@ package body {process.name}_RI is''']
             statecase = [f'when {ASN1SCC}{state} =>']
             input_def = process.input_mapping[signame].get(state)
             if state in process.aggregates.keys():
-                taste_template.extend(statecase)
+                dest.extend(statecase)
                 # State aggregation:
                 # - find which substate manages this input
                 # - add a switch case on the corresponding substate
-                taste_template.append('--  This is a state aggregation')
+                dest.append('--  This is a state aggregation')
                 for sub in process.aggregates[state]:
                     if [a for a in sub.mapping.keys()
                             if a in process.input_mapping[signame].keys()]:
-                        taste_template.append('case '
+                        dest.append('case '
                                f'{LPREFIX}.{sub.statename}{SEPARATOR}state is')
                         for par in sub.mapping.keys():
-                            case_state(par)
-                        taste_template.append('when others =>')
-                        taste_template.append('Execute_Transition (Continuous_Signals);')
-                        if simu:
-                            # In simulation mode, the unhandled input is signaled
-                            taste_template.append('raise Lost_Input;')
-                        taste_template.append('end case;')
+                            case_state(par, dest, simu_step)
+                        dest.append('when others =>')
+                        if simu_step:
+                            dest.append('return Continuous_Signals;')
+                        else:
+                            dest.append('Execute_Transition (Continuous_Signals);')
+                            if simu:
+                                # In simulation mode, the unhandled input is signaled
+                                dest.append('raise Lost_Input;')
+                        dest.append('end case;')
                         break
                 else:
                     # Input is not managed in the state aggregation
                     if input_def:
                         # check if it is managed one level above
-                        execute_transition(state, taste_template)
+                        execute_transition(state, dest, simu_step)
                     else:
-                        taste_template.append('Execute_Transition (Continuous_Signals);')
-                        if simu:
-                            # In simulation mode, the unhandled input is signaled
-                            taste_template.append('raise Lost_Input;')
+                        if simu_step:
+                            dest.append('return Continuous_Signals;')
+                        else:
+                            dest.append('Execute_Transition (Continuous_Signals);')
+                            if simu:
+                                # In simulation mode, the unhandled input is signaled
+                                dest.append('raise Lost_Input;')
             else:
-                if execute_transition(state, statecase):
-                    taste_template.extend(statecase)
+                if execute_transition(state, statecase, simu_step):
+                    dest.extend(statecase)
 
         if not instance:
             if has_transition and not getattr(process, 'no_context', False):
                 for each_state in reduced_statelist:
-                    case_state(each_state)
+                    case_state(each_state, taste_template, False)
                 taste_template.append('when others =>')
                 taste_template.append('Execute_Transition (Continuous_Signals);')
                 if simu:
@@ -1033,6 +1049,29 @@ package body {process.name}_RI is''']
                 taste_template.append("Execute_Transition (Continuous_Signals);")
             else:
                 taste_template.append('null;')
+
+            if simu and fake_name is False:
+                simu_taste_template = []
+                simu_taste_template.append(f'function simu_{signame}' + (f'({param_name}: in out {typename})' if 'type' in signal else '') + ' return Branches is')
+                simu_taste_template.append('begin')
+                if has_transition and not getattr(process, 'no_context', False):
+                    simu_taste_template.append(f'case {LPREFIX}.state is')
+                    for each_state in reduced_statelist:
+                        case_state(each_state, simu_taste_template, True)
+                    simu_taste_template.append('when others =>')
+                    simu_taste_template.append('return Continuous_Signals;')
+                    simu_taste_template.append('end case;')
+                elif has_cs:
+                    simu_taste_template.append("return Continuous_Signals;")
+                else:
+                    simu_taste_template.append('return Branch_End;')
+                simu_taste_template.append(f'end simu_{signame};')
+                simu_taste_template.append('\n')
+                
+
+                simu_pi_ads_decl.append(f'function simu_{signame}' + (f'({param_name}: in out {typename})' if 'type' in signal else '') + ' return Branches;')
+                simu_pi_ads_decl.append(f'pragma Export(C, simu_{signame}, "{process.name.lower()}_simu_PI_{signame}");')
+
         elif not fake_name or instance:
             inst_call = f"{process.name}_Instance.{signame}"
             if 'type' in signal:
@@ -1045,6 +1084,8 @@ package body {process.name}_RI is''']
         if not instance:
             taste_template.append(f'end {fake_name or signame};')
             taste_template.append('\n')
+            if simu and fake_name is False:
+                taste_template.extend(simu_taste_template)
         elif instance:
             taste_template.append(f'end {signame};')
             taste_template.append('\n')
@@ -1256,11 +1297,45 @@ package body {process.name}_RI is''']
 
     # Generate the code of the Execute_Transition procedure, if needed
     if process.transitions and not instance and not NO_CONTEXT:
+        if simu:
+            ads_template.append('function Execute_Transition_Step (Branch : Branches) return Branches;')
+            ads_template.append(f'pragma Export (C, Execute_Transition_Step, "{process.name.lower()}_simu_next");')
+            ads_template.append(f'pragma Export (C, Execute_Transition, "{process.name.lower()}_simu_continue");')
+
+            taste_template.append('function Execute_Transition_Step (Branch : Branches) return Branches is')
+            taste_template.append('Next_Branch : Branches := Branch;')
+            taste_template.extend(set(local_decl_transitions))
+            taste_template.append('begin')
+            taste_template.append('case Next_Branch is')
+            for label in all_labels:
+                taste_template.append(
+                        f'when {label} => Branch_Coverage ({label}) := True; Next_Branch := Branch_{label};')
+            if has_cs:
+                taste_template.append(
+                    'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
+            else:
+                taste_template.append(
+                    'when Continuous_Signals => Next_Branch := Branch_End;')
+            taste_template.append(
+                    'when Branch_End => null;')
+            taste_template.append('end case;')
+            if code_labels:
+                if not MONITORS:
+                    taste_template.append('return Continuous_Signals; -- DGB1')
+                else:
+                    taste_template.append('return Branch_end;  -- DBG2')
+            taste_template.extend(code_labels)
+            taste_template.append('return Next_Branch;')
+            taste_template.append('end Execute_Transition_Step;')
+            taste_template.append('\n')
+
         taste_template.append('procedure Execute_Transition (Branch : Branches) is')
         taste_template.append('Next_Branch : Branches := Branch;')
 
-        # Declare the local variables needed by the transitions in the template
-        taste_template.extend(set(local_decl_transitions))
+        if not simu:
+            # Declare the local variables needed by the transitions in the template
+            taste_template.extend(set(local_decl_transitions))
+            
         taste_template.append('begin')
 
         # Make sure initialization has happened before executing transitions
@@ -1275,39 +1350,38 @@ package body {process.name}_RI is''']
         # (there can be chained transition when entering a nested state)
         taste_template.append('while Next_Branch /= Branch_End loop')
 
-        # Generate the switch-case on the transition id
-        taste_template.append('case Next_Branch is')
-
-        for label in all_labels:
-            if simu:
-                taste_template.append(
-                        f'when {label} => Branch_Coverage ({label}) := True; Next_Branch := Branch_{label};')
-            else:
+        if simu:
+            taste_template.append('Next_Branch := Execute_Transition_Step (Next_Branch);')
+        else:
+            # Generate the switch-case on the transition id
+            taste_template.append('case Next_Branch is')
+    
+            for label in all_labels:
                 taste_template.append(
                         f'when {label} => Next_Branch := Branch_{label};')
-
-        if has_cs:
-            taste_template.append(
-                'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
-        else:
-            taste_template.append(
-                'when Continuous_Signals => Next_Branch := Branch_End;')
-        taste_template.append(
-                'when Branch_End => null;')
-
-        taste_template.append('end case;')
-        if code_labels:
-            # Due to nested states (chained transitions) jump over label code
-            # (NEXTSTATEs do not return from Execute_Transition)
-            if not MONITORS:
-                taste_template.append('return Continuous_Signals; -- DGB1')
+    
+            if has_cs:
+                taste_template.append(
+                    'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
             else:
-                # Observers only evaluate continuous signals once
-                # to avoid looping forever when remaining in the same state
-                taste_template.append('return Branch_end;  -- DBG2')
-
-        # Add the code for the floating labels
-        taste_template.extend(code_labels)
+                taste_template.append(
+                    'when Continuous_Signals => Next_Branch := Branch_End;')
+            taste_template.append(
+                    'when Branch_End => null;')
+    
+            taste_template.append('end case;')
+            if code_labels:
+                # Due to nested states (chained transitions) jump over label code
+                # (NEXTSTATEs do not return from Execute_Transition)
+                if not MONITORS:
+                    taste_template.append('return Continuous_Signals; -- DGB1')
+                else:
+                    # Observers only evaluate continuous signals once
+                    # to avoid looping forever when remaining in the same state
+                    taste_template.append('return Branch_end;  -- DBG2')
+    
+            # Add the code for the floating labels
+            taste_template.extend(code_labels)
 
         taste_template.append('end loop;')
         taste_template.append('end Execute_Transition;')
@@ -1320,6 +1394,9 @@ package body {process.name}_RI is''']
     # Add code of the package elaboration
     taste_template.extend(start_transition)
     taste_template.append(f'end {process.name};')
+
+    if simu_pi_ads_decl:
+        ads_template.extend(simu_pi_ads_decl)
 
     ads_template.append(f'end {process.name};')
 
