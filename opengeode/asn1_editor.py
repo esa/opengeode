@@ -4,6 +4,8 @@
     OpenGEODE - ASN.1 File Editor extension
     Provides syntax highlighting, line numbers, autocompletion, LSP diagnostics,
     and a toggleable Vim mode for ASN.1 files.
+    (c) 2026 Maxime Perrotin & ESA - European Space Agency
+
 """
 
 import os
@@ -11,7 +13,7 @@ import json
 import subprocess
 import threading
 from PySide6.QtWidgets import QPlainTextEdit, QCompleter, QWidget, QTextEdit, QLineEdit
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QTextCursor, QKeyEvent, QPainter, QTextFormat, QTextDocument
+from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QTextCursor, QKeyEvent, QPainter, QTextFormat, QTextDocument, QPalette
 from PySide6.QtCore import Qt, QRegularExpression, QStringListModel, QRect, QSize, QObject, Signal
 
 class ASN1Highlighter(QSyntaxHighlighter):
@@ -112,7 +114,7 @@ class ASN1TextEdit(QPlainTextEdit):
         
         # Vim mode properties
         self.vim_mode_enabled = False
-        self.vim_state = "NORMAL" # NORMAL, INSERT, VISUAL, PENDING
+        self.vim_state = "NORMAL" # NORMAL, INSERT, VISUAL, VISUAL_BLOCK, PENDING
         self.vim_pending_key = None
         self.yank_buffer = ""
         self.yank_is_line = False
@@ -126,6 +128,7 @@ class ASN1TextEdit(QPlainTextEdit):
         self.is_recording_insert = False
         self.last_insert_text = ""
         self.insert_start_pos = 0
+        self.is_macro_edit_block_open = False
         
         self.setFont(QFont('UbuntuMono', 12))
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
@@ -206,6 +209,21 @@ class ASN1TextEdit(QPlainTextEdit):
 
         # 2. If Vim mode is enabled and we are not in INSERT mode, handle keys via Vim emulation
         if self.vim_mode_enabled and self.vim_state != "INSERT":
+            # Handle Ctrl-V for VISUAL_BLOCK mode
+            if e.modifiers() == Qt.ControlModifier and e.key() == Qt.Key_V:
+                if self.vim_state == "VISUAL_BLOCK":
+                    # Toggle back to NORMAL mode
+                    self.set_vim_state("NORMAL")
+                else:
+                    self.set_vim_state("VISUAL_BLOCK")
+                    self.visual_anchor_cursor = self.textCursor()
+                    # Clear normal selection
+                    cursor = self.textCursor()
+                    cursor.clearSelection()
+                    self.setTextCursor(cursor)
+                e.accept()
+                return
+
             # Handle REPLACE state
             if self.vim_state == "REPLACE":
                 if e.key() == Qt.Key_Escape:
@@ -243,14 +261,14 @@ class ASN1TextEdit(QPlainTextEdit):
                 
             # Allow arrow keys to navigate even in NORMAL/VISUAL mode
             if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
-                if self.vim_state == "VISUAL":
+                if self.vim_state in ("VISUAL", "VISUAL_BLOCK"):
                     self.handle_visual_mode_key(e)
                 else:
                     self.handle_normal_mode_key(e)
                 e.accept()
                 return
                 
-            if self.vim_state == "VISUAL":
+            if self.vim_state in ("VISUAL", "VISUAL_BLOCK"):
                 self.handle_visual_mode_key(e)
             elif self.vim_state == "PENDING":
                 self.handle_pending_mode_key(e)
@@ -259,7 +277,7 @@ class ASN1TextEdit(QPlainTextEdit):
             e.accept()
             return
 
-        # 2. Escape from INSERT mode back to NORMAL mode
+        # 3. Escape from INSERT mode back to NORMAL mode
         if self.vim_mode_enabled and self.vim_state == "INSERT" and e.key() == Qt.Key_Escape:
             self.set_vim_state("NORMAL")
             e.accept()
@@ -389,12 +407,40 @@ class ASN1TextEdit(QPlainTextEdit):
                     'count': 1,
                     'text': self.last_insert_text
                 }
+            elif self.vim_insert_trigger in ('c_block', 'I_block', 'A_block') and hasattr(self, 'visual_block_insert_lines'):
+                rect = self.visual_block_insert_lines
+                start_line, end_line, start_col, end_col = rect
+                if start_line != end_line and self.last_insert_text:
+                    doc = self.document()
+                    cursor.beginEditBlock()
+                    for line in range(start_line + 1, end_line + 1):
+                        block = doc.findBlockByNumber(line)
+                        if block.isValid():
+                            block_len = max(0, block.length() - 1)
+                            if self.vim_insert_trigger == 'A_block':
+                                insert_col = min(end_col + 1, block_len)
+                            else:
+                                insert_col = min(start_col, block_len)
+                            
+                            cursor.setPosition(block.position() + insert_col)
+                            cursor.insertText(self.last_insert_text)
+                    cursor.endEditBlock()
+                    
+                self.last_edit_action = {
+                    'type': 'insert',
+                    'trigger': self.vim_insert_trigger,
+                    'text': self.last_insert_text
+                }
             else:
                 self.last_edit_action = {
                     'type': 'insert',
                     'trigger': self.vim_insert_trigger,
                     'text': self.last_insert_text
                 }
+                
+            if getattr(self, 'is_macro_edit_block_open', False):
+                self.textCursor().endEditBlock()
+                self.is_macro_edit_block_open = False
 
     def handle_normal_mode_key(self, e):
         text = e.text()
@@ -445,6 +491,17 @@ class ASN1TextEdit(QPlainTextEdit):
         elif text == 'l' or key == Qt.Key_Right:
             for _ in range(count):
                 self.moveCursor(QTextCursor.Right)
+        elif text == '^':
+            cursor = self.textCursor()
+            block_text = cursor.block().text()
+            spaces = len(block_text) - len(block_text.lstrip())
+            cursor.movePosition(QTextCursor.StartOfLine)
+            cursor.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, spaces)
+            self.setTextCursor(cursor)
+        elif text == '$' or key == Qt.Key_End:
+            self.moveCursor(QTextCursor.EndOfLine)
+        elif key == Qt.Key_Home:
+            self.moveCursor(QTextCursor.StartOfLine)
         elif text == '{':
             self.vim_paragraph_backward(count=count, keep_anchor=False)
         elif text == '}':
@@ -828,18 +885,27 @@ class ASN1TextEdit(QPlainTextEdit):
         key = e.key()
         cursor = self.textCursor()
         
+        is_block = (self.vim_state == "VISUAL_BLOCK")
+        
+        # In visual block mode, we don't keep anchor in the standard text cursor
+        move_anchor = QTextCursor.MoveAnchor if is_block else QTextCursor.KeepAnchor
+        
         # Handle visual pending 'g' key
         if self.vim_pending_key == 'g':
             self.vim_pending_key = None
             if text == 'u':
-                if cursor.hasSelection():
+                if is_block:
+                    self.vim_change_case_visual_block('lower')
+                elif cursor.hasSelection():
                     selected_text = cursor.selectedText()
                     cursor.insertText(selected_text.lower())
                 self.set_vim_state("NORMAL")
                 self.setTextCursor(cursor)
                 return
             elif text == 'U':
-                if cursor.hasSelection():
+                if is_block:
+                    self.vim_change_case_visual_block('upper')
+                elif cursor.hasSelection():
                     selected_text = cursor.selectedText()
                     cursor.insertText(selected_text.upper())
                 self.set_vim_state("NORMAL")
@@ -851,53 +917,109 @@ class ASN1TextEdit(QPlainTextEdit):
             return
             
         if text == 'h' or key == Qt.Key_Left:
-            cursor.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.Left, move_anchor)
         elif text == 'j' or key == Qt.Key_Down:
-            cursor.movePosition(QTextCursor.Down, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.Down, move_anchor)
         elif text == 'k' or key == Qt.Key_Up:
-            cursor.movePosition(QTextCursor.Up, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.Up, move_anchor)
         elif text == 'l' or key == Qt.Key_Right:
-            cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.Right, move_anchor)
+        elif text == '0' or key == Qt.Key_Home:
+            cursor.movePosition(QTextCursor.StartOfLine, move_anchor)
+        elif text == '^':
+            block_text = cursor.block().text()
+            spaces = len(block_text) - len(block_text.lstrip())
+            cursor.movePosition(QTextCursor.StartOfLine, move_anchor)
+            cursor.movePosition(QTextCursor.Right, move_anchor, spaces)
+        elif text == '$' or key == Qt.Key_End:
+            cursor.movePosition(QTextCursor.EndOfLine, move_anchor)
         elif text == 'G':
-            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            cursor.movePosition(QTextCursor.End, move_anchor)
         elif text == '{':
-            self.vim_paragraph_backward(count=1, keep_anchor=True)
+            self.vim_paragraph_backward(count=1, keep_anchor=not is_block)
             return
         elif text == '}':
-            self.vim_paragraph_forward(count=1, keep_anchor=True)
+            self.vim_paragraph_forward(count=1, keep_anchor=not is_block)
             return
         elif text == '(':
-            self.vim_sentence_backward(count=1, keep_anchor=True)
+            self.vim_sentence_backward(count=1, keep_anchor=not is_block)
             return
         elif text == ')':
-            self.vim_sentence_forward(count=1, keep_anchor=True)
+            self.vim_sentence_forward(count=1, keep_anchor=not is_block)
             return
             
         # Editing commands in Visual Mode
-        elif text == 'd':
-            if cursor.hasSelection():
+        elif text == 'v':
+            if is_block:
+                self.set_vim_state("VISUAL")
+                # Convert block selection to normal selection
+                pos = cursor.position()
+                cursor.setPosition(self.visual_anchor_cursor.position())
+                cursor.setPosition(pos, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
+            else:
+                self.set_vim_state("NORMAL")
+                cursor.clearSelection()
+                self.setTextCursor(cursor)
+            return
+        elif text == 'd' or text == 'x':
+            if is_block:
+                self.vim_delete_visual_block()
+            elif cursor.hasSelection():
                 self.yank_buffer = cursor.selectedText()
                 self.yank_is_line = False
                 cursor.removeSelectedText()
             self.set_vim_state("NORMAL")
+            return
         elif text == 'y':
-            if cursor.hasSelection():
+            if is_block:
+                self.vim_yank_visual_block()
+            elif cursor.hasSelection():
                 self.yank_buffer = cursor.selectedText()
                 self.yank_is_line = False
             cursor.clearSelection()
             self.set_vim_state("NORMAL")
+            return
+        elif text == 'c':
+            if is_block:
+                cursor.beginEditBlock()
+                self.is_macro_edit_block_open = True
+                rect = self.get_visual_block_rect()
+                if rect:
+                    self.visual_block_insert_lines = rect
+                self.vim_delete_visual_block()
+                self.vim_insert_trigger = 'c_block'
+            elif cursor.hasSelection():
+                cursor.beginEditBlock()
+                self.is_macro_edit_block_open = True
+                self.yank_buffer = cursor.selectedText()
+                self.yank_is_line = False
+                cursor.removeSelectedText()
+                self.vim_insert_trigger = 'c'
+            else:
+                self.vim_insert_trigger = 'c'
+            self.set_vim_state("INSERT")
+            return
         elif text == 'u':
-            if cursor.hasSelection():
+            if is_block:
+                self.vim_change_case_visual_block('lower')
+            elif cursor.hasSelection():
                 selected_text = cursor.selectedText()
                 cursor.insertText(selected_text.lower())
             self.set_vim_state("NORMAL")
+            return
         elif text == 'U':
-            if cursor.hasSelection():
+            if is_block:
+                self.vim_change_case_visual_block('upper')
+            elif cursor.hasSelection():
                 selected_text = cursor.selectedText()
                 cursor.insertText(selected_text.upper())
             self.set_vim_state("NORMAL")
+            return
         elif text == '~':
-            if cursor.hasSelection():
+            if is_block:
+                self.vim_change_case_visual_block('toggle')
+            elif cursor.hasSelection():
                 selected_text = cursor.selectedText()
                 toggled_chars = []
                 for char in selected_text:
@@ -909,43 +1031,208 @@ class ASN1TextEdit(QPlainTextEdit):
                         toggled_chars.append(char)
                 cursor.insertText("".join(toggled_chars))
             self.set_vim_state("NORMAL")
+            return
         elif text == 'i':
             cursor.clearSelection()
             self.setTextCursor(cursor)
             self.vim_insert_trigger = 'i'
             self.set_vim_state("INSERT")
             return
+        elif text == 'I' and is_block:
+            cursor.beginEditBlock()
+            self.is_macro_edit_block_open = True
+            rect = self.get_visual_block_rect()
+            if rect: self.visual_block_insert_lines = rect
+            self.vim_insert_trigger = 'I_block'
+            start_line, end_line, start_col, end_col = rect
+            doc = self.document()
+            top_block = doc.findBlockByNumber(start_line)
+            top_col = min(start_col, max(0, top_block.length() - 1))
+            cursor.setPosition(top_block.position() + top_col)
+            self.setTextCursor(cursor)
+            self.set_vim_state("INSERT")
+            return
+        elif text == 'A' and is_block:
+            cursor.beginEditBlock()
+            self.is_macro_edit_block_open = True
+            rect = self.get_visual_block_rect()
+            if rect: self.visual_block_insert_lines = rect
+            self.vim_insert_trigger = 'A_block'
+            start_line, end_line, start_col, end_col = rect
+            doc = self.document()
+            top_block = doc.findBlockByNumber(start_line)
+            top_col = min(end_col + 1, max(0, top_block.length() - 1))
+            cursor.setPosition(top_block.position() + top_col)
+            self.setTextCursor(cursor)
+            self.set_vim_state("INSERT")
+            return
         elif text in ('>', '<'):
-            if cursor.hasSelection():
+            start_block = -1
+            end_block = -1
+            if is_block:
+                rect = self.get_visual_block_rect()
+                if rect:
+                    start_block = rect[0]
+                    end_block = rect[1]
+            elif cursor.hasSelection():
                 start = cursor.selectionStart()
                 end = cursor.selectionEnd()
                 start_block = self.document().findBlock(start).blockNumber()
                 end_block = self.document().findBlock(end).blockNumber()
                 
+            if start_block != -1 and end_block != -1:
+                cursor.beginEditBlock()
                 for i in range(start_block, end_block + 1):
                     block = self.document().findBlockByNumber(i)
                     if not block.isValid():
                         continue
-                    block_cursor = QTextCursor(block)
                     if text == '>':
-                        block_cursor.movePosition(QTextCursor.StartOfBlock)
-                        block_cursor.insertText(" " * self.indent_size)
+                        cursor.setPosition(block.position())
+                        cursor.insertText(" " * self.indent_size)
                     else:  # '<'
                         block_text = block.text()
                         leading_spaces = len(block_text) - len(block_text.lstrip(' '))
                         to_remove = min(leading_spaces, self.indent_size)
                         if to_remove > 0:
-                            block_cursor.movePosition(QTextCursor.StartOfBlock)
-                            block_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, to_remove)
-                            block_cursor.removeSelectedText()
-            self.set_vim_state("NORMAL")
-            cursor.clearSelection()
-            self.setTextCursor(cursor)
+                            cursor.setPosition(block.position())
+                            cursor.setPosition(block.position() + to_remove, QTextCursor.KeepAnchor)
+                            cursor.removeSelectedText()
+                cursor.endEditBlock()
             return
             
         self.setTextCursor(cursor)
 
     # Vim Operations
+    def get_visual_block_rect(self):
+        """ Returns (start_line, end_line, start_col, end_col) for the current visual block. """
+        if not self.visual_anchor_cursor:
+            return None
+        anchor_pos = self.visual_anchor_cursor.position()
+        current_pos = self.textCursor().position()
+        
+        doc = self.document()
+        anchor_block = doc.findBlock(anchor_pos)
+        current_block = doc.findBlock(current_pos)
+        
+        start_line = min(anchor_block.blockNumber(), current_block.blockNumber())
+        end_line = max(anchor_block.blockNumber(), current_block.blockNumber())
+        
+        anchor_col = anchor_pos - anchor_block.position()
+        current_col = current_pos - current_block.position()
+        
+        start_col = min(anchor_col, current_col)
+        end_col = max(anchor_col, current_col)
+        
+        return start_line, end_line, start_col, end_col
+
+    def vim_delete_visual_block(self):
+        """ Deletes the text within the visual block and saves it to the yank buffer. """
+        rect = self.get_visual_block_rect()
+        if not rect: return
+        start_line, end_line, start_col, end_col = rect
+        
+        doc = self.document()
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        
+        yank_text = []
+        for line in range(start_line, end_line + 1):
+            block = doc.findBlockByNumber(line)
+            if block.isValid():
+                block_len = max(0, block.length() - 1)
+                s_col = min(start_col, block_len)
+                e_col = min(end_col + 1, block_len)
+                if s_col < e_col:
+                    cursor.setPosition(block.position() + s_col)
+                    cursor.setPosition(block.position() + e_col, QTextCursor.KeepAnchor)
+                    yank_text.append(cursor.selectedText())
+                    cursor.removeSelectedText()
+                else:
+                    yank_text.append("")
+                    
+        cursor.endEditBlock()
+        self.yank_buffer = "\n".join(yank_text)
+        self.yank_is_line = False
+        
+        # move cursor to top-left of the block
+        top_block = doc.findBlockByNumber(start_line)
+        top_col = min(start_col, max(0, top_block.length() - 1))
+        cursor.setPosition(top_block.position() + top_col)
+        self.setTextCursor(cursor)
+
+    def vim_yank_visual_block(self):
+        """ Yanks the text within the visual block into the yank buffer. """
+        rect = self.get_visual_block_rect()
+        if not rect: return
+        start_line, end_line, start_col, end_col = rect
+        
+        doc = self.document()
+        yank_text = []
+        for line in range(start_line, end_line + 1):
+            block = doc.findBlockByNumber(line)
+            if block.isValid():
+                block_len = max(0, block.length() - 1)
+                s_col = min(start_col, block_len)
+                e_col = min(end_col + 1, block_len)
+                if s_col < e_col:
+                    c = QTextCursor(block)
+                    c.setPosition(block.position() + s_col)
+                    c.setPosition(block.position() + e_col, QTextCursor.KeepAnchor)
+                    yank_text.append(c.selectedText())
+                else:
+                    yank_text.append("")
+                    
+        self.yank_buffer = "\n".join(yank_text)
+        self.yank_is_line = False
+        
+        # move cursor to top-left of the block
+        top_block = doc.findBlockByNumber(start_line)
+        top_col = min(start_col, max(0, top_block.length() - 1))
+        cursor = self.textCursor()
+        cursor.setPosition(top_block.position() + top_col)
+        self.setTextCursor(cursor)
+
+    def vim_change_case_visual_block(self, mode):
+        """ Changes the case of the text within the visual block. mode can be 'lower', 'upper', or 'toggle'. """
+        rect = self.get_visual_block_rect()
+        if not rect: return
+        start_line, end_line, start_col, end_col = rect
+        
+        doc = self.document()
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        
+        for line in range(start_line, end_line + 1):
+            block = doc.findBlockByNumber(line)
+            if block.isValid():
+                block_len = max(0, block.length() - 1)
+                s_col = min(start_col, block_len)
+                e_col = min(end_col + 1, block_len)
+                if s_col < e_col:
+                    cursor.setPosition(block.position() + s_col)
+                    cursor.setPosition(block.position() + e_col, QTextCursor.KeepAnchor)
+                    text = cursor.selectedText()
+                    if mode == 'lower':
+                        new_text = text.lower()
+                    elif mode == 'upper':
+                        new_text = text.upper()
+                    else: # toggle
+                        toggled_chars = []
+                        for char in text:
+                            if char.islower(): toggled_chars.append(char.upper())
+                            elif char.isupper(): toggled_chars.append(char.lower())
+                            else: toggled_chars.append(char)
+                        new_text = "".join(toggled_chars)
+                    cursor.insertText(new_text)
+                    
+        cursor.endEditBlock()
+        
+        # move cursor to top-left of the block
+        top_block = doc.findBlockByNumber(start_line)
+        top_col = min(start_col, max(0, top_block.length() - 1))
+        cursor.setPosition(top_block.position() + top_col)
+        self.setTextCursor(cursor)
+
     def vim_delete_line(self, count=1):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.StartOfLine)
@@ -1230,8 +1517,8 @@ class ASN1TextEdit(QPlainTextEdit):
     def highlightCurrentLineAndErrors(self):
         extraSelections = []
         
-        # Add highlight for current line
-        if not self.isReadOnly():
+        # Add highlight for current line (only if not in VISUAL_BLOCK mode)
+        if not self.isReadOnly() and getattr(self, 'vim_state', '') != "VISUAL_BLOCK":
             selection = QTextEdit.ExtraSelection()
             lineColor = QColor("#EAF2FB") # Subtle blue
             selection.format.setBackground(lineColor)
@@ -1239,6 +1526,48 @@ class ASN1TextEdit(QPlainTextEdit):
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
+
+        # Add highlight for VISUAL_BLOCK mode
+        if getattr(self, 'vim_mode_enabled', False) and getattr(self, 'vim_state', '') == "VISUAL_BLOCK" and getattr(self, 'visual_anchor_cursor', None):
+            cursor = self.textCursor()
+            anchor_pos = self.visual_anchor_cursor.position()
+            current_pos = cursor.position()
+            
+            doc = self.document()
+            anchor_block = doc.findBlock(anchor_pos)
+            current_block = doc.findBlock(current_pos)
+            
+            anchor_line = anchor_block.blockNumber()
+            current_line = current_block.blockNumber()
+            
+            anchor_col = anchor_pos - anchor_block.position()
+            current_col = current_pos - current_block.position()
+            
+            start_line = min(anchor_line, current_line)
+            end_line = max(anchor_line, current_line)
+            
+            start_col = min(anchor_col, current_col)
+            end_col = max(anchor_col, current_col)
+            
+            selection_color = self.palette().color(QPalette.Highlight)
+            text_color = self.palette().color(QPalette.HighlightedText)
+            
+            for line in range(start_line, end_line + 1):
+                block = doc.findBlockByNumber(line)
+                if block.isValid():
+                    block_len = max(0, block.length() - 1)
+                    s_col = min(start_col, block_len)
+                    # Vim selects at least 1 character in visual block
+                    e_col = min(end_col + 1, block_len) 
+                    if s_col < e_col:
+                        sel = QTextEdit.ExtraSelection()
+                        sel.format.setBackground(selection_color)
+                        sel.format.setForeground(text_color)
+                        sel_cursor = QTextCursor(block)
+                        sel_cursor.setPosition(block.position() + s_col)
+                        sel_cursor.setPosition(block.position() + e_col, QTextCursor.KeepAnchor)
+                        sel.cursor = sel_cursor
+                        extraSelections.append(sel)
             
         # Add highlights for lines with errors
         doc = self.document()
