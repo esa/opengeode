@@ -5028,7 +5028,15 @@ def system_definition(root, parent):
     # If there are exported procedures update signalroutes of the blocks
     if exported_procedures:
         for block in system.blocks:
-            block.signalroutes = system.channels
+            for sigroute in block.signalroutes:
+                if sigroute.get('type') == 'signalroute':
+                    if 'routes' not in sigroute:
+                        sigroute['routes'] = [{'dest': block.name, 'signals': []}]
+                    for route in sigroute['routes']:
+                        if route['dest'].lower() != "env":
+                            for proc in exported_procedures:
+                                if proc not in route['signals']:
+                                    route['signals'].append(proc)
 
     return system, errors, warnings
 

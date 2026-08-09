@@ -2228,6 +2228,13 @@ class SDL_View(QGraphicsView):
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.view_refresh()
+        symbols = [item for item in self.scene().items() if isinstance(item, Symbol)]
+        if symbols:
+            starts = [s for s in symbols if type(s).__name__ == 'Start']
+            if starts:
+                self.ensureVisible(starts[0])
+            else:
+                self.ensureVisible(symbols[0])
         self.scene().scene_left.emit()
         self.update_datadict.emit()
         self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
@@ -2533,6 +2540,10 @@ clean:
         else:
             files = [os.path.abspath(each) for each in files]
             os.chdir(dir_pool.pop() or '.')
+            if os.path.isfile('system_structure.pr'):
+                sys_struct = os.path.abspath('system_structure.pr')
+                if sys_struct not in files:
+                    files.append(sys_struct)
         try:
             ast, warnings, errors = ogParser.parse_pr(files=files)
         except IOError:
