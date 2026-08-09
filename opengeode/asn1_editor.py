@@ -91,10 +91,13 @@ class LineNumberArea(QWidget):
 class VimLineEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.history = []
+        self.pointer = 0
         
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.clear()
+            self.pointer = len(self.history)
             if self.parentWidget():
                 self.parentWidget().hide()
             main_win = self.window()
@@ -103,6 +106,43 @@ class VimLineEdit(QLineEdit):
                 main_win.asn1_editor.set_vim_state("NORMAL")
             e.accept()
             return
+        elif e.key() == Qt.Key_Return:
+            text = self.text()
+            if text and (not self.history or self.history[-1] != text):
+                self.history.append(text)
+            self.pointer = len(self.history)
+            
+            if text.startswith("%s") or text.startswith("s"):
+                main_win = self.window()
+                if hasattr(main_win, 'asn1_editor') and main_win.asn1_editor:
+                    main_win.asn1_editor.process_vim_substitution(text)
+                    self.clear()
+                    if self.parentWidget():
+                        self.parentWidget().hide()
+                    main_win.asn1_editor.setFocus()
+                    main_win.asn1_editor.set_vim_state("NORMAL")
+                e.accept()
+                return
+                
+            super().keyPressEvent(e)
+            return
+        elif e.key() == Qt.Key_Up:
+            if self.text() and self.text() not in self.history:
+                self.history.insert(self.pointer + 1, self.text())
+            self.pointer = max(0, self.pointer - 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError:
+                pass
+            return
+        elif e.key() == Qt.Key_Down:
+            self.pointer = min(len(self.history), self.pointer + 1)
+            try:
+                self.setText(self.history[self.pointer])
+            except IndexError:
+                self.clear()
+            return
+            
         super().keyPressEvent(e)
 
 
@@ -146,7 +186,7 @@ class ASN1TextEdit(QPlainTextEdit):
     def setCompleter(self, completer):
         if self._completer:
             self._completer.activated.disconnect()
-        
+            
         self._completer = completer
         if not self._completer:
             return
@@ -155,6 +195,74 @@ class ASN1TextEdit(QPlainTextEdit):
         self._completer.setCompletionMode(QCompleter.PopupCompletion)
         self._completer.setCaseSensitivity(Qt.CaseInsensitive)
         self._completer.activated.connect(self.insertCompletion)
+
+    def process_vim_substitution(self, cmd):
+        if not (cmd.startswith("%s") or cmd.startswith("s")):
+            return
+            
+        cmd_type = "%s" if cmd.startswith("%s") else "s"
+        separator_idx = len(cmd_type)
+        if len(cmd) <= separator_idx:
+            return
+            
+        separator = cmd[separator_idx]
+        if separator not in ('/', ',', '#', '@'):
+            return
+            
+        parts = cmd.split(separator)
+        if len(parts) >= 3:
+            old_val = parts[1]
+            new_val = parts[2]
+            flags = parts[3] if len(parts) > 3 else ""
+            
+            cursor = self.textCursor()
+            cursor.beginEditBlock()
+            
+            is_global_lines = (cmd_type == "%s")
+            is_global_inline = 'g' in flags
+            
+            import re
+            try:
+                pattern = re.compile(old_val)
+                count = 0
+                
+                start_line = 0 if is_global_lines else cursor.blockNumber()
+                end_line = self.document().blockCount() - 1 if is_global_lines else cursor.blockNumber()
+                
+                for line_num in range(end_line, start_line - 1, -1):
+                    block = self.document().findBlockByNumber(line_num)
+                    if not block.isValid(): continue
+                    line_text = block.text()
+                    
+                    matches = list(pattern.finditer(line_text))
+                    if not matches: continue
+                    
+                    if not is_global_inline:
+                        matches = [matches[0]]
+                        
+                    for match in reversed(matches):
+                        start, end = match.span()
+                        replacement = match.expand(new_val.replace('\\n', '\n'))
+                        
+                        c = QTextCursor(block)
+                        c.setPosition(block.position() + start)
+                        c.setPosition(block.position() + end, QTextCursor.KeepAnchor)
+                        c.insertText(replacement)
+                        count += 1
+                        
+                cursor.endEditBlock()
+                main_win = self.window()
+                if hasattr(main_win, 'statusBar') and main_win.statusBar():
+                    main_win.statusBar().showMessage(f"Substituted {count} occurrence(s).", 3000)
+            except Exception as e:
+                cursor.endEditBlock()
+                main_win = self.window()
+                if hasattr(main_win, 'statusBar') and main_win.statusBar():
+                    main_win.statusBar().showMessage(f"Substitution error: {e}", 3000)
+        else:
+            main_win = self.window()
+            if hasattr(main_win, 'statusBar') and main_win.statusBar():
+                main_win.statusBar().showMessage("Invalid substitution syntax.", 3000)
 
     def completer(self):
         return self._completer
