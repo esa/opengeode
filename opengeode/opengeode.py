@@ -763,23 +763,25 @@ class SDL_Scene(QGraphicsScene):
         def partition_scene(proc_scene, parent_scene):
             partition_names = {}
             for item in proc_scene.start:
-                proc_scene.partition_name = item.ast.partition
-                partition_names[item.ast.partition] = proc_scene
+                partition_name = item.ast.partition or 'default'
+                proc_scene.partition_name = partition_name
+                partition_names[partition_name] = proc_scene
 
             for item in list(proc_scene.floating_symb):
                 if isinstance(item, Start):
                     continue
+                partition_name = item.ast.partition or 'default'
                 if not proc_scene.partition_name:
-                    proc_scene.partition_name = item.ast.partition
-                    partition_names[item.ast.partition] = proc_scene
-                elif item.ast.partition != proc_scene.partition_name:
-                    if item.ast.partition not in partition_names.keys():
+                    proc_scene.partition_name = partition_name
+                    partition_names[partition_name] = proc_scene
+                elif partition_name != proc_scene.partition_name:
+                    if partition_name not in partition_names.keys():
                         subscene = self.create_subscene('process', parent_scene)
-                        subscene.partition_name = item.ast.partition
+                        subscene.partition_name = partition_name
                         subscene.addItem(item)
-                        partition_names[item.ast.partition] = subscene
+                        partition_names[partition_name] = subscene
                     else:
-                        partition_names[item.ast.partition].addItem(item)
+                        partition_names[partition_name].addItem(item)
             if not partition_names:
                 partition_names['default'] = proc_scene
             proc_scene.partitions = partition_names
@@ -789,6 +791,9 @@ class SDL_Scene(QGraphicsScene):
                 if each.nested_scene:
                     partition_scene(each.nested_scene, each.nested_scene)
             self.partitions = {}
+            for each in self.processes:
+                if each.nested_scene and hasattr(each.nested_scene, 'partitions'):
+                    self.partitions.update(each.nested_scene.partitions)
         else:
             partition_scene(self, self)
 
@@ -1017,19 +1022,17 @@ class SDL_Scene(QGraphicsScene):
                 item.setBrush(brush)
             self.highlighted = {}
 
-    def find_text(self, pattern):
+    def find_text(self, pattern, global_search=False):
         ''' Return all symbols with matching text '''
+        items = [symbol for symbol in self.items()
+                 if isinstance(symbol, EditableText)
+                 and symbol.isVisible()]
         #  If the scene is a process, extend the search to all partitions
-        if self.context == 'process':
-            items = []
+        if self.context == 'process' and not global_search:
             for part in self.partitions.values():
                 items.extend([symbol for symbol in part.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()])
-        else:
-            items = (symbol for symbol in self.items()
-                     if isinstance(symbol, EditableText)
-                     and symbol.isVisible())
 
         for item in items:
             try:
@@ -1041,7 +1044,7 @@ class SDL_Scene(QGraphicsScene):
                 yield item
 
 
-    def search(self, pattern, replace_with=None, cmd=None):
+    def search(self, pattern, replace_with=None, cmd=None, global_search=False):
         ''' Search and replace function ; get next search result with key n
         cmd is a user string from the vi bar that by default for a replace
         is "s" (substitute string) but that can be a different command,
@@ -1053,16 +1056,17 @@ class SDL_Scene(QGraphicsScene):
             # Avoid buggy pattern ending with a single backslash
             pattern += '\\'
 
-        search_item = self.find_text(pattern)
+        search_item = self.find_text(pattern, global_search=global_search)
+        
+        self.search_item = search_item
+        self.search_pattern = pattern
+
         # We may switch scene during the search, so set the iterator to all
         # partitions
-        if self.context == 'process':
+        if self.context == 'process' and not global_search:
             for part in self.partitions.values():
                 part.search_item = search_item
                 part.search_pattern = pattern
-        else:
-            self.search_item = search_item
-            self.search_pattern = pattern
 
         if replace_with:
             with undoCommands.UndoMacro(self.undo_stack, 'Search and Replace'):
@@ -1126,8 +1130,9 @@ class SDL_Scene(QGraphicsScene):
                                         QTextCursor.KeepAnchor)
                 location.current_found_item.setTextCursor(cursor)
 
-                parent = location.current_found_item.parentItem()
-                parent.select()
+                parent = location.current_found_item.parentItem() or location.current_found_item
+                if hasattr(parent, 'select'):
+                    parent.select()
                 location.highlight(parent)
                 parent.ensureVisible()
             except StopIteration:
@@ -1971,6 +1976,7 @@ class SDL_View(QGraphicsView):
 
     def all_scenes(self):
         ''' recursively yields all scenes/partitions '''
+        yield self.top_scene()
         for each in self.top_scene().partitions.values():
             yield each
             for nested in each.all_nested_scenes:
@@ -3960,10 +3966,7 @@ class OG_MainWindow(QMainWindow):
         scene = self.view.scene()
         # scene.partitions.keys()
         partitions = self.datadict.topLevelItem(9)
-        for idx in range(partitions.childCount()):
-            # Remove default partition
-            child = partitions.child(idx)
-            partitions.removeChild(child)
+        partitions.takeChildren()
         for name, part_scene in scene.partitions.items():
             new_part = QTreeWidgetItem(partitions, [name, "open"])
             new_part.setForeground(1, Qt.blue)
@@ -4120,7 +4123,7 @@ class OG_MainWindow(QMainWindow):
             else:
                 # apply globally to the whole model
                 for each in self.view.all_scenes():
-                    each.search(pattern, replace_with=new, cmd=cmd)
+                    each.search(pattern, replace_with=new, cmd=cmd, global_search=True)
         except AttributeError as err:
             # Developer command allowing to dynamically reload a
             # python module, to avoid heavy roundtrips while debugging
