@@ -2676,7 +2676,24 @@ def _not_expression(expr, **kwargs):
             else:
                 ada_string = f'(Data => (not {expr_str}.Data){size_expr})'
     else:
-        ada_string = f'(not {expr_str})'.format(expr=expr_str)
+        # If the type is an integer-derived type with a range (e.g. 0..255),
+        # asn1scc generates a subtype of a 64-bit unsigned integer. Applying
+        # the 'not' operator on this type will invert all 64 bits, yielding a
+        # huge number that causes a Constraint_Error exception at runtime in Ada.
+        # To solve this cleanly, we XOR the value with a bitmask based on the
+        # bit-length of the type's maximum value, perfectly inverting the relevant bits.
+        if "Integer" in bty_outer.kind:
+            try:
+                max_val = int(bty_outer.Max)
+                if max_val >= 0:
+                    mask = (1 << max_val.bit_length()) - 1
+                    ada_string = f'({expr_str} xor {mask})'
+                else:
+                    ada_string = f'(not {expr_str})'
+            except (ValueError, TypeError, AttributeError):
+                ada_string = f'(not {expr_str})'
+        else:
+            ada_string = f'(not {expr_str})'
 
     code.extend(expr_stmts)
     local_decl.extend(expr_local)

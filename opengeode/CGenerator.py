@@ -2221,7 +2221,21 @@ def _not_expression(expr, **kwargs):
             stmts.append(u'}')
             string = (u'not_{var_counter}'.format(var_counter=VAR_COUNTER))
     else:
-        string = u'!{expr}'.format(expr=expr_str.replace(',',',!'))
+        # If the type is an integer-derived type with a range (e.g. 0..255),
+        # apply a bitwise XOR with a mask to perfectly invert the relevant bits
+        # and prevent an out-of-range value due to 64-bit promotion.
+        if 'Integer' in bty_outer.kind:
+            try:
+                max_val = int(bty_outer.Max)
+                if max_val >= 0:
+                    mask = (1 << max_val.bit_length()) - 1
+                    string = f'(({expr_str}) ^ {mask})'
+                else:
+                    string = f'(~({expr_str}))'
+            except (ValueError, TypeError, AttributeError):
+                string = f'(~({expr_str}))'
+        else:
+            string = u'!{expr}'.format(expr=expr_str.replace(',',',!'))
 
     return stmts, str(string), decls
 

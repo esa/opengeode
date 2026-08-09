@@ -1,4 +1,5 @@
 system og;
+    signal dummy;
     /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (159, 221), (267, 140) */
     -- Text area for declarations and comments
@@ -8,15 +9,17 @@ system og;
     signal dd;
     signal we;
     /* CIF ENDTEXT */
-    channel c
+    channel c1
+        /* CIF Keep Specific Geode ROUTE (225, 86) (-75, 86) */
         from env to og with dd;
         from og to env with we;
     endchannel;
     block og;
-        signalroute r
+        signalroute r1
+            /* CIF Keep Specific Geode ROUTE (225, 86) (-75, 86) */
             from env to og with dd;
             from og to env with we;
-        connect c and r;
+        connect c1 and r1;
         /* CIF PROCESS (225, 49), (150, 75) */
         /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process og;
@@ -30,7 +33,7 @@ system og;
             
             dcl boundedstring fixedOctStr := 'FFFFFFFFFF'H; 
             dcl bs2 fixedOctStr := 'FF00FF00FF'H;
-             
+            
             dcl unboundedstring VarOctStr := 'ABCD'H;
             
             dcl boundedbools FixedSeqBool := { true, true, false, false };
@@ -56,7 +59,7 @@ system og;
                 decision longunsigned;
                     /* CIF ANSWER (530, 646), (70, 23) */
                     (0:'FF'H):
-                    /* CIF ANSWER (613, 646), (86, 38) */
+                    /* CIF ANSWER (612, 646), (86, 38) */
                     (> 'FF'H + 1,
 256):
                 enddecision;
@@ -68,7 +71,14 @@ system og;
 endfor;
                 /* CIF PROCEDURECALL (561, 828), (81, 35) */
                 call writeln('');
-                /* CIF NEXTSTATE (567, 878), (70, 35) */
+                /* CIF task (485, 883), (232, 38) */
+                task smallunsigned := '00'H,
+smallunsigned := not smallunsigned;
+                /* CIF PROCEDURECALL (521, 941), (160, 35) */
+                call writeln(smallunsigned)
+                /* CIF comment (702, 941), (70, 35) */
+                comment '255';
+                /* CIF NEXTSTATE (567, 991), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (511, 123), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
