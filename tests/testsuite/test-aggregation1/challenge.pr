@@ -1,4 +1,5 @@
 /* CIF PROCESS (150, 150), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process challenge;
     state on;
     substructure
@@ -7,6 +8,7 @@ process challenge;
             state hello;
             substructure
                     /* CIF procedure (893, 436), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     procedure entry;
                         /* CIF START (178, 136), (70, 35) */
                         START;
@@ -21,7 +23,8 @@ process challenge;
                     START;
                         /* CIF NEXTSTATE (319, 183), (128, 35) */
                         NEXTSTATE wait_in_sub_hello;
-                    /* CIF state (584, 147), (128, 35) */
+                    /* CIF state (578, 147), (128, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     state wait_in_sub_hello;
                     endstate;
             endsubstructure;
@@ -34,11 +37,14 @@ process challenge;
                                 /* CIF NEXTSTATE (0, 50), (70, 35) */
                                 NEXTSTATE CEH;
                             /* CIF state (116, 0), (70, 35) */
+                            /* CIF Keep Specific Geode Partition 'default' */
                             state CEH;
-                                /* CIF input (100, 55), (72, 35) */
+                                /* CIF input (94, 55), (72, 35) */
                                 input any_two;
-                                    /* CIF NEXTSTATE (102, 105), (70, 35) */
-                                    NEXTSTATE ceh;
+                                    /* CIF PROCEDURECALL (86, 110), (89, 35) */
+                                    call writeln('7');
+                                    /* CIF NEXTSTATE (96, 165), (70, 35) */
+                                    NEXTSTATE CEH;
                             endstate;
                     endsubstructure;
                     state D;
@@ -48,16 +54,20 @@ process challenge;
                                 /* CIF NEXTSTATE (80, 50), (70, 35) */
                                 NEXTSTATE DEH;
                             /* CIF state (80, 0), (70, 35) */
+                            /* CIF Keep Specific Geode Partition 'default' */
                             state DEH;
                             endstate;
                     endsubstructure;
-                    /* CIF state (77, 25), (70, 35) */
+                    /* CIF state (77, 147), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     state D;
                     endstate;
-                    /* CIF state (157, 0), (70, 35) */
+                    /* CIF state (524, 0), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     state C;
                     endstate;
             endsubstructure;
+            /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (528, 251), (312, 140) */
             dcl myresult T_UInt8 := 4;
             -- Use a variable with the same name as a variable
@@ -65,9 +75,10 @@ process challenge;
             -- use the proper one
             dcl result T_UInt32 := 9;
             /* CIF ENDTEXT */
-            /* CIF procedure (775, 143), (70, 35) */
+            /* CIF procedure (773, 143), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             procedure exit
-            /* CIF comment (865, 119), (137, 83) */
+            /* CIF comment (863, 119), (137, 83) */
             comment 'Special exit
 procedure - called
 automatically when
@@ -80,8 +91,10 @@ state';
                     /* CIF return (180, 219), (35, 35) */
                     return ;
             endprocedure;
-            /* CIF procedure (458, 522), (86, 35) */
+            /* CIF procedure (453, 522), (86, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             procedure inner_proc;
+                /* CIF Keep Specific Geode Partition 'default' */
                 /* CIF TEXT (31, 41), (277, 140) */
                 fpar in toto T_UInt8;
                 
@@ -102,6 +115,7 @@ state';
                     return ;
             endprocedure;
             /* CIF procedure (772, 54), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             procedure entry
             /* CIF comment (858, 31), (157, 83) */
             comment 'Special Entry
@@ -116,92 +130,106 @@ state';
                     /* CIF return (208, 178), (35, 35) */
                     return ;
             endprocedure;
-            /* CIF START (1408, 7), (71, 35) */
+            /* CIF START (1402, 7), (71, 35) */
             START via_toto ;
-                /* CIF PROCEDURECALL (1399, 57), (89, 35) */
+                /* CIF PROCEDURECALL (1393, 57), (89, 35) */
                 call writeln('3');
-                /* CIF return (1427, 107), (35, 35) */
+                /* CIF return (1421, 107), (35, 35) */
                 return ret0;
             /* CIF START (1155, 8), (70, 35) */
             START;
                 /* CIF PROCEDURECALL (1145, 58), (89, 35) */
-                call writeln('7');
+                call writeln('6');
                 /* CIF label (1143, 108), (92, 35) */
                 inside_label:
                 /* CIF PROCEDURECALL (1132, 158), (114, 35) */
                 call pow(3,3, result);
-                /* CIF decision (1155, 208), (70, 50) */
+                /* CIF decision (1155, 213), (70, 50) */
                 decision result;
-                    /* CIF ANSWER (1081, 278), (74, 23) */
-                    (myresult):
-                        /* CIF return (1101, 321), (35, 35) */
-                        return uncaught;
-                    /* CIF ANSWER (1202, 278), (70, 23) */
-                    ELSE:
-                        /* CIF task (1187, 316), (98, 35) */
+                    /* CIF ANSWER (1202, 283), (70, 23) */
+                    (27):
+                        /* CIF task (1187, 321), (98, 35) */
                         task myresult := 5;
+                    /* CIF ANSWER (1082, 283), (70, 23) */
+                    ELSE:
+                        /* CIF return (1099, 326), (35, 35) */
+                        return uncaught;
                 enddecision;
-                /* CIF label (1155, 372), (70, 35) */
+                /* CIF label (1155, 377), (70, 35) */
                 nslabel:
-                /* CIF NEXTSTATE (1119, 422), (140, 35) */
+                /* CIF NEXTSTATE (1120, 427), (140, 35) */
                 NEXTSTATE AggregNextToHello;
-            /* CIF label (353, 324), (70, 35) */
+            /* CIF label (347, 324), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             connection to_label:
-                /* CIF join (371, 374), (35, 35) */
+                /* CIF join (365, 374), (35, 35) */
                 join another_floating;
             /* CIF End Label */
             endconnection;
-            /* CIF label (733, 472), (122, 35) */
+            /* CIF label (727, 472), (122, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             connection another_floating:
-                /* CIF PROCEDURECALL (750, 522), (89, 35) */
+                /* CIF PROCEDURECALL (744, 522), (89, 35) */
                 call writeln('9');
-                /* CIF task (745, 572), (98, 35) */
+                /* CIF task (739, 572), (98, 35) */
                 task myresult := 1;
-                /* CIF PROCEDURECALL (721, 622), (146, 35) */
+                /* CIF PROCEDURECALL (715, 622), (146, 35) */
                 call inner_proc(myresult);
-                /* CIF return (777, 672), (35, 35) */
+                /* CIF return (771, 672), (35, 35) */
                 return ;
             /* CIF End Label */
             endconnection;
-            /* CIF state (5, 0), (140, 35) */
+            /* CIF state (0, 0), (140, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state AggregNextToHello;
             endstate;
-            /* CIF state (389, 0), (70, 35) */
+            /* CIF state (391, 0), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state hello;
-                /* CIF input (389, 55), (70, 35) */
+                /* CIF input (391, 55), (70, 35) */
                 input run;
-                    /* CIF PROCEDURECALL (345, 111), (157, 35) */
+                    /* CIF PROCEDURECALL (347, 111), (157, 35) */
                     call writeln('27 == ', result);
-                    /* CIF task (369, 161), (109, 38) */
+                    /* CIF task (371, 161), (109, 38) */
                     task myresult := 88,
 result := 33;
-                    /* CIF join (406, 214), (35, 35) */
+                    /* CIF join (408, 214), (35, 35) */
                     join to_label;
+            endstate;
+            /* CIF state (1120, 427), (140, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state AggregNextToHello;
+                /* CIF input (1150, 482), (72, 35) */
+                input any_one;
+                    /* CIF NEXTSTATE (1151, 537), (70, 35) */
+                    NEXTSTATE hello;
             endstate;
     endsubstructure;
     state aggregation Safe;
     substructure
             state A;
             substructure
-                    /* CIF START (154, 0), (70, 35) */
+                    /* CIF START (217, 0), (70, 35) */
                     START;
-                        /* CIF NEXTSTATE (154, 50), (70, 35) */
+                        /* CIF PROCEDURECALL (134, 55), (235, 35) */
+                        call writeln('5: Parallel state A starting');
+                        /* CIF NEXTSTATE (217, 105), (70, 35) */
                         NEXTSTATE HA;
-                    /* CIF state (0, 0), (70, 35) */
+                    /* CIF state (63, 0), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     state HA;
-                        /* CIF input (6, 55), (70, 35) */
-                        input run;
-                            /* CIF NEXTSTATE (6, 105), (70, 35) */
-                            NEXTSTATE -;
                     endstate;
             endsubstructure;
             state B;
             substructure
-                    /* CIF START (149, 0), (70, 35) */
+                    /* CIF START (177, 0), (70, 35) */
                     START;
-                        /* CIF NEXTSTATE (149, 50), (70, 35) */
+                        /* CIF PROCEDURECALL (91, 55), (243, 35) */
+                        call writeln('5B: Parallel state B starting');
+                        /* CIF NEXTSTATE (177, 105), (70, 35) */
                         NEXTSTATE BEH;
                     /* CIF state (10, 0), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
                     state BEH;
                         /* CIF input (0, 55), (72, 35) */
                         input any_one;
@@ -210,53 +238,69 @@ result := 33;
                     endstate;
             endsubstructure;
             /* CIF state (171, 147), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state B;
             endstate;
             /* CIF state (160, 0), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state A;
             endstate;
     endsubstructure;
-    /* CIF TEXT (306, 0), (209, 140) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (410, 0), (209, 140) */
     -- This system tests nested states
     
     dcl result T_uint32 :=0;
     /* CIF ENDTEXT */
-    /* CIF START (10, 113), (68, 37) */
+    /* CIF START (21, 113), (68, 37) */
     START;
-        /* CIF PROCEDURECALL (0, 165), (89, 35) */
+        /* CIF PROCEDURECALL (10, 165), (89, 35) */
         call writeln('1');
-        /* CIF NEXTSTATE (9, 215), (70, 35) */
+        /* CIF NEXTSTATE (20, 215), (70, 35) */
         NEXTSTATE OFF;
-    /* CIF state (681, 140), (70, 35) */
+    /* CIF state (692, 140), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state on;
-        /* CIF connect (488, 195), (0, 35) */
+        /* CIF connect (499, 195), (0, 35) */
         connect ;
-            /* CIF NEXTSTATE (453, 245), (70, 35) */
+            /* CIF NEXTSTATE (464, 245), (70, 35) */
             NEXTSTATE off;
-        /* CIF connect (569, 195), (0, 35) */
+        /* CIF connect (580, 195), (0, 35) */
         connect ret0;
-            /* CIF NEXTSTATE (534, 245), (70, 35) */
+            /* CIF PROCEDURECALL (535, 250), (89, 35) */
+            call writeln('4');
+            /* CIF NEXTSTATE (545, 300), (70, 35) */
             NEXTSTATE Safe;
-        /* CIF connect (787, 195), (70, 35) */
+        /* CIF connect (798, 195), (70, 35) */
         connect uncaught
-        /* CIF comment (877, 195), (141, 38) */
+        /* CIF comment (888, 195), (141, 38) */
         comment 'Remove it to trigger
 an error';
-            /* CIF NEXTSTATE (787, 250), (70, 35) */
+            /* CIF PROCEDURECALL (751, 250), (162, 35) */
+            call writeln('UNEXPECTED');
+            /* CIF NEXTSTATE (798, 300), (70, 35) */
             NEXTSTATE -;
     endstate;
-    /* CIF state (225, 0), (70, 35) */
+    /* CIF state (236, 0), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state safe;
-    endstate;
-    /* CIF state (9, 215), (70, 35) */
-    state OFF;
-        /* CIF input (9, 270), (70, 35) */
+        /* CIF input (236, 55), (70, 35) */
         input run;
-            /* CIF PROCEDURECALL (0, 320), (89, 35) */
+            /* CIF PROCEDURECALL (142, 110), (257, 35) */
+            call writeln('5C Leaving two parallel states');
+            /* CIF NEXTSTATE (236, 165), (70, 35) */
+            NEXTSTATE on;
+    endstate;
+    /* CIF state (20, 215), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state OFF;
+        /* CIF input (20, 270), (70, 35) */
+        input run;
+            /* CIF PROCEDURECALL (10, 320), (89, 35) */
             call writeln('2');
-            /* CIF NEXTSTATE (9, 371), (70, 35) */
-            NEXTSTATE on
-            /* CIF comment (97, 371), (197, 35) */
+            /* CIF NEXTSTATE (0, 371), (110, 35) */
+            NEXTSTATE on via via_toto
+            /* CIF comment (128, 371), (197, 35) */
             comment 'Enter substate via entry point';
     endstate;
 endprocess challenge;
