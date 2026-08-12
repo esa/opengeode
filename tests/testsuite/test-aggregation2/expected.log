@@ -1,0 +1,15 @@
+[a] entry (before startup)
+[a] startup
+[b] startup
+[a] Going to a2
+[a] Going to a1
+[a] Going to a2
+[b] Going to b2
+[b] got for_b in b2, exiting state b...
+Reset_all from substate a2
+Synchronous return from wait
+Entering again aggregation
+[a] entry (before startup)
+[a] startup
+[b] startup
+got exit_aggreg
