@@ -1343,25 +1343,19 @@ def _transition(tr, **kwargs):
                         # ends with a JOIN to find the next branch to execute
                         last_path = tr.terminator.path[-1].split()
                         if last_path[0] == 'STATE':
-                            state_name = last_path[1]
-                            def find_a_label(trans):
-                                if not hasattr(trans, 'terminator'):
-                                    # Return in a parallel state
-                                    return "continuous_signals"
-                                if trans.terminator.kind == 'join':
-                                    return trans.terminator.inputString
-                                return find_a_label(trans.terminator.next_trans) # ?
-
                             # If there are multiple next_trans, it's because
                             # we are exiting an instance of a state type.
                             if len(tr.terminator.next_trans) == 1:
-                                ret_branch = find_a_label(tr.terminator.next_trans[0])
-                                stmts.append(f'return {ret_branch.lower()};')
+                                ret_branch = getattr(tr.terminator.next_trans[0], 'branch_label', None)
+                                if ret_branch:
+                                    stmts.append(f'return {ret_branch.lower()};')
+                                else:
+                                    stmts.append(f'return branch_end;')
                             else:
                                 stmts.append(f"switch ({LPREFIX}.state_instance) {{")
                                 for nt in tr.terminator.next_trans:
                                     statename = nt.possible_states[0]
-                                    next_branch = find_a_label(nt)
+                                    next_branch = getattr(nt, 'branch_label', 'branch_end')
                                     stmts.append(f"case {generate_state_name(statename)}: return {next_branch.lower()}; break;")
                                 stmts.append("default: return continuous_signals; break;")
                                 stmts.append("}")

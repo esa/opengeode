@@ -561,7 +561,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs) -> str:
             process_level_decl.append(f'{proc_name};')
             aggreg_start_proc.extend([f'{proc_name} is',
                                       'begin'])
-            aggreg_start_proc.extend(f'Execute_Transition ({subname.statename}{SEPARATOR}START);'
+            aggreg_start_proc.extend(f'Execute_Branch_Loop ({subname.statename}{SEPARATOR}START);'
                                      for subname in substates)
             aggreg_start_proc.extend([f'end {name}{SEPARATOR}START;',
                                      '\n'])
@@ -1275,6 +1275,7 @@ package body {process.name}_RI is''']
     else:
         if not NO_CONTEXT:
             ads_template.append('procedure Execute_Transition (Branch : Branches);')
+            ads_template.append('procedure Execute_Branch_Loop (Branch : Branches);')
         # ads_template.append(f'CS_Only : constant := {len(process.transitions)};')
 
 
@@ -1329,63 +1330,42 @@ package body {process.name}_RI is''']
             taste_template.append('end Execute_Transition_Step;')
             taste_template.append('\n')
 
-        taste_template.append('procedure Execute_Transition (Branch : Branches) is')
-        taste_template.append('Next_Branch : Branches := Branch;')
-
+        # Declare the local variables needed by the transitions in the template
         if not simu:
-            # Declare the local variables needed by the transitions in the template
             taste_template.extend(set(local_decl_transitions))
-            
+
+        taste_template.append('procedure Execute_Branch_Loop (Branch : Branches) is')
+        taste_template.append('   Next_Branch : Branches := Branch;')
+        taste_template.append('begin')
+        taste_template.append('   while Next_Branch /= Branch_End loop')
+        taste_template.append('      case Next_Branch is')
+        for label in all_labels:
+            taste_template.append(f'         when {label} => Next_Branch := Branch_{label};')
+        if has_cs:
+            taste_template.append(
+                '         when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
+        else:
+            taste_template.append(
+                '         when Continuous_Signals => Next_Branch := Branch_End;')
+        taste_template.append('         when Branch_End => null;')
+        taste_template.append('      end case;')
+        taste_template.append('   end loop;')
+        taste_template.append('end Execute_Branch_Loop;\n')
+
+        taste_template.append('procedure Execute_Transition (Branch : Branches) is')
         taste_template.append('begin')
 
-        # Make sure initialization has happened before executing transitions
-        # other than the startup transition. It may be reset to False when an
-        # instance terminates with the stop symbol.
         if not getattr(process, 'no_context', False):
-            taste_template.append(f'if not {LPREFIX}.Init_Done and Branch /= Startup_Transition then')
-            taste_template.append('return;')
-            taste_template.append('end if;')
+            taste_template.append(f'   if not {LPREFIX}.Init_Done and Branch /= Startup_Transition then')
+            taste_template.append('      return;')
+            taste_template.append('   end if;')
 
-        # Generate a loop that ends when a next state is reached
-        # (there can be chained transition when entering a nested state)
-        taste_template.append('while Next_Branch /= Branch_End loop')
-
-        if simu:
-            taste_template.append('Next_Branch := Execute_Transition_Step (Next_Branch);')
-        else:
-            # Generate the switch-case on the transition id
-            taste_template.append('case Next_Branch is')
-    
-            for label in all_labels:
-                taste_template.append(
-                        f'when {label} => Next_Branch := Branch_{label};')
-    
-            if has_cs:
-                taste_template.append(
-                    'when Continuous_Signals => Next_Branch := Branch_Continuous_Signals;')
-            else:
-                taste_template.append(
-                    'when Continuous_Signals => Next_Branch := Branch_End;')
-            taste_template.append(
-                    'when Branch_End => null;')
-    
-            taste_template.append('end case;')
-            if code_labels:
-                # Due to nested states (chained transitions) jump over label code
-                # (NEXTSTATEs do not return from Execute_Transition)
-                if not MONITORS:
-                    taste_template.append('return Continuous_Signals; -- DGB1')
-                else:
-                    # Observers only evaluate continuous signals once
-                    # to avoid looping forever when remaining in the same state
-                    taste_template.append('return Branch_end;  -- DBG2')
-    
-            # Add the code for the floating labels
-            taste_template.extend(code_labels)
-
-        taste_template.append('end loop;')
+        taste_template.append('   Execute_Branch_Loop (Branch);')
         taste_template.append('end Execute_Transition;')
         taste_template.append('\n')
+        if code_labels:
+            taste_template.extend(code_labels)
+        
     elif not instance and not NO_CONTEXT:
         # No transitions defined, but keep the interface for CS_Only calls
         taste_template.append('procedure Execute_Transition (Branch : Branches) is null;')
@@ -3703,27 +3683,23 @@ def _transition(tr, **kwargs):
                         last_path = tr.terminator.path[-1].split()
                         if last_path[0] == 'STATE':
                             state_name = last_path[1]
-                            def find_a_label(trans):
-                                if not hasattr(trans, 'terminator'):
-                                    # Return in a parallel state
-                                    return "Continuous_Signals"
-                                if trans.terminator.kind == 'join':
-                                    return trans.terminator.inputString
-                                return find_a_label(trans.terminator.next_trans) # ?
+                            if len(tr.terminator.next_trans) == 1:
+                                ret_branch = getattr(tr.terminator.next_trans[0], 'branch_label', None)
+                                if ret_branch:
+                                    code.append(f'return {ret_branch};')
+                                else:
+                                    code.append(f'return Branch_End;') # ?
 
                             # If there are multiple next_trans, it's because
                             # we are exiting an instance of a state type.
                             # We must therefore make a switch case to determine
                             # Which transition to switch to based on the
                             # instance name
-                            if len(tr.terminator.next_trans) == 1:
-                                ret_branch = find_a_label(tr.terminator.next_trans[0])
-                                code.append(f'return {ret_branch};')
                             else:
                                 code.append(f"return (case {LPREFIX}.State_Instance is")
                                 for nt in tr.terminator.next_trans:
                                     statename = nt.possible_states[0]
-                                    next_branch = find_a_label(nt)
+                                    next_branch = getattr(nt, 'branch_label', 'Continuous_Signals')
                                     code.append(f"when {ASN1SCC}{statename} => {next_branch},")
                                 code.append("when others => Continuous_Signals);")
 

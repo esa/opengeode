@@ -1097,7 +1097,7 @@ def add_labels_before_each_branch(
         # transitions attached to a single return. Code generators will need
         # to branch to the correct one depending on the current instance. But
         # here we only set the branch names (which depend on the instance name)
-        for each in connect_names:
+        for each in set(connect_names):
             label_name = 'NESTED_STATE_' + state_name + '_EXIT'
             connect_name = each.strip()
             # we need to retrieve the composite state to find the transitions
@@ -1105,7 +1105,16 @@ def add_labels_before_each_branch(
             transitions = []
             for composite in process.composite_states:
                 if composite.statename == state_name:
-                    for term in composite.terminators:
+                    def get_terminators(comp):
+                        terms = []
+                        if isinstance(comp, ogAST.StateAggregation):
+                            for inner in comp.composite_states:
+                                terms.extend(get_terminators(inner))
+                        else:
+                            terms.extend(comp.terminators)
+                        return terms
+                    
+                    for term in get_terminators(composite):
                         if term.kind == 'return' \
                             and term.inputString.strip().lower() \
                                 == connect_name.strip().lower():
@@ -1116,7 +1125,7 @@ def add_labels_before_each_branch(
                 label_name += '_'
             fresh_label_name = label_name
             for trans in transitions:
-                if trans is not None and need_label(trans):
+                if trans is not None:
                     label_name = fresh_label_name + connect_name
                     if len(transitions) > 1 and len(trans.possible_states) == 1:
                         # instance of a state
@@ -1124,6 +1133,7 @@ def add_labels_before_each_branch(
                     label = ogAST.Label()
                     label.inputString = label_name
                     trans.actions.insert(0, label)
+                    trans.branch_label = label_name
                     # Removed becuase the pattern is incorrect, to be fixed:
                     # for branch in branches(trans):
                     #    ...
@@ -1179,6 +1189,8 @@ def add_labels_before_each_branch(
     for ns in process.content.named_start:
         if ns.transition:
             all_transitions.append(ns.transition)
+    for connect in process.connect_mapping.values():
+        pass
 
     for trans in all_transitions:
         initial_path = [trans.actions[0].inputString] if (trans.actions and isinstance(trans.actions[0], ogAST.Label)) else []
