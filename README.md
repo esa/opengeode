@@ -126,6 +126,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.8.0 (08/2026)**
+- Refactor error reporting to use standard gnu style
+- Minor bug fixes
+
 **4.7.1 (08/2026)**
 - Fix the NOT operator
 - Minor cosmetic fixes
