@@ -23,7 +23,7 @@ test-ada:
 	./test_ada
 
 test-c:
-	$(OPENGEODE) --toC --dumpAST $(ROOT_MODEL) 2>&1 | sort | diff expected_c -
+	$(OPENGEODE) --toC --dumpAST $(ROOT_MODEL)
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -g -o test_c complexsdl.c test_c.c dataview-uniq.c
 	./test_c

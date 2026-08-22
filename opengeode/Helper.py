@@ -218,8 +218,16 @@ def flatten(process, sep='_'):
     def update_terminator(context, term, process):
         '''Set next_id, identifying the next transition to run '''
         nextStateName = term.instance_of or term.inputString
+        comp_states = list(context.composite_states)
+        curr = context
+        while hasattr(curr, 'parent') and curr.parent:
+            curr = curr.parent
+            comp_states.extend(getattr(curr, 'composite_states', []))
+        if hasattr(process, 'composite_states'):
+            comp_states.extend(process.composite_states)
+
         if nextStateName.lower() in (st.statename.lower()
-                                     for st in context.composite_states):
+                                     for st in comp_states):
             if term.instance_of or not term.via:
                 term.next_id = nextStateName.lower() + sep + 'START'
             else:

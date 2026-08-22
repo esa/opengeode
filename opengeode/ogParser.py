@@ -5968,6 +5968,22 @@ def state(root, parent, context):
                 for lists in (inps for inps in state_ast.mapping.values()
                               if not isinstance(inps, int)):
                     res.extend(li for i in lists for li in i.inputlist)
+                # Check substates that are instances of state types
+                if hasattr(state_ast, 'content') and hasattr(state_ast.content, 'states'):
+                    for st_def in state_ast.content.states:
+                        if st_def.instance_of:
+                            type_comp = None
+                            curr_ctxt = context
+                            while curr_ctxt is not None:
+                                for comp_st in getattr(curr_ctxt, 'composite_states', []):
+                                    if comp_st.statename.lower() == st_def.instance_of.lower():
+                                        type_comp = comp_st
+                                        break
+                                if type_comp:
+                                    break
+                                curr_ctxt = getattr(curr_ctxt, 'parent', None)
+                            if type_comp and type_comp != state_ast:
+                                res.extend(gather_inputlist(type_comp))
                 subinputs = map(gather_inputlist, state_ast.composite_states)
                 for each in subinputs:
                     res.extend(each)
