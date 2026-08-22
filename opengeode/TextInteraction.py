@@ -170,11 +170,7 @@ class EditableText(QGraphicsTextItem):
             self.setPlainText(text)
         self._updating_flags = False
         self._is_editable = False
-        self.setTextInteractionFlags( Qt.TextSelectableByMouse
-                                     | Qt.TextEditable
-                                     | Qt.TextSelectableByKeyboard
-                                     | Qt.LinksAccessibleByMouse
-                                     | Qt.LinksAccessibleByKeyboard)
+        self.setTextInteractionFlags(Qt.NoTextInteraction)
         self.completer_has_focus = False
         self.editing = False
         self.try_resize()
@@ -195,6 +191,9 @@ class EditableText(QGraphicsTextItem):
         # Removed - does not render text properly (eats up the right part)
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self.force_focus = False
+        self._click_pos = QPointF()
+        self._mouse_pressed = False
+        self._has_moved = False
 
     def setTextInteractionFlags(self, flags):
         super().setTextInteractionFlags(flags)
@@ -390,7 +389,58 @@ class EditableText(QGraphicsTextItem):
         if self._completer and self._completer.isVisible():
             self._completer.hide()
             self._completer.resize(0, 0)
+        if not self.editing:
+            scene_p = event.scenePosition() if hasattr(event, 'scenePosition') else (event.scenePos() if hasattr(event, 'scenePos') else event.pos())
+            self._click_pos = scene_p
+            self._parent_start_pos = self.parent.pos() if hasattr(self.parent, 'pos') else QPointF()
+            self._mouse_pressed = True
+            self._has_moved = False
+            try:
+                self.parent.mouse_click(event)
+            except AttributeError:
+                pass
+            return
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        ''' Handle drag/move on symbol when not editing text '''
+        if not self.editing and self._mouse_pressed:
+            scene_p = event.scenePosition() if hasattr(event, 'scenePosition') else (event.scenePos() if hasattr(event, 'scenePos') else event.pos())
+            delta = scene_p - self._click_pos
+            if delta.manhattanLength() > 3:
+                self._has_moved = True
+            if self._has_moved:
+                try:
+                    # Only top level floating symbols (hasParent == False) can be moved by the user
+                    if not getattr(self.parent, 'hasParent', False):
+                        self.parent.set_valid_pos(self._parent_start_pos + delta)
+                    self.parent.mouse_move(event)
+                except AttributeError:
+                    pass
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        ''' Handle mouse release: enter text edit mode ONLY if user didn't move symbol '''
+        if not self.editing and self._mouse_pressed:
+            self._mouse_pressed = False
+            try:
+                self.parent.mouse_release(event)
+            except AttributeError:
+                pass
+            if not self._has_moved:
+                if hasattr(self.parent, 'edit_text'):
+                    self.parent.edit_text(self.mapToScene(event.pos()))
+                else:
+                    self.setTextInteractionFlags(Qt.TextSelectableByMouse
+                                                 | Qt.TextEditable
+                                                 | Qt.TextSelectableByKeyboard
+                                                 | Qt.LinksAccessibleByMouse
+                                                 | Qt.LinksAccessibleByKeyboard)
+                    self.setFocus()
+                    self.editing = True
+            return
+        super().mouseReleaseEvent(event)
 
 
     # pylint: disable=C0103
@@ -404,7 +454,7 @@ class EditableText(QGraphicsTextItem):
             super().focusOutEvent(event)
             if getattr(self, '_is_editable', False):
                 self._updating_flags = True
-                self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
+                self.setTextInteractionFlags(Qt.NoTextInteraction)
                 self._updating_flags = False
             return
         if self._completer and not self.completer_has_focus:
@@ -467,7 +517,7 @@ class EditableText(QGraphicsTextItem):
         super().focusOutEvent(event)
         if getattr(self, '_is_editable', False):
             self._updating_flags = True
-            self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.LinksAccessibleByMouse)
+            self.setTextInteractionFlags(Qt.NoTextInteraction)
             self._updating_flags = False
 
     # pylint: disable=C0103

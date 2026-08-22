@@ -2345,18 +2345,11 @@ class SDL_View(QGraphicsView):
             return super().mouseMoveEvent(evt)
 
     # pylint: disable=C0103
-    # this is a performance killer, ignore (use F5 to refresh)
-#   def mouseReleaseEvent(self, evt):
-#       self.mode = ''
-#       # Adjust scrollbars if diagram got bigger due to a move
-#       if self.scene().context != 'statechart':
-#           # Make sure scene size remains OK when adding/moving symbols
-#           # Avoid doing it when editing texts - it would prevent text
-#           # selection or cursor move
-#           if not isinstance(self.scene().focusItem(), EditableText):
-#               LOG.debug('mouseRelease refresh')
-#               self.refresh()
-#       super().mouseReleaseEvent(evt)
+    def mouseReleaseEvent(self, evt):
+        ''' Reset view mode on mouse release '''
+        if evt.button() == Qt.MiddleButton or self.mode == 'moveScreen':
+            self.mode = ''
+        super().mouseReleaseEvent(evt)
 
     def save_as(self):
         ''' Save As function '''

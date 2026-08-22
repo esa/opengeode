@@ -367,8 +367,13 @@ class Symbol(QObject, QGraphicsPathItem):
         '''
         _ = pos
         try:
-            # Only one text area is supported for now - ignoring position
+            self.text.setTextInteractionFlags(Qt.TextSelectableByMouse
+                                             | Qt.TextEditable
+                                             | Qt.TextSelectableByKeyboard
+                                             | Qt.LinksAccessibleByMouse
+                                             | Qt.LinksAccessibleByKeyboard)
             self.text.setFocus()
+            self.text.editing = True
         except AttributeError:
             return
 
