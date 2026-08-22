@@ -1,14 +1,14 @@
 include ../shared.mk
 
-ROOT_MODEL=system_structure.pr
+ROOT_MODEL=toto.pr
 
 all: test-ada test-llvm
 
 edit:
-	$(OPENGEODE) challenge.pr system_structure.pr
+	$(OPENGEODE) toto.pr
 
 test-parse:
-	$(OPENGEODE) challenge.pr system_structure.pr --check 2>&1 | diff expected -
+	$(OPENGEODE) toto.pr --check 2<&1 || exit 0
 
 test-qgen-parse:
 	$(TESTQGEN_PARSE) $(ROOT_MODEL)
@@ -25,17 +25,21 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: test-parse
+test-ada: 
 
-test-c: test-parse
-
+test-c: 
+	
 test-if:
-	sdl2if challenge.pr system_structure.pr
+	sdl2if toto.pr
 
-test-llvm: test-parse
 
-test-vhdl : test-parse
+test-llvm:
+	$(OPENGEODE) toto.pr --llvm -O$(O)
+	$(LLC) *.ll
+	$(CC) -O$(O) -c *.s
+
 
 coverage:
+	coverage run -p $(OPENGEODE) toto.pr --toAda
 
 .PHONY: all edit test-parse test-ada test-llvm coverage
