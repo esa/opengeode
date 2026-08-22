@@ -198,12 +198,155 @@ def type_name(t):
 # return the line number of this python module, useful for debugging
 lineno = lambda : currentframe().f_back.f_lineno
 
+
+class ParsingError:
+    ''' Handle a parsing error (or warning, note, info). Collect all information
+    useful to report to the end user, such as filename, line number, column,
+    graphical coordinates, and AST path.
+    '''
+    def __init__(self, msg, root=None, category: str = 'error',
+                 pos=None, path=None, filename: str = "", line: int = -1,
+                 col: int = -1, debug_line: int = -1):
+        if isinstance(msg, ParsingError):
+            other = msg
+            msg = other.msg
+            if root is None: root = other.root
+            if category == 'error' and other.category != 'error': category = other.category
+            if pos is None or pos == [0, 0]: pos = other.pos
+            if not path: path = other.path
+            if not filename: filename = other.filename
+            if line == -1: line = other.line
+            if col == -1: col = other.col
+            if debug_line == -1: debug_line = other.debug_line
+
+        msg_str = str(msg)
+        if msg_str.startswith('[WARNING] '):
+            msg_str = msg_str[10:]
+        elif msg_str.startswith('[ERROR] '):
+            msg_str = msg_str[8:]
+
+        self.msg = msg_str
+        self.category = category
+        self.root = root
+        self.pos = pos if pos is not None else [0, 0]
+        self.path = path if path is not None else []
+        self.debug_line = debug_line
+
+        self.filename = filename
+        self.line = line
+        self.col = col
+
+        if root is not None:
+            try:
+                if self.line == -1 and hasattr(root, 'getLine'):
+                    l = root.getLine()
+                    if l is not None and l > 0:
+                        self.line = l
+            except Exception:
+                pass
+            try:
+                if self.col == -1 and hasattr(root, 'getCharPositionInLine'):
+                    c = root.getCharPositionInLine()
+                    if c is not None and c >= 0:
+                        self.col = c + 1
+            except Exception:
+                pass
+            try:
+                if not self.filename:
+                    def find_fn(node, depth=0):
+                        if node is None or depth > 10:
+                            return ''
+                        tok = getattr(node, 'token', None)
+                        if tok and getattr(tok, 'input', None):
+                            fn = getattr(tok.input, 'fileName', '')
+                            if fn:
+                                return fn
+                        for ch in getattr(node, 'getChildren', lambda: [])():
+                            fn = find_fn(ch, depth + 1)
+                            if fn:
+                                return fn
+                        return ''
+                    self.filename = find_fn(root)
+            except Exception:
+                pass
+
+    def as_gnu(self) -> str:
+        ''' Format the error with GNU convention (like gcc/clang):
+            filename:line:col: category: message (or opengeode: category: message)
+            see https://www.gnu.org/prep/standards/html_node/Errors.html
+        '''
+        loc_parts = []
+        if self.filename:
+            fn = self.filename
+            try:
+                rel_fn = os.path.relpath(fn)
+                if not rel_fn.startswith('..'):
+                    fn = rel_fn
+            except Exception:
+                pass
+            loc_parts.append(fn)
+        if self.line != -1 and self.line is not None and self.line > 0:
+            loc_parts.append(str(self.line))
+            if self.col != -1 and self.col is not None and self.col > 0:
+                loc_parts.append(str(self.col))
+
+        loc_str = ":".join(loc_parts)
+        cat = self.category.lower()
+        if loc_str:
+            return f'{loc_str}: {cat}: {self.msg}'
+        else:
+            return f'opengeode: {cat}: {self.msg}'
+
+    def as_gui(self) -> str:
+        ''' Format the error for the Qt GUI '''
+        return f'[{self.category.upper()}] {self.msg}'
+
+    def to_rich_string(self, source_code: str = "") -> str:
+        ''' Return formatted string with GNU header and source context line if available '''
+        gnu = self.as_gnu()
+        if source_code and self.line > 0:
+            lines = source_code.splitlines()
+            if 0 <= self.line - 1 < len(lines):
+                src_line = lines[self.line - 1]
+                caret_indent = " " * (max(0, self.col - 1)) if self.col > 0 else ""
+                return f"{gnu}\n  {src_line}\n  {caret_indent}^"
+        return gnu
+
+    def __str__(self) -> str:
+        return self.msg
+
+    def __repr__(self) -> str:
+        return f"ParsingError({self.msg!r}, category={self.category!r}, line={self.line}, col={self.col})"
+
+    def __getitem__(self, idx: int):
+        if idx == 0:
+            return self.msg
+        elif idx == 1:
+            return self.pos
+        elif idx == 2:
+            return self.path
+        else:
+            raise IndexError(f"ParsingError index out of range: {idx}")
+
+    def __len__(self) -> int:
+        return 3
+
+    def __iter__(self):
+        yield self.msg
+        yield self.pos
+        yield self.path
+
+
+Error = ParsingError
+
+
 # user may create SDL (non-asn1) types with the newtype keyword
 # they are stored in a dedicated dictionary with the same structure
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
 CHOICE_SELECTORS = dict()
 g_choice_selectors_ignore_list = list()
+
 
 
 def types():
@@ -496,14 +639,18 @@ def get_input_string(root):
         return ""
 
 
-def error(root, msg: str) -> str:
-    ''' Return an error message '''
-    return '{} - "{}"'.format(msg, get_input_string(root))
+def error(root, msg: str) -> ParsingError:
+    ''' Return a ParsingError instance '''
+    input_str = get_input_string(root)
+    full_msg = f'{msg} - "{input_str}"' if input_str else msg
+    return ParsingError(msg=full_msg, root=root, category='error')
 
 
-def warning(root, msg: str) -> str:
-    ''' Return a warning message '''
-    return '{} - "{}"'.format(msg, get_input_string(root))
+def warning(root, msg: str) -> ParsingError:
+    ''' Return a ParsingError instance for warning '''
+    input_str = get_input_string(root)
+    full_msg = f'{msg} - "{input_str}"' if input_str else msg
+    return ParsingError(msg=full_msg, root=root, category='warning')
 
 
 def check_syntax(node: antlr3.tree.CommonTree,
@@ -1182,7 +1329,7 @@ def fix_append_expression_type(expr, expected_type):
     expr.expected_type = expected_type
 
 
-def check_type_compatibility(primary, type_ref, context):
+def check_type_compatibility(primary, type_ref, context, root=None):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
@@ -1229,12 +1376,13 @@ def check_type_compatibility(primary, type_ref, context):
             if expr.is_raw:
                 warnings.extend(check_type_compatibility(expr,
                                                          type_ref,
-                                                         context))
+                                                         context,
+                                                         root=root))
         return warnings
 
     elif isinstance(primary, (ogAST.PrimVariable, ogAST.PrimSelector)):
         try:
-            warnings.extend(compare_types(primary.exprType, type_ref))
+            warnings.extend(compare_types(primary.exprType, type_ref, root=root))
         except TypeError as err:
             raise TypeError('{expr} should be of type {ty} - {err}'
                             .format(expr=primary.inputString,
@@ -1512,7 +1660,7 @@ def check_type_compatibility(primary, type_ref, context):
     return warnings
 
 
-def compare_types(type_a, type_b):   # type -> [warnings]
+def compare_types(type_a, type_b, root=None):   # type -> [warnings]
     '''
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
@@ -1521,6 +1669,12 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     mismatch = ''
     if not type_a or not type_b:
         raise TypeError("Missing type definition")
+
+    def add_warn(w_msg):
+        if root is not None:
+            warnings.append(warning(root, w_msg))
+        else:
+            warnings.append(ParsingError(msg=w_msg, category='warning'))
 
     is_same_type = False
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
@@ -1571,18 +1725,18 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 raise TypeError(mismatch)
             if type_a.Min == type_a.Max:
                 if type_a.Min == type_b.Min == type_b.Max:
-                    warnings.extend(compare_types(type_a.type, type_b.type))
+                    warnings.extend(compare_types(type_a.type, type_b.type, root=root))
                     return warnings
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
             elif(float(type_b.Min) >= float(type_a.Min)
                  and float(type_b.Max) <= float(type_a.Max)):
-                warnings.extend(compare_types(type_a.type, type_b.type))
+                warnings.extend(compare_types(type_a.type, type_b.type, root=root))
                 return warnings
             else:
-                warnings.extend(compare_types(type_a.type, type_b.type))
-                warnings.append('Size constraints mismatch - risk of overflow')
+                warnings.extend(compare_types(type_a.type, type_b.type, root=root))
+                add_warn('Size constraints mismatch - risk of overflow')
                 return warnings
         # TODO: Check that OctetString types have compatible range
         elif type_a.kind == 'SequenceType' and mismatch:
@@ -1606,19 +1760,19 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 raise TypeError("Signed vs Unsigned type mismatch " +
                         mismatch)
             elif mismatch:
-                warnings.append(mismatch)
+                add_warn(mismatch)
         elif mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_string(type_a) and is_string(type_b):
         return warnings
     elif is_integer(type_a) and is_integer(type_b):
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_real(type_a) and is_real(type_b):
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_integer(type_a) and type_b.kind == 'OctetStringType' \
             or is_integer(type_b) and type_a.kind == 'OctetStringType':
@@ -1632,7 +1786,7 @@ def compare_types(type_a, type_b):   # type -> [warnings]
             #traceback.print_stack()
             raise TypeError(f'Try using mkstring')
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
 
     else:
@@ -2740,7 +2894,7 @@ def in_expression(root, context):
             expr.left.value[idx] = check_expr.right
 
     try:
-        warnings.extend(compare_types(expr.right.exprType, ref_type))
+        warnings.extend(compare_types(expr.right.exprType, ref_type, root=root))
     except TypeError as err:
         errors.append(error(root, str(err)))
 
@@ -2753,12 +2907,12 @@ def in_expression(root, context):
         bool_expr.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
         if expr.right.value in [each.value for each in expr.left.value]:
             bool_expr.value = ['true']
-            warnings.append('Expression {} is always true'
-                            .format(expr.inputString))
+            warnings.append(warning(root, 'Expression {} is always true'
+                                         .format(expr.inputString)))
         else:
             bool_expr.value = ['false']
-            warnings.append('Expression {} is always false'
-                            .format(expr.inputString))
+            warnings.append(warning(root, 'Expression {} is always false'
+                                         .format(expr.inputString)))
         expr = bool_expr
 
     return expr, errors, warnings
@@ -2789,7 +2943,7 @@ def append_expression(root, context):
                 errors.append(error(root,
                     f"Only a valid octet string can be appended to an octet string (not a {notOctStr.kind})"))
         try:
-            warnings.extend(compare_types(left.type, right.type))
+            warnings.extend(compare_types(left.type, right.type, root=root))
         except TypeError as err:
             errors.append(error(root, str(err)))
         except AttributeError:
@@ -5818,17 +5972,29 @@ def state(root, parent, context):
                 for each in subinputs:
                     res.extend(each)
                 return res
+            target_states = [s.lower() for s in state_def.statelist]
+            if state_def.instance_of:
+                target_states.append(state_def.instance_of.lower())
+
             for comp in context.composite_states:
-                # if the current state is a composite state, check that none of
-                # the inputs from the list is already consumed in a substate
-                if any(st.lower() == comp.statename.lower()
-                        for st in state_def.statelist):
+                # if the current state or state instance type is a composite state,
+                # check that none of the inputs from the list is already consumed in a substate
+                if comp.statename.lower() in target_states:
                     subinputs = [res.lower() for res in gather_inputlist(comp)]
                     for each in inp.inputlist:
                         if each.lower() in subinputs:
-                            sterr.append('Input "{}" is already consumed '
-                                         'in substate "{}"'
-                                         .format(each, comp.statename.lower()))
+                            msg = ('Input "{}" is already consumed '
+                                   'in substate "{}"'
+                                   .format(each, comp.statename.lower()))
+                            inp_err = ParsingError(
+                                msg=msg,
+                                root=child,
+                                category='error',
+                                pos=[inp.pos_x, inp.pos_y],
+                                path=getattr(inp, 'path', context.path)
+                            )
+                            errors.append(inp_err)
+                            inp.errors.append(msg)
             try:
                 # Use the statelist unless the state is an instance
                 if not state_def.instance_of:
@@ -7261,10 +7427,10 @@ def assign(root, context):
         # If assignment with numerical value: check range
         w = Assign_Check_Range (expr)
         if w is not None:
-            warnings.append(w)
+            warnings.append(warning(root, w))
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
-        errors.append('In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
+        msg = 'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'\
                       .format(exp=expr.inputString,
                               lty=type_name(expr.left.exprType) if
                                 expr.left and expr.left.exprType
@@ -7272,9 +7438,10 @@ def assign(root, context):
                               rty=type_name(expr.right.exprType) if
                                 expr.right and expr.right.exprType
                                 else 'Undefined',
-                              errstr=str(err)))
+                              errstr=str(err))
+        errors.append(error(root, msg))
     except Warning as warn:
-        warnings.append(str(warn))
+        warnings.append(warning(root, str(warn)))
     if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
@@ -7933,7 +8100,32 @@ def parse_pr(files=None, string=None):
                         process.only_procedures = True
                         if not process.variables and not process.global_variables and not process.timers and not process.global_timers and not getattr(process, 'user_defined_types', {}):
                             process.no_context = True
-    return og_ast, warnings, errors
+
+    clean_errors = []
+    for item in errors:
+        if isinstance(item, ParsingError):
+            clean_errors.append(item)
+        elif isinstance(item, (list, tuple)):
+            msg = item[0] if len(item) > 0 else ""
+            pos = item[1] if len(item) > 1 else [0, 0]
+            path = item[2] if len(item) > 2 else []
+            clean_errors.append(ParsingError(msg=msg, category='error', pos=pos, path=path))
+        else:
+            clean_errors.append(ParsingError(msg=str(item), category='error'))
+
+    clean_warnings = []
+    for item in warnings:
+        if isinstance(item, ParsingError):
+            clean_warnings.append(item)
+        elif isinstance(item, (list, tuple)):
+            msg = item[0] if len(item) > 0 else ""
+            pos = item[1] if len(item) > 1 else [0, 0]
+            path = item[2] if len(item) > 2 else []
+            clean_warnings.append(ParsingError(msg=msg, category='warning', pos=pos, path=path))
+        else:
+            clean_warnings.append(ParsingError(msg=str(item), category='warning'))
+
+    return og_ast, clean_warnings, clean_errors
 
 
 def n7s_scl_always(root, parent, context=None):

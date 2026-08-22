@@ -238,16 +238,20 @@ def log_errors(window, errors, warnings, clearfirst=True):
             # should be fixed now, CHECKME - NO, NOT FULLY FIXED
             # problem is in decision answers branches
             error[0] = 'Internal error - ' + str(error[0])
-        LOG.error(error[0])
-        item = QListWidgetItem('[ERROR] ' + error[0])
+        gnu_msg = error.as_gnu() if hasattr(error, 'as_gnu') else str(error[0])
+        gui_msg = error.as_gui() if hasattr(error, 'as_gui') else ('[ERROR] ' + str(error[0]))
+        LOG.error(gnu_msg)
+        item = QListWidgetItem(gui_msg)
         if len(error) == 3:
             item.setData(Qt.UserRole, error[1])
             item.setData(Qt.UserRole + 1, error[2])
         if window:
             window.addItem(item)
     for warning in warnings:
-        LOG.warning(warning[0])
-        item = QListWidgetItem('[WARNING] ' + str(warning[0]))
+        gnu_msg = warning.as_gnu() if hasattr(warning, 'as_gnu') else str(warning[0])
+        gui_msg = warning.as_gui() if hasattr(warning, 'as_gui') else ('[WARNING] ' + str(warning[0]))
+        LOG.warning(gnu_msg)
+        item = QListWidgetItem(gui_msg)
         if len(warning) == 3:
             item.setData(Qt.UserRole, warning[1])
             item.setData(Qt.UserRole + 1, warning[2])
@@ -2775,21 +2779,25 @@ clean:
                 if not use_id:
                     toBeRemoved.append(line)
                 elif int(coord[0]) != 0:
-                    symbol_id = int(coord[0])
-                    err = line.text()
-                    kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
-                    LOG.debug(f"id : {symbol_id} {line.text()}")
-                    # Retrieve the symbol from its id, put it in G_ERRORS
-                    # and update its ast.path value and errors/warnings fields
-                    # Cast the symbol id to retrieve the (existing) symbol
-                    symbol = ctypes.cast(symbol_id, ctypes.py_object).value
-                    symbol.ast.path = path
-                    if kind == "ERROR":
-                        symbol.ast.errors.append(err[6:])
-                    else:
-                        symbol.ast.warnings.append(err[8:])
-                    G_ERRORS.append(symbol)
-                    line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                    try:
+                        symbol_id = int(coord[0])
+                        err = line.text()
+                        kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
+                        LOG.debug(f"id : {symbol_id} {line.text()}")
+                        # Retrieve the symbol from its id, put it in G_ERRORS
+                        # and update its ast.path value and errors/warnings fields
+                        # Cast the symbol id to retrieve the (existing) symbol
+                        symbol = ctypes.cast(symbol_id, ctypes.py_object).value
+                        if isinstance(symbol, Symbol):
+                            symbol.ast.path = path
+                            if kind == "ERROR":
+                                symbol.ast.errors.append(err[6:])
+                            else:
+                                symbol.ast.warnings.append(err[8:])
+                            G_ERRORS.append(symbol)
+                            line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                    except Exception as e:
+                        LOG.debug(f"Could not cast symbol_id {coord[0]}: {e}")
         for each in toBeRemoved:
             row = messages.row(each)
             messages.takeItem(row)
@@ -2819,26 +2827,34 @@ clean:
     def go_to_scene_path(self, path) -> bool:
         ''' Reach a specific path (scene) by going up/down. This makes sure
         that the Up button is properly set when the scene is reached '''
+        if not path:
+            return True
         while self.up_button.isEnabled():
             self.go_up()
         processName = ''
         partitions = self.top_scene().partitions
         for each in path:
             try:
-                kind, name = each.split()
+                kind, name = each.split(maxsplit=1)
             except ValueError as err:
                 LOG.debug(f'In go_to_scene_path: {str(each)}')
                 return False
             name = str(name).lower()
             if kind.lower() == 'process':
-                for process in self.scene().processes:
+                top = self.top_scene()
+                top_proc_name = (getattr(top, 'process_name', '') or getattr(top, 'name', '') or str(top)).lower()
+                if top_proc_name == name or not getattr(self.scene(), 'processes', []):
+                    processName = name
+                    continue
+                for process in getattr(self.scene(), 'processes', []):
                     if str(process).lower() == name:
                         self.go_down(process.nested_scene,
                                      name='process {}'.format(name))
                         break
                 else:
-                    LOG.error(f'Process {name} not found')
-                    return False
+                    LOG.debug(f'Process {name} not found in sub-processes, assuming current scene')
+                    processName = name
+                    continue
                 processName = name
             elif kind.lower() == 'state':
                 # We have to look in all partitions
@@ -2848,8 +2864,8 @@ clean:
                             self.go_down(state.nested_scene,
                                          name=f'state {name}')
                             return True
-                LOG.error(f'Composite state {name} not found')
-                return False
+                LOG.debug(f'Composite state {name} not found')
+                return True
             elif kind.lower() == 'procedure':
                 # We have to look in all partitions
                 for part in partitions.values():
@@ -2858,8 +2874,8 @@ clean:
                             self.go_down(proc.nested_scene,
                                          name=f'procedure {name}')
                             return True
-                LOG.error(f'Procedure {name} not found')
-                return False
+                LOG.debug(f'Procedure {name} not found')
+                return True
         return True
 
     def show_item(self, item):
@@ -2870,13 +2886,13 @@ clean:
         coord = item.data(Qt.UserRole)
         path = item.data(Qt.UserRole + 1)
         symb_idx = item.data(Qt.UserRole + 2)
-        if symb_idx is not None:
+        if symb_idx is not None and isinstance(symb_idx, int) and 0 <= symb_idx < len(G_ERRORS):
             symbol = G_ERRORS[symb_idx]
             self.scene().clearSelection()
             self.scene().clear_highlight()
             self.scene().clear_focus()
-            if not self.go_to_scene_path(path):
-                return
+            if path:
+                self.go_to_scene_path(path)
             if self.scene().context == 'process' and symbol.scene() != self.scene():
                 # We need to go to the right partition
                 processName = sdlSymbols.CONTEXT.processName
@@ -2886,9 +2902,34 @@ clean:
             symbol.select()
             self.scene().highlight(symbol)
             self.ensureVisible(symbol)
-        else:
-            LOG.debug('No coordinates or symbol found')
             return
+
+        # Fallback: locate symbol by coord [x, y] and path
+        if path:
+            self.go_to_scene_path(path)
+        if coord and len(coord) == 2 and coord[0] is not None and coord[1] is not None:
+            try:
+                target_x, target_y = float(coord[0]), float(coord[1])
+                best_symbol = None
+                min_dist = float('inf')
+                for item_symb in self.scene().items():
+                    if isinstance(item_symb, Symbol):
+                        spos = item_symb.scenePos()
+                        dist = (spos.x() - target_x)**2 + (spos.y() - target_y)**2
+                        if dist < min_dist:
+                            min_dist = dist
+                            best_symbol = item_symb
+                if best_symbol:
+                    self.scene().clearSelection()
+                    self.scene().clear_highlight()
+                    self.scene().clear_focus()
+                    best_symbol.select()
+                    self.scene().highlight(best_symbol)
+                    self.ensureVisible(best_symbol)
+                    return
+            except (ValueError, TypeError):
+                pass
+        LOG.debug('No coordinates or symbol found')
 
     def generate_ada(self):
         ''' Generate Ada code '''
@@ -4322,9 +4363,11 @@ def parse(files):
              'Summary, found {} warnings and {} errors'
              .format(len(warnings), len(errors)))
     for warning in warnings:
-        LOG.warning(warning[0])
+        w_str = warning.as_gnu() if hasattr(warning, 'as_gnu') else str(warning[0])
+        print(w_str, file=sys.stderr)
     for error in errors:
-        LOG.error(error[0])
+        e_str = error.as_gnu() if hasattr(error, 'as_gnu') else str(error[0])
+        print(e_str, file=sys.stderr)
     os.chdir (cwd)
 
     return ast, warnings, errors

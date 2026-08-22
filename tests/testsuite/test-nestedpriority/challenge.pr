@@ -1,89 +1,121 @@
 /* CIF PROCESS (150, 150), (150, 75) */
-PROCESS challenge;
-    STATE nested;
-    SUBSTRUCTURE
-            STATE nested_1;
-            SUBSTRUCTURE
-                    /* CIF PROCEDURE (104, 101), (70, 35) */
-                    PROCEDURE exit;
-                        /* CIF START (198, 116), (70, 35) */
-                        START;
-                            /* CIF PROCEDURECALL (142, 166), (181, 35) */
-                            CALL writeln('exit nested_1');
-                            /* CIF RETURN (215, 216), (35, 35) */
-                            RETURN ;
-                    ENDPROCEDURE;
-                    /* CIF PROCEDURE (110, 183), (74, 35) */
-                    PROCEDURE entry;
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+process challenge;
+    state well;
+    substructure
+            /* CIF START (109, 64), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (109, 119), (70, 35) */
+                NEXTSTATE in_well;
+            /* CIF state (109, 119), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state in_well;
+                /* CIF input (109, 174), (70, 35) */
+                input run;
+                    /* CIF NEXTSTATE (109, 229), (70, 35) */
+                    NEXTSTATE in_well;
+            endstate;
+    endsubstructure;
+    state nested;
+    substructure
+            state nested_1;
+            substructure
+                    /* CIF procedure (112, 183), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    procedure entry;
                         /* CIF START (105, 54), (70, 35) */
                         START;
-                            /* CIF PROCEDURECALL (34, 104), (210, 35) */
-                            CALL writeln('entering nested_1');
-                            /* CIF RETURN (122, 154), (35, 35) */
-                            RETURN ;
-                    ENDPROCEDURE;
+                            /* CIF PROCEDURECALL (45, 104), (189, 35) */
+                            call writeln('entering nested_1');
+                            /* CIF return (122, 154), (35, 35) */
+                            return ;
+                    endprocedure;
+                    /* CIF procedure (104, 101), (70, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    procedure exit;
+                        /* CIF START (198, 116), (70, 35) */
+                        START;
+                            /* CIF PROCEDURECALL (152, 166), (161, 35) */
+                            call writeln('exit nested_1');
+                            /* CIF return (215, 216), (35, 35) */
+                            return ;
+                    endprocedure;
                     /* CIF START (245, 55), (70, 35) */
                     START;
-                        /* CIF NEXTSTATE (233, 105), (93, 35) */
+                        /* CIF NEXTSTATE (241, 105), (77, 35) */
                         NEXTSTATE nested_2;
-                    /* CIF STATE (276, 165), (93, 35) */
-                    STATE nested_2;
-                        /* CIF INPUT (287, 220), (70, 35) */
-                        INPUT run;
-                            /* CIF PROCEDURECALL (263, 270), (118, 35) */
-                            CALL writeln('OK');
+                    /* CIF state (283, 165), (77, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state nested_2;
+                        /* CIF input (287, 220), (70, 35) */
+                        input run;
+                            /* CIF PROCEDURECALL (272, 270), (99, 35) */
+                            call writeln('OK');
                             /* CIF NEXTSTATE (287, 320), (70, 35) */
                             NEXTSTATE -;
-                    ENDSTATE;
-            ENDSUBSTRUCTURE;
-            /* CIF PROCEDURE (334, 58), (70, 35) */
-            PROCEDURE exit;
-                /* CIF START (76, 53), (70, 35) */
-                START;
-                    /* CIF PROCEDURECALL (27, 103), (167, 35) */
-                    CALL writeln('exit nested');
-                    /* CIF RETURN (93, 153), (35, 35) */
-                    RETURN ;
-            ENDPROCEDURE;
-            /* CIF PROCEDURE (340, 134), (74, 35) */
-            PROCEDURE entry;
+                    endstate;
+            endsubstructure;
+            /* CIF procedure (342, 134), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure entry;
                 /* CIF START (121, 85), (70, 35) */
                 START;
-                    /* CIF PROCEDURECALL (57, 135), (196, 35) */
-                    CALL writeln('entering nested');
-                    /* CIF RETURN (138, 185), (35, 35) */
-                    RETURN ;
-            ENDPROCEDURE;
+                    /* CIF PROCEDURECALL (68, 135), (175, 35) */
+                    call writeln('entering nested');
+                    /* CIF return (138, 185), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (334, 58), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure exit;
+                /* CIF START (76, 53), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (37, 103), (147, 35) */
+                    call writeln('exit nested');
+                    /* CIF return (93, 153), (35, 35) */
+                    return ;
+            endprocedure;
             /* CIF START (136, 68), (70, 35) */
             START;
-                /* CIF NEXTSTATE (124, 118), (93, 35) */
+                /* CIF NEXTSTATE (132, 118), (77, 35) */
                 NEXTSTATE nested_1;
-            /* CIF STATE (124, 118), (93, 35) */
-            STATE nested_1;
-                /* CIF INPUT (130, 173), (80, 35) */
-                INPUT go_off;
-                    /* CIF RETURN (152, 223), (35, 35) */
-                    RETURN ;
-            ENDSTATE;
-    ENDSUBSTRUCTURE;
-    /* CIF START (92, 76), (68, 37) */
+            /* CIF state (132, 118), (77, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state nested_1;
+                /* CIF input (135, 173), (70, 35) */
+                input go_off;
+                    /* CIF return (152, 223), (35, 35) */
+                    return ;
+            endstate;
+    endsubstructure;
+    /* CIF START (93, 76), (68, 37) */
     START;
-        /* CIF NEXTSTATE (86, 128), (79, 35) */
+        /* CIF NEXTSTATE (92, 128), (70, 35) */
         NEXTSTATE nested;
-    /* CIF STATE (389, 131), (70, 35) */
-    STATE well;
-    ENDSTATE;
-    /* CIF STATE (86, 128), (79, 35) */
-    STATE nested;
-        /* CIF INPUT (145, 183), (70, 35) */
-        INPUT run;
-            /* CIF PROCEDURECALL (105, 233), (149, 35) */
-            CALL writeln('FAIL');
-            /* CIF NEXTSTATE (145, 283), (70, 35) */
+    /* CIF state (0, 233), (105, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state Iamdoing:well;
+        /* CIF input (17, 288), (70, 35) */
+        input run;
+            /* CIF NEXTSTATE (17, 343), (70, 35) */
             NEXTSTATE -;
-        /* CIF CONNECT (51, 183), (0, 35) */
-        CONNECT ;
-            /* CIF NEXTSTATE (12, 233), (78, 35) */
-            NEXTSTATE well;
-    ENDSTATE;
-ENDPROCESS challenge;
+    endstate;
+    /* CIF state (92, 128), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state nested;
+        /* CIF input (146, 183), (70, 35) */
+        input run;
+            /* CIF PROCEDURECALL (129, 233), (105, 35) */
+            call writeln('FAIL');
+            /* CIF NEXTSTATE (146, 283), (70, 35) */
+            NEXTSTATE -;
+        /* CIF connect (52, 183), (0, 35) */
+        connect ;
+            /* CIF NEXTSTATE (0, 233), (105, 35) */
+            NEXTSTATE Iamdoing:well;
+    endstate;
+    /* CIF state (390, 131), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state well;
+    endstate;
+endprocess challenge;
