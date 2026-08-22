@@ -6285,7 +6285,7 @@ def connect_part(root, parent, context):
     # a state type inside a nested state.
     # removed, this is done after the full model is parsed, and recursively
     # Added back: we still have to do it for non-instance states
-    if not parent.instance_of:
+    if not getattr(parent, 'instance_of', None):
         errs = check_and_resolve_connect_part(conn, nested)
         errors.extend(errs)
 
@@ -6294,7 +6294,7 @@ def connect_part(root, parent, context):
         existing = context.connect_mapping.get(statename, [])
         for each in existing:
             if each.lower() in (a.lower() for a in conn.connect_list) and (
-                    parent.instance_of and statename.lower() != parent.instance_of.lower()):
+                    getattr(parent, 'instance_of', None) and statename.lower() != parent.instance_of.lower()):
                 msg = (f'CONNECT: trigger {each} already specified '
                         f'for state {statename}')
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
@@ -8163,7 +8163,7 @@ def parse_pr(files=None, string=None):
             if len(startup_transition.actions) == 0:
                 if startup_transition.terminator and startup_transition.terminator.kind == 'next_state':
                     next_state_name = startup_transition.terminator.inputString.lower()
-                    if next_state_name not in comp_states and not startup_transition.terminator.instance_of:
+                    if next_state_name not in comp_states and not getattr(startup_transition.terminator, 'instance_of', None):
                         process.only_procedures = True
                         if not process.variables and not process.global_variables and not process.timers and not process.global_timers and not getattr(process, 'user_defined_types', {}):
                             process.no_context = True
