@@ -5225,6 +5225,7 @@ def rec_check_composite_state(comp):
         if t.instance_of:
             for ctxt in contexts:
                 keys.extend(list(ctxt.mapping.keys()))
+                keys.extend([comp.statename for comp in ctxt.composite_states])
         else:
             keys = list(comp.mapping.keys())
         ns = t.instance_of or t.inputString
@@ -6144,7 +6145,7 @@ def state(root, parent, context):
             if each.statename.lower() == state_def.statelist[0].lower():
                 state_def.composite = each
             # If this is an instance of a state type, keep track of it
-            if each.statename.lower() == state_def.instance_of:
+            if state_def.instance_of and each.statename.lower() == state_def.instance_of.lower():
                 each.instances.add(state_def.statelist[0].lower())
     for each in sterr:
         errors.append([each, [st_x, st_y], []])
@@ -6293,7 +6294,7 @@ def connect_part(root, parent, context):
         existing = context.connect_mapping.get(statename, [])
         for each in existing:
             if each.lower() in (a.lower() for a in conn.connect_list) and (
-                    statename.lower() != parent.instance_of):
+                    parent.instance_of and statename.lower() != parent.instance_of.lower()):
                 msg = (f'CONNECT: trigger {each} already specified '
                         f'for state {statename}')
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
@@ -8136,8 +8137,9 @@ def parse_pr(files=None, string=None):
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
-            ns = t.instance_of or t.inputString.lower()
-            if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
+            ns = (t.instance_of or t.inputString).lower()
+            valid_states = [s.lower() for s in process.mapping.keys()] + [comp.statename.lower() for comp in process.composite_states] + ['-', '-*']
+            if ns not in valid_states:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 msg = 'State definition missing: ' + ns.upper()
                 errors.append([msg,[t_x, t_y], ['PROCESS {}'.format(process.processName)]])
