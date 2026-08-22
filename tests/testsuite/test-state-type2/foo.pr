@@ -19,7 +19,23 @@ system foo;
         /* CIF PROCESS (203, 207), (150, 75) */
         /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process foo;
-            state wait;
+            state running;
+            substructure
+                out (outOfInner);
+                    /* CIF START (123, 200), (70, 35) */
+                    START;
+                        /* CIF NEXTSTATE (106, 255), (102, 35) */
+                        NEXTSTATE innerRunning;
+                    /* CIF state (303, 260), (102, 35) */
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    state innerRunning;
+                        /* CIF input (328, 315), (70, 35) */
+                        input pulse;
+                            /* CIF return (345, 370), (35, 35) */
+                            return outOfInner;
+                    endstate;
+            endsubstructure;
+            state Wait;
             substructure
                 in (done);
                 out (outOfWait);
@@ -37,7 +53,7 @@ system foo;
                         NEXTSTATE outside:running
                         /* CIF comment (403, 253), (308, 35) */
                         comment 'Instance of running: exit upon reception of pulse';
-                    /* CIF state (514, 387), (70, 35) */
+                    /* CIF state (513, 387), (70, 35) */
                     /* CIF Keep Specific Geode Partition 'default' */
                     state finished;
                     endstate;
@@ -54,22 +70,6 @@ system foo;
                             return outOfWait;
                     endstate;
             endsubstructure;
-            state running;
-            substructure
-                out (outOfInner);
-                    /* CIF START (123, 200), (70, 35) */
-                    START;
-                        /* CIF NEXTSTATE (106, 255), (102, 35) */
-                        NEXTSTATE innerRunning;
-                    /* CIF state (304, 260), (102, 35) */
-                    /* CIF Keep Specific Geode Partition 'default' */
-                    state innerRunning;
-                        /* CIF input (328, 315), (70, 35) */
-                        input pulse;
-                            /* CIF return (345, 370), (35, 35) */
-                            return outOfInner;
-                    endstate;
-            endsubstructure;
             /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (723, 29), (267, 140) */
             -- Text area for declarations and comments
@@ -83,41 +83,41 @@ system foo;
                 task x := 6;
                 /* CIF NEXTSTATE (612, 253), (70, 35) */
                 NEXTSTATE Wait;
-            /* CIF state (1429, 120), (75, 35) */
+            /* CIF state (1037, 113), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
-            state i:running;
-                /* CIF connect (1438, 175), (70, 35) */
+            state Wait;
+                /* CIF connect (1037, 168), (70, 35) */
+                connect outOfWait;
+                    /* CIF PROCEDURECALL (1027, 223), (89, 35) */
+                    call writeln('4');
+                    /* CIF task (1035, 273), (73, 35) */
+                    task x := x + 1;
+                    /* CIF NEXTSTATE (1034, 328), (75, 35) */
+                    NEXTSTATE i:running;
+            endstate;
+            /* CIF state (1280, 135), (100, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state inst2:running;
+                /* CIF connect (1296, 190), (70, 35) */
                 connect outOfInner;
-                    /* CIF PROCEDURECALL (1426, 230), (93, 35) */
-                    call writeln("5");
-                    /* CIF NEXTSTATE (1420, 280), (104, 35) */
-                    NEXTSTATE inst2:Running;
+                    /* CIF PROCEDURECALL (1284, 245), (93, 35) */
+                    call writeln("6");
+                    /* CIF NEXTSTATE (1279, 300), (102, 35) */
+                    NEXTSTATE wait via done;
             endstate;
             /* CIF state (807, 436), (70, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
             state running;
             endstate;
-            /* CIF state (1281, 135), (100, 35) */
+            /* CIF state (1428, 120), (75, 35) */
             /* CIF Keep Specific Geode Partition 'default' */
-            state inst2:running;
-                /* CIF connect (1304, 190), (70, 35) */
+            state i:running;
+                /* CIF connect (1431, 175), (70, 35) */
                 connect outOfInner;
-                    /* CIF PROCEDURECALL (1292, 245), (93, 35) */
-                    call writeln("6");
-                    /* CIF NEXTSTATE (1287, 300), (102, 35) */
-                    NEXTSTATE wait via done;
-            endstate;
-            /* CIF state (1037, 113), (70, 35) */
-            /* CIF Keep Specific Geode Partition 'default' */
-            state Wait;
-                /* CIF connect (1082, 168), (70, 35) */
-                connect outOfWait;
-                    /* CIF PROCEDURECALL (1072, 223), (89, 35) */
-                    call writeln('4');
-                    /* CIF task (1080, 273), (73, 35) */
-                    task x := x + 1;
-                    /* CIF NEXTSTATE (1079, 328), (75, 35) */
-                    NEXTSTATE i:running;
+                    /* CIF PROCEDURECALL (1419, 230), (93, 35) */
+                    call writeln("5");
+                    /* CIF NEXTSTATE (1414, 280), (104, 35) */
+                    NEXTSTATE inst2:Running;
             endstate;
         endprocess foo;
     endblock;

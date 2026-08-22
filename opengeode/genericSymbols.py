@@ -624,15 +624,19 @@ class Symbol(QObject, QGraphicsPathItem):
         req_action = 'Requirements manager'
         rid_action = 'Model review: create RID'
         hl_action = 'Hyperlink'
+        clean_action = 'Clean layout'
         my_menu = QMenu(png_action)
         if not hasattr(self, '_no_hyperlink'):
             my_menu.addAction(hl_action)
+        my_menu.addAction(clean_action)
         my_menu.addAction(png_action)
         my_menu.addAction(req_action)
         my_menu.addAction(rid_action)
         action = my_menu.exec(event.screenPos())
         if action:
-            if action.text() == png_action:
+            if action.text() == clean_action:
+                clean_layout(self)
+            elif action.text() == png_action:
                 # Save a picture of the selected symbol and all its children
                 filename = QFileDialog.getSaveFileName(self.window(),
                         'Export picture', '.',
@@ -1408,6 +1412,122 @@ class HorizontalSymbol(Symbol):
         except AttributeError:
             pass
         self.update_connections()
+
+
+def rebalance_horizontal_branches(parent, deleted_item=None):
+    '''
+        Recompute X-positions of remaining horizontal branch symbols attached to parent
+        so they are balanced evenly below the parent symbol.
+        Pushes MoveSymbol commands to the scene undo_stack for any moved items.
+    '''
+    if not parent:
+        return
+
+    try:
+        children = parent.childItems()
+    except AttributeError:
+        return
+
+    siblings = [
+        item for item in children
+        if isinstance(item, HorizontalSymbol)
+        and item is not deleted_item
+        and item.isVisible()
+        and item.scene() is not None
+    ]
+
+    if not siblings:
+        return
+
+    # Sort remaining siblings by their current X positions
+    siblings.sort(key=lambda s: s.x())
+
+    # Spacing between adjacent branches (same as insert_symbol)
+    gap = 20
+
+    # Total width of all remaining branches
+    total_width = sum(s.boundingRect().width() for s in siblings)
+    total_span = total_width + (len(siblings) - 1) * gap
+
+    # Center the span below the parent symbol
+    parent_width = parent.boundingRect().width()
+    current_x = (parent_width - total_span) / 2.0
+
+    scene = parent.scene()
+
+    for sibling in siblings:
+        new_pos = QPointF(current_x, sibling.y())
+        old_pos = sibling.position
+        if old_pos != new_pos:
+            sibling.pos_x = current_x
+            if scene and hasattr(scene, 'undo_stack') and scene.undo_stack:
+                undo_cmd = undoCommands.MoveSymbol(
+                    sibling, old_pos, sibling.position
+                )
+                scene.undo_stack.push(undo_cmd)
+        current_x += sibling.boundingRect().width() + gap
+
+    # Update connections and connection points on parent and ancestors
+    current = parent
+    visited = set()
+    while current and id(current) not in visited:
+        visited.add(id(current))
+        try:
+            current.update_connections()
+        except Exception:
+            pass
+        try:
+            current.updateConnectionPointPosition()
+        except Exception:
+            pass
+        try:
+            current = current.parentItem() or current.parent
+        except AttributeError:
+            current = getattr(current, 'parent', None)
+
+    if scene:
+        scene.update()
+
+
+def clean_layout(symbol):
+    ''' Context menu action: Rebalance all branches at symbol level and below '''
+    if not symbol or not symbol.scene():
+        return
+
+    # Determine starting root: if symbol is a HorizontalSymbol, include its parent level
+    root = (symbol.parentItem() or getattr(symbol, 'parent', None)) if isinstance(symbol, HorizontalSymbol) else symbol
+    root = root or symbol
+
+    undo_stack = symbol.scene().undo_stack
+    if undo_stack:
+        undo_stack.beginMacro("Clean layout")
+
+    visited = set()
+
+    def _rebalance_rec(item):
+        if not item or id(item) in visited:
+            return
+        visited.add(id(item))
+
+        # Rebalance horizontal branches directly under item if any
+        rebalance_horizontal_branches(item)
+
+        # Recursively visit all child symbols
+        try:
+            children = item.childItems()
+        except AttributeError:
+            children = []
+
+        for child in children:
+            if isinstance(child, Symbol):
+                _rebalance_rec(child)
+
+    _rebalance_rec(root)
+
+    if undo_stack:
+        undo_stack.endMacro()
+
+    symbol.scene().update()
 
 
 class VerticalSymbol(Symbol):
