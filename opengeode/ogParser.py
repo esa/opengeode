@@ -6687,6 +6687,8 @@ def decision(root, parent, context):
     dec.path = context.path
     dec.tmpVar = tmp()
     has_else = False
+    else_node = None
+    else_ans = None
     dec_x, dec_y = 0, 0
     # To support the "decision any" construct:
     need_random_generator = False
@@ -6728,7 +6730,14 @@ def decision(root, parent, context):
             dec.charPositionInLine = child.getCharPositionInLine()
         elif child.type == lexer.ANY:
             msg = 'Use of "ANY" introduces non-determinism'
-            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
+            warn_obj = ParsingError(
+                msg=msg,
+                root=child,
+                category='warning',
+                pos=[dec.pos_x, dec.pos_y],
+                path=getattr(dec, 'path', context.path)
+            )
+            warnings.append(warn_obj)
             dec.warnings.append(msg)
             dec.kind = 'any'
             need_random_generator = True
@@ -6750,7 +6759,9 @@ def decision(root, parent, context):
             warnings.extend(warn)
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
+            else_node = child
             ans = ogAST.Answer()
+            else_ans = ans
             ans.path = context.path
             ans.inputString = child.toString()
             for c in child.getChildren():
@@ -6773,12 +6784,8 @@ def decision(root, parent, context):
             dec.answers.append(ans)
             has_else = True
         else:
-            msg = f'Unsupported DECISION child type: {str(child.type)}'
-            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
-            dec.warnings.append(msg)
+            pass
     if need_random_generator:
-        # If there are N answers, code generators will need a random
-        # number from 0 to N.
         context.random_generator.add(len(dec.answers))
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
@@ -7054,11 +7061,39 @@ def decision(root, parent, context):
             qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
 
     elif has_else and dec.kind in ('informal_text', 'any'):
-        qwarn.append(f'Informal decision "{dec.inputString}": ELSE branch is meaningless')
+        msg = f'Informal decision "{dec.inputString}": ELSE branch is meaningless'
+        else_x = else_ans.pos_x if else_ans and hasattr(else_ans, 'pos_x') else dec_x
+        else_y = else_ans.pos_y if else_ans and hasattr(else_ans, 'pos_y') else dec_y
+        warn_obj = ParsingError(
+            msg=msg,
+            root=else_node if else_node else root,
+            category='warning',
+            pos=[else_x, else_y],
+            path=else_ans.path if else_ans and hasattr(else_ans, 'path') else getattr(dec, 'path', context.path)
+        )
+        warnings.append(warn_obj)
+        if else_ans:
+            else_ans.warnings.append(msg)
+        else:
+            dec.warnings.append(msg)
 
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
-        qwarn.append(f'Decision "{dec.inputString}": ELSE branch is unreachable')
+        msg = f'Decision "{dec.inputString}": ELSE branch is unreachable'
+        else_x = else_ans.pos_x if else_ans and hasattr(else_ans, 'pos_x') else dec_x
+        else_y = else_ans.pos_y if else_ans and hasattr(else_ans, 'pos_y') else dec_y
+        warn_obj = ParsingError(
+            msg=msg,
+            root=else_node if else_node else root,
+            category='warning',
+            pos=[else_x, else_y],
+            path=else_ans.path if else_ans and hasattr(else_ans, 'path') else getattr(dec, 'path', context.path)
+        )
+        warnings.append(warn_obj)
+        if else_ans:
+            else_ans.warnings.append(msg)
+        else:
+            dec.warnings.append(msg)
 
     if need_else and not has_else:
         # (4) Answers use non-ground expression -> there should be an ELSE
@@ -7099,14 +7134,28 @@ def decision(root, parent, context):
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
                           .format(dec.inputString,
                                   '", "'.join(set(enumerants) - set(answers))))
-    qerr = [[e, [dec_x, dec_y], []] for e in qerr]
-    qwarn = [[w, [dec_x, dec_y], []] for w in qwarn]
     for e in qerr:
-        dec.errors.append(e[0])
+        msg = e if isinstance(e, str) else str(e)
+        err_obj = ParsingError(
+            msg=msg,
+            root=root,
+            category='error',
+            pos=[dec_x, dec_y],
+            path=getattr(dec, 'path', context.path)
+        )
+        dec.errors.append(msg)
+        errors.append(err_obj)
     for w in qwarn:
-        dec.warnings.append(w[0])
-    errors.extend(qerr)
-    warnings.extend(qwarn)
+        msg = w if isinstance(w, str) else str(w)
+        warn_obj = ParsingError(
+            msg=msg,
+            root=root,
+            category='warning',
+            pos=[dec_x, dec_y],
+            path=getattr(dec, 'path', context.path)
+        )
+        dec.warnings.append(msg)
+        warnings.append(warn_obj)
     return dec, errors, warnings
 
 
