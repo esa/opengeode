@@ -224,7 +224,11 @@ class Symbol(QObject, QGraphicsPathItem):
     def set_valid_pos(self, pos):
         ''' Hook that can be redefined by sub classes to forbid wrong
         placements on the fly, before calling the actual setPos() from Qt '''
+        old_pos = self.pos()
         self.setPos(pos)
+        delta = old_pos - pos
+        if delta.x() != 0 or delta.y() != 0:
+            self.moved.emit(delta.x(), delta.y())
 
     # The "position" property cannot be defined as a standard Python
     # property because it is used in a QPropertyAnimation, which only
@@ -363,8 +367,13 @@ class Symbol(QObject, QGraphicsPathItem):
         '''
         _ = pos
         try:
-            # Only one text area is supported for now - ignoring position
+            self.text.setTextInteractionFlags(Qt.TextSelectableByMouse
+                                             | Qt.TextEditable
+                                             | Qt.TextSelectableByKeyboard
+                                             | Qt.LinksAccessibleByMouse
+                                             | Qt.LinksAccessibleByKeyboard)
             self.text.setFocus()
+            self.text.editing = True
         except AttributeError:
             return
 
@@ -620,15 +629,19 @@ class Symbol(QObject, QGraphicsPathItem):
         req_action = 'Requirements manager'
         rid_action = 'Model review: create RID'
         hl_action = 'Hyperlink'
+        clean_action = 'Clean layout'
         my_menu = QMenu(png_action)
         if not hasattr(self, '_no_hyperlink'):
             my_menu.addAction(hl_action)
+        my_menu.addAction(clean_action)
         my_menu.addAction(png_action)
         my_menu.addAction(req_action)
         my_menu.addAction(rid_action)
         action = my_menu.exec(event.screenPos())
         if action:
-            if action.text() == png_action:
+            if action.text() == clean_action:
+                clean_layout(self)
+            elif action.text() == png_action:
                 # Save a picture of the selected symbol and all its children
                 filename = QFileDialog.getSaveFileName(self.window(),
                         'Export picture', '.',
@@ -727,12 +740,19 @@ class Symbol(QObject, QGraphicsPathItem):
            When symbol moves or is resized, update the shape of all
            its connections - can be redefined in subclasses
         '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
+            
         for cnx in self.connections():
             cnx.reshape()
         try:
             self.connection_to_parent().reshape()
         except AttributeError:
             pass
+            
+        if getattr(self.scene(), 'mass_updating_no_bubble', False) or getattr(self, 'mass_updating_no_bubble', False):
+            return
+            
         try:
             self.branch_entrypoint.parent.update_connections()
         except AttributeError as err:
@@ -779,7 +799,7 @@ class Symbol(QObject, QGraphicsPathItem):
         self.updateConnectionPoints()
         # If any, update movable end points of connections
         for point in self.movable_points:
-            point.edge.end_connection.update_position()
+            point.update_position()
         if self.mode == 'Resize':
             # Define the resizing based on where item has been grabbed
             if self.grabber.resize_mode.endswith('right'):
@@ -1274,12 +1294,29 @@ class HorizontalSymbol(Symbol):
         self.connection = self.connect_to_parent()
         self.updateConnectionPoints()
         #self.cam(self.position, self.position)
+        # After insertion, refresh all ancestor symbols (e.g., Decision chain) so branching connections update automatically
+        if parent:
+            current = parent
+            visited = set()
+            while current and id(current) not in visited:
+                visited.add(id(current))
+                try:
+                    current.update_connections()
+                except Exception:
+                    pass
+                current = getattr(current, 'parent', None)
+        # Force a full scene repaint to ensure all connections are rendered immediately
+        if self.scene():
+            self.scene().update()
+        return
 
     def update_connections(self):
         '''
            Redefined from Symbol class
            Horizontal symbols may have siblings - check their shape.
         '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
         super().update_connections()
         try:
             for sibling in self.siblings():
@@ -1310,6 +1347,7 @@ class HorizontalSymbol(Symbol):
     def mouse_move(self, event):
         ''' Horizontal symbols: prevent move from being above the parent '''
         if self.mode == 'Move':
+            if self.hasParent: return
             event_pos = event.pos()
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
@@ -1379,6 +1417,122 @@ class HorizontalSymbol(Symbol):
         except AttributeError:
             pass
         self.update_connections()
+
+
+def rebalance_horizontal_branches(parent, deleted_item=None):
+    '''
+        Recompute X-positions of remaining horizontal branch symbols attached to parent
+        so they are balanced evenly below the parent symbol.
+        Pushes MoveSymbol commands to the scene undo_stack for any moved items.
+    '''
+    if not parent:
+        return
+
+    try:
+        children = parent.childItems()
+    except AttributeError:
+        return
+
+    siblings = [
+        item for item in children
+        if isinstance(item, HorizontalSymbol)
+        and item is not deleted_item
+        and item.isVisible()
+        and item.scene() is not None
+    ]
+
+    if not siblings:
+        return
+
+    # Sort remaining siblings by their current X positions
+    siblings.sort(key=lambda s: s.x())
+
+    # Spacing between adjacent branches (same as insert_symbol)
+    gap = 20
+
+    # Total width of all remaining branches
+    total_width = sum(s.boundingRect().width() for s in siblings)
+    total_span = total_width + (len(siblings) - 1) * gap
+
+    # Center the span below the parent symbol
+    parent_width = parent.boundingRect().width()
+    current_x = (parent_width - total_span) / 2.0
+
+    scene = parent.scene()
+
+    for sibling in siblings:
+        new_pos = QPointF(current_x, sibling.y())
+        old_pos = sibling.position
+        if old_pos != new_pos:
+            sibling.pos_x = current_x
+            if scene and hasattr(scene, 'undo_stack') and scene.undo_stack:
+                undo_cmd = undoCommands.MoveSymbol(
+                    sibling, old_pos, sibling.position
+                )
+                scene.undo_stack.push(undo_cmd)
+        current_x += sibling.boundingRect().width() + gap
+
+    # Update connections and connection points on parent and ancestors
+    current = parent
+    visited = set()
+    while current and id(current) not in visited:
+        visited.add(id(current))
+        try:
+            current.update_connections()
+        except Exception:
+            pass
+        try:
+            current.updateConnectionPointPosition()
+        except Exception:
+            pass
+        try:
+            current = current.parentItem() or current.parent
+        except AttributeError:
+            current = getattr(current, 'parent', None)
+
+    if scene:
+        scene.update()
+
+
+def clean_layout(symbol):
+    ''' Context menu action: Rebalance all branches at symbol level and below '''
+    if not symbol or not symbol.scene():
+        return
+
+    # Determine starting root: if symbol is a HorizontalSymbol, include its parent level
+    root = (symbol.parentItem() or getattr(symbol, 'parent', None)) if isinstance(symbol, HorizontalSymbol) else symbol
+    root = root or symbol
+
+    undo_stack = symbol.scene().undo_stack
+    if undo_stack:
+        undo_stack.beginMacro("Clean layout")
+
+    visited = set()
+
+    def _rebalance_rec(item):
+        if not item or id(item) in visited:
+            return
+        visited.add(id(item))
+
+        # Rebalance horizontal branches directly under item if any
+        rebalance_horizontal_branches(item)
+
+        # Recursively visit all child symbols
+        try:
+            children = item.childItems()
+        except AttributeError:
+            children = []
+
+        for child in children:
+            if isinstance(child, Symbol):
+                _rebalance_rec(child)
+
+    _rebalance_rec(root)
+
+    if undo_stack:
+        undo_stack.endMacro()
+
+    symbol.scene().update()
 
 
 class VerticalSymbol(Symbol):
@@ -1517,10 +1671,26 @@ class VerticalSymbol(Symbol):
             # if called before text is initialized - or if no textbox
             pass
 
+        # After insertion, refresh all ancestor symbols (e.g., Decision chain) so branching connections update automatically
+        if parent:
+            current = parent
+            visited = set()
+            while current and id(current) not in visited:
+                visited.add(id(current))
+                try:
+                    current.update_connections()
+                except Exception:
+                    pass
+                current = getattr(current, 'parent', None)
+        # Force a full scene repaint to ensure all connections are rendered immediately
+        if self.scene():
+            self.scene().update()
+
     def mouse_move(self, event):
         ''' Click and move: forbid symbol to move on the x axis '''
         super().mouse_move(event)
         if self.mode == 'Move':
+            if self.hasParent: return
             new_y = self.pos_y + event.pos().y() - event.lastPos().y()
             new_x = self.pos_x + event.pos().x() - event.lastPos().x()
             self.position = QPointF(new_x, new_y)

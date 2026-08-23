@@ -1,5 +1,6 @@
 system og;
-    /* CIF TEXT (159, 221), (290, 200) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (159, 221), (240, 140) */
     use dv comment 'dataview-uniq.asn';
     
     signal we;
@@ -15,29 +16,67 @@ system og;
             from og to env with we;
         connect c and r;
         /* CIF PROCESS (225, 49), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process og;
-            /* CIF TEXT (57, 58), (290, 140) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (57, 58), (282, 140) */
             -- Test the implicit _selection type for CHOICE 
             
             dcl foo MyChoice := a : TRUE;
             
-            dcl bar Mychoice_selection := a; 
-            
-            
-            
+            dcl bar Mychoice_selection := a;
+            dcl det MyDets;
+            dcl i MyInt;
             /* CIF ENDTEXT */
             /* CIF START (155, 216), (70, 35) */
             START;
-                /* CIF decision (140, 271), (99, 50) */
-                decision present(foo);
-                    /* CIF ANSWER (110, 341), (70, 24) */
-                    (a):
-                    /* CIF ANSWER (200, 341), (70, 24) */
+                /* CIF task (122, 271), (135, 35) */
+                task bar := present(foo);
+                /* CIF decision (155, 321), (70, 50) */
+                decision bar;
+                    /* CIF ANSWER (338, 397), (70, 23) */
                     (b):
+                        /* CIF PROCEDURECALL (309, 435), (127, 35) */
+                        call writeln ('ERR (1)');
+                    /* CIF ANSWER (86, 391), (70, 23) */
+                    (a):
+                        /* CIF PROCEDURECALL (44, 434), (153, 35) */
+                        call writeln ('OK (1): ', bar)
+                        /* CIF comment (217, 434), (81, 35) */
+                        comment 'a_present';
                 enddecision;
-                /* CIF NEXTSTATE (155, 381), (70, 35) */
+                /* CIF task (92, 486), (195, 35) */
+                task det := To_Enum (bar, MyDets);
+                /* CIF PROCEDURECALL (142, 541), (95, 35) */
+                call writeln(det)
+                /* CIF comment (257, 541), (70, 35) */
+                comment 'a';
+                /* CIF task (154, 596), (71, 35) */
+                task DET := B;
+                /* CIF task (78, 646), (223, 35) */
+                task bar := To_Selector (det, MyChoice);
+                /* CIF PROCEDURECALL (140, 701), (98, 35) */
+                call writeln (bar)
+                /* CIF comment (259, 701), (82, 35) */
+                comment 'b_present';
+                /* CIF task (104, 756), (171, 35) */
+                task i := choice_to_int(foo, 10);
+                /* CIF PROCEDURECALL (150, 811), (78, 35) */
+                call writeln(i)
+                /* CIF comment (250, 811), (70, 35) */
+                comment '10';
+                /* CIF task (147, 861), (85, 35) */
+                task foo := b:42;
+                /* CIF task (104, 916), (171, 35) */
+                task i := choice_to_int(foo, 10);
+                /* CIF PROCEDURECALL (150, 971), (78, 35) */
+                call writeln(i)
+                /* CIF comment (249, 971), (70, 35) */
+                comment '42';
+                /* CIF NEXTSTATE (155, 1021), (70, 35) */
                 NEXTSTATE wait;
-            /* CIF state (388, 217), (70, 40) */
+            /* CIF state (388, 217), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
             endstate;
         endprocess og;

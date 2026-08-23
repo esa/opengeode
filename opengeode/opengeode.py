@@ -7,7 +7,7 @@
 
     SDL is the Specification and Description Language (Z100 standard from ITU)
 
-    Copyright (c) 2012-2023 Maxime Perrotin & European Space Agency
+    Copyright (c) 2012-2026 Maxime Perrotin & European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -68,6 +68,7 @@ from . import(undoCommands,  # NOQA
               CGenerator,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
+from .ModelMonitor import ModelLockManager, FileMonitor
 try:
     import pygraphviz  # NOQA
 except ImportError:
@@ -86,6 +87,7 @@ from PySide6 import QtSvg
 from PySide6.QtPrintSupport import QPrinter
 
 from . import version
+from .asn1_editor import ASN1TextEdit, ASN1Highlighter, ASN1LSPClient, LSPSignalEmitter, VimLineEdit
 from .genericSymbols import Symbol, Comment, Cornergrabber, Connection, Channel
 from .sdlSymbols import(Input,
                         Output,
@@ -237,16 +239,20 @@ def log_errors(window, errors, warnings, clearfirst=True):
             # should be fixed now, CHECKME - NO, NOT FULLY FIXED
             # problem is in decision answers branches
             error[0] = 'Internal error - ' + str(error[0])
-        LOG.error(error[0])
-        item = QListWidgetItem('[ERROR] ' + error[0])
+        gnu_msg = error.as_gnu() if hasattr(error, 'as_gnu') else str(error[0])
+        gui_msg = error.as_gui() if hasattr(error, 'as_gui') else ('[ERROR] ' + str(error[0]))
+        LOG.error(gnu_msg)
+        item = QListWidgetItem(gui_msg)
         if len(error) == 3:
             item.setData(Qt.UserRole, error[1])
             item.setData(Qt.UserRole + 1, error[2])
         if window:
             window.addItem(item)
     for warning in warnings:
-        LOG.warning(warning[0])
-        item = QListWidgetItem('[WARNING] ' + str(warning[0]))
+        gnu_msg = warning.as_gnu() if hasattr(warning, 'as_gnu') else str(warning[0])
+        gui_msg = warning.as_gui() if hasattr(warning, 'as_gui') else ('[WARNING] ' + str(warning[0]))
+        LOG.warning(gnu_msg)
+        item = QListWidgetItem(gui_msg)
         if len(warning) == 3:
             item.setData(Qt.UserRole, warning[1])
             item.setData(Qt.UserRole + 1, warning[2])
@@ -652,8 +658,13 @@ class SDL_Scene(QGraphicsScene):
 
             try:
                 # Render top-level items and their children:
+                dest_scene.mass_updating = True
+                import opengeode.genericSymbols as gs
+                gs.Symbol.mass_updating = True
                 for each in Renderer.render(content, dest_scene):
                     G_SYMBOLS.add(each)
+                dest_scene.mass_updating = False
+                gs.Symbol.mass_updating = False
 
                 # find errors in the scene
                 for s in dest_scene.visible_symb:
@@ -712,8 +723,11 @@ class SDL_Scene(QGraphicsScene):
                             fix_pos_from_ast(branch)
                         fix_pos_from_ast(symbol.next_aligned_symbol())
                         fix_pos_from_ast(symbol.comment)
+                import opengeode.genericSymbols as gs
+                gs.Symbol.mass_updating_no_bubble = True
                 for each in dest_scene.floating_symb:
                     fix_pos_from_ast(each)
+                gs.Symbol.mass_updating_no_bubble = False
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -751,46 +765,43 @@ class SDL_Scene(QGraphicsScene):
         recursive_render(ast, self)
 
         # We now need to create partition scenes and distribute symbols inside
-        partition_names = {}
-        process_scene = self  # by default, if we are not in a block
-        for each in self.processes:
-            process_scene = each.nested_scene
-            if process_scene:
-                break
+        def partition_scene(proc_scene, parent_scene):
+            partition_names = {}
+            for item in proc_scene.start:
+                partition_name = item.ast.partition or 'default'
+                proc_scene.partition_name = partition_name
+                partition_names[partition_name] = proc_scene
 
-        for item in process_scene.start:
-            # first partition is the one with the start symbol
-            process_scene.partition_name = item.ast.partition
-            partition_names[item.ast.partition] = process_scene
+            for item in list(proc_scene.floating_symb):
+                if isinstance(item, Start):
+                    continue
+                partition_name = item.ast.partition or 'default'
+                if not proc_scene.partition_name:
+                    proc_scene.partition_name = partition_name
+                    partition_names[partition_name] = proc_scene
+                elif partition_name != proc_scene.partition_name:
+                    if partition_name not in partition_names.keys():
+                        subscene = self.create_subscene('process', parent_scene)
+                        subscene.partition_name = partition_name
+                        subscene.addItem(item)
+                        partition_names[partition_name] = subscene
+                    else:
+                        partition_names[partition_name].addItem(item)
+            if not partition_names:
+                partition_names['default'] = proc_scene
+            proc_scene.partitions = partition_names
 
-        for item in process_scene.floating_symb:
-            if isinstance(item, Start):
-                # already processed the start
-                continue
-            if not process_scene.partition_name:
-                # perhaps there was no start symbol in the model
-                process_scene.partition_name = item.ast.partition
-                partition_names[item.ast.partition] = process_scene
-            elif item.ast.partition != process_scene.partition_name:
-                if item.ast.partition not in partition_names.keys():
-                    # unmet name, create a new scene
-                    subscene = self.create_subscene('process', self)
-                    subscene.partition_name = item.ast.partition
-                    subscene.addItem(item)
-                    partition_names[item.ast.partition] = subscene
-                else:
-                    # scene already exist, just move the item into it
-                    partition_names[item.ast.partition].addItem(item)
-        # It can be that no partition was created, if the model was empty
-        # (nothing inside the process scene). In that case we must still
-        # set the default partition.
-        if not partition_names:
-            partition_names['default'] = process_scene
+        if self.context == 'block':
+            for each in self.processes:
+                if each.nested_scene:
+                    partition_scene(each.nested_scene, each.nested_scene)
+            self.partitions = {}
+            for each in self.processes:
+                if each.nested_scene and hasattr(each.nested_scene, 'partitions'):
+                    self.partitions.update(each.nested_scene.partitions)
+        else:
+            partition_scene(self, self)
 
-        # set the list of partitions at top-level scene, so that it will be
-        # picked up when the datadict is set up
-
-        self.partitions = partition_names
         self.setup_partitions_in_datadict.emit()
 
     def refresh(self):
@@ -804,6 +815,9 @@ class SDL_Scene(QGraphicsScene):
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
         self.refresh_requested = False
+        self.mass_updating = True
+        import opengeode.genericSymbols as gs
+        gs.Symbol.mass_updating = True
         for symbol in self.editable_texts:
             # EditableText refreshing - design explanation:
             # The first one is tricky: at symbol initialization,
@@ -827,8 +841,15 @@ class SDL_Scene(QGraphicsScene):
             symbol.set_text_alignment()
             # connect the signal that is emitted when text edit changes word
             symbol.word_under_cursor.connect(self.word_under_cursor.emit)
-        # Already called by try_resize for all editable texts
-        #    symbol.update_connections()
+        
+        self.mass_updating = False
+        gs.Symbol.mass_updating = False
+        self.mass_updating_no_bubble = True
+        gs.Symbol.mass_updating_no_bubble = True
+        for symbol in self.visible_symb:
+            symbol.update_connections()
+        self.mass_updating_no_bubble = False
+        gs.Symbol.mass_updating_no_bubble = False
 
     def set_cursor(self, follower):
         ''' Set the cursor shape depending on the selected menu item '''
@@ -871,9 +892,18 @@ class SDL_Scene(QGraphicsScene):
     @Slot(Sdl_toolbar)
     def set_selection(self, toolbar):
         ''' When the selection has changed, update menu, etc '''
-        toolbar.update_menu(self)
-        for item in self.selected_symbols:
-            item.grabber.display()
+        try:
+            toolbar.update_menu(self)
+            for item in self.selected_symbols:
+                item.grabber.display()
+            # Sync visual state of all connection lines in the scene
+            from .Connectors import Signalroute
+            for item in self.items():
+                if isinstance(item, Signalroute):
+                    item.select(item.isSelected())
+        except RuntimeError:
+            # Underlyings C++ object might be deleted on app exit/teardown
+            pass
 
     def syntax_errors(self, symb):
         ''' Parse a symbol and return a list of syntax errors '''
@@ -997,19 +1027,17 @@ class SDL_Scene(QGraphicsScene):
                 item.setBrush(brush)
             self.highlighted = {}
 
-    def find_text(self, pattern):
+    def find_text(self, pattern, global_search=False):
         ''' Return all symbols with matching text '''
+        items = [symbol for symbol in self.items()
+                 if isinstance(symbol, EditableText)
+                 and symbol.isVisible()]
         #  If the scene is a process, extend the search to all partitions
-        if self.context == 'process':
-            items = []
+        if self.context == 'process' and not global_search:
             for part in self.partitions.values():
                 items.extend([symbol for symbol in part.items()
                      if isinstance(symbol, EditableText)
                      and symbol.isVisible()])
-        else:
-            items = (symbol for symbol in self.items()
-                     if isinstance(symbol, EditableText)
-                     and symbol.isVisible())
 
         for item in items:
             try:
@@ -1021,7 +1049,7 @@ class SDL_Scene(QGraphicsScene):
                 yield item
 
 
-    def search(self, pattern, replace_with=None, cmd=None):
+    def search(self, pattern, replace_with=None, cmd=None, global_search=False):
         ''' Search and replace function ; get next search result with key n
         cmd is a user string from the vi bar that by default for a replace
         is "s" (substitute string) but that can be a different command,
@@ -1033,16 +1061,17 @@ class SDL_Scene(QGraphicsScene):
             # Avoid buggy pattern ending with a single backslash
             pattern += '\\'
 
-        search_item = self.find_text(pattern)
+        search_item = self.find_text(pattern, global_search=global_search)
+        
+        self.search_item = search_item
+        self.search_pattern = pattern
+
         # We may switch scene during the search, so set the iterator to all
         # partitions
-        if self.context == 'process':
+        if self.context == 'process' and not global_search:
             for part in self.partitions.values():
                 part.search_item = search_item
                 part.search_pattern = pattern
-        else:
-            self.search_item = search_item
-            self.search_pattern = pattern
 
         if replace_with:
             with undoCommands.UndoMacro(self.undo_stack, 'Search and Replace'):
@@ -1106,8 +1135,9 @@ class SDL_Scene(QGraphicsScene):
                                         QTextCursor.KeepAnchor)
                 location.current_found_item.setTextCursor(cursor)
 
-                parent = location.current_found_item.parentItem()
-                parent.select()
+                parent = location.current_found_item.parentItem() or location.current_found_item
+                if hasattr(parent, 'select'):
+                    parent.select()
                 location.highlight(parent)
                 parent.ensureVisible()
             except StopIteration:
@@ -1133,6 +1163,14 @@ class SDL_Scene(QGraphicsScene):
                 item.branchEntryPoint.parent.updateConnectionPoints()
             except AttributeError:
                 pass
+        # Also check for selected connections
+        from .Connectors import Signalroute
+        for item in self.selectedItems():
+            if isinstance(item, Signalroute):
+                if not item.scene():
+                    continue
+                undo_cmd = undoCommands.DeleteConnection(item, self)
+                self.undo_stack.push(undo_cmd)
         self.undo_stack.endMacro()
 
     def copy_selected_symbols(self):
@@ -1354,10 +1392,12 @@ class SDL_Scene(QGraphicsScene):
         items = self.items(
                 QRectF(pos.x() - dist, pos.y() - dist, 2 * dist, 2 * dist))
         for item in items:
-            if((selectable_only and item.flags() &
-                    QGraphicsItem.ItemIsSelectable)
-                    or not selectable_only):
-                return item.parent if isinstance(item, Cornergrabber) else item
+            actual_item = item.parent if isinstance(item, Cornergrabber) else item
+            if isinstance(actual_item, Symbol):
+                if((selectable_only and item.flags() &
+                        QGraphicsItem.ItemIsSelectable)
+                        or not selectable_only):
+                    return actual_item
 
     def can_insert(self, pos, item_type):
         ''' Check if we can add an item type at a given position '''
@@ -1390,6 +1430,11 @@ class SDL_Scene(QGraphicsScene):
 
     def place_symbol(self, item_type, parent, pos=None, rect=None):
         ''' Draw a symbol on the scene '''
+        focus_item = self.focusItem()
+        if focus_item and hasattr(focus_item, 'editing') and focus_item.editing:
+            focus_item.clearFocus()
+            if self.focusItem() == focus_item:
+                return None
         item = item_type()
         if rect is not None:
             # Optionally size the new item
@@ -1459,23 +1504,57 @@ class SDL_Scene(QGraphicsScene):
     def border_point(self, symb, point):
         ''' Find the closest point on the border of a symbol '''
         rect = symb.sceneBoundingRect()
-        center = rect.center()
-        h_dist = min(point.y() - rect.y(),
-                     rect.y() + rect.height() - point.y())
-        v_dist = min(point.x() - rect.x(),
-                     rect.x() + rect.width() - point.x())
-        res = QPointF()
-        res.setX(symb.pos_x
-                if point.x() <= center.x()
-                else symb.pos_x + symb.boundingRect().width())
-        res.setY(symb.pos_y
-                if point.y() <= center.y()
-                else symb.pos_y + symb.boundingRect().height())
-        if h_dist < v_dist:
-            res.setX(point.x())
+        if rect.width() == 0 or rect.height() == 0:
+            return point
+        px = max(rect.left(), min(point.x(), rect.right()))
+        py = max(rect.top(), min(point.y(), rect.bottom()))
+
+        q_left = QPointF(rect.left(), py)
+        q_right = QPointF(rect.right(), py)
+        q_top = QPointF(px, rect.top())
+        q_bottom = QPointF(px, rect.bottom())
+
+        d2_left = (point.x() - q_left.x())**2 + (point.y() - q_left.y())**2
+        d2_right = (point.x() - q_right.x())**2 + (point.y() - q_right.y())**2
+        d2_top = (point.x() - q_top.x())**2 + (point.y() - q_top.y())**2
+        d2_bottom = (point.x() - q_bottom.x())**2 + (point.y() - q_bottom.y())**2
+
+        min_d2 = min(d2_left, d2_right, d2_top, d2_bottom)
+
+        if min_d2 == d2_left:
+            return q_left
+        elif min_d2 == d2_right:
+            return q_right
+        elif min_d2 == d2_top:
+            return q_top
         else:
-            res.setY(point.y())
-        return res
+            return q_bottom
+
+    def start_reconnect_connection(self, edge, is_start, pos_scene):
+        ''' Called by a connection grabber to detach and redraw the line '''
+        # Save old signal data
+        self.preserved_in_sig = getattr(edge, 'in_sig', '')
+        self.preserved_out_sig = getattr(edge, 'out_sig', '')
+        
+        # Hide the old edge using the undo stack so this action can be cleanly undone
+        undo_cmd = undoCommands.DeleteConnection(edge, self)
+        self.undo_stack.push(undo_cmd)
+        
+        # Transition to drawing mode
+        self.mode = 'wait_next_connection_point'
+        
+        if is_start:
+            # User is dragging the START point. The fixed anchor is the DESTINATION (child)
+            self.connection_start = getattr(edge, 'child', edge.parent)
+            self.drawing_backwards = True
+            anchor_point = edge.parent.mapToScene(edge.end_point)
+        else:
+            # User is dragging the END point. The fixed anchor is the SOURCE (parent)
+            self.connection_start = edge.parent
+            self.drawing_backwards = False
+            anchor_point = edge.parent.mapToScene(edge.start_point)
+        self.edge_points = [anchor_point]
+        self.temp_lines.append(self.addLine(anchor_point.x(), anchor_point.y(), pos_scene.x(), pos_scene.y()))
 
     # pylint: disable=C0103
     def mousePressEvent(self, event):
@@ -1507,7 +1586,9 @@ class SDL_Scene(QGraphicsScene):
                 nearby_connection.mousePressEvent(event)
                 connection_selected = True
             symb = self.symbol_near(event.scenePos(), dist=1)
-            if not symb:
+            clicked_grabber = any(isinstance(item, (Connectors.ChannelConnectionpoint, Cornergrabber, Connectors.Controlpoint))
+                                  for item in self.items(event.scenePos()))
+            if not symb and not clicked_grabber:
                 self.mode = 'select_items'
                 self.orig_pos = event.scenePos()
                 self.select_rect = self.addRect(
@@ -1520,21 +1601,26 @@ class SDL_Scene(QGraphicsScene):
                             item.bezier_set_visible(False)
                         except AttributeError:
                             pass
-            elif symb.user_can_connect and symb.in_start_zone(event.pos().toPoint()):
-                # TODO check if symbol can have more than
-                # one connection if there is already one, if start
-                # and end can be on the same symbol, etc.
-                # DISABLE CONNECTIONS FOR NOW
-                pass
-#               self.mode = 'wait_next_connection_point'
-#               click_point = event.scenePos()
-#               point = self.border_point(symb, click_point)
-#               self.edge_points = [point]
-#               self.temp_lines.append(self.addLine(point.x(),
-#                                                   point.y(),
-#                                                   click_point.x(),
-#                                                   click_point.y()))
-#               self.connection_start = symb
+            elif symb and symb.user_can_connect and (event.modifiers() & Qt.ControlModifier):
+                if not sdlSymbols.TASTE_TARGET:
+                    self.mode = 'wait_next_connection_point'
+                    click_point = event.scenePos()
+                    point = self.border_point(symb, click_point)
+                    self.edge_points = [point]
+                    self.temp_lines.append(self.addLine(point.x(),
+                                                        point.y(),
+                                                        click_point.x(),
+                                                        click_point.y()))
+                    self.connection_start = symb
+                    self.drawing_backwards = False
+                    self.preserved_in_sig = ''
+                    self.preserved_out_sig = ''
+                else:
+                    # TODO check if symbol can have more than
+                    # one connection if there is already one, if start
+                    # and end can be on the same symbol, etc.
+                    # DISABLE CONNECTIONS FOR NOW
+                    pass
 
         elif self.mode == 'wait_placement':
             try:
@@ -1607,6 +1693,9 @@ class SDL_Scene(QGraphicsScene):
         for each in self.temp_lines:
             each.setVisible(False)
         self.mode = 'idle'
+        self.drawing_backwards = False
+        self.preserved_in_sig = ''
+        self.preserved_out_sig = ''
 
     # pylint: disable=C0103
     def mouseReleaseEvent(self, event):
@@ -1654,12 +1743,12 @@ class SDL_Scene(QGraphicsScene):
             valid = (symb and symb.__class__.__name__
                      in self.connection_start._conn_sources and
                      self.connection_start.__class__.__name__
-                     in symb._conn_targets)# and
-                     #len(self.edge_points) > 2)
-                     # (The above was commented because it prevented
-                     # direct lines between two blocks)
-            # "valid" could also check if it's allowed to connect
-            # a symbol to itself.
+                     in symb._conn_targets)
+            if not sdlSymbols.TASTE_TARGET:
+                # Forbid connecting a symbol to itself
+                if symb == self.connection_start:
+                    valid = False
+
             if symb and valid:
                 nb_segments = len(self.edge_points) - 1
                 for each in self.temp_lines[-nb_segments:]:
@@ -1668,14 +1757,60 @@ class SDL_Scene(QGraphicsScene):
                 # Clicked on a symbol: create the actual connector
                 # Use a Channel type by default, but this could be something
                 # else in a different context
-                connector = Channel(parent=self.connection_start, child=symb)
+                if getattr(self, 'drawing_backwards', False):
+                    connector = Connectors.Channel(parent=symb, child=self.connection_start)
+                else:
+                    connector = Connectors.Channel(parent=self.connection_start, child=symb)
+                    
+                if hasattr(self, 'preserved_in_sig'):
+                    connector.in_sig = self.preserved_in_sig
+                    if self.preserved_in_sig:
+                        connector.label_in.setPlainText(f'[{self.preserved_in_sig}]')
+                if hasattr(self, 'preserved_out_sig'):
+                    connector.out_sig = self.preserved_out_sig
+                    if self.preserved_out_sig:
+                        connector.label_out.setPlainText(f'[{self.preserved_out_sig}]')
                 # Set start and end points first, so that the distance can
                 # be computed when storing the middle points's relative
                 # positions
-                connector.start_point = self.edge_points[0]
-                connector.end_point = self.border_point(symb, point)
-                connector.middle_points = self.edge_points[1:-1]
+                if len(self.edge_points) > 2:
+                    start_pt = self.border_point(self.connection_start, self.edge_points[1])
+                    end_pt = self.border_point(symb, self.edge_points[-2])
+                    mid_pts = self.edge_points[1:-1]
+                else:
+                    start_pt = self.edge_points[0]
+                    end_pt = self.border_point(symb, self.edge_points[-1])
+                    mid_pts = []
+
+                if getattr(self, 'drawing_backwards', False):
+                    connector.start_point = end_pt
+                    connector.end_point = start_pt
+                    connector.middle_points = list(reversed(mid_pts))
+                else:
+                    connector.start_point = start_pt
+                    connector.end_point = end_pt
+                    connector.middle_points = mid_pts
+                    
+                connector.hide()
+                self.undo_stack.push(undoCommands.InsertConnection(connector, self))
                 self.cancel()
+            elif not symb and not sdlSymbols.TASTE_TARGET:
+                # Clicked on empty space: connect to the screen edge (ENV) only if near viewport borders
+                try:
+                    view = self.views()[0]
+                    rect = view.mapToScene(view.viewport().geometry()).boundingRect()
+                    near_left = abs(point.x() - rect.left()) < 80
+                    near_right = abs(point.x() - rect.right()) < 80
+                except (IndexError, AttributeError):
+                    near_left = near_right = False
+                if near_left or near_right:
+                    connector = Connectors.Signalroute(parent=self.connection_start)
+                    connector.start_point = self.border_point(self.connection_start, self.edge_points[1])
+                    connector.end_point = point
+                    connector.hide()
+                    self.undo_stack.push(undoCommands.InsertConnection(connector, self))
+                    self.cancel()
+
 
         super().mouseReleaseEvent(event)
 
@@ -1835,16 +1970,22 @@ class SDL_View(QGraphicsView):
         # Command line flags are used by the save_diagram method. They are
         # set at startup when the main window is read from the ui file
         self.options = None
+        # File locking and external modification monitoring
+        self.is_read_only = False
+        self.lock_manager = ModelLockManager()
+        self.file_monitor = FileMonitor()
 
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
 
     # Check both the stack and the RIDs/Requirement status
     is_model_clean = lambda self: genericSymbols.g_rids_or_reqs_clean \
+            and self.top_scene().undo_stack.isClean() \
             and not any(not sc.undo_stack.isClean() for sc in self.all_scenes())
 
     def all_scenes(self):
         ''' recursively yields all scenes/partitions '''
+        yield self.top_scene()
         for each in self.top_scene().partitions.values():
             yield each
             for nested in each.all_nested_scenes:
@@ -1857,15 +1998,21 @@ class SDL_View(QGraphicsView):
         via a signal sent by the undo stack of the scene (indexChanged)'''
         self.something_changed = True
 
+    def update_window_modified(self, clean_state):
+        ''' Update window modified state, catching RuntimeError if already deleted '''
+        try:
+            self.wrapping_window.setWindowModified(not clean_state)
+        except RuntimeError:
+            pass
+
     def set_toolbar(self):
         ''' Define the toolbar depending on the context '''
         self.toolbar.set_actions(
                 bar_items=ACTIONS.get(self.scene().context, []))
 
         # Connect toolbar actions
-        self.scene().menuslot = partial(self.scene().set_selection, self.toolbar)
-        if not self.scene().menuslot:
-            # avoid multiple connections. it causes Pyside bugs on app exit
+        if not hasattr(self.scene(), 'menuslot'):
+            self.scene().menuslot = partial(self.scene().set_selection, self.toolbar)
             self.scene().selectionChanged.connect(self.scene().menuslot)
         for item in self.toolbar.actions.keys():
             self.toolbar.actions[item].triggered.connect(
@@ -1932,12 +2079,15 @@ class SDL_View(QGraphicsView):
         #LOG.debug('view refresh done')
         self.refresh_requested = False
         self.scene().refresh()
+        self.update_phantom_rect(refresh=False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
-
-    def update_phantom_rect(self):
+ 
+    def update_phantom_rect(self, refresh=True):
         LOG.debug("Update phantom rect")
         scene_rect = self.scene().itemsBoundingRect()
+        scene_rect.setLeft(min(0.0, scene_rect.left()))
+        scene_rect.setTop(min(0.0, scene_rect.top()))
         view_size = self.size()
         scene_rect.setWidth(max(scene_rect.width(), view_size.width()))
         scene_rect.setHeight(max(scene_rect.height(), view_size.height()))
@@ -1948,7 +2098,8 @@ class SDL_View(QGraphicsView):
                     pen=QPen(QColor(0, 0, 0, 0)))
         # Hide the rectangle so that it does not collide with the symbols
         self.phantom_rect.hide()
-        self.refresh()
+        if refresh:
+            self.refresh()
 
     # pylint: disable=C0103
     def resizeEvent(self, event):
@@ -2028,10 +2179,8 @@ class SDL_View(QGraphicsView):
         self.verticalScrollBar().setSliderPosition(verpos)
         sdlSymbols.CONTEXT = self.context_history.pop()
         self.update_datadict.emit()
-        self.scene().undo_stack.cleanChanged.connect(
-                lambda x: self.wrapping_window.setWindowModified(not x))
-        self.scene().undo_stack.indexChanged.connect(lambda idx :
-                    self.change_cleanliness(idx))
+        self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
+        self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
         self.update_partition_arrows()
 
     def go_down(self, scene, name=''):
@@ -2094,12 +2243,17 @@ class SDL_View(QGraphicsView):
         self.up_button.setEnabled(True)
         self.set_toolbar()
         self.view_refresh()
+        symbols = [item for item in self.scene().items() if isinstance(item, Symbol)]
+        if symbols:
+            starts = [s for s in symbols if type(s).__name__ == 'Start']
+            if starts:
+                self.ensureVisible(starts[0])
+            else:
+                self.ensureVisible(symbols[0])
         self.scene().scene_left.emit()
         self.update_datadict.emit()
-        self.scene().undo_stack.cleanChanged.connect(
-                lambda x: self.wrapping_window.setWindowModified(not x))
-        self.scene().undo_stack.indexChanged.connect(lambda idx :
-                    self.change_cleanliness(idx))
+        self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
+        self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
         self.update_partition_arrows()
 
 
@@ -2196,18 +2350,11 @@ class SDL_View(QGraphicsView):
             return super().mouseMoveEvent(evt)
 
     # pylint: disable=C0103
-    # this is a performance killer, ignore (use F5 to refresh)
-#   def mouseReleaseEvent(self, evt):
-#       self.mode = ''
-#       # Adjust scrollbars if diagram got bigger due to a move
-#       if self.scene().context != 'statechart':
-#           # Make sure scene size remains OK when adding/moving symbols
-#           # Avoid doing it when editing texts - it would prevent text
-#           # selection or cursor move
-#           if not isinstance(self.scene().focusItem(), EditableText):
-#               LOG.debug('mouseRelease refresh')
-#               self.refresh()
-#       super().mouseReleaseEvent(evt)
+    def mouseReleaseEvent(self, evt):
+        ''' Reset view mode on mouse release '''
+        if evt.button() == Qt.MiddleButton or self.mode == 'moveScreen':
+            self.mode = ''
+        super().mouseReleaseEvent(evt)
 
     def save_as(self):
         ''' Save As function '''
@@ -2215,11 +2362,26 @@ class SDL_View(QGraphicsView):
 
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
+        if getattr(self, 'is_read_only', False) and not save_as:
+            if not autosave:
+                LOG.warning('Cannot save diagram: model was opened in Read-Only mode')
+                msg_box = QMessageBox(self)
+                msg_box.setIcon(QMessageBox.Warning)
+                msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+                msg_box.setText("This model was opened in Read-Only mode.\nChanges cannot be saved to the original file.")
+                msg_box.exec()
+            return False
 
         if (not self.filename or save_as) and not autosave:
             save_as = True
+            old_filename = self.filename
             self.filename = QFileDialog.getSaveFileName(
                     self, "Save model", ".", "SDL Model (*.pr)")[0]
+            if not self.filename:
+                self.filename = old_filename
+                return False
+            # Save As to a new filename clears read-only status for the new file
+            self.is_read_only = False
         if self.filename and self.filename.split('.')[-1] != 'pr':
             self.filename += ".pr"
         filename = ((self.filename or '_opengeode')
@@ -2344,7 +2506,9 @@ class SDL_View(QGraphicsView):
             source_dir = "."
             firstAsn1File, otherAsn1Files = "", []
 
-        otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
+        process = scene.ast.processes[0] if scene.ast and len(scene.ast.processes) == 1 else None
+        if not process or not getattr(process, 'no_context', False):
+            otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
         otherAsn = " ".join(otherAsn1Files)
 
         #  Template for the Makefile
@@ -2369,10 +2533,14 @@ clean:
                 with open(f"{pr_path}/Makefile.{prj_name}", 'w') as f:
                     f.write(template_makefile)
                 self.scene().clear_focus()
+                self.top_scene().undo_stack.setClean()
                 for each in self.all_scenes():
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
+            if not autosave and self.filename:
+                self.lock_manager.acquire_lock(self.filename)
+                self.file_monitor.update_file(self.filename)
             return True
         except AttributeError:
             LOG.error('Impossible to save the file')
@@ -2388,8 +2556,44 @@ clean:
         else:
             self.scene().export_img(filename, doc_format='png')
 
-    def load_file(self, files):
+    def load_file(self, files, is_reload=False):
         ''' Parse a PR file and render it on the scene '''
+        # Check lock status for all files being loaded if not a reload
+        if not is_reload:
+            self.is_read_only = False
+            for f in files:
+                abs_f = os.path.abspath(f)
+                is_locked, info = self.lock_manager.check_lock(abs_f)
+                if is_locked:
+                    msg_box = QMessageBox(self)
+                    msg_box.setWindowTitle("OpenGEODE - Model File Locked")
+                    msg_box.setIcon(QMessageBox.Warning)
+                    msg_box.setText(
+                        f"Model file '{os.path.basename(abs_f)}' is already open in another OpenGEODE instance.\n\n"
+                        f"PID: {info.get('pid')}\n"
+                        f"User: {info.get('user')}\n"
+                        f"Host: {info.get('hostname')}\n"
+                        f"Opened: {info.get('datetime')}"
+                    )
+                    msg_box.setInformativeText("Multiple concurrent accesses to the model may cause lost changes.")
+                    btn_readonly = msg_box.addButton("Open Read-Only", QMessageBox.AcceptRole)
+                    btn_override = msg_box.addButton("Override Lock", QMessageBox.DestructiveRole)
+                    btn_cancel = msg_box.addButton("Cancel", QMessageBox.RejectRole)
+                    msg_box.exec()
+
+                    clicked = msg_box.clickedButton()
+                    if clicked == btn_cancel:
+                        return
+                    elif clicked == btn_readonly:
+                        self.is_read_only = True
+                    elif clicked == btn_override:
+                        self.is_read_only = False
+                    break
+
+        if not self.is_read_only:
+            self.lock_manager.release_locks()
+        self.file_monitor.stop_tracking()
+
         #cwd = os.getcwd()
         dir_pool = set(os.path.dirname(each) for each in files)
         if len(dir_pool) != 1:
@@ -2398,6 +2602,10 @@ clean:
         else:
             files = [os.path.abspath(each) for each in files]
             os.chdir(dir_pool.pop() or '.')
+            if os.path.isfile('system_structure.pr'):
+                sys_struct = os.path.abspath('system_structure.pr')
+                if sys_struct not in files:
+                    files.append(sys_struct)
         try:
             ast, warnings, errors = ogParser.parse_pr(files=files)
         except IOError:
@@ -2408,6 +2616,8 @@ clean:
             LOG.error("No PROCESS was parsed in the input file(s)")
             process = ogAST.Process()
             process.processName = "Syntax_Error"
+            block = ogAST.Block()
+            block.processes = [process]
         elif len(ast.processes) == 1:
             process,         = ast.processes
             if not process.instance_of_name:
@@ -2419,33 +2629,73 @@ clean:
                 self.messages_window.addItem("Could not parse model")
                 return
             self.readonly_pr = ast.pr_files - {self.filename}
+            try:
+                syst, = ast.systems
+                block, = syst.blocks
+                if block.processes[0].referenced:
+                    LOG.debug('[Load file] Process is referenced')
+                    block.processes = [process]
+            except ValueError:
+                # No System/Block hierarchy, creating single block
+                block = ogAST.Block()
+                block.processes = [process]
         else:
             # More than one process
-            LOG.error("More than one process is not supported")
-            return
-        try:
-            syst, = ast.systems
-            block, = syst.blocks
-            if block.processes[0].referenced:
-                LOG.debug('[Load file] Process is referenced')
-                block.processes = [process]
-        except ValueError:
-            # No System/Block hierarchy, creating single block
-            block = ogAST.Block()
-            block.processes = [process]
+            if sdlSymbols.TASTE_TARGET:
+                LOG.error("More than one process is not supported")
+                return
+            else:
+                self.filename = list(ast.processes)[0].filename if ast.processes else None
+                self.readonly_pr = set()
+                try:
+                    syst, = ast.systems
+                    block, = syst.blocks
+                    if block.processes[0].referenced:
+                        LOG.debug('[Load file] Process is referenced')
+                        block.processes = list(ast.processes)
+                except ValueError:
+                    # No System/Block hierarchy, creating single block
+                    block = ogAST.Block()
+                    block.processes = list(ast.processes)
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
         log_errors(self.messages_window, errors, warnings)
+
+        # Reset current diagram scene & symbol tables before rendering reloaded/new AST
+        self.need_new_scene.emit()
+        self.scene_stack = []
+        if self.scene() and hasattr(self.scene(), 'undo_stack'):
+            self.scene().undo_stack.clear()
+        G_SYMBOLS.clear()
+
         try:
             self.scene().render_everything(block)
         except AttributeError as err:
             LOG.debug("[Rendering] " + str(err))
         self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
-        self.scene().name = 'block {}[*]'.format(process.processName)
+        self.scene().name = 'block {}[*]'.format(block.name or list(ast.processes)[0].processName)
         self.wrapping_window.setWindowTitle(self.scene().name)
+        self.update_phantom_rect()
+        
+        # Reshape environment connections now that phantom rect is correct
+        for item in self.scene().items():
+            if isinstance(item, Connectors.Signalroute) and not isinstance(item, Connectors.Channel):
+                item.reshape()
+
         self.refresh()
-        self.centerOn(self.sceneRect().topLeft())
+
+        # Center on a process symbol instead of the top left
+        processes = list(self.scene().processes)
+        if processes:
+            target_process = processes[0]
+            for p in processes:
+                if getattr(p, 'connections', lambda: [])():
+                    target_process = p
+                    break
+            self.centerOn(target_process)
+        else:
+            self.centerOn(self.sceneRect().topLeft())
         self.scene().undo_stack.clear()
         # Emit a signal for the application to update the ASN.1 scene
         self.update_asn1_dock.emit(ast)
@@ -2453,6 +2703,33 @@ clean:
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
+
+        # Update read-only setting and UI window title if opened read-only
+        if self.is_read_only:
+            if self.readonly_pr is None:
+                self.readonly_pr = set()
+            if self.filename:
+                self.readonly_pr.add(self.filename)
+            if hasattr(self, 'wrapping_window') and self.wrapping_window:
+                self.wrapping_window.setWindowTitle(self.scene().name + ' [READ-ONLY]')
+
+        # Acquire locks on loaded files ONLY if NOT read-only
+        if not self.is_read_only:
+            for f in files:
+                self.lock_manager.acquire_lock(f)
+
+        # Track files for external modifications
+        monitored = set(files)
+        if self.filename:
+            monitored.add(self.filename)
+        if self.readonly_pr:
+            monitored.update(self.readonly_pr)
+        try:
+            if hasattr(ogParser, 'DV') and hasattr(ogParser.DV, 'asn1Files'):
+                monitored.update(ogParser.DV.asn1Files)
+        except Exception:
+            pass
+        self.file_monitor.track_files(monitored)
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2495,8 +2772,11 @@ clean:
         self.scene().process_name = ''
         self.filename = None
         self.readonly_pr = None
+        self.is_read_only = False
         self.wrapping_window.setWindowTitle('block[*]')
         self.set_toolbar()
+        self.lock_manager.release_locks()
+        self.file_monitor.stop_tracking()
         return True
 
 
@@ -2589,21 +2869,25 @@ clean:
                 if not use_id:
                     toBeRemoved.append(line)
                 elif int(coord[0]) != 0:
-                    symbol_id = int(coord[0])
-                    err = line.text()
-                    kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
-                    LOG.debug(f"id : {symbol_id} {line.text()}")
-                    # Retrieve the symbol from its id, put it in G_ERRORS
-                    # and update its ast.path value and errors/warnings fields
-                    # Cast the symbol id to retrieve the (existing) symbol
-                    symbol = ctypes.cast(symbol_id, ctypes.py_object).value
-                    symbol.ast.path = path
-                    if kind == "ERROR":
-                        symbol.ast.errors.append(err[6:])
-                    else:
-                        symbol.ast.warnings.append(err[8:])
-                    G_ERRORS.append(symbol)
-                    line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                    try:
+                        symbol_id = int(coord[0])
+                        err = line.text()
+                        kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
+                        LOG.debug(f"id : {symbol_id} {line.text()}")
+                        # Retrieve the symbol from its id, put it in G_ERRORS
+                        # and update its ast.path value and errors/warnings fields
+                        # Cast the symbol id to retrieve the (existing) symbol
+                        symbol = ctypes.cast(symbol_id, ctypes.py_object).value
+                        if isinstance(symbol, Symbol):
+                            symbol.ast.path = path
+                            if kind == "ERROR":
+                                symbol.ast.errors.append(err[6:])
+                            else:
+                                symbol.ast.warnings.append(err[8:])
+                            G_ERRORS.append(symbol)
+                            line.setData(Qt.UserRole + 2, len(G_ERRORS) - 1)
+                    except Exception as e:
+                        LOG.debug(f"Could not cast symbol_id {coord[0]}: {e}")
         for each in toBeRemoved:
             row = messages.row(each)
             messages.takeItem(row)
@@ -2633,26 +2917,34 @@ clean:
     def go_to_scene_path(self, path) -> bool:
         ''' Reach a specific path (scene) by going up/down. This makes sure
         that the Up button is properly set when the scene is reached '''
+        if not path:
+            return True
         while self.up_button.isEnabled():
             self.go_up()
         processName = ''
         partitions = self.top_scene().partitions
         for each in path:
             try:
-                kind, name = each.split()
+                kind, name = each.split(maxsplit=1)
             except ValueError as err:
                 LOG.debug(f'In go_to_scene_path: {str(each)}')
                 return False
             name = str(name).lower()
             if kind.lower() == 'process':
-                for process in self.scene().processes:
+                top = self.top_scene()
+                top_proc_name = (getattr(top, 'process_name', '') or getattr(top, 'name', '') or str(top)).lower()
+                if top_proc_name == name or not getattr(self.scene(), 'processes', []):
+                    processName = name
+                    continue
+                for process in getattr(self.scene(), 'processes', []):
                     if str(process).lower() == name:
                         self.go_down(process.nested_scene,
                                      name='process {}'.format(name))
                         break
                 else:
-                    LOG.error(f'Process {name} not found')
-                    return False
+                    LOG.debug(f'Process {name} not found in sub-processes, assuming current scene')
+                    processName = name
+                    continue
                 processName = name
             elif kind.lower() == 'state':
                 # We have to look in all partitions
@@ -2662,8 +2954,8 @@ clean:
                             self.go_down(state.nested_scene,
                                          name=f'state {name}')
                             return True
-                LOG.error(f'Composite state {name} not found')
-                return False
+                LOG.debug(f'Composite state {name} not found')
+                return True
             elif kind.lower() == 'procedure':
                 # We have to look in all partitions
                 for part in partitions.values():
@@ -2672,8 +2964,8 @@ clean:
                             self.go_down(proc.nested_scene,
                                          name=f'procedure {name}')
                             return True
-                LOG.error(f'Procedure {name} not found')
-                return False
+                LOG.debug(f'Procedure {name} not found')
+                return True
         return True
 
     def show_item(self, item):
@@ -2684,13 +2976,13 @@ clean:
         coord = item.data(Qt.UserRole)
         path = item.data(Qt.UserRole + 1)
         symb_idx = item.data(Qt.UserRole + 2)
-        if symb_idx is not None:
+        if symb_idx is not None and isinstance(symb_idx, int) and 0 <= symb_idx < len(G_ERRORS):
             symbol = G_ERRORS[symb_idx]
             self.scene().clearSelection()
             self.scene().clear_highlight()
             self.scene().clear_focus()
-            if not self.go_to_scene_path(path):
-                return
+            if path:
+                self.go_to_scene_path(path)
             if self.scene().context == 'process' and symbol.scene() != self.scene():
                 # We need to go to the right partition
                 processName = sdlSymbols.CONTEXT.processName
@@ -2700,9 +2992,34 @@ clean:
             symbol.select()
             self.scene().highlight(symbol)
             self.ensureVisible(symbol)
-        else:
-            LOG.debug('No coordinates or symbol found')
             return
+
+        # Fallback: locate symbol by coord [x, y] and path
+        if path:
+            self.go_to_scene_path(path)
+        if coord and len(coord) == 2 and coord[0] is not None and coord[1] is not None:
+            try:
+                target_x, target_y = float(coord[0]), float(coord[1])
+                best_symbol = None
+                min_dist = float('inf')
+                for item_symb in self.scene().items():
+                    if isinstance(item_symb, Symbol):
+                        spos = item_symb.scenePos()
+                        dist = (spos.x() - target_x)**2 + (spos.y() - target_y)**2
+                        if dist < min_dist:
+                            min_dist = dist
+                            best_symbol = item_symb
+                if best_symbol:
+                    self.scene().clearSelection()
+                    self.scene().clear_highlight()
+                    self.scene().clear_focus()
+                    best_symbol.select()
+                    self.scene().highlight(best_symbol)
+                    self.ensureVisible(best_symbol)
+                    return
+            except (ValueError, TypeError):
+                pass
+        LOG.debug('No coordinates or symbol found')
 
     def generate_ada(self):
         ''' Generate Ada code '''
@@ -2727,7 +3044,8 @@ clean:
             else:
                 self.messages_window.addItem('Generating Ada code')
                 try:
-                    AdaGenerator.generate(process)
+                    for proc in ast.processes:
+                        AdaGenerator.generate(proc)
                     self.messages_window.addItem('Done')
                 except (TypeError, ValueError, NameError) as err:
                     err=str(err).encode('utf8')
@@ -2756,6 +3074,7 @@ class OG_MainWindow(QMainWindow):
         self.statechart_mdi = None
         self.current_window = None
         self.datadict = None
+        self.messages_window = None
         # Command line flags (set in the start method)
         self.options = None
 
@@ -2768,10 +3087,8 @@ class OG_MainWindow(QMainWindow):
             scene.messages_window = self.view.messages_window
             self.view.setScene(scene)
             self.view.refresh()
-            scene.undo_stack.cleanChanged.connect(lambda x :
-                lambda x: self.view.wrapping_window.setWindowModified(not x))
-            scene.undo_stack.indexChanged.connect(lambda idx :
-                    self.view.change_cleanliness(idx))
+            scene.undo_stack.cleanChanged.connect(self.view.update_window_modified)
+            scene.undo_stack.indexChanged.connect(self.view.change_cleanliness)
             scene.context_change.connect(self.update_datadict_window)
             scene.word_under_cursor.connect(self.select_in_datadict_window)
             scene.setup_partitions_in_datadict.connect(self.setup_partitions)
@@ -2854,6 +3171,7 @@ class OG_MainWindow(QMainWindow):
         msg_dock.setStyleSheet('QDockWidget::title {background: lightgrey;}')
         messages = self.findChild(QListWidget, 'messages')
         messages.addItem('Welcome to OpenGEODE.')
+        self.messages_window = messages
         self.view.messages_window = messages
         self.view.scene().messages_window = messages
         messages.itemClicked.connect(self.view.show_item)
@@ -2882,6 +3200,8 @@ class OG_MainWindow(QMainWindow):
         self.tabifyDockWidget(asn1_dock, help_dock)
         self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
+        if not options.taste_target:
+            self.setup_asn1_editor()
         #self.help_browser = self.findChild(OG_HelpBrowser, 'help_browser')
         # Set up the content of the Help tab: use a splitter to have an
         # area with Index/Contents/Search and an area with the actual html
@@ -2950,6 +3270,11 @@ class OG_MainWindow(QMainWindow):
         autosave.timeout.connect(
                 partial(self.view.save_diagram, autosave=True))
         autosave.start(60000)
+
+        # Timer for checking external file modifications
+        self.file_check_timer = QTimer(self)
+        self.file_check_timer.timeout.connect(self.check_external_modifications)
+        self.file_check_timer.start(3000)
 
         # Add a line editor on the status bar for the vim mode
         self.statusBar().addPermanentWidget(self.vi_bar)
@@ -3129,9 +3454,28 @@ class OG_MainWindow(QMainWindow):
     def set_asn1_view(self, ast):
         ''' Display the ASN.1 types in the dedicated scene '''
         # Update the dock widget with ASN.1 files content
-        html_content = ast.DV.html
+        html_content = ast.DV.html if (hasattr(ast, 'DV') and ast.DV) else ""
         self.asn1_browser.setHtml(html_content)
         self.asn1_browser.setFont(QFont('UbuntuMono', 12))
+
+        # Check if the edit button is present and update its status
+        if hasattr(self, 'edit_btn') and self.edit_btn is not None:
+            if hasattr(ast, 'DV') and ast.DV and ast.DV.asn1Files:
+                self.edit_btn.setEnabled(True)
+                self.current_asn1_file = ast.DV.asn1Files[0]
+                self.current_asn1_ast = ast
+                if hasattr(self, 'no_asn1_widget'):
+                    self.no_asn1_widget.hide()
+                    self.asn1_browser.show()
+                    self.edit_btn.show()
+            else:
+                self.edit_btn.setEnabled(False)
+                self.current_asn1_file = None
+                self.current_asn1_ast = None
+                if hasattr(self, 'no_asn1_widget'):
+                    self.no_asn1_widget.show()
+                    self.asn1_browser.hide()
+                    self.edit_btn.hide()
 
         # Update the data dictionary
         item_types = self.datadict.topLevelItem(0)
@@ -3187,6 +3531,574 @@ class OG_MainWindow(QMainWindow):
         partitions.setExpanded(True)
         self.datadict.resizeColumnToContents(0)
 
+    def setup_asn1_editor(self):
+        ''' Set up the ASN.1 editor and buttons '''
+        if not self.asn1_browser:
+            return
+        
+        layout = self.asn1_browser.parentWidget().layout()
+        if not layout:
+            return
+            
+        # Predefined keywords for autocomplete
+        self.asn1_keywords = [
+            "BEGIN", "END", "DEFINITIONS", "IMPORTS", "EXPORTS", "FROM", "CHOICE", "SEQUENCE", "OF",
+            "INTEGER", "BOOLEAN", "OCTET", "STRING", "REAL", "ENUMERATED", "SIZE", "WITH", "COMPONENTS",
+            "TRUE", "FALSE"
+        ]
+        
+        # Create the text editor widget
+        self.asn1_editor = ASN1TextEdit(self)
+        self.asn1_highlighter = ASN1Highlighter(self.asn1_editor.document())
+        
+        # Create the completer
+        self.asn1_completer = QCompleter(self)
+        self.asn1_completer.setModel(QStringListModel(self.asn1_keywords, self.asn1_completer))
+        self.asn1_editor.setCompleter(self.asn1_completer)
+        
+        # Create buttons widget
+        self.asn1_buttons_widget = QWidget(self)
+        buttons_layout = QHBoxLayout(self.asn1_buttons_widget)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.edit_btn = QPushButton("Edit ASN.1", self)
+        self.vim_btn = QPushButton("Vim Mode: Off", self)
+        self.vim_btn.setCheckable(True)
+        self.check_btn = QPushButton("Check syntax", self)
+        self.save_btn = QPushButton("Save ASN.1", self)
+        self.cancel_btn = QPushButton("Cancel", self)
+        
+        self.edit_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.vim_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.check_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.save_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.cancel_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        buttons_layout.addWidget(self.edit_btn)
+        buttons_layout.addWidget(self.vim_btn)
+        buttons_layout.addWidget(self.check_btn)
+        buttons_layout.addWidget(self.save_btn)
+        buttons_layout.addWidget(self.cancel_btn)
+        
+        # Create Vim status/command line bar
+        self.vim_bar = QWidget(self)
+        vim_bar_layout = QHBoxLayout(self.vim_bar)
+        vim_bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.vim_status = QLabel("-- NORMAL --", self.vim_bar)
+        self.vim_input = VimLineEdit(self.vim_bar)
+        self.vim_input.setPlaceholderText("Vim command...")
+        self.vim_input.returnPressed.connect(self.execute_vim_command)
+        vim_bar_layout.addWidget(self.vim_status)
+        vim_bar_layout.addWidget(self.vim_input)
+        self.vim_bar.hide()
+        
+        # Create widget for no ASN.1 file loaded state
+        self.no_asn1_widget = QWidget(self)
+        no_asn1_layout = QVBoxLayout(self.no_asn1_widget)
+        no_asn1_layout.setContentsMargins(0, 0, 0, 0)
+        self.btn_create_asn1 = QPushButton("Create ASN.1 file", self)
+        self.btn_add_existing_asn1 = QPushButton("Add existing ASN.1 file", self)
+        self.btn_create_asn1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.btn_add_existing_asn1.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        no_asn1_layout.addWidget(self.btn_create_asn1)
+        no_asn1_layout.addWidget(self.btn_add_existing_asn1)
+        no_asn1_layout.addStretch()
+        
+        # Add widgets to parent grid layout
+        layout.addWidget(self.asn1_editor, 0, 0)
+        layout.addWidget(self.vim_bar, 1, 0)
+        layout.addWidget(self.asn1_buttons_widget, 2, 0)
+        layout.addWidget(self.no_asn1_widget, 0, 0)
+        
+        # Connect signals
+        self.edit_btn.clicked.connect(self.enter_asn1_edit_mode)
+        self.vim_btn.toggled.connect(self.toggle_vim_mode)
+        import sys
+        if "pytest" not in sys.modules:
+            self.vim_btn.setChecked(True)
+        self.check_btn.clicked.connect(self.check_asn1_syntax_button_clicked)
+        self.save_btn.clicked.connect(self.save_asn1_changes)
+        self.cancel_btn.clicked.connect(self.cancel_asn1_edit)
+        self.btn_create_asn1.clicked.connect(self.create_asn1_file_clicked)
+        self.btn_add_existing_asn1.clicked.connect(self.add_existing_asn1_file_clicked)
+        
+        # Setup LSP signals and debounce timer
+        self.lsp_signal_emitter = LSPSignalEmitter()
+        self.lsp_signal_emitter.diagnostics_received.connect(self.handle_lsp_diagnostics)
+        
+        self.lsp_debounce_timer = QTimer(self)
+        self.lsp_debounce_timer.setSingleShot(True)
+        self.lsp_debounce_timer.setInterval(300)
+        self.lsp_debounce_timer.timeout.connect(self.send_lsp_changes)
+        self.asn1_editor.textChanged.connect(self.lsp_debounce_timer.start)
+        
+        # Start in view mode
+        self.current_asn1_file = None
+        self.edit_btn.setEnabled(False)
+        self.vim_btn.hide()
+        self.cancel_asn1_edit()
+        
+        if self.current_asn1_file:
+            self.no_asn1_widget.hide()
+            self.asn1_browser.show()
+            self.edit_btn.show()
+        else:
+            self.no_asn1_widget.show()
+            self.asn1_browser.hide()
+            self.edit_btn.hide()
+        self.vim_btn.hide()
+        self.cancel_asn1_edit()
+
+    def associate_asn1_file_and_save(self, filename):
+        ''' Add a TextSymbol referencing the ASN.1 file to the diagram and save '''
+        from PySide6.QtCore import QPointF
+        pos = QPointF(50, 50)
+        text_content = f"use datamodel comment '{filename}';"
+        text_symbol = self.view.scene().place_symbol(item_type=sdlSymbols.TextSymbol, parent=None, pos=pos)
+        if text_symbol:
+            text_symbol.text.setPlainText(text_content)
+            text_symbol.ast.inputString = text_content
+            text_symbol.text.try_resize()
+
+        # Invoke model save
+        self.view.save_diagram()
+
+    def create_asn1_file_clicked(self):
+        ''' Slot for Create ASN.1 file button '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot create ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nCannot create new ASN.1 files.")
+            msg_box.exec()
+            return
+
+        if not hasattr(self.view, 'filename') or not self.view.filename:
+            if not self.view.save_diagram():
+                return
+
+        # Determine process name
+        process_name = None
+        if hasattr(self.view, 'scene') and self.view.scene():
+            for each in self.view.scene().processes:
+                if not isinstance(each, sdlSymbols.ProcessType):
+                    process_name = str(each.text).strip()
+                    break
+
+        import os
+        base_dir = os.path.dirname(self.view.filename)
+        if not base_dir:
+            base_dir = "."
+            
+        module_name = process_name
+        
+        while True:
+            if not module_name:
+                from PySide6.QtWidgets import QInputDialog
+                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:")
+                if not ok or not name.strip():
+                    return
+                module_name = name.strip()
+
+            # Ensure first letter of module name is uppercase
+            module_name = module_name[0].upper() + module_name[1:] if len(module_name) > 0 else ""
+
+            # Ensure first letter of file name is lowercase
+            file_prefix = module_name[0].lower() + module_name[1:] if len(module_name) > 0 else ""
+            filename = f"{file_prefix}.asn"
+            filepath = os.path.join(base_dir, filename)
+
+            if os.path.exists(filepath):
+                from PySide6.QtWidgets import QMessageBox
+                reply = QMessageBox.question(
+                    self, 
+                    "File Already Exists",
+                    f"The file '{filename}' already exists.\n\nDo you want to associate this existing file with the diagram?",
+                    QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+                    QMessageBox.Yes
+                )
+                if reply == QMessageBox.Yes:
+                    self.associate_asn1_file_and_save(filename)
+                    return
+                elif reply == QMessageBox.Cancel:
+                    return
+                else:
+                    module_name = None
+                    continue
+            else:
+                content = f"{module_name} DEFINITIONS ::=\nBEGIN\n\nMyInt ::= INTEGER (0..255)\n\nEND\n"
+                try:
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                    if hasattr(self.view, 'file_monitor'):
+                        self.view.file_monitor.update_file(filepath)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to create ASN.1 file:\n{e}")
+                    return
+
+                self.associate_asn1_file_and_save(filename)
+                return
+
+    def add_existing_asn1_file_clicked(self):
+        ''' Slot for Add existing ASN.1 file button '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot add ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nCannot add ASN.1 files.")
+            msg_box.exec()
+            return
+
+        if not hasattr(self.view, 'filename') or not self.view.filename:
+            if not self.view.save_diagram():
+                return
+
+        import os
+        base_dir = os.path.dirname(self.view.filename)
+        if not base_dir:
+            base_dir = "."
+
+        # Let user choose file
+        from PySide6.QtWidgets import QFileDialog
+        filename_path, _ = QFileDialog.getOpenFileName(self, "Add Existing ASN.1 File", base_dir, "ASN.1 Files (*.asn *.asn1)")
+        if not filename_path:
+            return
+
+        # Compute relative path
+        rel_path = os.path.relpath(filename_path, base_dir)
+
+        # Add textbox referencing it and save
+        self.associate_asn1_file_and_save(rel_path)
+
+    def enter_asn1_edit_mode(self):
+        ''' Read dataview ASN.1 file and open it in the editor '''
+        if not self.current_asn1_file:
+            return
+        try:
+            with open(self.current_asn1_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.asn1_editor.setPlainText(content)
+            
+            # Dynamic keywords from active model types
+            words = list(self.asn1_keywords)
+            if hasattr(self.view, 'scene') and self.view.scene():
+                scene = self.view.scene()
+                if hasattr(scene, 'ast') and scene.ast:
+                    words.extend(list(scene.ast.dataview.keys()))
+            words = sorted(list(set(words)))
+            model = QStringListModel(words, self.asn1_completer)
+            self.asn1_completer.setModel(model)
+            
+            is_read_only = getattr(self.view, 'is_read_only', False)
+            self.asn1_editor.setReadOnly(is_read_only)
+            self.asn1_browser.hide()
+            self.asn1_editor.show()
+            self.edit_btn.hide()
+            self.vim_btn.show()
+            self.check_btn.show()
+            if is_read_only:
+                self.save_btn.hide()
+            else:
+                self.save_btn.show()
+            self.cancel_btn.show()
+            self.asn1_editor.setFocus()
+            
+            # Show vim bar if vim mode is checked
+            if self.vim_btn.isChecked():
+                self.vim_bar.show()
+            
+            # Start LSP client
+            try:
+                import shutil
+                from distutils import spawn
+                path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+                if path_to_asn1scc:
+                    server_path = os.path.join(os.path.dirname(path_to_asn1scc), "Server")
+                    if os.path.exists(server_path):
+                        self.lsp_client = ASN1LSPClient(server_path, self.current_asn1_file, self.lsp_signal_emitter)
+                        self.lsp_client.start()
+                        self.lsp_client.did_open(content)
+            except Exception as lsp_err:
+                LOG.warning(f"Could not start ASN.1 LSP server: {lsp_err}")
+        except Exception as err:
+            LOG.error(f"Failed to read ASN.1 file: {err}")
+            QMessageBox.critical(self, "Error", f"Failed to read ASN.1 file:\n{err}")
+
+    def check_asn1_syntax(self):
+        ''' Run asn1scc on the current editor content and return status and error messages '''
+        if not self.current_asn1_file or not hasattr(self, 'current_asn1_ast') or not self.current_asn1_ast:
+            return True, ""
+            
+        ast = self.current_asn1_ast
+        if not hasattr(ast, 'DV') or not ast.DV:
+            return True, ""
+            
+        asn1_files = list(ast.DV.asn1Files)
+        if not asn1_files:
+            return True, ""
+            
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.asn', delete=False, encoding='utf-8') as tmp_file:
+            tmp_file.write(self.asn1_editor.toPlainText())
+            tmp_file_path = tmp_file.name
+            
+        try:
+            import shutil
+            from distutils import spawn
+            path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+            if not path_to_asn1scc:
+                return False, "ASN.1 Compiler (asn1scc) not found in PATH"
+                
+            args = ['-typePrefix', 'asn1Scc', '-equal']
+            for file_path in asn1_files:
+                if os.path.abspath(file_path) == os.path.abspath(self.current_asn1_file):
+                    args.append(tmp_file_path)
+                else:
+                    args.append(file_path)
+                    
+            from PySide6.QtCore import QProcess
+            process = QProcess()
+            process.start(path_to_asn1scc, args)
+            
+            if not process.waitForStarted():
+                return False, "Could not start asn1scc compiler"
+                
+            if not process.waitForFinished(10000):
+                return False, "Compiler syntax check timed out"
+                
+            exit_code = process.exitCode()
+            err_output = bytes(process.readAllStandardError()).decode('utf-8', errors='replace')
+            std_output = bytes(process.readAllStandardOutput()).decode('utf-8', errors='replace')
+            
+            if exit_code == 0:
+                return True, ""
+            else:
+                return False, err_output or std_output or f"Unknown error (exit code {exit_code})"
+        except Exception as err:
+            return False, str(err)
+        finally:
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+    def check_asn1_syntax_button_clicked(self):
+        ''' Slot for Check Syntax button '''
+        success, err = self.check_asn1_syntax()
+        if success:
+            self.messages_window.clear()
+            self.messages_window.addItem("[ASN.1] ASN.1 model has no errors")
+            QMessageBox.information(self, "Syntax Check", "ASN.1 Syntax is OK!")
+        else:
+            self.messages_window.clear()
+            self.messages_window.addItem("[ASN.1 ERROR] Syntax errors found:")
+            for line in err.splitlines():
+                if line.strip():
+                    self.messages_window.addItem(line.strip())
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("ASN.1 Syntax Errors")
+            msg_box.setText("Syntax errors were found in the ASN.1 file:")
+            msg_box.setDetailedText(err)
+            msg_box.exec()
+
+    def save_asn1_changes(self):
+        ''' Save content to the file and trigger parsing '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot save ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nASN.1 files cannot be saved.")
+            msg_box.exec()
+            return
+
+        if not self.current_asn1_file:
+            return
+            
+        # Check syntax first
+        success, err = self.check_asn1_syntax()
+        if not success:
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle("ASN.1 Syntax Errors")
+            msg_box.setText("Syntax errors were found in the ASN.1 file. Saving with syntax errors will break the type rendering.\n\nAre you sure you want to save anyway?")
+            msg_box.setDetailedText(err)
+            msg_box.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
+            res = msg_box.exec()
+            if res == QMessageBox.Cancel:
+                return
+
+        try:
+            content = self.asn1_editor.toPlainText()
+            with open(self.current_asn1_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            # Update FileMonitor timestamp so internal save does not trigger external modification prompt
+            if hasattr(self.view, 'file_monitor'):
+                self.view.file_monitor.update_file(self.current_asn1_file)
+
+            # Exit edit mode and save diagram
+            self.cancel_asn1_edit()
+            self.view.save_diagram()
+        except Exception as err:
+            LOG.error(f"Failed to save ASN.1 file: {err}")
+            QMessageBox.critical(self, "Error", f"Failed to save ASN.1 file:\n{err}")
+
+    def cancel_asn1_edit(self):
+        ''' Exit edit mode, restoring previous display '''
+        if hasattr(self, 'lsp_client') and self.lsp_client:
+            try:
+                self.lsp_client.stop()
+            except Exception as e:
+                LOG.warning(f"Error stopping LSP client: {e}")
+            self.lsp_client = None
+            
+        if hasattr(self, 'lsp_debounce_timer'):
+            self.lsp_debounce_timer.stop()
+            
+        self.asn1_editor.setErrorLines([])
+        self.statusBar().clearMessage()
+        
+        self.asn1_editor.hide()
+        self.vim_bar.hide()
+        self.vim_btn.hide()
+        self.check_btn.hide()
+        self.save_btn.hide()
+        self.cancel_btn.hide()
+        
+        if self.current_asn1_file:
+            self.asn1_browser.show()
+            self.edit_btn.show()
+            if hasattr(self, 'no_asn1_widget'):
+                self.no_asn1_widget.hide()
+        else:
+            self.asn1_browser.hide()
+            self.edit_btn.hide()
+            if hasattr(self, 'no_asn1_widget'):
+                self.no_asn1_widget.show()
+
+    def send_lsp_changes(self):
+        if hasattr(self, 'lsp_client') and self.lsp_client:
+            self.lsp_client.did_change(self.asn1_editor.toPlainText())
+
+    def handle_lsp_diagnostics(self, diagnostics):
+        error_lines = []
+        error_msgs = []
+        
+        # Clear previous messages to show current live LSP diagnostics
+        self.messages_window.clear()
+        
+        for diag in diagnostics:
+            line = diag["line"]
+            msg = diag["message"]
+            error_lines.append(line)
+            error_msgs.append(f"Line {line+1}: {msg}")
+            
+            item = QListWidgetItem(f"[ASN.1 ERROR] Line {line+1}: {msg}")
+            self.messages_window.addItem(item)
+            
+        self.asn1_editor.setErrorLines(error_lines)
+        if error_msgs:
+            self.statusBar().showMessage("; ".join(error_msgs), 5000)
+        else:
+            self.statusBar().clearMessage()
+
+    def toggle_vim_mode(self, enabled):
+        self.asn1_editor.vim_mode_enabled = enabled
+        if enabled:
+            self.vim_btn.setText("Vim Mode: On")
+            self.vim_bar.show()
+            self.asn1_editor.set_vim_state("NORMAL")
+            self.statusBar().showMessage("Vim mode enabled. Esc to NORMAL mode, : to run commands.", 3000)
+        else:
+            self.vim_btn.setText("Vim Mode: Off")
+            self.vim_bar.hide()
+            self.statusBar().showMessage("Vim mode disabled.", 3000)
+            self.asn1_editor.set_vim_state("NORMAL")
+        self.asn1_editor.setFocus()
+            
+    def update_vim_status(self, state):
+        if state == "NORMAL":
+            self.vim_status.setText("-- NORMAL --")
+        elif state == "INSERT":
+            self.vim_status.setText("-- INSERT --")
+        elif state == "VISUAL":
+            self.vim_status.setText("-- VISUAL --")
+        elif state == "PENDING":
+            self.vim_status.setText("-- PENDING --")
+        elif state == "REPLACE":
+            self.vim_status.setText("-- REPLACE --")
+
+    def show_vim_input(self, prefix):
+        self.vim_status.setText(prefix)
+        self.vim_input.setText("")
+        self.vim_bar.show()
+        self.vim_input.setFocus()
+
+    def execute_vim_command(self):
+        cmd = self.vim_input.text()
+        prefix = self.vim_status.text()
+        self.vim_bar.hide()
+        self.asn1_editor.setFocus()
+        
+        # Reset editor to NORMAL state
+        self.asn1_editor.set_vim_state("NORMAL")
+        
+        # Show vim_bar again if Vim mode is still active
+        if self.vim_btn.isChecked():
+            self.vim_bar.show()
+            self.vim_status.setText("-- NORMAL --")
+            self.vim_input.clear()
+            
+        if prefix == ":":
+            self.process_colon_command(cmd)
+        elif prefix == "/":
+            self.process_search_command(cmd)
+
+    def process_search_command(self, pattern):
+        if not pattern:
+            return
+        self.asn1_editor.last_search_pattern = pattern
+        cursor = self.asn1_editor.document().find(pattern, self.asn1_editor.textCursor())
+        if not cursor.isNull():
+            self.asn1_editor.setTextCursor(cursor)
+        else:
+            # Wrap around search
+            cursor = self.asn1_editor.document().find(pattern, 0)
+            if not cursor.isNull():
+                self.asn1_editor.setTextCursor(cursor)
+            else:
+                self.statusBar().showMessage(f"Pattern not found: {pattern}", 3000)
+
+    def process_colon_command(self, cmd):
+        if cmd.startswith("%s/") or cmd.startswith("s/"):
+            parts = cmd.split('/')
+            if len(parts) >= 3:
+                old_val = parts[1]
+                new_val = parts[2]
+                flags = parts[3] if len(parts) > 3 else ""
+                
+                content = self.asn1_editor.toPlainText()
+                import re
+                try:
+                    if 'g' in flags:
+                        new_content, count = re.subn(old_val, new_val, content)
+                    else:
+                        new_content, count = re.subn(old_val, new_val, content, count=1)
+                    
+                    self.asn1_editor.setPlainText(new_content)
+                    self.statusBar().showMessage(f"Substituted {count} occurrence(s).", 3000)
+                except Exception as e:
+                    self.statusBar().showMessage(f"Substitution error: {e}", 3000)
+            else:
+                self.statusBar().showMessage("Invalid substitution syntax. Use: %s/old/new/g", 3000)
+        elif cmd == "w":
+            self.save_asn1_changes()
+        elif cmd == "q":
+            self.cancel_asn1_edit()
+        elif cmd == "wq":
+            self.save_asn1_changes()
+
     def select_in_datadict_window(self, str):
         ''' This function is called upon reception of a signal emitted by
         text boxes when the current word under the cursor has changed. This
@@ -3228,10 +4140,7 @@ class OG_MainWindow(QMainWindow):
         scene = self.view.scene()
         # scene.partitions.keys()
         partitions = self.datadict.topLevelItem(9)
-        for idx in range(partitions.childCount()):
-            # Remove default partition
-            child = partitions.child(idx)
-            partitions.removeChild(child)
+        partitions.takeChildren()
         for name, part_scene in scene.partitions.items():
             new_part = QTreeWidgetItem(partitions, [name, "open"])
             new_part.setForeground(1, Qt.blue)
@@ -3388,7 +4297,7 @@ class OG_MainWindow(QMainWindow):
             else:
                 # apply globally to the whole model
                 for each in self.view.all_scenes():
-                    each.search(pattern, replace_with=new, cmd=cmd)
+                    each.search(pattern, replace_with=new, cmd=cmd, global_search=True)
         except AttributeError as err:
             # Developer command allowing to dynamically reload a
             # python module, to avoid heavy roundtrips while debugging
@@ -3450,12 +4359,58 @@ class OG_MainWindow(QMainWindow):
             self.vi_bar.setText('/')
         super().keyPressEvent(key_event)
 
+    def check_external_modifications(self):
+        ''' Check if any tracked model file has been modified externally '''
+        if not hasattr(self, 'view') or not self.view:
+            return
+        modified = self.view.file_monitor.check_modifications()
+        if not modified:
+            return
+
+        self.file_check_timer.stop()
+        try:
+            for filepath, old_mtime, new_mtime in modified:
+                rel_name = os.path.basename(filepath)
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("OpenGEODE - File Modified Externally")
+                msg_box.setIcon(QMessageBox.Question)
+                msg_box.setText(f"File '{rel_name}' has been modified by another process.")
+                msg_box.setInformativeText("Do you want to reload the model from disk or ignore?")
+                btn_reload = msg_box.addButton("Reload", QMessageBox.AcceptRole)
+                btn_ignore = msg_box.addButton("Ignore", QMessageBox.RejectRole)
+                msg_box.exec()
+
+                if msg_box.clickedButton() == btn_reload:
+                    if not self.view.is_model_clean():
+                        confirm = QMessageBox.question(
+                            self,
+                            "OpenGEODE - Unsaved Changes",
+                            "Reloading will discard your current unsaved edits. Are you sure you want to proceed?",
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.No
+                        )
+                        if confirm == QMessageBox.No:
+                            self.view.file_monitor.update_file(filepath)
+                            continue
+
+                    if self.view.filename:
+                        self.view.load_file([self.view.filename], is_reload=True)
+                    break
+                else:
+                    self.view.file_monitor.update_file(filepath)
+        finally:
+            self.file_check_timer.start(3000)
+
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application after saving application state '''
         if not self.view.is_model_clean() and not self.view.propose_to_save():
             event.ignore()
         else:
+            if hasattr(self.view, 'lock_manager'):
+                self.view.lock_manager.release_locks()
+            if hasattr(self.view, 'file_monitor'):
+                self.view.file_monitor.stop_tracking()
             # save windows geometry to a setting file
             if self.view.filename:
                 ini_filename = self.view.filename + ".ini"
@@ -3587,9 +4542,11 @@ def parse(files):
              'Summary, found {} warnings and {} errors'
              .format(len(warnings), len(errors)))
     for warning in warnings:
-        LOG.warning(warning[0])
+        w_str = warning.as_gnu() if hasattr(warning, 'as_gnu') else str(warning[0])
+        print(w_str, file=sys.stderr)
     for error in errors:
-        LOG.error(error[0])
+        e_str = error.as_gnu() if hasattr(error, 'as_gnu') else str(error[0])
+        print(e_str, file=sys.stderr)
     os.chdir (cwd)
 
     return ast, warnings, errors
@@ -3756,6 +4713,29 @@ def gui(options):
     app.setApplicationName('OpenGEODE')
     app.setWindowIcon(QIcon(':icons/input.png'))
 
+    # Force light mode palette to override any system dark theme
+    light_palette = QPalette()
+    light_palette.setColor(QPalette.Window, QColor(239, 239, 239))
+    light_palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Base, QColor(255, 255, 255))
+    light_palette.setColor(QPalette.AlternateBase, QColor(233, 231, 227))
+    light_palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 220))
+    light_palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Text, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.Button, QColor(239, 239, 239))
+    light_palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
+    light_palette.setColor(QPalette.BrightText, QColor(255, 0, 0))
+    light_palette.setColor(QPalette.Link, QColor(0, 0, 255))
+    light_palette.setColor(QPalette.Highlight, QColor(48, 140, 198))
+    light_palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+    light_palette.setColor(QPalette.PlaceholderText, QColor(128, 128, 128))
+    # Disabled state
+    light_palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(190, 190, 190))
+    light_palette.setColor(QPalette.Disabled, QPalette.Text, QColor(190, 190, 190))
+    light_palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(190, 190, 190))
+    app.setPalette(light_palette)
+    app.setStyle("Fusion")
+
     # Set all encodings to utf-8 in Qt
     # This was removed in Qt5, the consequences are unclear
     #QTextCodec.setCodecForCStrings(QTextCodec.codecForName('UTF-8'))
@@ -3806,6 +4786,7 @@ def opengeode():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     options = parse_args()
+    sdlSymbols.TASTE_TARGET = options.taste_target
 
     init_logging(options)
 

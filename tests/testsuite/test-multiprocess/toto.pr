@@ -1,0 +1,212 @@
+system baz;
+    signal dummy;
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (869, 236), (267, 140) */
+    -- Text area for declarations and comments
+    use dataview comment 'dataview.asn';
+    
+    signal hello;
+    /* CIF ENDTEXT */
+    channel c1
+        /* CIF Keep Specific Geode ROUTE (148, 101) (148, 101) */
+        from env to baz with hello;
+        from baz to env with dummy;
+    endchannel;
+    block baz;
+        signalroute r1
+            /* CIF Keep Specific Geode ROUTE (488, 526) (488, 602) (779, 602) (779, 33) (539, 33) (539, 89) */
+            from bar to foo with dummy;
+            from foo to bar with dummy;
+        signalroute r2
+            /* CIF Keep Specific Geode ROUTE (431, 526) (211, 632) (283, 652) (269, 692) */
+            from bar to blurp with dummy;
+            from blurp to bar with dummy;
+        signalroute r3
+            /* CIF Keep Specific Geode ROUTE (616, 124) (638, 124) (638, 354) */
+            from foo to baz with dummy;
+            from baz to foo with dummy;
+        signalroute r4
+            /* CIF Keep Specific Geode ROUTE (490, 164) (492, 230) */
+            from foo to tutu with dummy;
+            from tutu to foo with dummy;
+        signalroute r5
+            /* CIF Keep Specific Geode ROUTE (236, 350) (312, 350) (312, 287) (391, 287) */
+            from titi to tutu with dummy;
+            from tutu to titi with dummy;
+        signalroute r6
+            /* CIF Keep Specific Geode ROUTE (259, 139) (259, 270) (391, 270) */
+            from toto to tutu with dummy;
+            from tutu to toto with dummy;
+        signalroute r7
+            /* CIF Keep Specific Geode ROUTE (148, 101) (148, 101) */
+            from env to toto with hello;
+            from toto to env with dummy;
+        connect c1 and r7;
+        signalroute r8
+            /* CIF Keep Specific Geode ROUTE (176, 139) (176, 239) (152, 239) (152, 323) */
+            from toto to titi with dummy;
+            from titi to toto with dummy;
+        signalroute r9
+            /* CIF Keep Specific Geode ROUTE (298, 98) (466, 101) */
+            from toto to foo with dummy;
+            from foo to toto with dummy;
+        signalroute r10
+            /* CIF Keep Specific Geode ROUTE (213, 139) (213, 239) (371, 239) (391, 50) (689, 50) (689, 320) (520, 320) (520, 390) (598, 390) */
+            from toto to baz with dummy;
+            from baz to toto with dummy;
+        /* CIF PROCESS (598, 354), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process baz;
+            /* CIF START (215, 105), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (215, 160), (70, 35) */
+                NEXTSTATE baz;
+            /* CIF state (444, 142), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state baz;
+            endstate;
+        endprocess baz;
+        /* CIF PROCESS (431, 451), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process bar;
+            /* CIF START (130, 97), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (130, 152), (70, 35) */
+                NEXTSTATE bar;
+            /* CIF state (232, 110), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state bar;
+            endstate;
+        endprocess bar;
+        /* CIF PROCESS (466, 89), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process foo;
+            /* CIF START (221, 111), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (221, 166), (70, 35) */
+                NEXTSTATE foo;
+            /* CIF state (58, 49), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state foo;
+            endstate;
+        endprocess foo;
+        /* CIF PROCESS (391, 230), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process tutu;
+            /* CIF START (183, 76), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (183, 131), (70, 35) */
+                NEXTSTATE tutu;
+            /* CIF state (505, 137), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state tutu;
+            endstate;
+        endprocess tutu;
+        /* CIF PROCESS (86, 323), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process titi;
+            /* CIF START (141, 114), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (141, 169), (70, 35) */
+                NEXTSTATE pop;
+            /* CIF state (464, 88), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state pop;
+            endstate;
+        endprocess titi;
+        /* CIF PROCESS (148, 64), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process toto;
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (693, 124), (367, 140) */
+            -- Model used to demonstrate how to work with enumerated
+            -- and choice determinants
+            
+            dcl val MyChoice,  det MyEnum;
+            
+            dcl choice_selectors mychoice_selection := foo;
+            
+            dcl pos MyInt;
+            /* CIF ENDTEXT */
+            /* CIF START (240, 89), (70, 35) */
+            START;
+                /* CIF task (169, 144), (210, 35) */
+                task choice_selectors := present(val);
+                /* CIF decision (225, 199), (99, 50) */
+                decision present (val);
+                    /* CIF ANSWER (195, 269), (70, 23) */
+                    (foo):
+                    /* CIF ANSWER (285, 269), (70, 23) */
+                    (bar):
+                enddecision;
+                /* CIF decision (225, 308), (99, 50) */
+                decision present (val);
+                    /* CIF ANSWER (160, 378), (120, 23) */
+                    (choice_selectors):
+                    /* CIF ANSWER (315, 378), (70, 23) */
+                    else:
+                enddecision;
+                /* CIF decision (214, 417), (120, 50) */
+                decision choice_selectors;
+                    /* CIF ANSWER (216, 487), (96, 23) */
+                    (present(val)):
+                    /* CIF ANSWER (346, 487), (70, 23) */
+                    else:
+                enddecision;
+                /* CIF task (235, 526), (79, 35) */
+                task det := foo;
+                /* CIF task (215, 578), (118, 35) */
+                task pos := num (det);
+                /* CIF PROCEDURECALL (150, 633), (249, 35) */
+                call writeln ('1. num: ', pos, ' (should be 0)');
+                /* CIF task (196, 683), (156, 35) */
+                task choice_selectors := bar;
+                /* CIF task (125, 738), (299, 35) */
+                task choice_selectors := to_selector (det, MyChoice);
+                /* CIF PROCEDURECALL (83, 793), (382, 35) */
+                call writeln ('2. to_selector: ',choice_selectors, ' (should be FOO)');
+                /* CIF task (235, 848), (79, 35) */
+                task det := bar;
+                /* CIF task (135, 898), (278, 35) */
+                task det := to_enum (choice_selectors, MyEnum);
+                /* CIF PROCEDURECALL (127, 953), (294, 35) */
+                call writeln ('3. to_enum: ', det, ' (should be FOO)');
+                /* CIF task (235, 1008), (79, 35) */
+                task det := bar;
+                /* CIF task (125, 1063), (299, 35) */
+                task choice_selectors := to_selector (det, MyChoice);
+                /* CIF PROCEDURECALL (84, 1118), (381, 35) */
+                call writeln ('4. to_selector:', choice_selectors, ' (should be BAR)');
+                /* CIF task (235, 1173), (79, 35) */
+                task det := foo;
+                /* CIF task (135, 1228), (278, 35) */
+                task det := to_enum (choice_selectors, MyEnum);
+                /* CIF PROCEDURECALL (128, 1283), (292, 35) */
+                call writeln ('5. to_enum: ', det, ' (should be BAR)');
+                /* CIF task (198, 1338), (152, 35) */
+                task det := val (0, MyEnum)
+                /* CIF comment (371, 1338), (116, 35) */
+                comment 'convert 0 to foo';
+                /* CIF PROCEDURECALL (147, 1393), (255, 35) */
+                call writeln ('6. val: ',det, ' (should be FOO)');
+                /* CIF NEXTSTATE (240, 1443), (70, 35) */
+                NEXTSTATE hop;
+            /* CIF state (528, 360), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state hop;
+            endstate;
+        endprocess toto;
+        /* CIF PROCESS (269, 692), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
+        process blurp;
+            /* CIF START (188, 110), (70, 35) */
+            START;
+                /* CIF NEXTSTATE (188, 165), (70, 35) */
+                NEXTSTATE pop;
+            /* CIF state (453, 143), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state pop;
+            endstate;
+        endprocess blurp;
+    endblock;
+endsystem;

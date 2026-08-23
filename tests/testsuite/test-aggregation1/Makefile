@@ -25,18 +25,26 @@ test-qgen-gt-ada:
 test-qgen-gt-c:
 	$(TESTQGEN_GT_C) $(ROOT_MODEL)
 
-test-ada: challenge.ali dataview-uniq.o | test_ada.o
+test-ada: dataview-uniq.o | test_ada.o
+	cp challenge_ri.ada challenge_ri.adb
+	$(OPENGEODE) challenge.pr system_structure.pr --toAda
+	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	gnat make challenge
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
-	./test_ada
+	./test_ada | diff expected.log -
 
 test-if:
 	sdl2if challenge.pr system_structure.pr
 
-test-c: challenge.c test_c.o dataview-uniq.o
+challenge_datamodel.o: challenge_datamodel.asn dataview-uniq.asn
+	$(ASN1SCC) -c -typePrefix asn1Scc -equal challenge_datamodel.asn dataview-uniq.asn
+	$(CC) -O$(O) -c -g $*.c
+
+test-c: challenge.c test_c.o dataview-uniq.o challenge_datamodel.o
 	$(CC) challenge.c -c -o challenge.o
-	$(CC) test_c.o challenge.c dataview-uniq.o -lm -o test_c
-	./test_c
+	$(CC) test_c.o challenge.c dataview-uniq.o challenge_datamodel.o -lm -o test_c
+	./test_c | diff expected.log -
 
 test-llvm: challenge.o dataview-uniq.o | test_llvm.o
 	$(CC) challenge.o dataview-uniq.o test_llvm.o -o test_llvm -lm

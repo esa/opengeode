@@ -8,7 +8,7 @@ edit:
 	$(OPENGEODE) challenge.pr system_structure.pr
 
 test-parse:
-	$(OPENGEODE) challenge.pr system_structure.pr --check 2>&1 | grep ERROR | wc | grep "1       9      61" && echo OK
+	$(OPENGEODE) challenge.pr system_structure.pr --check 2>&1 | diff expected -
 
 test-qgen-parse:
 	$(TESTQGEN_PARSE) $(ROOT_MODEL)

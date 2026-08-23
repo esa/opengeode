@@ -1,0 +1,4 @@
+Test of various bitwise operations
+should be 255: 255
+00 FF 00 FF 00 
+ 255

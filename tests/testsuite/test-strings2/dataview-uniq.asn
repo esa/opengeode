@@ -10,6 +10,7 @@ FixedIA5String ::= IA5String (SIZE (3))
 
 
 Textstring ::= IA5String (SIZE (0..100))
+ListOfIa5 ::= SEQUENCE(SIZE(1..5)) OF Textstring
 
 END
 

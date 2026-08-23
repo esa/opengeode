@@ -198,12 +198,155 @@ def type_name(t):
 # return the line number of this python module, useful for debugging
 lineno = lambda : currentframe().f_back.f_lineno
 
+
+class ParsingError:
+    ''' Handle a parsing error (or warning, note, info). Collect all information
+    useful to report to the end user, such as filename, line number, column,
+    graphical coordinates, and AST path.
+    '''
+    def __init__(self, msg, root=None, category: str = 'error',
+                 pos=None, path=None, filename: str = "", line: int = -1,
+                 col: int = -1, debug_line: int = -1):
+        if isinstance(msg, ParsingError):
+            other = msg
+            msg = other.msg
+            if root is None: root = other.root
+            if category == 'error' and other.category != 'error': category = other.category
+            if pos is None or pos == [0, 0]: pos = other.pos
+            if not path: path = other.path
+            if not filename: filename = other.filename
+            if line == -1: line = other.line
+            if col == -1: col = other.col
+            if debug_line == -1: debug_line = other.debug_line
+
+        msg_str = str(msg)
+        if msg_str.startswith('[WARNING] '):
+            msg_str = msg_str[10:]
+        elif msg_str.startswith('[ERROR] '):
+            msg_str = msg_str[8:]
+
+        self.msg = msg_str
+        self.category = category
+        self.root = root
+        self.pos = pos if pos is not None else [0, 0]
+        self.path = path if path is not None else []
+        self.debug_line = debug_line
+
+        self.filename = filename
+        self.line = line
+        self.col = col
+
+        if root is not None:
+            try:
+                if self.line == -1 and hasattr(root, 'getLine'):
+                    l = root.getLine()
+                    if l is not None and l > 0:
+                        self.line = l
+            except Exception:
+                pass
+            try:
+                if self.col == -1 and hasattr(root, 'getCharPositionInLine'):
+                    c = root.getCharPositionInLine()
+                    if c is not None and c >= 0:
+                        self.col = c + 1
+            except Exception:
+                pass
+            try:
+                if not self.filename:
+                    def find_fn(node, depth=0):
+                        if node is None or depth > 10:
+                            return ''
+                        tok = getattr(node, 'token', None)
+                        if tok and getattr(tok, 'input', None):
+                            fn = getattr(tok.input, 'fileName', '')
+                            if fn:
+                                return fn
+                        for ch in getattr(node, 'getChildren', lambda: [])():
+                            fn = find_fn(ch, depth + 1)
+                            if fn:
+                                return fn
+                        return ''
+                    self.filename = find_fn(root)
+            except Exception:
+                pass
+
+    def as_gnu(self) -> str:
+        ''' Format the error with GNU convention (like gcc/clang):
+            filename:line:col: category: message (or opengeode: category: message)
+            see https://www.gnu.org/prep/standards/html_node/Errors.html
+        '''
+        loc_parts = []
+        if self.filename:
+            fn = self.filename
+            try:
+                rel_fn = os.path.relpath(fn)
+                if not rel_fn.startswith('..'):
+                    fn = rel_fn
+            except Exception:
+                pass
+            loc_parts.append(fn)
+        if self.line != -1 and self.line is not None and self.line > 0:
+            loc_parts.append(str(self.line))
+            if self.col != -1 and self.col is not None and self.col > 0:
+                loc_parts.append(str(self.col))
+
+        loc_str = ":".join(loc_parts)
+        cat = self.category.lower()
+        if loc_str:
+            return f'{loc_str}: {cat}: {self.msg}'
+        else:
+            return f'opengeode: {cat}: {self.msg}'
+
+    def as_gui(self) -> str:
+        ''' Format the error for the Qt GUI '''
+        return f'[{self.category.upper()}] {self.msg}'
+
+    def to_rich_string(self, source_code: str = "") -> str:
+        ''' Return formatted string with GNU header and source context line if available '''
+        gnu = self.as_gnu()
+        if source_code and self.line > 0:
+            lines = source_code.splitlines()
+            if 0 <= self.line - 1 < len(lines):
+                src_line = lines[self.line - 1]
+                caret_indent = " " * (max(0, self.col - 1)) if self.col > 0 else ""
+                return f"{gnu}\n  {src_line}\n  {caret_indent}^"
+        return gnu
+
+    def __str__(self) -> str:
+        return self.msg
+
+    def __repr__(self) -> str:
+        return f"ParsingError({self.msg!r}, category={self.category!r}, line={self.line}, col={self.col})"
+
+    def __getitem__(self, idx: int):
+        if idx == 0:
+            return self.msg
+        elif idx == 1:
+            return self.pos
+        elif idx == 2:
+            return self.path
+        else:
+            raise IndexError(f"ParsingError index out of range: {idx}")
+
+    def __len__(self) -> int:
+        return 3
+
+    def __iter__(self):
+        yield self.msg
+        yield self.pos
+        yield self.path
+
+
+Error = ParsingError
+
+
 # user may create SDL (non-asn1) types with the newtype keyword
 # they are stored in a dedicated dictionary with the same structure
 # as the ASN1SCC generated python AST
 USER_DEFINED_TYPES = dict()
 CHOICE_SELECTORS = dict()
 g_choice_selectors_ignore_list = list()
+
 
 
 def types():
@@ -451,9 +594,14 @@ def get_interfaces(ast, process_name):
     undeclared_signals = []
     for each in process_parent.signalroutes:
         for route in each['routes']:
-            if route['source'] == process_name:
+            src = route['source'].lower()
+            dst = route['dest'].lower()
+            p_name = process_name.lower()
+            single_proc = (len(getattr(process_parent, 'processes', [])) == 1)
+            
+            if src == p_name or (src != 'env' and single_proc):
                 direction = 'out'
-            elif route['dest'] == process_name:
+            elif dst == p_name or (dst != 'env' and single_proc):
                 direction = 'in'
             else:
                 continue
@@ -463,7 +611,8 @@ def get_interfaces(ast, process_name):
                     found, = [dict(sig) for sig in all_signals
                               if sig['name'].lower() == sig_id.lower()]
                     found['direction'] = direction
-                    async_signals.append(found)
+                    if not any(s['name'].lower() == found['name'].lower() and s['direction'] == direction for s in async_signals):
+                        async_signals.append(found)
                 except ValueError:
                     undeclared_signals.append(sig_id)
                 except (KeyError, AttributeError) as err:
@@ -490,14 +639,18 @@ def get_input_string(root):
         return ""
 
 
-def error(root, msg: str) -> str:
-    ''' Return an error message '''
-    return '{} - "{}"'.format(msg, get_input_string(root))
+def error(root, msg: str) -> ParsingError:
+    ''' Return a ParsingError instance '''
+    input_str = get_input_string(root)
+    full_msg = f'{msg} - "{input_str}"' if input_str else msg
+    return ParsingError(msg=full_msg, root=root, category='error')
 
 
-def warning(root, msg: str) -> str:
-    ''' Return a warning message '''
-    return '{} - "{}"'.format(msg, get_input_string(root))
+def warning(root, msg: str) -> ParsingError:
+    ''' Return a ParsingError instance for warning '''
+    input_str = get_input_string(root)
+    full_msg = f'{msg} - "{input_str}"' if input_str else msg
+    return ParsingError(msg=full_msg, root=root, category='warning')
 
 
 def check_syntax(node: antlr3.tree.CommonTree,
@@ -1176,7 +1329,7 @@ def fix_append_expression_type(expr, expected_type):
     expr.expected_type = expected_type
 
 
-def check_type_compatibility(primary, type_ref, context):
+def check_type_compatibility(primary, type_ref, context, root=None):
     '''
         Check if an ogAST.Primary (raw value, enumerated, ASN.1 Value...)
         is compatible with a given type (type_ref is an ASN1Scc type)
@@ -1223,12 +1376,13 @@ def check_type_compatibility(primary, type_ref, context):
             if expr.is_raw:
                 warnings.extend(check_type_compatibility(expr,
                                                          type_ref,
-                                                         context))
+                                                         context,
+                                                         root=root))
         return warnings
 
     elif isinstance(primary, (ogAST.PrimVariable, ogAST.PrimSelector)):
         try:
-            warnings.extend(compare_types(primary.exprType, type_ref))
+            warnings.extend(compare_types(primary.exprType, type_ref, root=root))
         except TypeError as err:
             raise TypeError('{expr} should be of type {ty} - {err}'
                             .format(expr=primary.inputString,
@@ -1506,7 +1660,7 @@ def check_type_compatibility(primary, type_ref, context):
     return warnings
 
 
-def compare_types(type_a, type_b):   # type -> [warnings]
+def compare_types(type_a, type_b, root=None):   # type -> [warnings]
     '''
        Compare two types, return if they are semantically equivalent,
        otherwise raise TypeError
@@ -1515,6 +1669,12 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     mismatch = ''
     if not type_a or not type_b:
         raise TypeError("Missing type definition")
+
+    def add_warn(w_msg):
+        if root is not None:
+            warnings.append(warning(root, w_msg))
+        else:
+            warnings.append(ParsingError(msg=w_msg, category='warning'))
 
     is_same_type = False
     if type_a.kind == 'ReferenceType' and type_b.kind == 'ReferenceType':
@@ -1539,7 +1699,7 @@ def compare_types(type_a, type_b):   # type -> [warnings]
     # there is another case where we can consider that the types are the same,
     # in some mathematical operations like power, that can return either
     # signed or unsigned value, according to what they are used with.
-    if any(sort.__name__ == 'Power' for sort in (type_a, type_b)):
+    if any(sort.__name__ in ('Power', 'choice_to_int') for sort in (type_a, type_b)):
         is_same_type = True
 
     type_a = find_basic_type(type_a)
@@ -1565,18 +1725,18 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 raise TypeError(mismatch)
             if type_a.Min == type_a.Max:
                 if type_a.Min == type_b.Min == type_b.Max:
-                    warnings.extend(compare_types(type_a.type, type_b.type))
+                    warnings.extend(compare_types(type_a.type, type_b.type, root=root))
                     return warnings
                 else:
                     raise TypeError('Incompatible sizes - size of {} can vary'
                                     .format(type_name(type_b)))
             elif(float(type_b.Min) >= float(type_a.Min)
                  and float(type_b.Max) <= float(type_a.Max)):
-                warnings.extend(compare_types(type_a.type, type_b.type))
+                warnings.extend(compare_types(type_a.type, type_b.type, root=root))
                 return warnings
             else:
-                warnings.extend(compare_types(type_a.type, type_b.type))
-                warnings.append('Size constraints mismatch - risk of overflow')
+                warnings.extend(compare_types(type_a.type, type_b.type, root=root))
+                add_warn('Size constraints mismatch - risk of overflow')
                 return warnings
         # TODO: Check that OctetString types have compatible range
         elif type_a.kind == 'SequenceType' and mismatch:
@@ -1600,19 +1760,19 @@ def compare_types(type_a, type_b):   # type -> [warnings]
                 raise TypeError("Signed vs Unsigned type mismatch " +
                         mismatch)
             elif mismatch:
-                warnings.append(mismatch)
+                add_warn(mismatch)
         elif mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_string(type_a) and is_string(type_b):
         return warnings
     elif is_integer(type_a) and is_integer(type_b):
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_real(type_a) and is_real(type_b):
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
     elif is_integer(type_a) and type_b.kind == 'OctetStringType' \
             or is_integer(type_b) and type_a.kind == 'OctetStringType':
@@ -1626,7 +1786,7 @@ def compare_types(type_a, type_b):   # type -> [warnings]
             #traceback.print_stack()
             raise TypeError(f'Try using mkstring')
         if mismatch:
-            warnings.append(mismatch)
+            add_warn(mismatch)
         return warnings
 
     else:
@@ -2734,7 +2894,7 @@ def in_expression(root, context):
             expr.left.value[idx] = check_expr.right
 
     try:
-        warnings.extend(compare_types(expr.right.exprType, ref_type))
+        warnings.extend(compare_types(expr.right.exprType, ref_type, root=root))
     except TypeError as err:
         errors.append(error(root, str(err)))
 
@@ -2747,12 +2907,12 @@ def in_expression(root, context):
         bool_expr.exprType = type('PrBool', (object,), {'kind': 'BooleanType'})
         if expr.right.value in [each.value for each in expr.left.value]:
             bool_expr.value = ['true']
-            warnings.append('Expression {} is always true'
-                            .format(expr.inputString))
+            warnings.append(warning(root, 'Expression {} is always true'
+                                         .format(expr.inputString)))
         else:
             bool_expr.value = ['false']
-            warnings.append('Expression {} is always false'
-                            .format(expr.inputString))
+            warnings.append(warning(root, 'Expression {} is always false'
+                                         .format(expr.inputString)))
         expr = bool_expr
 
     return expr, errors, warnings
@@ -2783,7 +2943,7 @@ def append_expression(root, context):
                 errors.append(error(root,
                     f"Only a valid octet string can be appended to an octet string (not a {notOctStr.kind})"))
         try:
-            warnings.extend(compare_types(left.type, right.type))
+            warnings.extend(compare_types(left.type, right.type, root=root))
         except TypeError as err:
             errors.append(error(root, str(err)))
         except AttributeError:
@@ -3611,6 +3771,7 @@ def composite_state(root, parent=None, context=None):
         comp.output_signals = context.output_signals
         comp.procedures = context.procedures
         comp.operators = dict(context.operators)
+        comp.user_defined_types = getattr(context, 'user_defined_types', USER_DEFINED_TYPES)
     except AttributeError:
         LOG.debug('Procedure context is undefined')
     inner_proc = []
@@ -4401,7 +4562,7 @@ def syntype(root, ta_ast, context):
         })
 
     USER_DEFINED_TYPES.update({asnName: newtype})
-    if isinstance(context, ogAST.Process):
+    if hasattr(context, 'user_defined_types'):
         context.user_defined_types = USER_DEFINED_TYPES
 
     return errors, warnings
@@ -4446,7 +4607,7 @@ def newtype(root, ta_ast, context):
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +
                     str(root.type))
-    if isinstance(context, ogAST.Process):
+    if hasattr(context, 'user_defined_types'):
         context.user_defined_types = USER_DEFINED_TYPES
     return errors, warnings
 
@@ -4827,6 +4988,16 @@ def signalroute(root, parent=None, context=None):
                     break
             else:
                 edge['routes'].append(route)
+        elif child.type == lexer.ROUTE_COORDS:
+            edge['coordinates'] = []
+            for point_node in child.getChildren():
+                if point_node.type == lexer.POINT:
+                    try:
+                        x = int(point_node.getChild(0).text)
+                        y = int(point_node.getChild(1).text)
+                        edge['coordinates'].append((x, y))
+                    except (ValueError, TypeError, IndexError, AttributeError):
+                        pass
     return edge, [], []
 
 
@@ -4836,12 +5007,7 @@ def block_definition(root, parent):
     block = ogAST.Block()
     block.parent = parent
     parent.blocks.append(block)
-    # blocks have signalroutes but since we have systems with a single
-    # block and a single process, it is better to set the routes with the
-    # same values as the channels from the system-level channels
-    # The reason is that some signals may have added to the channels to
-    # support RPCs' transitions
-    block.signalroutes = parent.channels
+    block.signalroutes = list(getattr(parent, 'channels', []))
     for child in root.getChildren():
         if child.type == lexer.ID:
             block.name = child.text
@@ -4851,8 +5017,13 @@ def block_definition(root, parent):
             warnings.extend(warn)
             block.signals.append(sig)
         elif child.type == lexer.CONNECTION:
-            block.connections.append({'channel': cnx[0].text,
-              'signalroute': cnx[1].text} for cnx in child.getChildren())
+            try:
+                block.connections.append({
+                    'channel': child.children[0].text,
+                    'signalroute': child.children[1].text
+                })
+            except (IndexError, AttributeError):
+                pass
         elif child.type == lexer.BLOCK:
             block, err, warn = block_definition(child, parent=block)
             errors.extend(err)
@@ -4867,8 +5038,8 @@ def block_definition(root, parent):
             proc.dv = DV
         elif child.type == lexer.SIGNALROUTE:
             sigroute, _, _ = signalroute(child)
-            # ignored (see comment above)
-            #block.signalroutes.append(sigroute)
+            sigroute['type'] = 'signalroute'
+            block.signalroutes.append(sigroute)
         else:
             warnings.append('Unsupported block child type: ' +
                 str(child.type))
@@ -4895,6 +5066,7 @@ def system_definition(root, parent):
             procedures.append(child)
         elif child.type == lexer.CHANNEL:
             channel, _, _ = signalroute(child)
+            channel['type'] = 'channel'
             system.channels.append(channel)
         elif child.type == lexer.BLOCK:
             blocks.append(child)
@@ -5011,7 +5183,15 @@ def system_definition(root, parent):
     # If there are exported procedures update signalroutes of the blocks
     if exported_procedures:
         for block in system.blocks:
-            block.signalroutes = system.channels
+            for sigroute in block.signalroutes:
+                if sigroute.get('type') == 'signalroute':
+                    if 'routes' not in sigroute:
+                        sigroute['routes'] = [{'dest': block.name, 'signals': []}]
+                    for route in sigroute['routes']:
+                        if route['dest'].lower() != "env":
+                            for proc in exported_procedures:
+                                if proc not in route['signals']:
+                                    route['signals'].append(proc)
 
     return system, errors, warnings
 
@@ -5046,6 +5226,7 @@ def rec_check_composite_state(comp):
         if t.instance_of:
             for ctxt in contexts:
                 keys.extend(list(ctxt.mapping.keys()))
+                keys.extend([comp.statename for comp in ctxt.composite_states])
         else:
             keys = list(comp.mapping.keys())
         ns = t.instance_of or t.inputString
@@ -5147,7 +5328,16 @@ def process_definition(root, parent=None, context=None):
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
 
     process.user_defined_types = USER_DEFINED_TYPES
-    tas = list(x for x in root.getChildren() if x.type == lexer.TEXTAREA)
+    def find_textareas(node):
+        res = []
+        for child in node.getChildren():
+            if child.type == lexer.TEXTAREA:
+                res.append(child)
+            else:
+                res.extend(find_textareas(child))
+        return res
+
+    tas = find_textareas(root)
     for child in tas:
         content = (x for x in child.getChildren()
                    if x.type == lexer.TEXTAREA_CONTENT)
@@ -5789,21 +5979,49 @@ def state(root, parent, context):
                 for lists in (inps for inps in state_ast.mapping.values()
                               if not isinstance(inps, int)):
                     res.extend(li for i in lists for li in i.inputlist)
+                # Check substates that are instances of state types
+                if hasattr(state_ast, 'content') and hasattr(state_ast.content, 'states'):
+                    for st_def in state_ast.content.states:
+                        if st_def.instance_of:
+                            type_comp = None
+                            curr_ctxt = context
+                            while curr_ctxt is not None:
+                                for comp_st in getattr(curr_ctxt, 'composite_states', []):
+                                    if comp_st.statename.lower() == st_def.instance_of.lower():
+                                        type_comp = comp_st
+                                        break
+                                if type_comp:
+                                    break
+                                curr_ctxt = getattr(curr_ctxt, 'parent', None)
+                            if type_comp and type_comp != state_ast:
+                                res.extend(gather_inputlist(type_comp))
                 subinputs = map(gather_inputlist, state_ast.composite_states)
                 for each in subinputs:
                     res.extend(each)
                 return res
+            target_states = [s.lower() for s in state_def.statelist]
+            if state_def.instance_of:
+                target_states.append(state_def.instance_of.lower())
+
             for comp in context.composite_states:
-                # if the current state is a composite state, check that none of
-                # the inputs from the list is already consumed in a substate
-                if any(st.lower() == comp.statename.lower()
-                        for st in state_def.statelist):
+                # if the current state or state instance type is a composite state,
+                # check that none of the inputs from the list is already consumed in a substate
+                if comp.statename.lower() in target_states:
                     subinputs = [res.lower() for res in gather_inputlist(comp)]
                     for each in inp.inputlist:
                         if each.lower() in subinputs:
-                            sterr.append('Input "{}" is already consumed '
-                                         'in substate "{}"'
-                                         .format(each, comp.statename.lower()))
+                            msg = ('Input "{}" is already consumed '
+                                   'in substate "{}"'
+                                   .format(each, comp.statename.lower()))
+                            inp_err = ParsingError(
+                                msg=msg,
+                                root=child,
+                                category='error',
+                                pos=[inp.pos_x, inp.pos_y],
+                                path=getattr(inp, 'path', context.path)
+                            )
+                            errors.append(inp_err)
+                            inp.errors.append(msg)
             try:
                 # Use the statelist unless the state is an instance
                 if not state_def.instance_of:
@@ -5937,7 +6155,7 @@ def state(root, parent, context):
             if each.statename.lower() == state_def.statelist[0].lower():
                 state_def.composite = each
             # If this is an instance of a state type, keep track of it
-            if each.statename.lower() == state_def.instance_of:
+            if state_def.instance_of and each.statename.lower() == state_def.instance_of.lower():
                 each.instances.add(state_def.statelist[0].lower())
     for each in sterr:
         errors.append([each, [st_x, st_y], []])
@@ -6077,7 +6295,7 @@ def connect_part(root, parent, context):
     # a state type inside a nested state.
     # removed, this is done after the full model is parsed, and recursively
     # Added back: we still have to do it for non-instance states
-    if not parent.instance_of:
+    if not getattr(parent, 'instance_of', None):
         errs = check_and_resolve_connect_part(conn, nested)
         errors.extend(errs)
 
@@ -6086,7 +6304,7 @@ def connect_part(root, parent, context):
         existing = context.connect_mapping.get(statename, [])
         for each in existing:
             if each.lower() in (a.lower() for a in conn.connect_list) and (
-                    statename.lower() != parent.instance_of):
+                    getattr(parent, 'instance_of', None) and statename.lower() != parent.instance_of.lower()):
                 msg = (f'CONNECT: trigger {each} already specified '
                         f'for state {statename}')
                 errors.append([msg, [conn.pos_x or 0, conn.pos_y or 0], []])
@@ -6480,6 +6698,8 @@ def decision(root, parent, context):
     dec.path = context.path
     dec.tmpVar = tmp()
     has_else = False
+    else_node = None
+    else_ans = None
     dec_x, dec_y = 0, 0
     # To support the "decision any" construct:
     need_random_generator = False
@@ -6521,7 +6741,14 @@ def decision(root, parent, context):
             dec.charPositionInLine = child.getCharPositionInLine()
         elif child.type == lexer.ANY:
             msg = 'Use of "ANY" introduces non-determinism'
-            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
+            warn_obj = ParsingError(
+                msg=msg,
+                root=child,
+                category='warning',
+                pos=[dec.pos_x, dec.pos_y],
+                path=getattr(dec, 'path', context.path)
+            )
+            warnings.append(warn_obj)
             dec.warnings.append(msg)
             dec.kind = 'any'
             need_random_generator = True
@@ -6543,7 +6770,9 @@ def decision(root, parent, context):
             warnings.extend(warn)
             dec.answers.append(ans)
         elif child.type == lexer.ELSE:
+            else_node = child
             ans = ogAST.Answer()
+            else_ans = ans
             ans.path = context.path
             ans.inputString = child.toString()
             for c in child.getChildren():
@@ -6566,12 +6795,8 @@ def decision(root, parent, context):
             dec.answers.append(ans)
             has_else = True
         else:
-            msg = f'Unsupported DECISION child type: {str(child.type)}'
-            warnings.append([msg, [dec.pos_x, dec.pos_y], []])
-            dec.warnings.append(msg)
+            pass
     if need_random_generator:
-        # If there are N answers, code generators will need a random
-        # number from 0 to N.
         context.random_generator.add(len(dec.answers))
     # Make type checks to be sure that question and answers are compatible
     covered_ranges = defaultdict(list)
@@ -6847,11 +7072,39 @@ def decision(root, parent, context):
             qerr.append(f'Decision "{dec.inputString}": No answer to cover {txt}')
 
     elif has_else and dec.kind in ('informal_text', 'any'):
-        qwarn.append(f'Informal decision "{dec.inputString}": ELSE branch is meaningless')
+        msg = f'Informal decision "{dec.inputString}": ELSE branch is meaningless'
+        else_x = else_ans.pos_x if else_ans and hasattr(else_ans, 'pos_x') else dec_x
+        else_y = else_ans.pos_y if else_ans and hasattr(else_ans, 'pos_y') else dec_y
+        warn_obj = ParsingError(
+            msg=msg,
+            root=else_node if else_node else root,
+            category='warning',
+            pos=[else_x, else_y],
+            path=else_ans.path if else_ans and hasattr(else_ans, 'path') else getattr(dec, 'path', context.path)
+        )
+        warnings.append(warn_obj)
+        if else_ans:
+            else_ans.warnings.append(msg)
+        else:
+            dec.warnings.append(msg)
 
     elif has_else and is_numeric(dec.question.exprType) and not q_ranges:
         # (3) Check that ELSE branch is reachable
-        qwarn.append(f'Decision "{dec.inputString}": ELSE branch is unreachable')
+        msg = f'Decision "{dec.inputString}": ELSE branch is unreachable'
+        else_x = else_ans.pos_x if else_ans and hasattr(else_ans, 'pos_x') else dec_x
+        else_y = else_ans.pos_y if else_ans and hasattr(else_ans, 'pos_y') else dec_y
+        warn_obj = ParsingError(
+            msg=msg,
+            root=else_node if else_node else root,
+            category='warning',
+            pos=[else_x, else_y],
+            path=else_ans.path if else_ans and hasattr(else_ans, 'path') else getattr(dec, 'path', context.path)
+        )
+        warnings.append(warn_obj)
+        if else_ans:
+            else_ans.warnings.append(msg)
+        else:
+            dec.warnings.append(msg)
 
     if need_else and not has_else:
         # (4) Answers use non-ground expression -> there should be an ELSE
@@ -6892,14 +7145,28 @@ def decision(root, parent, context):
             qerr.append('Decision "{}": Missing branches for answer(s) "{}"'
                           .format(dec.inputString,
                                   '", "'.join(set(enumerants) - set(answers))))
-    qerr = [[e, [dec_x, dec_y], []] for e in qerr]
-    qwarn = [[w, [dec_x, dec_y], []] for w in qwarn]
     for e in qerr:
-        dec.errors.append(e[0])
+        msg = e if isinstance(e, str) else str(e)
+        err_obj = ParsingError(
+            msg=msg,
+            root=root,
+            category='error',
+            pos=[dec_x, dec_y],
+            path=getattr(dec, 'path', context.path)
+        )
+        dec.errors.append(msg)
+        errors.append(err_obj)
     for w in qwarn:
-        dec.warnings.append(w[0])
-    errors.extend(qerr)
-    warnings.extend(qwarn)
+        msg = w if isinstance(w, str) else str(w)
+        warn_obj = ParsingError(
+            msg=msg,
+            root=root,
+            category='warning',
+            pos=[dec_x, dec_y],
+            path=getattr(dec, 'path', context.path)
+        )
+        dec.warnings.append(msg)
+        warnings.append(warn_obj)
     return dec, errors, warnings
 
 
@@ -7236,10 +7503,10 @@ def assign(root, context):
         # If assignment with numerical value: check range
         w = Assign_Check_Range (expr)
         if w is not None:
-            warnings.append(w)
+            warnings.append(warning(root, w))
     except(AttributeError, TypeError) as err:
         LOG.debug(str(traceback.format_exc()))
-        errors.append('In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'
+        msg = 'In "{exp}": Type mismatch ({lty} vs {rty} - {errstr})'\
                       .format(exp=expr.inputString,
                               lty=type_name(expr.left.exprType) if
                                 expr.left and expr.left.exprType
@@ -7247,9 +7514,10 @@ def assign(root, context):
                               rty=type_name(expr.right.exprType) if
                                 expr.right and expr.right.exprType
                                 else 'Undefined',
-                              errstr=str(err)))
+                              errstr=str(err))
+        errors.append(error(root, msg))
     except Warning as warn:
-        warnings.append(str(warn))
+        warnings.append(warning(root, str(warn)))
     if not errors:
         if expr.right.exprType == UNKNOWN_TYPE or not \
                 isinstance(expr.right, (ogAST.ExprAppend,
@@ -7879,8 +8147,9 @@ def parse_pr(files=None, string=None):
         for t in process.terminators:
             if t.kind != 'next_state':
                 continue
-            ns = t.instance_of or t.inputString.lower()
-            if not ns in [s.lower() for s in process.mapping.keys()] + ['-', '-*']:
+            ns = (t.instance_of or t.inputString).lower()
+            valid_states = [s.lower() for s in process.mapping.keys()] + [comp.statename.lower() for comp in process.composite_states] + ['-', '-*']
+            if ns not in valid_states:
                 t_x, t_y = t.pos_x or 0, t.pos_y or 0
                 msg = 'State definition missing: ' + ns.upper()
                 errors.append([msg,[t_x, t_y], ['PROCESS {}'.format(process.processName)]])
@@ -7904,9 +8173,36 @@ def parse_pr(files=None, string=None):
             if len(startup_transition.actions) == 0:
                 if startup_transition.terminator and startup_transition.terminator.kind == 'next_state':
                     next_state_name = startup_transition.terminator.inputString.lower()
-                    if next_state_name not in comp_states and not startup_transition.terminator.instance_of:
+                    if next_state_name not in comp_states and not getattr(startup_transition.terminator, 'instance_of', None):
                         process.only_procedures = True
-    return og_ast, warnings, errors
+                        if not process.variables and not process.global_variables and not process.timers and not process.global_timers and not getattr(process, 'user_defined_types', {}):
+                            process.no_context = True
+
+    clean_errors = []
+    for item in errors:
+        if isinstance(item, ParsingError):
+            clean_errors.append(item)
+        elif isinstance(item, (list, tuple)):
+            msg = item[0] if len(item) > 0 else ""
+            pos = item[1] if len(item) > 1 else [0, 0]
+            path = item[2] if len(item) > 2 else []
+            clean_errors.append(ParsingError(msg=msg, category='error', pos=pos, path=path))
+        else:
+            clean_errors.append(ParsingError(msg=str(item), category='error'))
+
+    clean_warnings = []
+    for item in warnings:
+        if isinstance(item, ParsingError):
+            clean_warnings.append(item)
+        elif isinstance(item, (list, tuple)):
+            msg = item[0] if len(item) > 0 else ""
+            pos = item[1] if len(item) > 1 else [0, 0]
+            path = item[2] if len(item) > 2 else []
+            clean_warnings.append(ParsingError(msg=msg, category='warning', pos=pos, path=path))
+        else:
+            clean_warnings.append(ParsingError(msg=str(item), category='warning'))
+
+    return og_ast, clean_warnings, clean_errors
 
 
 def n7s_scl_always(root, parent, context=None):

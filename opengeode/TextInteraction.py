@@ -48,8 +48,9 @@ class Completer(QGraphicsProxyWidget):
 
     def set_completer_list(self):
         ''' Set list of items for the autocompleter popup '''
-        compl = [item.replace('-', '_') for item in
-                 self.parent.parentItem().completion_list]
+        parent_item = (self.parent.parentItem() if hasattr(self.parent, 'parentItem') else None) or getattr(self.parent, 'parent', None)
+        compl_list = getattr(parent_item, 'completion_list', [])
+        compl = [item.replace('-', '_') for item in compl_list]
         self.string_list.setStringList(compl)
         self._completer.setModel(self.string_list)
 
@@ -75,7 +76,9 @@ class Completer(QGraphicsProxyWidget):
     def keyPressEvent(self, e):
         super().keyPressEvent(e)
         if e.key() == Qt.Key_Escape:
-            self.parentItem().setFocus()
+            target = self.parentItem() or getattr(self, 'parent', None)
+            if target:
+                target.setFocus()
         # Consume the event so that it is not repeated at EditableText level
         e.accept()
 
@@ -85,7 +88,9 @@ class Completer(QGraphicsProxyWidget):
         super().focusOutEvent(event)
         self.hide()
         self.resize(0, 0)
-        self.parentItem().setFocus()
+        target = self.parentItem() or getattr(self, 'parent', None)
+        if target:
+            target.setFocus()
 
 
 # pylint: disable=R0904
@@ -155,8 +160,7 @@ class EditableText(QGraphicsTextItem):
         super().__init__(parent)
         self.parent = parent
         self.setFont(QFont('Ubuntu', 10))
-        self.completer = Completer(self)
-        self.completer.widget().itemActivated.connect(self.completion_selected)
+        self._completer = None
         self.hyperlink = hyperlink
         self.setOpenExternalLinks(True)
         if hyperlink:
@@ -164,11 +168,9 @@ class EditableText(QGraphicsTextItem):
                     (hlink=hyperlink, text=text.replace('\n', '<br>')))
         else:
             self.setPlainText(text)
-        self.setTextInteractionFlags( Qt.TextSelectableByMouse
-                                     | Qt.TextEditable
-                                     | Qt.TextSelectableByKeyboard
-                                     | Qt.LinksAccessibleByMouse
-                                     | Qt.LinksAccessibleByKeyboard)
+        self._updating_flags = False
+        self._is_editable = False
+        self.setTextInteractionFlags(Qt.NoTextInteraction)
         self.completer_has_focus = False
         self.editing = False
         self.try_resize()
@@ -189,6 +191,17 @@ class EditableText(QGraphicsTextItem):
         # Removed - does not render text properly (eats up the right part)
         # self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self.force_focus = False
+        self._click_pos = QPointF()
+        self._mouse_pressed = False
+        self._has_moved = False
+
+    def setTextInteractionFlags(self, flags):
+        super().setTextInteractionFlags(flags)
+        if not getattr(self, '_updating_flags', False):
+            if flags & Qt.TextEditable:
+                self._is_editable = True
+            else:
+                self._is_editable = False
 
     def set_text_alignment(self):
         ''' Apply the required text alignment within the text box '''
@@ -250,6 +263,13 @@ class EditableText(QGraphicsTextItem):
         self.parent.resize_item(parent_rect)
         self.set_textbox_position()
 
+    @property
+    def completer(self):
+        if self._completer is None:
+            self._completer = Completer(self)
+            self._completer.widget().itemActivated.connect(self.completion_selected)
+        return self._completer
+
     @Slot(QListWidgetItem)
     def completion_selected(self, item):
         '''
@@ -309,10 +329,10 @@ class EditableText(QGraphicsTextItem):
             self.clearFocus()
             return
         # When completer is displayed, give it the focus with down key
-        if self.completer.isVisible() and event.key() == Qt.Key_Down:
+        if self._completer and self._completer.isVisible() and event.key() == Qt.Key_Down:
             self.completer_has_focus = True
-            self.completer.setFocusProxy(None)
-            self.completer.widget().setFocus()
+            self._completer.setFocusProxy(None)
+            self._completer.widget().setFocus()
             return
         self.try_resize()
         text_cursor = self.textCursor()
@@ -354,9 +374,10 @@ class EditableText(QGraphicsTextItem):
             self.completer.setFocusProxy(self)
             self.setTabChangesFocus(True)
         else:
-            self.completer.setFocusProxy(None)
-            self.completer.hide()
-            self.completer.resize(0, 0)
+            if self._completer:
+                self._completer.setFocusProxy(None)
+                self._completer.hide()
+                self._completer.resize(0, 0)
             self.setFocus()
         self.completer_has_focus = False
 
@@ -365,10 +386,61 @@ class EditableText(QGraphicsTextItem):
             If the completer box is active while the user clicks on another
             area of the text box, make it disappear first
         '''
-        if self.completer.isVisible():
-            self.completer.hide()
-            self.completer.resize(0, 0)
+        if self._completer and self._completer.isVisible():
+            self._completer.hide()
+            self._completer.resize(0, 0)
+        if not self.editing:
+            scene_p = event.scenePosition() if hasattr(event, 'scenePosition') else (event.scenePos() if hasattr(event, 'scenePos') else event.pos())
+            self._click_pos = scene_p
+            self._parent_start_pos = self.parent.pos() if hasattr(self.parent, 'pos') else QPointF()
+            self._mouse_pressed = True
+            self._has_moved = False
+            try:
+                self.parent.mouse_click(event)
+            except AttributeError:
+                pass
+            return
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        ''' Handle drag/move on symbol when not editing text '''
+        if not self.editing and self._mouse_pressed:
+            scene_p = event.scenePosition() if hasattr(event, 'scenePosition') else (event.scenePos() if hasattr(event, 'scenePos') else event.pos())
+            delta = scene_p - self._click_pos
+            if delta.manhattanLength() > 3:
+                self._has_moved = True
+            if self._has_moved:
+                try:
+                    # Only top level floating symbols (hasParent == False) can be moved by the user
+                    if not getattr(self.parent, 'hasParent', False):
+                        self.parent.set_valid_pos(self._parent_start_pos + delta)
+                    self.parent.mouse_move(event)
+                except AttributeError:
+                    pass
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        ''' Handle mouse release: enter text edit mode ONLY if user didn't move symbol '''
+        if not self.editing and self._mouse_pressed:
+            self._mouse_pressed = False
+            try:
+                self.parent.mouse_release(event)
+            except AttributeError:
+                pass
+            if not self._has_moved:
+                if hasattr(self.parent, 'edit_text'):
+                    self.parent.edit_text(self.mapToScene(event.pos()))
+                else:
+                    self.setTextInteractionFlags(Qt.TextSelectableByMouse
+                                                 | Qt.TextEditable
+                                                 | Qt.TextSelectableByKeyboard
+                                                 | Qt.LinksAccessibleByMouse
+                                                 | Qt.LinksAccessibleByKeyboard)
+                    self.setFocus()
+                    self.editing = True
+            return
+        super().mouseReleaseEvent(event)
 
 
     # pylint: disable=C0103
@@ -379,19 +451,25 @@ class EditableText(QGraphicsTextItem):
             that got the focus.
         '''
         if not self.editing:
-            return super().focusOutEvent(event)
-        if self.completer and not self.completer_has_focus:
-            self.completer.hide()
-            self.completer.resize(0, 0)
+            super().focusOutEvent(event)
+            if getattr(self, '_is_editable', False):
+                self._updating_flags = True
+                self.setTextInteractionFlags(Qt.NoTextInteraction)
+                self._updating_flags = False
+            return
+        if self._completer and not self.completer_has_focus:
+            self._completer.hide()
+            self._completer.resize(0, 0)
         if self.force_focus:
             # when user double-clicks on the Completer, it may be out of
             # the editable text. It is not right to leave the focus in that
             # case, as this would generate a syntax check while in fact
             # user is not done editing text
+            super().focusOutEvent(event)
             self.setFocus()
             self.force_focus = False
             return
-        if not self.completer or not self.completer.isVisible():
+        if not self._completer or not self._completer.isVisible():
             # Trigger a select - side effect makes the toolbar update
             try:
                 self.parent.select(True)
@@ -409,10 +487,13 @@ class EditableText(QGraphicsTextItem):
                 # Call syntax checker from item containing the text (if any)
                 if self.scene().check_syntax(self.parent):
                     # Keep focus
+                    super().focusOutEvent(event)
                     self.setFocus()
                     return
                 # Update class completion list
-                self.scene().update_completion_list(self.parentItem())
+                target = self.parentItem() or getattr(self, 'parent', None)
+                if target:
+                    self.scene().update_completion_list(target)
                 # Create undo command, including possible CAM
                 with undoCommands.UndoMacro(self.scene().undo_stack, 'Text'):
                     undo_cmd = undoCommands.ResizeSymbol(
@@ -434,10 +515,22 @@ class EditableText(QGraphicsTextItem):
         for each in zValueItems(self.parent):
             each.setZValue(each.zValue() - 1)
         super().focusOutEvent(event)
+        if getattr(self, '_is_editable', False):
+            self._updating_flags = True
+            self.setTextInteractionFlags(Qt.NoTextInteraction)
+            self._updating_flags = False
 
     # pylint: disable=C0103
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
+        if getattr(self, '_is_editable', False):
+            self._updating_flags = True
+            self.setTextInteractionFlags( Qt.TextSelectableByMouse
+                                         | Qt.TextEditable
+                                         | Qt.TextSelectableByKeyboard
+                                         | Qt.LinksAccessibleByMouse
+                                         | Qt.LinksAccessibleByKeyboard)
+            self._updating_flags = False
         super().focusInEvent(event)
         # Change the Z-value of items to make sure the
         # completer is always be on top of other symbols

@@ -125,6 +125,43 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.8.2 (08/2026)**
+- Detect/prevent concurrent access to the model (lock file+monitor)
+
+**4.8.1 (08/2026)**
+- Add traceability to requirement ids in generated code
+- Improve user experience when grabbing/moving symbols
+- Add option to graphically rebalance the branches
+- Complete support of state types (can be instantiated in a lower level in the hierarchy)
+
+**4.8.0 (08/2026)**
+- Refactor error reporting to use standard gnu style
+- Minor bug fixes
+
+**4.7.1 (08/2026)**
+- Fix the NOT operator
+- Minor cosmetic fixes
+ 
+**4.7.0 (07/2026)**
+- Add ASN.1 editor with LSP and vim mode (for use without taste)
+- Fix OCTET STRING xor OCTET STRING support (C and Ada)
+
+**4.6.4 (07/2026)**
+- C backend improvements: bitwise operators, equality checks, Decision any
+
+**4.6.3 (07/2026)**
+- Fix graphical glitches (mutiple cursors blinking, dynamic menu update, jumps of the symbols after reopening, light palette when system dark mode is enabled)
+- Fix compilation of QtWidget
+- Introuce support for branch coverage collection (model checking)
+
+**4.6.2 (07/2026)**
+- Fix call to the _transition procedure when continuous signals exist at process level
+- (Resolve issue with taste model checker - "observe" procedure did not trigger the transition)
+
+**4.6.1 (07/2026)**
+- State instance support in C backend bugfix
+
 **4.6.0 (06/2026)**
 - Support state type and instances both in C and Ada backends
 

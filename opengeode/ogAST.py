@@ -70,13 +70,15 @@ class Expression:
 
     @exprType.setter
     def exprType(self, val):
-        ''' Log call stack each time exprType is modified '''
-        if not hasattr(self, 'expr_type_log'):
-            self.expr_type_log = ""
-        stack = traceback.extract_stack()[:-1]  # Exclude current setter
-        compact_stack = " -> ".join(f"{f.name}({f.lineno})" for f in stack[-5:])
-        self.expr_type_log += f"\n--- Set exprType to {val} ---\n{compact_stack}\n"
+        ''' Set the expression type, and record where it was set '''
         self._exprType = val
+        try:
+            import sys
+            frame = sys._getframe(1)
+            self.line = frame.f_lineno
+            self.charPositionInLine = 0
+        except ValueError:
+            pass
 
     def trace(self):
         ''' Debug output for an expression '''
@@ -564,13 +566,15 @@ class ProcedureCall(Output):
 
     @exprType.setter
     def exprType(self, val):
-        ''' Log call stack each time exprType is modified '''
-        if not hasattr(self, 'expr_type_log'):
-            self.expr_type_log = ""
-        stack = traceback.extract_stack()[:-1]  # Exclude current setter
-        compact_stack = " -> ".join(f"{f.name}({f.lineno})" for f in stack[-8:])
-        self.expr_type_log += f"\n--- Set exprType to {val} ---\n{compact_stack}\n"
+        ''' Set the expression type, and record where it was set '''
         self._exprType = val
+        try:
+            import sys
+            frame = sys._getframe(1)
+            self.line = frame.f_lineno
+            self.charPositionInLine = 0
+        except ValueError:
+            pass
 
 
 class Terminator:
@@ -1098,6 +1102,10 @@ class Procedure:
         # Optional partition name where the symbol is rendered
         self.partition: str = "default"
 
+    def trace(self):
+        ''' Debug output for a procedure '''
+        return f'PROCEDURE {self.inputString} ({self.line},{self.charPositionInLine})'
+
 
 class Process:
     ''' SDL Process entry point '''
@@ -1121,6 +1129,8 @@ class Process:
         self.referenced = False
         # Flag indicating if there are no transitions in the model
         self.only_procedures = False
+        # Flag indicating if the process has no state context (no transitions, variables, etc)
+        self.no_context = False
         # variables: dictionary: {variable1Name: (asn1SccType, default value)}
         self.variables = {}
         # MONITOR variables used in observers (same structure as DCL)

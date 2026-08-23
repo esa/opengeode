@@ -41,6 +41,9 @@ LOG = logging.getLogger('sdlSymbols')
 
 AST = ogAST.AST()
 CONTEXT = ogAST.Process()
+TASTE_TARGET = True
+DISABLE_AUTO_CONNECTION = False
+
 
 # SDL-specific: reserved keywords, to be highlighted in textboxes
 # Two kind of formatting are possible: black bold, and red bold
@@ -385,6 +388,8 @@ class Decision(VerticalSymbol):
 
     def update_connections(self):
         ''' Redefined - update arrows shape below connection point '''
+        if getattr(self.scene(), 'mass_updating', False) or getattr(self, 'mass_updating', False):
+            return
         super().update_connections()
         for branch in self.branches():
             for cnx in branch.last_branch_item.connections():
@@ -402,37 +407,29 @@ class Decision(VerticalSymbol):
             last = branch.last_branch_item
             try:
                 # To compute the branch length, we must keep only the symbols,
-                # so we must remove the last connection (if any)
+                # so we must ignore the last connection (if any)
                 last_cnx, = (c for c in last.childItems() if
                     isinstance(c, Connection) and not
                     isinstance(c.child, (Comment, HorizontalSymbol)))
-                # Don't set parent item to None to avoid Qt segfault
-                # The bug with setParentItem is a Qt bug documented here:
-                # https://bugreports.qt.io/browse/QTBUG-18616
-                # the crash may happen if the scene of the new parent
-                # is different from the scene of the object. the doc says
-                # it is allowed but an assert in the code makes it crash
-                # workaround: first put the item manually in the right scene
-                # then call setParentItem
                 if self.scene() != last_cnx.scene():
                     self.scene().addItem(last_cnx)
                 last_cnx.setParentItem(self)
             except ValueError:
                 pass
-            branch_len = branch.y() + (
-                    branch.boundingRect() |
-                    branch.childrenBoundingRect()).height()
-            try:
-                if last.scene() != last_cnx.scene():
-                    last.scene().addItem(last_cnx) # workaround Qt's bug 18616
-                last_cnx.setParentItem(last)
-            except AttributeError:
-                pass
             # If last item was a decision, use its connection point
-            # position to get the length of the branch:
-            try:
+            # position to get the length of the branch (much faster than childrenBoundingRect):
+            if hasattr(last, 'connectionPoint'):
                 branch_len = (last.connectionPoint.y() +
                         self.mapFromScene(0, last.scenePos().y()).y())
+            else:
+                branch_len = branch.y() + (
+                        branch.boundingRect() |
+                        branch.childrenBoundingRect()).height()
+
+            try:
+                if last.scene() != last_cnx.scene():
+                    last.scene().addItem(last_cnx)
+                last_cnx.setParentItem(last)
             except AttributeError:
                 pass
             # Rounded with int() -> mandatory when view scale has changed
@@ -1248,7 +1245,10 @@ class Process(HorizontalSymbol):
     blackbold = SDL_BLACKBOLD
     redbold = SDL_REDBOLD
     completion_list = set()
-    is_singleton = True #(False to allow multiple processes)
+    @property
+    def is_singleton(self):
+        return TASTE_TARGET
+
     arrow_head = 'angle'
     arrow_tail = 'angle'
     # Process can be connected to other processes by the user
@@ -1312,11 +1312,35 @@ class Process(HorizontalSymbol):
         ''' Redefinition - adds connection line to env '''
         super().insert_symbol(parent, x, y)
         if not self.connection:
-            self.connection = self.connect_to_parent()
+            scene = self.scene()
+            has_other_processes = False
+            if self.ast and self.ast.parent and isinstance(self.ast.parent, ogAST.Block):
+                other_ast_processes = [p for p in self.ast.parent.processes if p is not self.ast]
+                if other_ast_processes:
+                    has_other_processes = True
+            elif scene:
+                other_processes = [p for p in scene.processes if p is not self]
+                if other_processes:
+                    has_other_processes = True
+            else:
+                try:
+                    from .opengeode import G_SYMBOLS
+                    other_processes = [p for p in G_SYMBOLS if isinstance(p, Process) and p is not self]
+                    if other_processes:
+                        has_other_processes = True
+                except ImportError:
+                    pass
+            
+            if not DISABLE_AUTO_CONNECTION:
+                if TASTE_TARGET:
+                    self.connection = self.connect_to_parent()
+
+
 
     def connect_to_parent(self):
         ''' Redefinition: creates connection to env with a signalroute '''
         return Signalroute(self)
+
 
     def set_shape(self, width, height):
         ''' Compute the polygon to fit in width, height '''
@@ -1351,9 +1375,6 @@ class Process(HorizontalSymbol):
             new_y = self.pos_y + (event_pos.y() - event.lastPos().y())
             new_x = self.pos_x + (event_pos.x() - event.lastPos().x())
             self.position = QPointF(new_x, new_y)
-            # Signal the move to the connections
-            self.moved.emit(event.lastPos().x() - event.pos().x(),
-                            event.lastPos().y() - event.pos().y())
 
 
     def update_completion_list(self, pr_text):

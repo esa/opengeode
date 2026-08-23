@@ -1,5 +1,5 @@
-[ERROR] Choice assignment: use "var := a: value" instead of "var!a := value" - "var4!a"
-[ERROR] Choice assignment: use "var := uia: value" instead of "var!uia := value" - "var4!uia"
+[ERROR] Choice assignment: use "var := a: value" instead of "var.a := value" - "var4!a"
+[ERROR] Choice assignment: use "var := uia: value" instead of "var.uia := value" - "var4!uia"
 [ERROR] Decision "present(var4)": Missing branches for answer(s) "b"
 [ERROR] Decision "var1": answers =0 and /=1 are overlapping in range 0.0 .. 0.0
 [ERROR] Decision "var1": answers /=1 and >0 are overlapping in range 2.0 .. 2147483647.0
@@ -26,7 +26,8 @@
 [ERROR] Parameter type does not match with signal declaration (expecting a variable of type T-Int32) -Signed vs Unsigned type mismatch "T-Int32" is not "T-UInt8"
 [ERROR] Too many errors, cannot generate code
 [ERROR] Variable "VAR5" is declared more than once
-[INFO] Checking ['myfunction.pr', 'system_structure.pr']
+[INFO] Checking myfunction.pr, system_structure.pr
+[INFO] No ASN.1 file in cache (or no cache folder)
 [INFO] Parsing complete. Summary, found 6 warnings and 27 errors
 [WARNING] Decision "var2": Range -10.0 .. -1.0 is unreachable
 [WARNING] Decision "var2": Range 256 .. 300.0 is unreachable

@@ -49,7 +49,7 @@ update:
 	git pull
 
 # Define the expected version of the QtTaste widget
-export QTASTE_VERSION=2.0.2
+export QTASTE_VERSION=2.1.1
 
 dependencies:
 	#sudo apt install -y python3 python3-pip libgl1 gnat python3-pexpect xcb libxcb-cursor0
@@ -63,13 +63,21 @@ dependencies:
 	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.6.0.1/asn1scc-bin-4.6.0.1.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
+	# Ensure shiboken6 and shiboken6-generator versions match PySide6
+	@PYSIDE_VER=$$(python3 -c "from importlib.metadata import version; v=version('PySide6'); print('.'.join(v.split('.')[:3]))") && \
+	       python3 -c "from importlib.metadata import version; v=version('shiboken6'); assert '.'.join(v.split('.')[:3])=='$$PYSIDE_VER'" 2>/dev/null || \
+	       python3 -m pip install shiboken6==$$PYSIDE_VER --break-system-packages && \
+	       python3 -c "from importlib.metadata import version; v=version('shiboken6_generator'); assert '.'.join(v.split('.')[:3])=='$$PYSIDE_VER'" 2>/dev/null || \
+	       python3 -m pip install shiboken6-generator==$$PYSIDE_VER --break-system-packages
 	@python3 -c "import sys, PyTasteQtWidgets as taste, os; sys.exit(taste.__version__!=os.environ['QTASTE_VERSION'])" || \
 	       (rm -rf TasteQtWidgets && \
 	       git clone --depth 1 --branch ${QTASTE_VERSION} https://github.com/esa/TasteQtWidgets && \
-	       cd TasteQtWidgets/pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	       cd TasteQtWidgets && \
+	       sed -i 's/Py_LIMITED_API=0x03050000/Py_LIMITED_API=0x030D0000/' cmake/KDPySide6ModuleBuild.cmake && \
+	       cd pytastewidgets && python3 ./install.py > /dev/null || exit 1)
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
-install:
+install: help
 	PATH=~/.local/bin:"${PATH}" pyside6-rcc opengeode.qrc -o opengeode/icons.py && python3 -m pip install --upgrade .
 
 full-install: update
@@ -85,7 +93,9 @@ pytest:
 	python3 -m pip  install --user --upgrade pytest pytest-qt
 	PATH=~/.local/bin:"${PATH}" ; cd tests/pytests ; PYTEST_QT_API=PySide6 py.test
 
-help:
+help: help/opengeode.qhc
+
+help/opengeode.qhc:
 	# Build the inline help by getting the content on the wiki and converting it to QtHelp format
 	cd help && ./SDL.sh
 

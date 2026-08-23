@@ -1,5 +1,7 @@
 /* CIF PROCESS (144, 159), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process expressions;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (832, 176), (272, 248) */
     DCL i MyInteger;
     DCL f Real;
@@ -9,7 +11,7 @@ process expressions;
     DCL fixSeqOf2 FixSeqof;
     DCL varSeqOf1 VarSeqof;
     DCL varSeqOf2 VarSeqof;
-    DCL seq Seq;
+    DCL seq, seq2 Seq;
     DCL nestedSeq NestedSeq;
     DCL bs1 BoolSeqOf;
     DCL bs2 BoolSeqOf;
@@ -23,6 +25,7 @@ process expressions;
         /* CIF NEXTSTATE (497, 65), (70, 35) */
         NEXTSTATE Wait;
     /* CIF state (497, 65), (70, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Wait;
         /* CIF input (498, 120), (70, 35) */
         input run;
@@ -152,13 +155,13 @@ process expressions;
             call assert(shift_left(ui16, 8) = 'FF00'H, ' shift_left(ui16, 8) = FF00 when ui16=00FF');
             /* CIF decision (498, 3280), (70, 50) */
             decision bs1;
-                /* CIF ANSWER (205, 3350), (182, 23) */
+                /* CIF ANSWER (204, 3350), (182, 23) */
                 (not { true, true, true, true}):
-                    /* CIF PROCEDURECALL (152, 3393), (289, 35) */
+                    /* CIF PROCEDURECALL (151, 3393), (289, 35) */
                     call assert(false, 'bs1 = not { true true true true }');
-                /* CIF ANSWER (502, 3350), (77, 23) */
+                /* CIF ANSWER (501, 3350), (77, 23) */
                 (= not bs2):
-                    /* CIF PROCEDURECALL (446, 3393), (190, 35) */
+                    /* CIF PROCEDURECALL (445, 3393), (190, 35) */
                     call assert(false, 'bs1 = not {bs2');
                 /* CIF ANSWER (652, 3350), (70, 23) */
                 else:
@@ -201,48 +204,62 @@ process expressions;
             call assert(varSeqOf1(1) = 3, 'varSeqOf1(1) = 3');
             /* CIF task (412, 4344), (241, 35) */
             task seq := {i '01'H, b true, f 1.0, s 'HELLO'};
-            /* CIF PROCEDURECALL (444, 4394), (176, 35) */
+            /* CIF task (488, 4399), (88, 35) */
+            task seq2 := seq;
+            /* CIF decision (468, 4454), (128, 68) */
+            decision seq2.b = seq.b
+and seq2.s = seq.s
+and seq2.i = seq.i
+and seq2.f = seq.f;
+                /* CIF ANSWER (433, 4557), (70, 23) */
+                (true):
+                /* CIF ANSWER (543, 4557), (70, 23) */
+                (false):
+                    /* CIF PROCEDURECALL (514, 4600), (126, 35) */
+                    call writeln ('ERROR');
+            enddecision;
+            /* CIF PROCEDURECALL (444, 4651), (176, 35) */
             call assert(seq!i = 1, 'seq!i = 1');
-            /* CIF PROCEDURECALL (422, 4444), (220, 35) */
+            /* CIF PROCEDURECALL (422, 4701), (220, 35) */
             call assert(seq!b = true, 'seq!b = true');
-            /* CIF PROCEDURECALL (432, 4494), (200, 35) */
+            /* CIF PROCEDURECALL (432, 4751), (200, 35) */
             call assert(seq!f = 1.0, 'seq!f = 1.0');
-            /* CIF PROCEDURECALL (401, 4544), (262, 35) */
+            /* CIF PROCEDURECALL (401, 4801), (262, 35) */
             call assert(seq!s = 'HELLO', 'seq!s = "HELLO"');
-            /* CIF decision (498, 4599), (70, 50) */
+            /* CIF decision (498, 4856), (70, 50) */
             decision seq.i;
-                /* CIF ANSWER (251, 4669), (70, 23) */
+                /* CIF ANSWER (251, 4926), (70, 23) */
                 ('01'B):
-                /* CIF ANSWER (409, 4670), (70, 23) */
+                /* CIF ANSWER (409, 4927), (70, 23) */
                 ('FF'H):
-                    /* CIF PROCEDURECALL (350, 4713), (186, 35) */
+                    /* CIF PROCEDURECALL (350, 4970), (186, 35) */
                     call assert(false, 'seq.1 = "01"B');
-                /* CIF ANSWER (654, 4669), (70, 23) */
+                /* CIF ANSWER (654, 4926), (70, 23) */
                 ELSE:
-                    /* CIF PROCEDURECALL (595, 4712), (186, 35) */
+                    /* CIF PROCEDURECALL (595, 4969), (186, 35) */
                     call assert(false, 'seq.1 = "01"B');
             enddecision;
-            /* CIF decision (498, 4764), (70, 50) */
+            /* CIF decision (498, 5021), (70, 50) */
             decision seq.s;
-                /* CIF ANSWER (407, 4834), (70, 23) */
+                /* CIF ANSWER (407, 5091), (70, 23) */
                 ('HELLO'):
-                /* CIF ANSWER (588, 4834), (70, 23) */
+                /* CIF ANSWER (588, 5091), (70, 23) */
                 ELSE:
-                    /* CIF PROCEDURECALL (518, 4877), (209, 35) */
+                    /* CIF PROCEDURECALL (518, 5134), (209, 35) */
                     call assert(false, 'seq.s = "HELLO"B');
             enddecision;
-            /* CIF task (441, 4928), (183, 35) */
+            /* CIF task (441, 5185), (183, 35) */
             task nestedSeq := {a {b {c {d 9}}}};
-            /* CIF PROCEDURECALL (367, 4978), (330, 35) */
+            /* CIF PROCEDURECALL (367, 5235), (330, 35) */
             call assert(nestedSeq!a!b!c!d = 9, 'nestedSeq!a!b!c!d = 9');
-            /* CIF decision (472, 5033), (120, 50) */
+            /* CIF decision (472, 5290), (120, 50) */
             decision ui16 = bigwhoop;
-                /* CIF ANSWER (453, 5103), (70, 23) */
+                /* CIF ANSWER (453, 5360), (70, 23) */
                 (true):
-                /* CIF ANSWER (543, 5103), (70, 23) */
+                /* CIF ANSWER (543, 5360), (70, 23) */
                 (false):
             enddecision;
-            /* CIF NEXTSTATE (498, 5142), (70, 35) */
+            /* CIF NEXTSTATE (498, 5399), (70, 35) */
             NEXTSTATE Wait;
     endstate;
 endprocess expressions;

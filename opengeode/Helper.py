@@ -25,7 +25,7 @@
                                        branches / transitions, allowing to
                                        name them for better code traceability
 
-    Copyright (c) 2012-2025 European Space Agency
+    Copyright (c) 2012-2026 European Space Agency
 
     Designed and implemented by Maxime Perrotin
 
@@ -194,10 +194,12 @@ def inner_labels_to_floating(process):
         section of code, where they are in the scope of everybody
         Works with processes, procedures and nested states
     '''
-    for idx in range(len(process.content.floating_labels)):
+    idx = 0
+    while idx < len(process.content.floating_labels):
         for new_floating in find_labels(
                       process.content.floating_labels[idx].transition):
             process.content.floating_labels.append(new_floating)
+        idx += 1
     for proc_tr in process.transitions:
         for new_floating in find_labels(proc_tr):
             process.content.floating_labels.append(new_floating)
@@ -216,8 +218,16 @@ def flatten(process, sep='_'):
     def update_terminator(context, term, process):
         '''Set next_id, identifying the next transition to run '''
         nextStateName = term.instance_of or term.inputString
+        comp_states = list(context.composite_states)
+        curr = context
+        while hasattr(curr, 'parent') and curr.parent:
+            curr = curr.parent
+            comp_states.extend(getattr(curr, 'composite_states', []))
+        if hasattr(process, 'composite_states'):
+            comp_states.extend(process.composite_states)
+
         if nextStateName.lower() in (st.statename.lower()
-                                     for st in context.composite_states):
+                                     for st in comp_states):
             if term.instance_of or not term.via:
                 term.next_id = nextStateName.lower() + sep + 'START'
             else:
@@ -743,6 +753,8 @@ def find_basic_type(TYPES, a_type):
 
 
 def generate_asn1_datamodel(process: ogAST.Process, SEPARATOR: str=DEFAULT_SEPARATOR) -> None:
+    if getattr(process, 'no_context', False):
+        return
     ''' Generate an ASN.1 model containing:
           - the state definition
           - a type describing the SDL context
@@ -923,6 +935,8 @@ def add_labels_before_each_branch(
             (1) it contains just a single Join terminator
             (2) it already starts with a label
         '''
+        if transition is None:
+            return False
         if len(transition.actions) == 0 and transition.terminator is not None:
             # empty transition, but there can be a JOIN terminator
             return False if transition.terminator.kind == 'join' else True
@@ -931,6 +945,20 @@ def add_labels_before_each_branch(
             # starts with a Label
             return False
         return True
+
+    def has_terminator(trans: ogAST.Transition) -> bool:
+        ''' Recursively check if a transition ends with a terminator on all branches. '''
+        if trans is None:
+            return False
+        if trans.terminator is not None:
+            return True
+        if len(trans.actions) > 0:
+            last_action = trans.actions[-1]
+            if isinstance(last_action, ogAST.Decision):
+                return len(last_action.answers) > 0 and all(
+                    has_terminator(ans.transition) for ans in last_action.answers
+                )
+        return False
 
     def branches(transition, path=[]):
         ''' Find branches inside a transition (decision answers) and add label
@@ -941,35 +969,68 @@ def add_labels_before_each_branch(
         to have unique label names even if there are several decisions with
         the same name. As soon as a decision is reached, we augment the path.
         '''
-        for each in transition.actions:
+        if transition is None:
+            return
+        idx_action = 0
+        while idx_action < len(transition.actions):
+            each = transition.actions[idx_action]
             # Look for decisions
             if isinstance(each, ogAST.Decision):
                 # keep the first word to prefix the decision label
-                label_prefix = 'DECISION_' + re.split(r'\W+',
-                                                      each.inputString)[0]
+                dec_words = [w for w in re.split(r'\W+', each.inputString) if w]
+                dec_name = dec_words[0] if dec_words else 'DEC'
+                label_prefix = 'DECISION_' + dec_name
                 path.append(label_prefix)
+
+                join_label_name = (''.join(path) + '_JOIN').rstrip('_')
+                has_subsequent_code = (idx_action + 1 < len(transition.actions)) or (transition.terminator is not None)
+                needs_join_label = has_subsequent_code and any(
+                    answer.transition is not None and not has_terminator(answer.transition)
+                    for answer in each.answers
+                )
+
+                if needs_join_label:
+                    join_label = ogAST.Label()
+                    join_label.inputString = join_label_name
+                    transition.actions.insert(idx_action + 1, join_label)
+
                 # prevent duplicates in answer names by using a suffix in case
                 labels = []
                 idx = 2
                 for answer in each.answers:
-                    ans_prefix = '_ANSWER_' + re.split(r'\W+',
-                                                       answer.inputString)[0]
+                    ans_words = [w for w in re.split(r'\W+', answer.inputString) if w]
+                    ans_name = ans_words[0] if ans_words else 'branch'
+                    ans_prefix = '_ANSWER_' + ans_name
                     if ans_prefix in labels:
                         ans_prefix += f'_{idx}'
                         idx += 1
                     labels.append(ans_prefix)
                     path.append(ans_prefix)
-                    if need_label(answer.transition):
-                        label_name = ''.join(path)
+                    if also_decisions and need_label(answer.transition):
+                        label_name = ''.join(path).rstrip('_')
                         label = ogAST.Label()
                         label.inputString = label_name
                         answer.transition.actions.insert(0, label)
                         answer.branch_label = label_name
-                    # Go recursively
+
                     branches(answer.transition, path)
+
+                    if needs_join_label and answer.transition is not None and not has_terminator(answer.transition):
+                        term = ogAST.Terminator()
+                        term.kind = 'join'
+                        term.inputString = join_label_name
+                        answer.transition.terminator = term
+                        if hasattr(answer.transition, 'terminators'):
+                            answer.transition.terminators.append(term)
+
                     # Then remove the answer from the path, just keep the
                     # decision in case there are more in the transition.
                     path.pop()
+
+                if needs_join_label:
+                    idx_action += 1
+
+            idx_action += 1
 
     if process.content.start:
         # We always add a label for the startup transition is the name
@@ -978,8 +1039,6 @@ def add_labels_before_each_branch(
         label = ogAST.Label()
         label.inputString = "Startup_Transition"
         process.content.start.transition.actions.insert(0, label)
-        if also_decisions:
-            branches(process.content.start.transition, [label.inputString])
 
     for state_name, inputs in process.mapping.items():
         # Add a label just after the INPUT statements
@@ -1015,8 +1074,6 @@ def add_labels_before_each_branch(
                                                         ogAST.Label):
                 # if there is already a label, use it
                 each.branch_label = each.transition.actions[0].inputString
-            if also_decisions and each.branch_label != 'Continuous_Signals':
-                branches(each.transition, [each.branch_label])
 
 
     for state_name, continuous in process.cs_mapping.items():
@@ -1048,7 +1105,7 @@ def add_labels_before_each_branch(
         # transitions attached to a single return. Code generators will need
         # to branch to the correct one depending on the current instance. But
         # here we only set the branch names (which depend on the instance name)
-        for each in connect_names:
+        for each in set(connect_names):
             label_name = 'NESTED_STATE_' + state_name + '_EXIT'
             connect_name = each.strip()
             # we need to retrieve the composite state to find the transitions
@@ -1056,7 +1113,16 @@ def add_labels_before_each_branch(
             transitions = []
             for composite in process.composite_states:
                 if composite.statename == state_name:
-                    for term in composite.terminators:
+                    def get_terminators(comp):
+                        terms = []
+                        if isinstance(comp, ogAST.StateAggregation):
+                            for inner in comp.composite_states:
+                                terms.extend(get_terminators(inner))
+                        else:
+                            terms.extend(comp.terminators)
+                        return terms
+                    
+                    for term in get_terminators(composite):
                         if term.kind == 'return' \
                             and term.inputString.strip().lower() \
                                 == connect_name.strip().lower():
@@ -1067,7 +1133,7 @@ def add_labels_before_each_branch(
                 label_name += '_'
             fresh_label_name = label_name
             for trans in transitions:
-                if trans is not None and need_label(trans):
+                if trans is not None:
                     label_name = fresh_label_name + connect_name
                     if len(transitions) > 1 and len(trans.possible_states) == 1:
                         # instance of a state
@@ -1075,6 +1141,7 @@ def add_labels_before_each_branch(
                     label = ogAST.Label()
                     label.inputString = label_name
                     trans.actions.insert(0, label)
+                    trans.branch_label = label_name
                     # Removed becuase the pattern is incorrect, to be fixed:
                     # for branch in branches(trans):
                     #    ...
@@ -1110,6 +1177,32 @@ def add_labels_before_each_branch(
     for composite in process.composite_states:
         state_path = [composite.statename]
         rec_find_named_start(composite, state_path)
+
+    all_transitions = []
+    if process.content.start and process.content.start.transition:
+        all_transitions.append(process.content.start.transition)
+    for inputs in process.mapping.values():
+        if isinstance(inputs, list):
+            for inp in inputs:
+                if inp.transition:
+                    all_transitions.append(inp.transition)
+    for continuous in process.cs_mapping.values():
+        if isinstance(continuous, list):
+            for cs in continuous:
+                if cs.transition:
+                    all_transitions.append(cs.transition)
+    for fl in process.content.floating_labels:
+        if fl.transition:
+            all_transitions.append(fl.transition)
+    for ns in process.content.named_start:
+        if ns.transition:
+            all_transitions.append(ns.transition)
+    for connect in process.connect_mapping.values():
+        pass
+
+    for trans in all_transitions:
+        initial_path = [trans.actions[0].inputString] if (trans.actions and isinstance(trans.actions[0], ogAST.Label)) else []
+        branches(trans, initial_path)
 
 
 def code_generation_preprocessing(process, separator=DEFAULT_SEPARATOR):

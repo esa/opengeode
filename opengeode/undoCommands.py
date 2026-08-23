@@ -206,6 +206,7 @@ class DeleteSymbol(QUndoCommand):
         self.parent = item.parentItem() if item.hasParent else None
         self.pos_x = 0
         self.pos_y = 0
+        self.first_redo = True
 
     def undo(self):
         self.item.insert_symbol(self.parent, self.pos_x, self.pos_y)
@@ -216,11 +217,16 @@ class DeleteSymbol(QUndoCommand):
         self.scene.refresh()
 
     def redo(self):
+        from . import genericSymbols
         self.pos_x = self.item.x()
         self.pos_y = self.item.y()
         self.item.delete_symbol()
         # Replaced removeItem with hide/show to avoid exit crash
         self.item.hide()
+        if self.first_redo:
+            self.first_redo = False
+            if isinstance(self.item, genericSymbols.HorizontalSymbol) and self.parent:
+                genericSymbols.rebalance_horizontal_branches(self.parent, deleted_item=self.item)
         self.scene.refresh()
 
 
@@ -257,3 +263,53 @@ class MoveSymbol(QUndoCommand):
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:
             pass
+
+
+class InsertConnection(QUndoCommand):
+    ''' Undo/Redo command for inserting a new connection (Channel or Signalroute) '''
+    def __init__(self, connection, scene):
+        super().__init__()
+        self.connection = connection
+        self.scene = scene
+        self.parent = connection.parent
+        self.child = getattr(connection, 'child', None)
+        
+    def undo(self):
+        from . import Connectors
+        self.connection.hide()
+        if not isinstance(self.connection, Connectors.Channel):
+            if getattr(self.parent, 'connection', None) is self.connection:
+                self.parent.connection = None
+                
+    def redo(self):
+        from . import Connectors
+        self.connection.show()
+        if not isinstance(self.connection, Connectors.Channel):
+            self.parent.connection = self.connection
+        self.connection.reshape()
+
+
+class DeleteConnection(QUndoCommand):
+    ''' Undo/Redo command for deleting a connection (Channel or Signalroute) '''
+    def __init__(self, connection, scene):
+        super().__init__()
+        self.connection = connection
+        self.scene = scene
+        self.parent = connection.parent
+        self.child = getattr(connection, 'child', None)
+        
+    def undo(self):
+        from . import Connectors
+        self.connection.show()
+        if not isinstance(self.connection, Connectors.Channel):
+            self.parent.connection = self.connection
+        self.connection.reshape()
+        
+    def redo(self):
+        from . import Connectors
+        self.connection.hide()
+        if not isinstance(self.connection, Connectors.Channel):
+            if getattr(self.parent, 'connection', None) is self.connection:
+                self.parent.connection = None
+
+

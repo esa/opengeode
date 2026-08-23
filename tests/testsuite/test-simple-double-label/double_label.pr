@@ -1,4 +1,5 @@
 system Complexsdl;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (552, 9), (291, 140) */
     use Datamodel comment 'dataview-uniq.asn';
     
@@ -16,38 +17,70 @@ system Complexsdl;
             from Complexsdl to env with response;
         connect c and r;
         /* CIF PROCESS (250, 150), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process Complexsdl;
+            /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (1263, 53), (267, 140) */
             -- Text area for declarations and comments
             
             DCL tmp MyInteger;
-            
             /* CIF ENDTEXT */
             /* CIF START (320, 21), (70, 35) */
             START;
-                /* CIF NEXTSTATE (320, 71), (70, 35) */
+                /* CIF decision (320, 76), (70, 50) */
+                decision true;
+                    /* CIF ANSWER (275, 146), (70, 23) */
+                    (true):
+                        /* CIF label (275, 189), (70, 35) */
+                        lab:
+                    /* CIF ANSWER (365, 146), (70, 23) */
+                    (false):
+                enddecision;
+                /* CIF PROCEDURECALL (294, 240), (121, 35) */
+                call writeln("Check");
+                /* CIF NEXTSTATE (320, 290), (70, 35) */
                 NEXTSTATE Wait;
-            /* CIF label (737, 573), (99, 35) */
-            connection Right_Action:
-                /* CIF output (740, 628), (92, 35) */
-                output response(1);
-                /* CIF NEXTSTATE (752, 683), (70, 35) */
-                NEXTSTATE Wait;
-            /* CIF End Label */
-            endconnection;
-            /* CIF label (472, 553), (85, 35) */
+            /* CIF label (471, 553), (85, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             connection LeftAction:
                 /* CIF output (468, 608), (92, 35) */
                 output response(0);
-                /* CIF NEXTSTATE (480, 663), (70, 35) */
+                /* CIF NEXTSTATE (479, 663), (70, 35) */
                 NEXTSTATE One;
             /* CIF End Label */
             endconnection;
-            /* CIF state (1013, 120), (70, 35) */
-            state One;
-                /* CIF input (997, 175), (101, 35) */
+            /* CIF label (736, 573), (99, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            connection Right_Action:
+                /* CIF output (740, 628), (92, 35) */
+                output response(1);
+                /* CIF NEXTSTATE (751, 683), (70, 35) */
+                NEXTSTATE Wait;
+            /* CIF End Label */
+            endconnection;
+            /* CIF state (590, 129), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state Wait;
+                /* CIF input (573, 184), (101, 35) */
                 input impulse(tmp);
-                    /* CIF decision (1013, 230), (70, 50) */
+                    /* CIF decision (589, 239), (70, 50) */
+                    decision tmp = 0;
+                        /* CIF ANSWER (545, 309), (70, 23) */
+                        (true):
+                            /* CIF join (562, 352), (35, 35) */
+                            join leftaction;
+                        /* CIF ANSWER (635, 309), (70, 23) */
+                        (false):
+                            /* CIF join (652, 352), (35, 35) */
+                            join right_action;
+                    enddecision;
+            endstate;
+            /* CIF state (1013, 120), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state One;
+                /* CIF input (996, 175), (101, 35) */
+                input impulse(tmp);
+                    /* CIF decision (1012, 230), (70, 50) */
                     decision tmp = 1;
                         /* CIF ANSWER (968, 300), (70, 23) */
                         (true):
@@ -57,22 +90,6 @@ system Complexsdl;
                         (false):
                             /* CIF join (1075, 343), (35, 35) */
                             join LeftAction;
-                    enddecision;
-            endstate;
-            /* CIF state (590, 129), (70, 35) */
-            state Wait;
-                /* CIF input (574, 184), (101, 35) */
-                input impulse(tmp);
-                    /* CIF decision (590, 239), (70, 50) */
-                    decision tmp = 0;
-                        /* CIF ANSWER (545, 309), (70, 23) */
-                        (true):
-                            /* CIF join (563, 352), (35, 35) */
-                            join leftaction;
-                        /* CIF ANSWER (635, 309), (70, 23) */
-                        (false):
-                            /* CIF join (653, 352), (35, 35) */
-                            join right_action;
                     enddecision;
             endstate;
         endprocess Complexsdl;

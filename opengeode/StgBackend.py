@@ -29,13 +29,13 @@ try:
 except ModuleNotFoundError:
     # python3
     from functools import singledispatch
-import ogAST
-import Helper
+from . import ogAST
+from . import Helper
 
 try:
     import stringtemplate3
     stg = True
-except ImportError:
+except (ImportError, AttributeError):
     stg = False
 
 LOG = logging.getLogger(__name__)
@@ -540,7 +540,9 @@ def _call_external_function(output, **kwargs):
 def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
     for expr in task.elems:
         code.extend(traceability(expr))
@@ -555,7 +557,9 @@ def _task_assign(task, **kwargs):
 def _task_informal_text(task, **kwargs):
     ''' Generate Ada comments for informal text '''
     code = []
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
     code.extend(['-- ' + text.replace('\n', '\n-- ') for text in task.elems])
     return code, []
@@ -1816,7 +1820,10 @@ def path_type(path):
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
     template = new("comment")
-    template['lines'] = symbol.trace().split('\n')
+    lines = symbol.trace().split('\n')
+    if hasattr(symbol, 'req_ids') and symbol.req_ids:
+        lines.append(f"Requirement IDs: {', '.join(symbol.req_ids)}")
+    template['lines'] = lines
     result = [str(template)]
     if hasattr(symbol, 'comment') and symbol.comment:
         result.extend(traceability(symbol.comment))
