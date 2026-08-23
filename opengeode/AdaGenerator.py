@@ -1710,6 +1710,10 @@ def _call_external_function(output, **kwargs):
 def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
+        code.extend(traceability(task.comment))
     for expr in task.elems:
         trace_comments = traceability(expr)
         # ExprAssign only returns code statements, no string
@@ -1728,8 +1732,6 @@ def _task_assign(task, **kwargs):
             code.extend(trace_comments)
             code.extend(code_assign)
             
-    if task.comment:
-        code = traceability(task.comment) + code
     return code, []
 
 
@@ -1737,7 +1739,9 @@ def _task_assign(task, **kwargs):
 def _task_informal_text(task, **kwargs):
     ''' Generate Ada comments for informal text '''
     code = []
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
     code.extend(['-- ' + text.replace('\n', '\n-- ') for text in task.elems])
     return code, []
@@ -3825,6 +3829,7 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
             inner_code, inner_local = generate(inner_proc)
             local_decl.extend(inner_local)
             code.extend(inner_code)
+        code.extend(traceability(proc))
         code.append(f'{pi_header} is')
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)

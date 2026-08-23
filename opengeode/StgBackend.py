@@ -540,7 +540,9 @@ def _call_external_function(output, **kwargs):
 def _task_assign(task, **kwargs):
     ''' A list of assignments in a task symbol '''
     code, local_decl = [], []
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
     for expr in task.elems:
         code.extend(traceability(expr))
@@ -555,7 +557,9 @@ def _task_assign(task, **kwargs):
 def _task_informal_text(task, **kwargs):
     ''' Generate Ada comments for informal text '''
     code = []
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
     code.extend(['-- ' + text.replace('\n', '\n-- ') for text in task.elems])
     return code, []

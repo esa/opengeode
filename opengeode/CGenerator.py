@@ -921,6 +921,7 @@ def _inner_procedure(proc, **kwargs):
             local_decl.extend(inner_local)
             code.extend(inner_code)
 
+        code.extend(traceability(proc))
         code.append(procedure_declaration)
         code.append('{')
 
@@ -1030,7 +1031,9 @@ def _task_assign(task, **kwargs):
 
     code, local_decl = [], []
 
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
 
     for expr in task.elems:
@@ -1157,7 +1160,9 @@ def _task_informal_text(task, **kwargs):
 
     code = []
 
-    if task.comment:
+    if hasattr(task, 'req_ids') and task.req_ids:
+        code.extend(traceability(task))
+    elif task.comment:
         code.extend(traceability(task.comment))
 
     code.extend(['// ' + text.replace('\n', '\n// ') for text in task.elems])

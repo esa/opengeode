@@ -1102,6 +1102,10 @@ class Procedure:
         # Optional partition name where the symbol is rendered
         self.partition: str = "default"
 
+    def trace(self):
+        ''' Debug output for a procedure '''
+        return f'PROCEDURE {self.inputString} ({self.line},{self.charPositionInLine})'
+
 
 class Process:
     ''' SDL Process entry point '''
