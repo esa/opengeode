@@ -126,6 +126,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.8.1 (08/2026)**
+- Add traceability to requirement ids in generated code
+- Improve user experience when grabbing/moving symbols
+- Add option to graphically rebalance the branches
+- Complete support of state types (can be instantiated in a lower level in the hierarchy)
+
 **4.8.0 (08/2026)**
 - Refactor error reporting to use standard gnu style
 - Minor bug fixes
