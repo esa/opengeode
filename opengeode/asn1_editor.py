@@ -315,6 +315,9 @@ class ASN1TextEdit(QPlainTextEdit):
                 e.ignore()
                 return
 
+        if self.isReadOnly() and self.vim_mode_enabled and self.vim_state != "NORMAL":
+            self.set_vim_state("NORMAL")
+
         # 2. If Vim mode is enabled and we are not in INSERT mode, handle keys via Vim emulation
         if self.vim_mode_enabled and self.vim_state != "INSERT":
             # Handle Ctrl-V for VISUAL_BLOCK mode

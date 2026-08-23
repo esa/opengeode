@@ -1,7 +1,7 @@
 system og;
     signal dummy;
     /* CIF Keep Specific Geode Partition 'default' */
-    /* CIF TEXT (228, 136), (380, 140) */
+    /* CIF TEXT (456, 136), (380, 140) */
     -- demonstrating how to create custom types with the newtype
     -- sdl construct
     
@@ -11,17 +11,17 @@ system og;
     signal we;
     /* CIF ENDTEXT */
     channel c1
-        /* CIF Keep Specific Geode ROUTE (226, 83) (226, 83) */
+        /* CIF Keep Specific Geode ROUTE (224, 209) (0, 209) */
         from env to og with dd;
         from og to env with we;
     endchannel;
     block og;
         signalroute r1
-            /* CIF Keep Specific Geode ROUTE (226, 83) (226, 83) */
+            /* CIF Keep Specific Geode ROUTE (224, 209) (0, 209) */
             from env to og with dd;
             from og to env with we;
         connect c1 and r1;
-        /* CIF PROCESS (226, 46), (150, 75) */
+        /* CIF PROCESS (224, 172), (150, 75) */
         
         process og;
             state cool;
@@ -116,9 +116,9 @@ system og;
                 task someint := some_constant;
                 /* CIF decision (974, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (811, 501), (112, 23) */
+                    /* CIF ANSWER (807, 501), (112, 23) */
                     (some_constant):
-                    /* CIF ANSWER (944, 501), (81, 23) */
+                    /* CIF ANSWER (940, 501), (81, 23) */
                     (forty_two):
                     /* CIF ANSWER (1047, 501), (70, 23) */
                     (zero):

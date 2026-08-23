@@ -68,6 +68,7 @@ from . import(undoCommands,  # NOQA
               CGenerator,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
+from .ModelMonitor import ModelLockManager, FileMonitor
 try:
     import pygraphviz  # NOQA
 except ImportError:
@@ -1969,6 +1970,10 @@ class SDL_View(QGraphicsView):
         # Command line flags are used by the save_diagram method. They are
         # set at startup when the main window is read from the ui file
         self.options = None
+        # File locking and external modification monitoring
+        self.is_read_only = False
+        self.lock_manager = ModelLockManager()
+        self.file_monitor = FileMonitor()
 
     top_scene = lambda self: (self.scene_stack[0][0] if self.scene_stack
                               else self.scene())
@@ -2357,11 +2362,26 @@ class SDL_View(QGraphicsView):
 
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
+        if getattr(self, 'is_read_only', False) and not save_as:
+            if not autosave:
+                LOG.warning('Cannot save diagram: model was opened in Read-Only mode')
+                msg_box = QMessageBox(self)
+                msg_box.setIcon(QMessageBox.Warning)
+                msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+                msg_box.setText("This model was opened in Read-Only mode.\nChanges cannot be saved to the original file.")
+                msg_box.exec()
+            return False
 
         if (not self.filename or save_as) and not autosave:
             save_as = True
+            old_filename = self.filename
             self.filename = QFileDialog.getSaveFileName(
                     self, "Save model", ".", "SDL Model (*.pr)")[0]
+            if not self.filename:
+                self.filename = old_filename
+                return False
+            # Save As to a new filename clears read-only status for the new file
+            self.is_read_only = False
         if self.filename and self.filename.split('.')[-1] != 'pr':
             self.filename += ".pr"
         filename = ((self.filename or '_opengeode')
@@ -2518,6 +2538,9 @@ clean:
                     each.undo_stack.setClean()
             else:
                 LOG.debug('Auto-saving backup file completed:' + filename)
+            if not autosave and self.filename:
+                self.lock_manager.acquire_lock(self.filename)
+                self.file_monitor.update_file(self.filename)
             return True
         except AttributeError:
             LOG.error('Impossible to save the file')
@@ -2533,8 +2556,44 @@ clean:
         else:
             self.scene().export_img(filename, doc_format='png')
 
-    def load_file(self, files):
+    def load_file(self, files, is_reload=False):
         ''' Parse a PR file and render it on the scene '''
+        # Check lock status for all files being loaded if not a reload
+        if not is_reload:
+            self.is_read_only = False
+            for f in files:
+                abs_f = os.path.abspath(f)
+                is_locked, info = self.lock_manager.check_lock(abs_f)
+                if is_locked:
+                    msg_box = QMessageBox(self)
+                    msg_box.setWindowTitle("OpenGEODE - Model File Locked")
+                    msg_box.setIcon(QMessageBox.Warning)
+                    msg_box.setText(
+                        f"Model file '{os.path.basename(abs_f)}' is already open in another OpenGEODE instance.\n\n"
+                        f"PID: {info.get('pid')}\n"
+                        f"User: {info.get('user')}\n"
+                        f"Host: {info.get('hostname')}\n"
+                        f"Opened: {info.get('datetime')}"
+                    )
+                    msg_box.setInformativeText("Multiple concurrent accesses to the model may cause lost changes.")
+                    btn_readonly = msg_box.addButton("Open Read-Only", QMessageBox.AcceptRole)
+                    btn_override = msg_box.addButton("Override Lock", QMessageBox.DestructiveRole)
+                    btn_cancel = msg_box.addButton("Cancel", QMessageBox.RejectRole)
+                    msg_box.exec()
+
+                    clicked = msg_box.clickedButton()
+                    if clicked == btn_cancel:
+                        return
+                    elif clicked == btn_readonly:
+                        self.is_read_only = True
+                    elif clicked == btn_override:
+                        self.is_read_only = False
+                    break
+
+        if not self.is_read_only:
+            self.lock_manager.release_locks()
+        self.file_monitor.stop_tracking()
+
         #cwd = os.getcwd()
         dir_pool = set(os.path.dirname(each) for each in files)
         if len(dir_pool) != 1:
@@ -2601,6 +2660,14 @@ clean:
         LOG.debug('Parsing complete. Summary, found ' + str(len(warnings)) +
                 ' warnings and ' + str(len(errors)) + ' errors')
         log_errors(self.messages_window, errors, warnings)
+
+        # Reset current diagram scene & symbol tables before rendering reloaded/new AST
+        self.need_new_scene.emit()
+        self.scene_stack = []
+        if self.scene() and hasattr(self.scene(), 'undo_stack'):
+            self.scene().undo_stack.clear()
+        G_SYMBOLS.clear()
+
         try:
             self.scene().render_everything(block)
         except AttributeError as err:
@@ -2636,6 +2703,33 @@ clean:
         sdlSymbols.AST = ast
         sdlSymbols.CONTEXT = block
         self.update_datadict.emit()
+
+        # Update read-only setting and UI window title if opened read-only
+        if self.is_read_only:
+            if self.readonly_pr is None:
+                self.readonly_pr = set()
+            if self.filename:
+                self.readonly_pr.add(self.filename)
+            if hasattr(self, 'wrapping_window') and self.wrapping_window:
+                self.wrapping_window.setWindowTitle(self.scene().name + ' [READ-ONLY]')
+
+        # Acquire locks on loaded files ONLY if NOT read-only
+        if not self.is_read_only:
+            for f in files:
+                self.lock_manager.acquire_lock(f)
+
+        # Track files for external modifications
+        monitored = set(files)
+        if self.filename:
+            monitored.add(self.filename)
+        if self.readonly_pr:
+            monitored.update(self.readonly_pr)
+        try:
+            if hasattr(ogParser, 'DV') and hasattr(ogParser.DV, 'asn1Files'):
+                monitored.update(ogParser.DV.asn1Files)
+        except Exception:
+            pass
+        self.file_monitor.track_files(monitored)
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -2678,8 +2772,11 @@ clean:
         self.scene().process_name = ''
         self.filename = None
         self.readonly_pr = None
+        self.is_read_only = False
         self.wrapping_window.setWindowTitle('block[*]')
         self.set_toolbar()
+        self.lock_manager.release_locks()
+        self.file_monitor.stop_tracking()
         return True
 
 
@@ -3174,6 +3271,11 @@ class OG_MainWindow(QMainWindow):
                 partial(self.view.save_diagram, autosave=True))
         autosave.start(60000)
 
+        # Timer for checking external file modifications
+        self.file_check_timer = QTimer(self)
+        self.file_check_timer.timeout.connect(self.check_external_modifications)
+        self.file_check_timer.start(3000)
+
         # Add a line editor on the status bar for the vim mode
         self.statusBar().addPermanentWidget(self.vi_bar)
         self.vi_bar.hide()
@@ -3563,6 +3665,15 @@ class OG_MainWindow(QMainWindow):
 
     def create_asn1_file_clicked(self):
         ''' Slot for Create ASN.1 file button '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot create ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nCannot create new ASN.1 files.")
+            msg_box.exec()
+            return
+
         if not hasattr(self.view, 'filename') or not self.view.filename:
             if not self.view.save_diagram():
                 return
@@ -3620,6 +3731,8 @@ class OG_MainWindow(QMainWindow):
                 try:
                     with open(filepath, 'w', encoding='utf-8') as f:
                         f.write(content)
+                    if hasattr(self.view, 'file_monitor'):
+                        self.view.file_monitor.update_file(filepath)
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to create ASN.1 file:\n{e}")
                     return
@@ -3629,6 +3742,15 @@ class OG_MainWindow(QMainWindow):
 
     def add_existing_asn1_file_clicked(self):
         ''' Slot for Add existing ASN.1 file button '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot add ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nCannot add ASN.1 files.")
+            msg_box.exec()
+            return
+
         if not hasattr(self.view, 'filename') or not self.view.filename:
             if not self.view.save_diagram():
                 return
@@ -3669,12 +3791,17 @@ class OG_MainWindow(QMainWindow):
             model = QStringListModel(words, self.asn1_completer)
             self.asn1_completer.setModel(model)
             
+            is_read_only = getattr(self.view, 'is_read_only', False)
+            self.asn1_editor.setReadOnly(is_read_only)
             self.asn1_browser.hide()
             self.asn1_editor.show()
             self.edit_btn.hide()
             self.vim_btn.show()
             self.check_btn.show()
-            self.save_btn.show()
+            if is_read_only:
+                self.save_btn.hide()
+            else:
+                self.save_btn.show()
             self.cancel_btn.show()
             self.asn1_editor.setFocus()
             
@@ -3776,6 +3903,15 @@ class OG_MainWindow(QMainWindow):
 
     def save_asn1_changes(self):
         ''' Save content to the file and trigger parsing '''
+        if getattr(self.view, 'is_read_only', False):
+            LOG.warning('Cannot save ASN.1 file: model was opened in Read-Only mode')
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle('OpenGEODE - Read-Only Model')
+            msg_box.setText("This model was opened in Read-Only mode.\nASN.1 files cannot be saved.")
+            msg_box.exec()
+            return
+
         if not self.current_asn1_file:
             return
             
@@ -3796,10 +3932,14 @@ class OG_MainWindow(QMainWindow):
             content = self.asn1_editor.toPlainText()
             with open(self.current_asn1_file, 'w', encoding='utf-8') as f:
                 f.write(content)
-            
-            # Exit edit mode and reload
+
+            # Update FileMonitor timestamp so internal save does not trigger external modification prompt
+            if hasattr(self.view, 'file_monitor'):
+                self.view.file_monitor.update_file(self.current_asn1_file)
+
+            # Exit edit mode and save diagram
             self.cancel_asn1_edit()
-            self.view.check_model()
+            self.view.save_diagram()
         except Exception as err:
             LOG.error(f"Failed to save ASN.1 file: {err}")
             QMessageBox.critical(self, "Error", f"Failed to save ASN.1 file:\n{err}")
@@ -4219,12 +4359,58 @@ class OG_MainWindow(QMainWindow):
             self.vi_bar.setText('/')
         super().keyPressEvent(key_event)
 
+    def check_external_modifications(self):
+        ''' Check if any tracked model file has been modified externally '''
+        if not hasattr(self, 'view') or not self.view:
+            return
+        modified = self.view.file_monitor.check_modifications()
+        if not modified:
+            return
+
+        self.file_check_timer.stop()
+        try:
+            for filepath, old_mtime, new_mtime in modified:
+                rel_name = os.path.basename(filepath)
+                msg_box = QMessageBox(self)
+                msg_box.setWindowTitle("OpenGEODE - File Modified Externally")
+                msg_box.setIcon(QMessageBox.Question)
+                msg_box.setText(f"File '{rel_name}' has been modified by another process.")
+                msg_box.setInformativeText("Do you want to reload the model from disk or ignore?")
+                btn_reload = msg_box.addButton("Reload", QMessageBox.AcceptRole)
+                btn_ignore = msg_box.addButton("Ignore", QMessageBox.RejectRole)
+                msg_box.exec()
+
+                if msg_box.clickedButton() == btn_reload:
+                    if not self.view.is_model_clean():
+                        confirm = QMessageBox.question(
+                            self,
+                            "OpenGEODE - Unsaved Changes",
+                            "Reloading will discard your current unsaved edits. Are you sure you want to proceed?",
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.No
+                        )
+                        if confirm == QMessageBox.No:
+                            self.view.file_monitor.update_file(filepath)
+                            continue
+
+                    if self.view.filename:
+                        self.view.load_file([self.view.filename], is_reload=True)
+                    break
+                else:
+                    self.view.file_monitor.update_file(filepath)
+        finally:
+            self.file_check_timer.start(3000)
+
     # pylint: disable=C0103
     def closeEvent(self, event):
         ''' Close main application after saving application state '''
         if not self.view.is_model_clean() and not self.view.propose_to_save():
             event.ignore()
         else:
+            if hasattr(self.view, 'lock_manager'):
+                self.view.lock_manager.release_locks()
+            if hasattr(self.view, 'file_monitor'):
+                self.view.file_monitor.stop_tracking()
             # save windows geometry to a setting file
             if self.view.filename:
                 ini_filename = self.view.filename + ".ini"
