@@ -1,6 +1,40 @@
 /* CIF PROCESS (250, 149), (150, 75) */
+/* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
 process orchestrator;
-    /* CIF TEXT (437, 19), (319, 392) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (81, 253), (233, 233) */
+    -- You can manually declare an
+    -- external procedure:
+    
+    -- procedure tototo;
+    -- fpar titi MyInteger;
+    -- external;
+    
+    -- In that case you are responsible for
+    -- providing the body code.
+    
+    -- toto is used to check that
+    -- the FPAR in myproc that also
+    -- has a param called toto does
+    -- not conflict.
+    dcl toto MySeqOf;
+    /* CIF ENDTEXT */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (59, 9), (313, 173) */
+    -- This demo shows the main features
+    -- and syntax currently supported by
+    -- OpenGEODE
+    
+    -- The description of the signal and
+    -- external procedures is in the file called
+    -- "system_structure.pr".
+    
+    -- To open this model you must load both
+    -- files from the command line:
+    -- $ opengeode system_structure.pr orchestrator.pr
+    /* CIF ENDTEXT */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (437, 20), (201, 368) */
     -- Some test data
     DCL  a MyInteger := 4;
     
@@ -26,39 +60,12 @@ process orchestrator;
     
     dcl m MyChoice2;
     /* CIF ENDTEXT */
-    /* CIF TEXT (59, 8), (366, 195) */
-    -- This demo shows the main features
-    -- and syntax currently supported by
-    -- OpenGEODE
-    
-    -- The description of the signal and
-    -- external procedures is in the file called
-    -- "system_structure.pr".
-    
-    -- To open this model you must load both
-    -- files from the command line:
-    -- $ opengeode system_structure.pr orchestrator.pr
-    /* CIF ENDTEXT */
-    /* CIF TEXT (81, 252), (276, 283) */
-    -- You can manually declare an
-    -- external procedure:
-    
-    -- procedure tototo;
-    -- fpar titi MyInteger;
-    -- external;
-    
-    -- In that case you are responsible for
-    -- providing the body code.
-    
-    -- toto is used to check that
-    -- the FPAR in myproc that also
-    -- has a param called toto does
-    -- not conflict.
-    dcl toto MySeqOf;
-    /* CIF ENDTEXT */
-    /* CIF procedure (146, 614), (91, 50) */
+    /* CIF procedure (156, 615), (70, 35) */
+/* CIF Keep Specific Geode _REQID_ 'OPENGEODE_TEST_REQID_01' */
+    /* CIF Keep Specific Geode Partition 'default' */
     procedure myproc;
-        /* CIF TEXT (409, 0), (197, 140) */
+        /* CIF Keep Specific Geode Partition 'default' */
+        /* CIF TEXT (409, 0), (170, 140) */
         -- A Local variable
         DCL foo MyInteger;
         
@@ -69,27 +76,29 @@ process orchestrator;
         /* CIF ENDTEXT */
         /* CIF START (617, 19), (100, 50) */
         START;
-            /* CIF task (617, 84), (100, 50) */
+            /* CIF task (632, 84), (70, 35) */
             task a := 42;
-            /* CIF decision (617, 149), (100, 70) */
+            /* CIF decision (632, 134), (70, 50) */
             decision toto;
-                /* CIF ANSWER (422, 239), (100, 35) */
+                /* CIF ANSWER (587, 204), (70, 23) */
                 (<10):
-                    /* CIF task (409, 289), (126, 50) */
+                    /* CIF task (578, 242), (86, 35) */
                     task tutu := 128;
-                /* CIF ANSWER (548, 239), (100, 35) */
+                /* CIF ANSWER (677, 204), (70, 23) */
                 ELSE:
-                    /* CIF task (543, 289), (110, 50) */
+                    /* CIF task (668, 242), (86, 35) */
                     task tutu := 254;
             enddecision;
-            /* CIF task (617, 354), (100, 50) */
+            /* CIF task (632, 313), (70, 35) */
             task foo := a;
-            /* CIF return (642, 419), (50, 50) */
+            /* CIF return (649, 363), (35, 35) */
             return ;
     endprocedure;
-    /* CIF START (953, 3), (100, 50) */
+    /* CIF START (953, 4), (100, 50) */
     START;
-        /* CIF task (796, 73), (413, 408) */
+        /* CIF task (832, 74), (341, 383) */
+/* CIF Keep Specific Geode _REQID_ 'OPENGEODE_TEST_REQID_01' */
+/* CIF Keep Specific Geode _REQID_ '55' */
         task a := 42 + 5 * 3 - 1,
 b := { hello, world },
 a := length(b),
@@ -115,112 +124,118 @@ h := abs(-42.5),
 h := abs(h),
 i := {1, 2},
 m := B:C:TRUE
-        /* CIF comment (1273, 257), (167, 40) */
+        /* CIF comment (1237, 246), (157, 38) */
         comment 'This is a comment
 A multiline one, I mean';
-        /* CIF task (939, 520), (128, 56) */
+        /* CIF task (947, 496), (110, 53) */
         task for x in i:
 call writeln(x);
 endfor;
-        /* CIF PROCEDURECALL (875, 594), (255, 50) */
+        /* CIF PROCEDURECALL (883, 567), (238, 35) */
         call writeln('Should show "5 42.5": ', a, h);
-        /* CIF decision (947, 659), (112, 70) */
+        /* CIF decision (959, 617), (86, 50) */
+/* CIF Keep Specific Geode _REQID_ 'OPENGEODE_TEST_REQID_02' */
+/* CIF Keep Specific Geode _REQID_ 'OPENGEODE_TEST_REQID_01' */
         decision present(e);
-            /* CIF ANSWER (953, 749), (100, 31) */
+            /* CIF ANSWER (878, 687), (70, 23) */
             (a):
-                /* CIF task (949, 799), (108, 50) */
+                /* CIF task (878, 729), (70, 35) */
                 task a := 37;
-            /* CIF ANSWER (1106, 749), (100, 35) */
+            /* CIF ANSWER (968, 687), (70, 23) */
             (b):
-                /* CIF task (1066, 799), (179, 50) */
+                /* CIF task (968, 725), (70, 35) */
                 task a := 38;
-            /* CIF ANSWER (1256, 749), (100, 35) */
+            /* CIF ANSWER (1058, 687), (70, 23) */
             ELSE:
         enddecision;
-        /* CIF decision (953, 864), (100, 70) */
+        /* CIF decision (968, 800), (70, 50) */
         decision e;
-            /* CIF ANSWER (840, 954), (100, 35) */
+            /* CIF ANSWER (968, 870), (70, 23) */
             (a:TRUE):
-                /* CIF task (840, 1009), (100, 50) */
+                /* CIF task (968, 912), (70, 35) */
                 task a := 41;
-            /* CIF ANSWER (646, 954), (100, 35) */
+            /* CIF ANSWER (878, 870), (70, 23) */
             (g):
-                /* CIF task (646, 1009), (100, 50) */
+                /* CIF task (878, 912), (70, 35) */
                 task a := 40;
-            /* CIF ANSWER (1077, 954), (100, 35) */
+            /* CIF ANSWER (1058, 870), (70, 23) */
             ELSE:
-                /* CIF task (1077, 1009), (100, 50) */
+                /* CIF task (1058, 912), (70, 35) */
                 task a := 42;
         enddecision;
-        /* CIF NEXTSTATE (956, 1074), (94, 38) */
+        /* CIF NEXTSTATE (966, 983), (72, 35) */
         NEXTSTATE Stopped;
-    /* CIF label (452, 491), (152, 50) */
+    /* CIF label (460, 492), (134, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     connection Transition_to_Stop:
-        /* CIF output (451, 556), (153, 50) */
+        /* CIF output (463, 542), (128, 35) */
         output housekeeping(31);
-        /* CIF NEXTSTATE (478, 621), (100, 50) */
+        /* CIF NEXTSTATE (491, 592), (72, 35) */
         NEXTSTATE Stopped;
     /* CIF End Label */
     endconnection;
-    /* CIF state (1503, 29), (100, 50) */
+    /* CIF state (2410, 508), (71, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Running;
-        /* CIF input (1503, 99), (100, 50) */
-        input pulse;
-            /* CIF task (1456, 164), (193, 50) */
-            task a := (a+1) mod 10;
-            /* CIF PROCEDURECALL (1450, 229), (205, 50) */
-            call writeln
-('Calling GNC with value ', a);
-            /* CIF PROCEDURECALL (1474, 294), (158, 50) */
-            call computeGNC(a, a);
-            /* CIF output (1479, 359), (148, 50) */
-            output housekeeping(a);
-            /* CIF NEXTSTATE (1503, 424), (100, 50) */
-            NEXTSTATE Running;
-    endstate;
-    /* CIF state (2396, 617), (100, 50) */
-    state Running;
-        /* CIF input (2386, 687), (120, 50) */
+        /* CIF input (2398, 563), (95, 35) */
         input run(myCmd);
-            /* CIF output (2363, 752), (165, 50) */
+            /* CIF output (2381, 613), (128, 35) */
             output housekeeping(42);
-            /* CIF join (2421, 817), (50, 50) */
+            /* CIF join (2428, 663), (35, 35) */
             join Transition_to_Stop;
     endstate;
-    /* CIF state (2064, 20), (100, 50) */
+    /* CIF state (2077, 21), (72, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
     state Stopped;
-        /* CIF input (2396, 90), (100, 50) */
+        /* CIF input (2411, 76), (70, 35) */
         input run(a)
-        /* CIF comment (2368, 21), (167, 50) */
+        /* CIF comment (2353, 0), (136, 35) */
         /* CIF Keep Specific Geode HyperLink 'http://www.esa.int' */
         comment 'My comment is rich';
-            /* CIF label (2396, 155), (100, 50) */
+            /* CIF label (2411, 126), (70, 35) */
             Here:
-            /* CIF decision (2396, 220), (100, 70) */
+            /* CIF decision (2411, 176), (70, 50) */
             decision a>10;
-                /* CIF ANSWER (2304, 310), (100, 35) */
+                /* CIF ANSWER (2319, 246), (70, 23) */
                 (TRUE):
-                    /* CIF PROCEDURECALL (2209, 360), (290, 47) */
+                    /* CIF PROCEDURECALL (2230, 284), (246, 38) */
                     call writeln
 ('a is too big! - decrementing :', a, a - 1);
-                    /* CIF task (2298, 422), (112, 50) */
+                    /* CIF task (2318, 337), (70, 35) */
                     task a := a - 1;
-                    /* CIF PROCEDURECALL (2296, 487), (116, 50) */
+                    /* CIF PROCEDURECALL (2307, 387), (92, 35) */
                     call myproc(5,a);
-                    /* CIF join (2329, 552), (50, 50) */
+                    /* CIF join (2336, 437), (35, 35) */
                     join Here;
-                /* CIF ANSWER (2509, 310), (100, 35) */
+                /* CIF ANSWER (2524, 246), (70, 23) */
                 (FALSE):
             enddecision;
-            /* CIF NEXTSTATE (2396, 617), (100, 50) */
+            /* CIF NEXTSTATE (2410, 508), (71, 35) */
             NEXTSTATE Running;
-        /* CIF input (1746, 90), (100, 50) */
+        /* CIF input (1761, 76), (70, 35) */
         input pulse;
-            /* CIF output (1715, 155), (161, 50) */
+            /* CIF output (1733, 126), (124, 35) */
             output housekeeping (1);
-            /* CIF NEXTSTATE (1750, 220), (91, 46) */
+            /* CIF NEXTSTATE (1761, 176), (70, 35) */
             NEXTSTATE -
-            /* CIF comment (1909, 213), (162, 50) */
+            /* CIF comment (1898, 164), (152, 35) */
             comment 'Stay in the same state';
+    endstate;
+    /* CIF state (1517, 30), (71, 35) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    state Running;
+        /* CIF input (1518, 85), (70, 35) */
+        input pulse;
+            /* CIF task (1491, 135), (123, 35) */
+            task a := (a+1) mod 10;
+            /* CIF PROCEDURECALL (1460, 185), (185, 38) */
+            call writeln
+('Calling GNC with value ', a);
+            /* CIF PROCEDURECALL (1488, 238), (128, 35) */
+            call computeGNC(a, a);
+            /* CIF output (1492, 288), (120, 35) */
+            output housekeeping(a);
+            /* CIF NEXTSTATE (1517, 338), (71, 35) */
+            NEXTSTATE Running;
     endstate;
 endprocess orchestrator;
