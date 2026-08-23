@@ -126,6 +126,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.8.2 (08/2026)**
+- Detect/prevent concurrent access to the model (lock file+monitor)
+
 **4.8.1 (08/2026)**
 - Add traceability to requirement ids in generated code
 - Improve user experience when grabbing/moving symbols
