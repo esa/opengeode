@@ -4280,6 +4280,8 @@ def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
 
     trace = [u'// {line}'.format(line=l) for l in symbol.trace().split('\n')]
+    if hasattr(symbol, 'req_ids') and symbol.req_ids:
+        trace.append(f"// Requirement IDs: {', '.join(symbol.req_ids)}")
 
     if hasattr(symbol, 'comment') and symbol.comment:
         trace.extend(traceability(symbol.comment))

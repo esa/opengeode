@@ -29,13 +29,13 @@ try:
 except ModuleNotFoundError:
     # python3
     from functools import singledispatch
-import ogAST
-import Helper
+from . import ogAST
+from . import Helper
 
 try:
     import stringtemplate3
     stg = True
-except ImportError:
+except (ImportError, AttributeError):
     stg = False
 
 LOG = logging.getLogger(__name__)
@@ -1816,7 +1816,10 @@ def path_type(path):
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
     template = new("comment")
-    template['lines'] = symbol.trace().split('\n')
+    lines = symbol.trace().split('\n')
+    if hasattr(symbol, 'req_ids') and symbol.req_ids:
+        lines.append(f"Requirement IDs: {', '.join(symbol.req_ids)}")
+    template['lines'] = lines
     result = [str(template)]
     if hasattr(symbol, 'comment') and symbol.comment:
         result.extend(traceability(symbol.comment))
