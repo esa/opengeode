@@ -75,8 +75,11 @@ class Connection(QGraphicsPathItem):
         from PySide6.QtWidgets import QMenu
         menu = QMenu()
         auto_layout_action = menu.addAction("Automatic connection layout")
+        scene = self.scene()
+        if scene and getattr(scene, 'context', '') != 'block':
+            auto_layout_action.setEnabled(False)
         action = menu.exec(event.screenPos())
-        if action == auto_layout_action:
+        if action == auto_layout_action and auto_layout_action.isEnabled():
             import opengeode.AutoRouter as AutoRouter
             dialog = AutoRouter.AutoLayoutDialog(self, parent=self.scene().views()[0])
             dialog.exec()
