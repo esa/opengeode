@@ -1,7 +1,12 @@
 all:
 	mkdir -p code
-	cd code && opengeode --toAda /home/taste/opengeode/tests/testsuite/test-newtype/og.pr 
+	cd code && opengeode --toAda ../*.pr
 	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dataview-uniq.asn code/og_datamodel.asn
 	cd code && gnat make og
+c:
+	mkdir -p code_c
+	cd code_c && opengeode --toC ../*.pr
+	asn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c dataview-uniq.asn code/og_datamodel.asn
+	cd code_c && gcc -c *.c
 clean:
-	rm -rf code
+	rm -rf code code_c

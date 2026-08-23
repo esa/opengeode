@@ -3771,6 +3771,7 @@ def composite_state(root, parent=None, context=None):
         comp.output_signals = context.output_signals
         comp.procedures = context.procedures
         comp.operators = dict(context.operators)
+        comp.user_defined_types = getattr(context, 'user_defined_types', USER_DEFINED_TYPES)
     except AttributeError:
         LOG.debug('Procedure context is undefined')
     inner_proc = []
@@ -4561,7 +4562,7 @@ def syntype(root, ta_ast, context):
         })
 
     USER_DEFINED_TYPES.update({asnName: newtype})
-    if isinstance(context, ogAST.Process):
+    if hasattr(context, 'user_defined_types'):
         context.user_defined_types = USER_DEFINED_TYPES
 
     return errors, warnings
@@ -4606,7 +4607,7 @@ def newtype(root, ta_ast, context):
         warnings.append(
                     'Unsupported type definition in newtype, type: ' +
                     str(root.type))
-    if isinstance(context, ogAST.Process):
+    if hasattr(context, 'user_defined_types'):
         context.user_defined_types = USER_DEFINED_TYPES
     return errors, warnings
 
@@ -5327,7 +5328,16 @@ def process_definition(root, parent=None, context=None):
     USER_DEFINED_TYPES = CHOICE_SELECTORS.copy()
 
     process.user_defined_types = USER_DEFINED_TYPES
-    tas = list(x for x in root.getChildren() if x.type == lexer.TEXTAREA)
+    def find_textareas(node):
+        res = []
+        for child in node.getChildren():
+            if child.type == lexer.TEXTAREA:
+                res.append(child)
+            else:
+                res.extend(find_textareas(child))
+        return res
+
+    tas = find_textareas(root)
     for child in tas:
         content = (x for x in child.getChildren()
                    if x.type == lexer.TEXTAREA_CONTENT)

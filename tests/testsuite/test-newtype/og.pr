@@ -1,4 +1,6 @@
 system og;
+    signal dummy;
+    /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (228, 136), (380, 140) */
     -- demonstrating how to create custom types with the newtype
     -- sdl construct
@@ -8,17 +10,44 @@ system og;
     signal dd;
     signal we;
     /* CIF ENDTEXT */
-    channel c
+    channel c1
+        /* CIF Keep Specific Geode ROUTE (226, 83) (226, 83) */
         from env to og with dd;
         from og to env with we;
     endchannel;
     block og;
-        signalroute r
+        signalroute r1
+            /* CIF Keep Specific Geode ROUTE (226, 83) (226, 83) */
             from env to og with dd;
             from og to env with we;
-        connect c and r;
+        connect c1 and r1;
         /* CIF PROCESS (226, 46), (150, 75) */
+        
         process og;
+            state cool;
+            substructure
+                    /* CIF Keep Specific Geode Partition 'default' */
+                    /* CIF TEXT (42, 185), (570, 203) */
+                    syntype innerfoo = natural
+                       constants 0:255
+                    endsyntype;
+                    
+                    -- objective is to verify that custom types declared in substates are visible and usable as expected
+                    dcl innertest innerfoo := 1;
+                    
+                    newtype myothernewtype
+                     array (innerfoo, innerfoo)
+                    endnewtype;
+                    
+                    
+                    dcl somearray MyOtherNewType := { 1, 2, 3};
+                    /* CIF ENDTEXT */
+                    /* CIF START (623, 176), (70, 35) */
+                    START;
+                        /* CIF return (640, 231), (35, 35) */
+                        return ;
+            endsubstructure;
+            /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (402, 101), (379, 398) */
             syntype toto = myInteger
               constants 5:some_constant,  60,=100, >100, <250 -- [5, 249]
@@ -47,6 +76,7 @@ system og;
              constants 0:255
             endsyntype;
             /* CIF ENDTEXT */
+            /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (122, 80), (249, 338) */
             newtype myArray
                array (myinteger, myinteger)
@@ -71,10 +101,10 @@ system og;
             
             dcl myseq Seq;
             /* CIF ENDTEXT */
+            /* CIF Keep Specific Geode Partition 'default' */
             /* CIF TEXT (234, 599), (201, 140) */
             dcl something subinteger := 8;
             dcl sth subunsigned := 5;
-            
             /* CIF ENDTEXT */
             /* CIF START (975, 216), (70, 35) */
             START;
@@ -86,25 +116,30 @@ system og;
                 task someint := some_constant;
                 /* CIF decision (974, 431), (70, 50) */
                 decision someint;
-                    /* CIF ANSWER (786, 501), (112, 23) */
+                    /* CIF ANSWER (811, 501), (112, 23) */
                     (some_constant):
-                    /* CIF ANSWER (904, 501), (81, 23) */
+                    /* CIF ANSWER (944, 501), (81, 23) */
                     (forty_two):
-                    /* CIF ANSWER (1027, 501), (70, 23) */
+                    /* CIF ANSWER (1047, 501), (70, 23) */
                     (zero):
-                    /* CIF ANSWER (1117, 501), (70, 53) */
+                    /* CIF ANSWER (1137, 501), (70, 53) */
                     (1:41,
 43:65,
 67:255):
                 enddecision;
                 /* CIF NEXTSTATE (975, 570), (70, 35) */
-                NEXTSTATE wait;
+                NEXTSTATE cool;
             /* CIF state (792, 231), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
                 /* CIF input (792, 286), (70, 35) */
                 input dd;
                     /* CIF NEXTSTATE (792, 341), (70, 35) */
                     NEXTSTATE wait;
+            endstate;
+            /* CIF state (1228, 171), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            state cool;
             endstate;
         endprocess og;
     endblock;
