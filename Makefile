@@ -56,7 +56,15 @@ dependencies:
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
 	python3 -c 'import PySide6' || python3 -m pip install pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	python3 -c 'import antlr3' || python3 -m pip install "https://gitlab.esa.int/api/v4/projects/taste%2Ftaste-setup/packages/generic/dependencies/1.0/antlr3_python3_runtime_3.4.tar.bz2"
+	# The sdist uses an ancient ez_setup.py bootstrap that breaks on modern pip/setuptools,
+	# so we download it, strip the bootstrap, and install from a local directory.
+	python3 -c 'import antlr3' || (python3 -m pip install setuptools && \
+	       cd /tmp && rm -rf antlr3_python3_runtime_3.4 && \
+	       python3 -c "import urllib.request; urllib.request.urlretrieve('https://gitlab.esa.int/api/v4/projects/taste%2Ftaste-setup/packages/generic/dependencies/1.0/antlr3_python3_runtime_3.4.tar.bz2', 'antlr3_python3_runtime_3.4.tar.bz2')" && \
+	       tar xjf antlr3_python3_runtime_3.4.tar.bz2 && \
+	       cd antlr3_python3_runtime_3.4 && \
+	       sed -i '/import ez_setup/d; /ez_setup.use_setuptools/d' setup.py && \
+	       python3 -m pip install --no-build-isolation .)
 	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
@@ -74,7 +82,8 @@ dependencies:
 	       git clone --depth 1 --branch ${QTASTE_VERSION} https://github.com/esa/TasteQtWidgets && \
 	       cd TasteQtWidgets && \
 	       sed -i 's/Py_LIMITED_API=0x03050000/Py_LIMITED_API=0x030D0000/' cmake/KDPySide6ModuleBuild.cmake && \
-	       cd pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	       cd pytastewidgets && python3 ./install.py > /dev/null) || \
+	       echo "[!] WARNING: Failed to build TasteQtWidgets (optional). Continuing without it."
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install: help
