@@ -22,6 +22,7 @@ import os
 import threading
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
+from PySide6.QtGui import QTextDocument
 from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QMessageBox, QPushButton,
                                QTextEdit, QVBoxLayout, QWidget)
 
@@ -213,11 +214,38 @@ class OrbitChatPanel(QWidget):
     editor. Degrades to a disabled, informative placeholder when orbit_acp
     or orbit is not available."""
 
+    # CSS injected into the chat view so rendered markdown (code blocks,
+    # headings, lists, tables) has a consistent, readable style.
+    _CHAT_CSS = (
+        "<style>\n"
+        " pre { background-color:#f4f4f4; border:1px solid #ddd;"
+        " border-radius:3px; padding:4px; margin:4px 0;"
+        " font-family:monospace; white-space:pre-wrap; }\n"
+        " code { font-family:monospace; background-color:#f0f0f0;"
+        " padding:1px 3px; border-radius:2px; }\n"
+        " h1 { font-size:large; margin:8px 0 4px; }\n"
+        " h2 { font-size:medium; margin:8px 0 4px; }\n"
+        " h3 { font-size:medium; margin:6px 0 2px; }\n"
+        " table { border-collapse:collapse; margin:4px 0; }\n"
+        " th, td { border:1px solid #ccc; padding:2px 6px; }\n"
+        " ul, ol { margin:4px 0; padding-left:20px; }\n"
+        " li { margin:2px 0; }\n"
+        "</style>"
+    )
+
     def __init__(self, main_window, parent=None):
         super().__init__(parent)
         self.main_window = main_window
         self._busy = False
         self._agent = None
+
+        # Conversation rendered as a list of message records. Each record is
+        # a dict: {"role": ..., "html": ..., "streaming": bool}. The panel
+        # re-renders the whole view as HTML whenever this list changes.
+        self._messages = []
+        # Accumulated raw markdown text for the assistant reply currently
+        # streaming in.  Cleared when the turn finishes.
+        self._assistant_text = ""
 
         # --- UI ---
         self.view = QTextEdit(readOnly=True)
@@ -262,10 +290,74 @@ class OrbitChatPanel(QWidget):
         self._agent.failed.connect(self._on_failed)
         self._start_conversation()
 
+    # -- markdown helpers ---------------------------------------------------
+    @staticmethod
+    def _md_to_html(md: str) -> str:
+        """Convert a markdown string to HTML using Qt's built-in parser.
+
+        Qt's ``QTextDocument.setMarkdown`` supports CommonMark plus a few
+        GitHub-flavoured extensions (fenced code blocks, tables, strikethrough).
+        We render into a throw-away document and read back the HTML body.
+        """
+        doc = QTextDocument()
+        doc.setMarkdown(md)
+        html = doc.toHtml()
+        # ``toHtml`` returns a full HTML page with a body. Extract just the
+        # inner body so we can splice it into our own message structure.
+        start = html.find("<body", )
+        if start != -1:
+            start = html.find(">", start) + 1
+            end = html.rfind("</body>")
+            if end != -1:
+                html = html[start:end]
+        return html
+
+    @staticmethod
+    def _html_escape(text: str) -> str:
+        """Escape plain text for safe inclusion in HTML."""
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    def _render_view(self):
+        """Rebuild the chat view HTML from ``self._messages``.
+
+        Each message is rendered as a styled block.  Assistant markdown is
+        converted to HTML via ``QTextDocument.setMarkdown``; user text and
+        tool/plan/task status lines are escaped and shown inline.
+        """
+        parts = []
+        for msg in self._messages:
+            role = msg.get("role", "")
+            html = msg.get("html", "")
+            if not html:
+                continue
+            if role == "user":
+                parts.append(
+                    f'<p style="margin:6px 0;">'
+                    f'<b style="color:#0066cc;">you:</b> {html}</p>')
+            elif role == "assistant":
+                parts.append(
+                    f'<p style="margin:6px 0;">'
+                    f'<b style="color:#006600;">orbit:</b></p>'
+                    f'<div style="margin-left:8px;">{html}</div>')
+            else:
+                # tool events, plan, usage, task, system lines
+                parts.append(html)
+        self.view.setHtml(self._CHAT_CSS + "\n".join(parts))
+        # Scroll to bottom so the latest content is visible.
+        sb = self.view.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
     # -- layout helpers ------------------------------------------------------
     def _show_unavailable(self, message):
         """Disable the panel and show a short explanation instead of a chat."""
-        self.view.setHtml(f"<i>{message}</i>")
+        self._messages = [
+            {"role": "system", "html": f"<i>{self._html_escape(message)}</i>"}
+        ]
+        self._render_view()
         self.entry.setPlaceholderText("orbit not available")
         self.entry.setEnabled(False)
         self.stop_btn.setEnabled(False)
@@ -293,34 +385,50 @@ class OrbitChatPanel(QWidget):
     def _start_conversation(self):
         """Open the conversation, with the model directory as cwd and a
         briefing that tells orbit about the SDL model."""
-        self.view.setHtml("<i>Starting orbit…</i>")
+        self._messages = [
+            {"role": "system", "html": "<i>Starting orbit…</i>"}
+        ]
+        self._render_view()
         self.entry.setPlaceholderText("Ask orbit… (starting)")
         self._agent.start(self._model_dir(), briefing=self._briefing())
 
     # -- agent signal slots (run on the GUI thread) -------------------------
     @Slot()
     def _on_ready(self):
-        self.view.clear()
+        self._messages = []
+        self._render_view()
         self.entry.setPlaceholderText("Ask orbit about the SDL model…")
         self.entry.setEnabled(True)
         self.entry.setFocus()
-        self.view.append(
-            "<i>Connected to orbit. The current model is "
-            f"{self._pr_file() or 'unsaved'}.</i>")
+        pr_file = self._pr_file() or 'unsaved'
+        self._messages.append({
+            "role": "system",
+            "html": f"<i>Connected to orbit. The current model is "
+                    f"{self._html_escape(pr_file)}.</i>",
+        })
+        self._render_view()
 
     @Slot(object)
     def _on_event(self, ev):
         kind = getattr(ev, "kind", "")
         if kind == "text":
-            cursor = self.view.textCursor()
-            cursor.movePosition(cursor.MoveOperation.End)
-            cursor.insertText(ev.text)
-            self.view.setTextCursor(cursor)
+            # Accumulate the raw markdown text; show it live as escaped plain
+            # text so the user sees streaming output.  The full markdown is
+            # rendered when the turn finishes (see _on_turn_done).
+            self._assistant_text += ev.text
+            html = self._html_escape(self._assistant_text).replace("\n", "<br>")
+            if self._messages and self._messages[-1].get("role") == "assistant" \
+                    and self._messages[-1].get("streaming"):
+                self._messages[-1]["html"] = html
+            else:
+                self._messages.append(
+                    {"role": "assistant", "html": html, "streaming": True})
+            self._render_view()
         elif kind == "thought":
-            cursor = self.view.textCursor()
-            cursor.movePosition(cursor.MoveOperation.End)
-            cursor.insertText(f"\n[thinking] {ev.text}")
-            self.view.setTextCursor(cursor)
+            html = (f"<p style='margin:4px 0;color:#888;'><i>[thinking] "
+                    f"{self._html_escape(ev.text)}</i></p>")
+            self._messages.append({"role": "thought", "html": html})
+            self._render_view()
         elif kind == "tool":
             status = getattr(ev, "status", "")
             title = getattr(ev, "title", "")
@@ -330,26 +438,42 @@ class OrbitChatPanel(QWidget):
             files = getattr(ev, "files", None) or []
             if getattr(ev, "done", False) and files:
                 extra = " → " + ", ".join(files)
-            self.view.append(f"<i>[{title}: {status}{extra}]</i>")
+            html = (f"<p style='margin:2px 0;color:#555;'><i>["
+                    f"{self._html_escape(title)}: {self._html_escape(status)}"
+                    f"{self._html_escape(extra)}]</i></p>")
+            self._messages.append({"role": "tool", "html": html})
+            self._render_view()
         elif kind == "plan":
             steps = getattr(ev, "steps", None) or []
             if steps:
-                self.view.append("<i>Plan:</i>")
+                lines = ["<p style='margin:4px 0;'><i>Plan:</i></p>"]
                 for step in steps:
                     mark = {"pending": "○", "in_progress": "◐",
                             "completed": "●"}.get(getattr(step, "status", ""),
                                                   "•")
-                    self.view.append(f"<i>  {mark} {step.title}</i>")
+                    lines.append(
+                        f"<p style='margin:2px 0;margin-left:12px;'><i>"
+                        f"{mark} {self._html_escape(step.title)}</i></p>")
+                self._messages.append(
+                    {"role": "plan", "html": "\n".join(lines)})
+                self._render_view()
         elif kind == "usage":
             used = getattr(ev, "used", 0)
             size = getattr(ev, "size", 0)
             if size:
-                self.view.append(f"<i>[context: {used}/{size} tokens]</i>")
+                html = (f"<p style='margin:2px 0;color:#888;'><i>"
+                        f"[context: {used}/{size} tokens]</i></p>")
+                self._messages.append({"role": "usage", "html": html})
+                self._render_view()
         elif kind == "task":
             title = getattr(ev, "title", "")
             status = getattr(ev, "status", "")
             if title:
-                self.view.append(f"<i>⟡ {title}: {status}</i>")
+                html = (f"<p style='margin:2px 0;'><i>⟡ "
+                        f"{self._html_escape(title)}: "
+                        f"{self._html_escape(status)}</i></p>")
+                self._messages.append({"role": "task", "html": html})
+                self._render_view()
 
     @Slot(object)
     def _on_permission(self, req):
@@ -379,8 +503,23 @@ class OrbitChatPanel(QWidget):
     @Slot(str)
     def _on_turn_done(self, reason):
         self._busy = False
+        # Finalise the assistant reply: render the accumulated raw markdown
+        # as proper HTML via Qt's markdown parser.
+        if self._assistant_text:
+            rendered = self._md_to_html(self._assistant_text)
+            if self._messages and self._messages[-1].get("role") == "assistant" \
+                    and self._messages[-1].get("streaming"):
+                self._messages[-1]["html"] = rendered
+                self._messages[-1]["streaming"] = False
+            else:
+                self._messages.append(
+                    {"role": "assistant", "html": rendered, "streaming": False})
+            self._assistant_text = ""
+            self._render_view()
         if reason and reason != "done":
-            self.view.append(f"<i>({reason})</i>")
+            self._messages.append(
+                {"role": "system", "html": f"<i>({self._html_escape(reason)})</i>"})
+            self._render_view()
         self.entry.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self.entry.setFocus()
@@ -392,7 +531,12 @@ class OrbitChatPanel(QWidget):
     @Slot(str)
     def _on_failed(self, message):
         self._busy = False
-        self.view.append(f"<i>error: {message}</i>")
+        self._assistant_text = ""
+        self._messages.append({
+            "role": "system",
+            "html": f"<i>error: {self._html_escape(message)}</i>",
+        })
+        self._render_view()
         self.entry.setEnabled(self._agent is not None and self._agent.chat is not None)
         self.stop_btn.setEnabled(False)
 
@@ -407,8 +551,12 @@ class OrbitChatPanel(QWidget):
         self.entry.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self._busy = True
-        self.view.append(f"<b>you:</b> {question}")
-        self.view.append("<b>orbit:</b> ")
+        self._assistant_text = ""
+        self._messages.append({
+            "role": "user",
+            "html": self._html_escape(question),
+        })
+        self._render_view()
         self._agent.ask(question)
 
     def _stop(self):
