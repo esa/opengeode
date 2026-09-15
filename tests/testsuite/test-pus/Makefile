@@ -35,7 +35,11 @@ test-if:
 
 test-llvm: flight.o
 
+test-rust:
+	$(OPENGEODE) flight.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) flight.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm coverage test-rust

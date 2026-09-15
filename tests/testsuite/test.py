@@ -56,7 +56,9 @@ def main():
     results = []
     op = parse_args()
     paths = sys.argv[2:]
-    xfails = os.environ['EXPECTED_FAILURES']
+    xfails = os.environ['EXPECTED_FAILURES'].split()
+    rust_xfails = os.environ.get('RUST_EXPECTED_FAILURES', '').split() \
+        if op.rule == 'test-rust' else []
     if op.rule in ['test-qgen-parse', 'test-qgen-ada', 'test-qgen-c', 'test-qgen-gt-ada', 'test-qgen-gt-c']:
         qgen_unsup = os.environ['QGEN_UNSUPPORTED']
     else:
@@ -74,12 +76,13 @@ def main():
             result = each.result()
             errcode, stdout, stderr, path, rule = result
             name = path.replace("/", "")
+            is_xfail = path in xfails or (op.rule == 'test-rust' and path in rust_xfails)
             print("(%3d / %3d) %50s: %s" %
                                (len(results)+1, len(paths),
                                 name, colorMe(errcode,
                                '[OK]' if errcode==0 else
                                 ('[EXPECTED FAILURE]'
-                                if path in xfails
+                                if is_xfail
                                 else ('[QGEN UNSUPPORTED]'
                                 if path in qgen_unsup
                  else '[FAILED] ... build log in logs/{}.err'.format(name))))))
@@ -96,7 +99,7 @@ def main():
                         f.write("-- stderr " + "-" * 70)
                         f.write(stderr.decode())
                         f.write("-" * 80)
-            if errcode != 0 and name in xfails:
+            if errcode != 0 and is_xfail:
                # for "expected failures", set errcode to None
                result = (None, stdout, stderr, path, rule)
             results.append(result)

@@ -21,7 +21,11 @@ test-c:
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO  *.asn
 	$(CC) -O$(O) -c *.c
 
+test-rust:
+	$(OPENGEODE) --toRust $(ROOT_MODEL) && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm coverage test-rust

@@ -53,7 +53,11 @@ test-if:
 
 test-llvm: orchestrator.o
 
+test-rust:
+	$(OPENGEODE) orchestrator.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-c simu test-llvm coverage
+.PHONY: all edit test-parse test-ada test-c test-rust simu test-llvm coverage

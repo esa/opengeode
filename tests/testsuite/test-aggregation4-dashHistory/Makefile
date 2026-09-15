@@ -42,7 +42,11 @@ test-llvm: challenge.o dataview-uniq.o | test_llvm.o
 	$(CC) challenge.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm
 
+test-rust:
+	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

@@ -38,6 +38,10 @@ test-c:
 	$(CC) -O$(O) -o test_c *.c
 	./test_c | diff expected -
 
+test-rust:
+	$(OPENGEODE) og.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-llvm:
 	$(OPENGEODE) og.pr --llvm -O$(O)
 	$(LLC) *.ll
@@ -47,4 +51,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

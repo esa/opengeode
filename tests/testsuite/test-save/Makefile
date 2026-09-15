@@ -30,10 +30,14 @@ test-ada:
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
 	gnat make test_ada.ada && ./test_ada | diff expected -
 
-test-c: 
+test-c:
 	$(OPENGEODE) og.pr --toC
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -o test_c *.c && ./test_c | diff expected -
+
+test-rust:
+	$(OPENGEODE) og.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
 test-if:
 	sdl2if og.pr
@@ -61,4 +65,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

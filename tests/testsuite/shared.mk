@@ -46,6 +46,10 @@ test-promela: FORCE
 	$(OPENGEODE) $< system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
+# Fallback test-rust rule: generates Rust code from all .pr files plus
+# system_structure.pr.  This only works for tests that have a
+# system_structure.pr file; individual test Makefiles should override this
+# target with the correct .pr invocation for their layout.
 test-rust: FORCE
 	$(OPENGEODE) *.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn

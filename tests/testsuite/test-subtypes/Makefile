@@ -41,6 +41,10 @@ test-if:
 	sdl2if *.pr
 
 
+test-rust:
+	$(OPENGEODE) *.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-llvm:
 	$(OPENGEODE) *.pr --llvm -O$(O)
 	$(LLC) *.ll
@@ -50,4 +54,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) *.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

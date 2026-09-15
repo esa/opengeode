@@ -45,4 +45,8 @@ test-llvm: operators.o dataview-uniq.o | test_llvm.o
 coverage:
 	coverage run -p $(OPENGEODE) operators.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+test-rust:
+	$(OPENGEODE) operators.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

@@ -33,8 +33,12 @@ test-ada:
 
 test-c:
 	$(OPENGEODE) insdl.pr system_structure.pr --toC
-	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
+
+test-rust:
+	$(OPENGEODE) insdl.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
 test-if:
 	sdl2if ${ROOT_MODEL}
@@ -48,4 +52,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) ${ROOT_MODEL} --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

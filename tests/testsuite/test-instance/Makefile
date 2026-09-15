@@ -36,6 +36,10 @@ test-c: og.c test_c.o dataview-uniq.o
 	$(CC) test_c.o og.c dataview-uniq.o -lm -o test_c
 	./test_c
 
+test-rust:
+	$(OPENGEODE) og.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-if:
 	sdl2if og.pr system_structure.pr
 
@@ -48,4 +52,4 @@ test-llvm: og.o dataview-uniq.o | test_llvm.o
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

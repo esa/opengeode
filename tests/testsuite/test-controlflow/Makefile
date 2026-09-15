@@ -45,7 +45,11 @@ test-llvm: controlflow.o dataview-uniq.o | test_llvm.o
 test-vhdl : test-c
 	bambu controlflow.c test_c.c --experimental-setup=BAMBU --debug-classes=MuxConnectionBinding --print-dot --no-clean --pretty-print=a.c -d2
 
+test-rust:
+	$(OPENGEODE) controlflow.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) controlflow.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

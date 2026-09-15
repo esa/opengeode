@@ -48,4 +48,8 @@ test-vhdl : test-c
 coverage:
 	coverage run -p $(OPENGEODE) expressions.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+test-rust:
+	$(OPENGEODE) expressions.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage
