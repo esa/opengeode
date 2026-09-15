@@ -19,6 +19,9 @@ test-promela:
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
 
+test-rust:
+	@$(MAKE) -s -C tests/testsuite $@
+
 benchmark:
 	@$(MAKE) -s -C tests/testsuite $@
 
@@ -39,7 +42,7 @@ flake8:
 	@cd opengeode && flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py \
 	        AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py ogASTDumper.py \
 			sdlHelp.py undoCommands.py  Connectors.py Asn1scc.py Helper.py \
-	        Statechart.py TextInteraction.py > flake8_report
+	        Statechart.py TextInteraction.py RustGenerator.py > flake8_report
 
 compile-all:
 	# use antlr3 from Debian's python3-antlr3 package
@@ -117,5 +120,5 @@ clean:
 	@rm -rf pyinstaller-pyinstaller-953f6e3
 	@rm -rf opengeode/*.pyc dist build *.egg-info
 
-.PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+.PHONY: all test-parse test-ada test-llvm test-rust benchmark benchmark-O1 benchmark-O2 \
 	    benchmark-O3 flake8 coverage compile-all install publish clean help

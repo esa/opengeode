@@ -66,6 +66,7 @@ from . import(undoCommands,  # NOQA
               Helper,
               Pr,
               CGenerator,
+              RustGenerator,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
 from .ModelMonitor import ModelLockManager, FileMonitor
@@ -143,6 +144,7 @@ MODULES : List[types.ModuleType] = [
     TextInteraction,
     Connectors,
     CGenerator,
+    RustGenerator,
 ]
 
 # Define custom UserRoles
@@ -2496,8 +2498,8 @@ class SDL_View(QGraphicsView):
         if (not autosave
                and scene.ast is not None
                and len(scene.ast.processes) == 1
-               and (self.options.toAda or self.options.toC)):
-            # When --edit is combined with --toAda or --toC, generate the
+               and (self.options.toAda or self.options.toC or self.options.toRust)):
+            # When --edit is combined with --toAda, --toC, or --toRust, generate the
             # code at the same time as the model, to save build time in TASTE
             process, = scene.ast.processes
             try:
@@ -4589,6 +4591,8 @@ def parse_args():
             help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
             help='Generate C code for the .pr file ')
+    parser.add_argument('--toRust', dest='toRust', action='store_true',
+            help='Generate Rust code for the .pr file (aligned with ASN1SCC Rust backend)')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -4692,6 +4696,18 @@ def generate(process, options):
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('C generation failed')
+    if options.toRust:
+        LOG.info('Generating Rust code')
+        try:
+            RustGenerator.generate(process,
+                                    simu=options.simu,
+                                    taste=options.taste_target)
+        except (TypeError, ValueError, NameError) as err:
+            ret = 1
+            err = str(err).replace(RustGenerator.SEPARATOR, '.')
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('Rust code generation failed')
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
@@ -4794,7 +4810,7 @@ def cli(options):
         export(ast, options)
 
     if any((options.toAda, options.llvm, options.simu,
-        options.stg, options.toC)):
+        options.stg, options.toC, options.toRust)):
         if not errors:
             errors = generate(ast.processes[0], options)
         else:
@@ -4901,11 +4917,11 @@ def opengeode():
     if options.edit and any ((options.check, options.png, options.pdf,
             options.svg, options.simu, options.stg, options.dumpAST)):
         LOG.error("Invalid combination of options. --edit can only be "
-                  "used together with --toC and --toAda. Ignoring...")
+                  "used together with --toC, --toAda, or --toRust. Ignoring...")
         return cli(options)
     if any((options.check, options.toAda, options.png, options.pdf,
             options.svg, options.llvm, options.simu, options.stg,
-            options.toC, options.dumpAST)) and not options.edit:
+            options.toC, options.toRust, options.dumpAST)) and not options.edit:
         return cli(options)
     else:
         return gui(options)

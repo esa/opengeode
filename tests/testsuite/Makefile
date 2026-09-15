@@ -48,6 +48,10 @@ test-c:
 test-llvm:
 	@python3 test.py test-llvm $(TEST_CASES)
 
+test-rust:
+	rm -f ${TEST_BASE_DIR}/logs/*
+	@python3 test.py test-rust $(TEST_CASES)
+
 test-vhdl:
 	@python3 test.py test-c $(TEST_CASES)
 
@@ -74,5 +78,5 @@ clean:
 		do $(MAKE) -s -C $$v clean ; \
 	done
 
-.PHONY: test-parse test-qgen-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+.PHONY: test-parse test-qgen-parse test-ada test-llvm test-rust benchmark benchmark-O1 benchmark-O2 \
 	     test-qgen-ada test-qgen-c test-qgen-gt-ada test-qgen-gt-c benchmark-O3 coverage clean

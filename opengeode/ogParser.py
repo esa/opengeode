@@ -363,6 +363,11 @@ def set_global_DV(asn1_filenames):
     global USER_DEFINED_TYPES
     if '--toC' in sys.argv:
         rename_policy = ASN1.SystematicRenameAllEnumerants
+    elif '--toRust' in sys.argv:
+        # Rust backend: Rust enums are scoped like Ada, so NoRename works.
+        # However, Rust naming conventions prefer snake_case which may conflict.
+        # Start with NoRename (same as Ada) and adjust if needed.
+        rename_policy = ASN1.NoRename
     else:
         rename_policy = ASN1.NoRename
     try:

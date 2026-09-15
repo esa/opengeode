@@ -26,6 +26,7 @@ testsWork = {
     'test-promela' :     work1,
     'test-c' :           work1,
     'test-llvm' :        work1,
+    'test-rust' :        work1,
     'test-vhdl':         work1
 }
 
