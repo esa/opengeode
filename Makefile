@@ -68,7 +68,7 @@ dependencies:
 	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.6.0.1/asn1scc-bin-4.6.0.1.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
+	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.9.0.0/asn1scc-bin-4.9.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
 	# Ensure shiboken6 and shiboken6-generator versions match PySide6
