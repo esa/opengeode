@@ -126,6 +126,12 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.8.3 (09/2026)**
+- Add an AI Chat tab in the right panel, communicating with the orbit agent via the `orbit-acp` Python library. The tab passes the current `.pr` and ASN.1 file paths so that orbit can modify the model on disk; it degrades gracefully to a disabled placeholder when the library or orbit is not available
+- When an externally modified file is reloaded, save a backup of the current model to a `.pr.backup` file before reloading. If the reloaded model has syntax errors and cannot be rendered, offer to restore from the backup or continue with the broken model (keeping the file monitored for further changes)
+- Fix a bug where the file monitor stopped tracking a file after a reload that produced syntax errors (early-return paths in `load_file` skipped re-tracking)
+- Make the Help tab the default selected tab in the right panel at startup (instead of the AI Chat tab)
+
 **4.8.2 (08/2026)**
 - Detect/prevent concurrent access to the model (lock file+monitor)
 
