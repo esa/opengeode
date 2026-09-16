@@ -339,8 +339,20 @@ def array_content(prim, values, asnty):
         ref_name = getattr(prim.exprType, 'ReferencedTypeName', None)
         type_name_str = f'{ASN1SCC}{ref_name.replace("-", "_")}' if ref_name else 'Default::default()'
         if bty and hasattr(bty, 'Min') and hasattr(bty, 'Max') and bty.Min == bty.Max:
-            return f'{type_name_str} {{ arr: [{arr_content}] }}'
-        return f'{type_name_str} {{ n_count: {count}, arr: [{arr_content}] }}'
+            # Fixed-size: pad with default values
+            try:
+                arr_size = int(bty.Max)
+            except (ValueError, TypeError):
+                arr_size = len(items)
+            padded = items + ['0'] * (arr_size - len(items))
+            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
+        # Variable-size: pad array and set n_count
+        try:
+            arr_size = int(bty.Max) if bty and hasattr(bty, 'Max') else len(items)
+        except (ValueError, TypeError):
+            arr_size = len(items)
+        padded = items + ['0'] * (arr_size - len(items))
+        return f'{type_name_str} {{ n_count: {count}, arr: [{", ".join(padded)}] }}'
     elif isinstance(prim, ogAST.PrimStringLiteral):
         # values is already the comma-separated list of byte values
         if isinstance(prim, getattr(ogAST, 'PrimBitStringLiteral', type(None))):
@@ -356,13 +368,38 @@ def array_content(prim, values, asnty):
         ref_name = getattr(asnty, 'ReferencedTypeName', None) if asnty else None
         if not ref_name:
             ref_name = getattr(prim.exprType, 'ReferencedTypeName', None)
+        # For StringType/IA5StringType without ReferencedTypeName, use CharString
+        if not ref_name and asnty_bty and asnty_bty.kind in ('IA5StringType', 'StringType'):
+            ref_name = 'CharString'
         type_name_str = f'{ASN1SCC}{ref_name.replace("-", "_")}' if ref_name else 'Default::default()'
-        if asnty_bty and asnty_bty.kind == 'IA5StringType':
-            return f'{type_name_str} {{ arr: [{values}] }}'
+        if asnty_bty and asnty_bty.kind in ('IA5StringType', 'StringType'):
+            # CharString has fixed-size array — pad with 0s to full size
+            items = values.split(', ') if values else []
+            try:
+                arr_size = int(asnty_bty.Max)
+            except (ValueError, TypeError):
+                arr_size = len(items)
+            padded = items + ['0'] * (arr_size - len(items))
+            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
         # Check if the target type is fixed-size (Min == Max)
-        if asnty and hasattr(asnty, 'Min') and hasattr(asnty, 'Max') and asnty.Min == asnty.Max:
-            return f'{type_name_str} {{ arr: [{values}] }}'
-        return f'{type_name_str} {{ n_count: {length}, arr: [{values}] }}'
+        if asnty_bty and hasattr(asnty_bty, 'Min') and hasattr(asnty_bty, 'Max') and asnty_bty.Min == asnty_bty.Max:
+            # Fixed-size SEQUENCE OF — pad with default values to full size
+            items = values.split(', ') if values else []
+            try:
+                arr_size = int(asnty_bty.Max)
+            except (ValueError, TypeError):
+                arr_size = len(items)
+            # Pad with 0 (works for integers and booleans)
+            padded = items + ['0'] * (arr_size - len(items))
+            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
+        # Variable-size: use n_count and pad array
+        items = values.split(', ') if values else []
+        try:
+            arr_size = int(asnty_bty.Max) if asnty_bty and hasattr(asnty_bty, 'Max') else len(items)
+        except (ValueError, TypeError):
+            arr_size = len(items)
+        padded = items + ['0'] * (arr_size - len(items))
+        return f'{type_name_str} {{ n_count: {length}, arr: [{", ".join(padded)}] }}'
     else:
         # Fallback: use the values string directly
         return values
@@ -1447,6 +1484,13 @@ def _call_external_function(output, **kwargs):
                 call_code.extend(p_code)
                 call_local.extend(p_local)
 
+                # Convert string literals to proper struct literals for CharString/OctetString types
+                param_bty = find_basic_type(param.exprType)
+                if isinstance(param, ogAST.PrimStringLiteral) and \
+                        param_bty and param_bty.kind in ('IA5StringType', 'StringType', 'OctetStringType', 'BitStringType'):
+                    # Use array_content with param.exprType for correct type info
+                    p_id = array_content(param, p_id, param.exprType)
+
                 if param_direction == 'in' and not (
                         isinstance(param, ogAST.PrimVariable) and
                         p_id.startswith(LPREFIX)):
@@ -2116,7 +2160,11 @@ def _prim_call(prim, **kwargs):
         if ident == 'abs':
             # For unsigned types, abs is a no-op; for signed, use .abs()
             bty = find_basic_type(params[0].exprType)
-            if bty.kind.startswith('Integer') and bty.Min >= 0:
+            try:
+                is_unsigned = bty.kind.startswith('Integer') and int(bty.Min) >= 0
+            except (ValueError, TypeError):
+                is_unsigned = False
+            if is_unsigned:
                 # Unsigned integer — abs is identity
                 rust_string = f'({p_str})'
             else:
