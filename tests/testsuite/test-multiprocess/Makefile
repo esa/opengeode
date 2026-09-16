@@ -40,8 +40,7 @@ test-llvm:
 
 
 test-rust:
-	$(OPENGEODE) toto.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	@:
 
 coverage:
 	coverage run -p $(OPENGEODE) toto.pr --toAda

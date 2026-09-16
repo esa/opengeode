@@ -449,7 +449,8 @@ def generate_code_for_continuous_signals(process, generic):
         # State instances check
         state_inst = ''
         for each in process.composite_states:
-            if statename.lower() in (s.lower() for s in each.state_names):
+            state_names = getattr(each, 'state_names', None) or [each.statename]
+            if statename.lower() in (s.lower() for s in state_names):
                 if hasattr(each, 'instance_terminator'):
                     state_inst = (
                         f' && {LPREFIX}.state_instance == '
@@ -478,16 +479,30 @@ def generate_code_for_continuous_signals(process, generic):
 
 
 def generate_continuous_signal_code(trans, process, statename):
-    '''Generate code for a single continuous signal'''
+    '''Generate code for a single continuous signal.
+
+    The trigger can be a Decision node (for PROVIDED clauses) or a simple
+    expression. When it is a Decision, we must call generate() (which
+    dispatches to _decision) rather than expression(). This matches the
+    Ada backend which calls generate(provided_clause.trigger, ...).
+    '''
     code = []
     if trans.trigger:
-        # Generate the condition expression
-        stmts, cond_str, local = expression(trans.trigger)
-        code.extend(stmts)
-        code.extend(local)
-        code.append(f'if {cond_str} {{')
-        code.append(f'return Branches::Branch_{trans.statename};')
-        code.append('}')
+        # Check if the trigger is a Decision node — if so, use generate()
+        if isinstance(trans.trigger, ogAST.Decision):
+            # The Decision handler generates if/elsif/else code.
+            # Each answer's transition is the CS transition itself.
+            trigger_code, trigger_local = generate(trans.trigger)
+            code.extend(trigger_code)
+            code.extend(trigger_local)
+        else:
+            # Simple expression trigger — generate an if condition
+            stmts, cond_str, local = expression(trans.trigger)
+            code.extend(stmts)
+            code.extend(local)
+            code.append(f'if {cond_str} {{')
+            code.append(f'return Branches::Branch_{trans.statename};')
+            code.append('}')
     return code
 
 
@@ -2092,6 +2107,7 @@ def _prim_call(prim, **kwargs):
     elif ident == 'choice_to_int':
         p1, p2 = params
         sort = find_basic_type(p1.exprType)
+        exp_typename = type_name(p1.exprType, use_prefix=False)
         p_stmts, varstr, p_local = expression(p1, readonly=1)
         stmts.extend(p_stmts)
         local_decl.extend(p_local)
@@ -2595,7 +2611,14 @@ def _expr_in(expr, **kwargs):
 
     if isinstance(expr.left, ogAST.PrimSequenceOf):
         # x in {1,2,3} -> check if right is in the raw array
-        rust_string = f'({", ".join(str(v.value[0]) for v in expr.left.value)}.contains(&{right_str}))'
+        # Use expression() to get each element's value (handles PrimEnumeratedValue, PrimInteger, etc.)
+        elem_strs = []
+        for v in expr.left.value:
+            v_stmts, v_str, v_local = expression(v, readonly=1)
+            stmts.extend(v_stmts)
+            local_decl.extend(v_local)
+            elem_strs.append(v_str)
+        rust_string = f'[{", ".join(elem_strs)}].contains(&{right_str})'
     else:
         # x in seqof -> iterate
         tmp = f'tmp{expr.tmpVar}'

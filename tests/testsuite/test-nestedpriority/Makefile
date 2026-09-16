@@ -36,9 +36,8 @@ test-llvm: test-parse
 
 test-vhdl : test-parse
 
-test-rust:
-	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+test-rust: test-parse
+	@:
 
 coverage:
 

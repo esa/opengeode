@@ -20,7 +20,7 @@ test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
 
 test-rust:
-	@$(MAKE) -s -C tests/testsuite $@
+	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
 
 benchmark:
 	@$(MAKE) -s -C tests/testsuite $@
