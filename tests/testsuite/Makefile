@@ -8,9 +8,7 @@ DISABLED_BENCHMARKS=test1/ test2/ test3/ test4/ test5/ test6/ test7/ test9/ \
 BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */))))
 
 export EXPECTED_FAILURES=test-branchcoverage/ test-branchcoverage2/ test-procedure/ test-procedure-inparam/ test-typecheck/ test-nestedpriority/
-export RUST_EXPECTED_FAILURES=test10/ test-equal/ \
-                              test-exported-procedure/ test-instance/ \
-                              test-math/ test-operators/
+export RUST_EXPECTED_FAILURES=test-instance/
 export QGEN_UNSUPPORTED=test-debug/ test-demotaste/ test-instance/ test-eds2/ test-asn1constants/\
 					      test-nocif/ test-nocif2/ test-provided2/ test-processfpar1/ test-processfpar2/\
 					      test-recursion/

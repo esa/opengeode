@@ -45,6 +45,7 @@ VARIABLES = {}
 ALIASES = {}
 MONITORS = {}
 LOCAL_VAR = {}
+FPAR_VARS = set()  # Track fpar parameter names (they are &mut references in Rust)
 
 # List of output signals and procedures
 OUT_SIGNALS = []
@@ -56,6 +57,10 @@ LPREFIX = 'ctxt'
 ASN1SCC = 'asn1Scc'
 NO_CONTEXT = False
 VAR_COUNTER = 0
+
+# When inside a procedure that uses label dispatch (loop+match), this is set
+# so that join terminators generate __next = "label"; continue; instead of comments
+PROC_LABEL_NAMES = []  # list of label names in the current procedure dispatch
 
 # Reference to the current process
 PROCESS = None
@@ -220,6 +225,18 @@ def find_monitoring(mon):
 def is_local(var):
     '''Check if a variable is in the global context or in a local scope'''
     return var.lower() in (loc.lower() for loc in LOCAL_VAR.keys())
+
+
+def is_fpar(name):
+    '''Check if a variable name is an fpar parameter (which is &mut in Rust)'''
+    return name in FPAR_VARS or any(name.lower() == f.lower() for f in FPAR_VARS)
+
+
+def deref_fpar(var_str, name):
+    '''Add * dereference prefix if the variable is an fpar parameter'''
+    if is_fpar(name):
+        return f'*{var_str}'
+    return var_str
 
 
 def path_type(path):
@@ -426,16 +443,69 @@ def array_content(prim, values, asnty):
     if isinstance(prim, ogAST.PrimSequenceOf):
         # Build the array elements from the sequence
         items = []
+        # Determine element type from the SequenceOf's type definition
+        seqof_bty = find_basic_type(prim.exprType)
+        if seqof_bty and seqof_bty.kind == 'ReferenceType' and seqof_bty.ReferencedTypeName in TYPES:
+            seqof_bty = find_basic_type(TYPES[seqof_bty.ReferencedTypeName].type)
+        elem_type = seqof_bty.type if seqof_bty and hasattr(seqof_bty, 'type') else None
         for val in prim.value:
             stmts, val_str, local = expression(val, readonly=1)
+            # If the element type is complex (OctetString, Sequence, etc.),
+            # wrap each element in a proper struct literal using array_content
+            if elem_type is not None:
+                elem_bty = find_basic_type(elem_type)
+                if elem_bty and elem_bty.kind in ('OctetStringType', 'BitStringType',
+                                                   'IA5StringType', 'StringType',
+                                                   'SequenceType'):
+                    # val is a PrimStringLiteral or PrimSequenceOf — wrap it
+                    if isinstance(val, (ogAST.PrimStringLiteral, ogAST.PrimSequenceOf)):
+                        val_str = array_content(val, val_str, elem_type)
+                        # Wrap in parentheses to disambiguate struct literal from block
+                        if val_str.startswith(ASN1SCC):
+                            val_str = f'({val_str})'
             items.append(val_str)
         count = len(items)
         if not max_size:
             max_size = count
         # Determine the zero/placeholder value for padding based on element type
-        # Check the first element's type, or the SequenceOf's element type
         zero_val = '0'
-        if prim.value:
+        if elem_type is not None:
+            elem_bty = find_basic_type(elem_type)
+            if elem_bty:
+                if elem_bty.kind == 'BooleanType':
+                    zero_val = 'false'
+                elif elem_bty.kind in ('OctetStringType', 'BitStringType', 'IA5StringType', 'StringType'):
+                    # Need a zero struct of the element type (const, not ::default())
+                    elem_ref = getattr(elem_type, 'ReferencedTypeName', None)
+                    if elem_ref:
+                        elem_tname = f'{ASN1SCC}{elem_ref.replace("-", "_")}'
+                        # Get inner array size
+                        try:
+                            inner_max = int(elem_bty.Max)
+                        except (ValueError, TypeError):
+                            inner_max = 20
+                        if elem_bty.kind in ('IA5StringType', 'StringType'):
+                            inner_max += 1  # null terminator
+                        # Check if inner type has n_count
+                        try:
+                            inner_min = int(elem_bty.Min)
+                            inner_has_n_count = inner_min != inner_max
+                        except (ValueError, TypeError):
+                            inner_has_n_count = True
+                        if inner_has_n_count:
+                            zero_val = f'{elem_tname} {{ n_count: 0, arr: [0; {inner_max}] }}'
+                        else:
+                            zero_val = f'{elem_tname} {{ arr: [0; {inner_max}] }}'
+                    else:
+                        zero_val = 'Default::default()'
+                elif elem_bty.kind == 'SequenceType':
+                    elem_ref = getattr(elem_type, 'ReferencedTypeName', None)
+                    if elem_ref:
+                        elem_tname = f'{ASN1SCC}{elem_ref.replace("-", "_")}'
+                        zero_val = f'{elem_tname} {{ ..unsafe {{ std::mem::zeroed() }} }}'
+                    else:
+                        zero_val = 'Default::default()'
+        elif prim.value:
             first_elem_bty = find_basic_type(prim.value[0].exprType)
             if first_elem_bty and first_elem_bty.kind == 'BooleanType':
                 zero_val = 'false'
@@ -489,15 +559,13 @@ def ia5string_raw(prim):
 
 def state_enumerated_name(state):
     '''Generate the full Rust enum variant for a state name'''
-    state_name = state.lower().replace(SEPARATOR, '_')
-    state_name = state_name.replace('-', '_')
+    state_name = state.lower().replace('-', '_')
     return f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::asn1Scc{state_name}'
 
 
 def generate_state_name(state):
     '''Generate the Rust state enum variant name'''
-    state_name = state.lower().replace(SEPARATOR, '_')
-    state_name = state_name.replace('-', '_')
+    state_name = state.lower().replace('-', '_')
     return f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::asn1Scc{state_name}'
 
 
@@ -654,7 +722,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         process_instance = process
 
     global PROCESS_NAME
-    PROCESS_NAME = process.name
+    PROCESS_NAME = process.name or process.processName
     global PROCESS
     PROCESS = process
 
@@ -766,19 +834,66 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     ctxt_parts.append(f'{var_name}: {dstr}')
 
             if ctxt_parts:
+                # Check if the context struct contains Choice/enum types
+                # (std::mem::zeroed() can't be used for types with enums in static contexts)
+                has_choice = False
+                for var_name, (var_type, _) in process.variables.items():
+                    varbty = find_basic_type(var_type)
+                    if varbty.kind in ('ChoiceEnumeratedType', 'EnumeratedType'):
+                        has_choice = True
+                        break
                 context_decl.append(f'// Default context with initial values')
-                context_decl.append(
-                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
-                    f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
-                    f'{", ".join(ctxt_parts)}, ..unsafe {{ std::mem::zeroed() }} }};')
+                if has_choice:
+                    # Can't use zeroed() for structs with enums; initialize remaining
+                    # fields explicitly
+                    remaining = []
+                    if not any(p.startswith('state:') for p in ctxt_parts):
+                        # Initialize state to the first state enum variant
+                        if process.mapping:
+                            first_state = list(process.mapping.keys())[0]
+                            state_name = first_state.lower().replace('-', '_')
+                            remaining.append(f'state: {ASN1SCC}{process.name.capitalize()}_States::{ASN1SCC}{state_name}')
+                        else:
+                            remaining.append(f'state: unsafe {{ std::mem::zeroed() }}')
+                    if not any(p.startswith('init_done:') for p in ctxt_parts):
+                        remaining.append('init_done: false')
+                    for var_name, (var_type, def_value) in process.variables.items():
+                        if var_name in process.aliases.keys():
+                            continue
+                        if not def_value and not any(p.startswith(f'{var_name}:') for p in ctxt_parts):
+                            varbty = find_basic_type(var_type)
+                            typename = type_name(var_type)
+                            if varbty.kind in ('ChoiceEnumeratedType', 'EnumeratedType'):
+                                # Can't zero enum, but we must provide something
+                                # Use the enum's Default (not const) via a hack:
+                                # write the actual first variant
+                                remaining.append(f'{var_name}: unsafe {{ std::mem::zeroed() }}')
+                            else:
+                                remaining.append(f'{var_name}: unsafe {{ std::mem::zeroed() }}')
+                    all_parts = ctxt_parts + remaining
+                    context_decl.append(
+                        f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
+                        f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
+                        f'{", ".join(all_parts)} }};')
+                else:
+                    context_decl.append(
+                        f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
+                        f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
+                        f'{", ".join(ctxt_parts)}, ..unsafe {{ std::mem::zeroed() }} }};')
             else:
                 context_decl.append(
                     f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
                     f'unsafe {{ std::mem::zeroed() }};')
 
-            context_decl.append(
-                f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
-                f'unsafe {{ std::mem::zeroed() }};')
+            # Use DEFAULT_CONTEXT as initial value for ctxt (avoids zeroed() issues with Choice enums)
+            if ctxt_parts:
+                context_decl.append(
+                    f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
+                    f'unsafe {{ DEFAULT_CONTEXT }};')
+            else:
+                context_decl.append(
+                    f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
+                    f'unsafe {{ std::mem::zeroed() }};')
 
         # Monitors
         for mon_name, (mon_type, _) in process.monitors.items():
@@ -814,11 +929,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rand_reset.append(f'gen_{rand_g}.reset();')
 
         if NO_CONTEXT:
-            start_transition = ['unsafe fn startup() {}', '']
+            start_transition = ['pub(crate) unsafe fn startup() {}', '']
         else:
             if process.transitions:
                 start_transition = [
-                    'unsafe fn startup() {',
+                    'pub(crate) unsafe fn startup() {',
                     *rand_reset,
                     f'{LPREFIX} = DEFAULT_CONTEXT;',
                     'execute_transition(Branches::Startup_Transition);',
@@ -827,7 +942,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     '']
             else:
                 start_transition = [
-                    'unsafe fn startup() {',
+                    'pub(crate) unsafe fn startup() {',
                     *rand_reset,
                     f'{LPREFIX} = DEFAULT_CONTEXT;',
                     init_done,
@@ -850,22 +965,32 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # asn1scc generates dataview-uniq.rs and dataview-uniqDef.rs
     # These files internally use 'use crate::dataview_uniqDef::*;' so we must
     # declare the module with the exact name asn1scc expects.
-    try:
-        for dv in process.asn1Modules:
-            # Dataview type definitions and functions
-            # Module name must be 'dataview_uniqDef' (matching asn1scc's internal use)
-            rust_body.append(f'#[path = "dataview-uniqDef.rs"]')
-            rust_body.append(f'pub mod dataview_uniqDef;')
-            rust_body.append(f'use dataview_uniqDef::*;')
-            rust_body.append(f'#[path = "dataview-uniq.rs"]')
-            rust_body.append(f'pub mod dataview_uniq;')
-            rust_body.append(f'use dataview_uniq::*;')
-            break  # Only need one dataview module
+    # When this is an instance wrapper, skip declaring dataview modules —
+    # they are already declared in the process type module.
+    if not instance:
+        try:
+            for dv in process.asn1Modules:
+                # Dataview type definitions and functions
+                # Module name must be 'dataview_uniqDef' (matching asn1scc's internal use)
+                rust_body.append(f'#[path = "dataview-uniqDef.rs"]')
+                rust_body.append(f'pub mod dataview_uniqDef;')
+                rust_body.append(f'use dataview_uniqDef::*;')
+                rust_body.append(f'#[path = "dataview-uniq.rs"]')
+                rust_body.append(f'pub mod dataview_uniq;')
+                rust_body.append(f'use dataview_uniq::*;')
+                break  # Only need one dataview module
+            rust_body.append('use asn1rust::*;')
+        except TypeError:
+            rust_body.append('// No ASN.1 data types used in this model')
+    else:
+        # Instance wrapper: use types from the process type module
+        ptype_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
+        rust_body.append(f'use {ptype_module}::dataview_uniqDef::*;')
+        rust_body.append(f'use {ptype_module}::dataview_uniq::*;')
+        rust_body.append(f'use {ptype_module}::og_type_datamodelDef::*;' if ptype_module == 'og_type' else '')
         rust_body.append('use asn1rust::*;')
-    except TypeError:
-        rust_body.append('// No ASN.1 data types used in this model')
 
-    if not getattr(process, 'no_context', False) and not stop_condition:
+    if not getattr(process, 'no_context', False) and not stop_condition and not instance:
         dmn = process.name.lower()
         # Datamodel definitions — module name must match asn1scc's internal 'use crate::<name>_datamodelDef::*;'
         rust_body.append(f'#[path = "{dmn}_datamodelDef.rs"]')
@@ -874,6 +999,16 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.append(f'#[path = "{dmn}_datamodel.rs"]')
         rust_body.append(f'pub mod {dmn}_datamodel;')
         rust_body.append(f'use {dmn}_datamodel::*;')
+
+    # When this is a process instance wrapper (instance=True),
+    # import the process type module (generated in the first call, instance=False)
+    if instance and hasattr(process, 'instance_of_name') and process.instance_of_name:
+        # process.instance_of_name is the type name (e.g., og_type)
+        # The type file was generated as {instance_of_name}.rs
+        ptype_module = process.instance_of_name.lower()
+        rust_body.append(f'#[path = "{ptype_module}.rs"]')
+        rust_body.append(f'pub mod {ptype_module};')
+        rust_body.append(f'use {ptype_module}::*;')
     elif stop_condition:
         rust_body.append(f'mod {stop_condition.lower()}_datamodel;')
         rust_body.append(f'use {stop_condition.lower()}_datamodel::*;')
@@ -940,14 +1075,33 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     not_local = True
             if not proc.external and not generic:
                 if not_local:
+                    # Build PI wrapper with fpar parameters
+                    pi_params = []
+                    pi_args = []
+                    for fpar in proc.fpar:
+                        typename = type_name(fpar['type'])
+                        pi_params.append(f'{fpar.get("name")}: &mut {typename}')
+                        # Params are already &mut, pass directly (not &mut again)
+                        pi_args.append(f'{fpar.get("name")}')
+                    pi_param_str = ', '.join(pi_params)
+                    pi_arg_str = ', '.join(pi_args)
                     rust_body.append(
-                        f'#[no_mangle] pub extern "C" fn '
-                        f'{process.name.lower()}_PI_{spelling}() {{ '
-                        f'{proc.inputString}(); }}')
+                        f'#[no_mangle] pub unsafe extern "C" fn '
+                        f'{process.name.lower()}_PI_{spelling}({pi_param_str}) {{ '
+                        f'{proc.inputString}({pi_arg_str}); }}')
                 else:
+                    # Local exported procedure
+                    pi_params = []
+                    pi_args = []
+                    for fpar in proc.fpar:
+                        typename = type_name(fpar['type'])
+                        pi_params.append(f'{fpar.get("name")}: &mut {typename}')
+                        pi_args.append(f'{fpar.get("name")}')
+                    pi_param_str = ', '.join(pi_params)
+                    pi_arg_str = ', '.join(pi_args)
                     rust_body.append(
-                        f'#[no_mangle] pub extern "C" fn {spelling}() {{ '
-                        f'{proc.inputString}(); }}')
+                        f'#[no_mangle] pub unsafe extern "C" fn {spelling}({pi_param_str}) {{ '
+                        f'{proc.inputString}({pi_arg_str}); }}')
 
     rust_body.extend(process_level_decl)
 
@@ -1033,9 +1187,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rust_body.append(sig + ' {')
         else:
             if param_decl:
-                rust_body.append(f'unsafe fn {pi_name}({param_decl}) {{')
+                rust_body.append(f'pub(crate) unsafe fn {pi_name}({param_decl}) {{')
             else:
-                rust_body.append(f'unsafe fn {pi_name}() {{')
+                rust_body.append(f'pub(crate) unsafe fn {pi_name}() {{')
 
         has_transition = any(signame.lower() == k.lower()
                              for k in process.input_mapping.keys())
@@ -1169,12 +1323,16 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 simu_pi_decl.append(simu_code)
 
         elif not fake_name or instance:
-            inst_call = f'{process.name}_Instance::{signame}'
+            # Use the process type name as module (e.g., og_type::go)
+            type_module = process.instance_of_name if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name
+            inst_call = f'{type_module}::{signame}'
             if 'type' in signal:
                 inst_call += f'({param_name})'
             elif proc_to_declare and proc_to_declare.fpar:
                 params = [p['name'] for p in proc_to_declare.fpar]
                 inst_call += f'({", ".join(params)})'
+            else:
+                inst_call += '()'
             rust_body.append(f'{inst_call};')
 
         rust_body.append('}')
@@ -1199,9 +1357,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     # ── Instance startup ──
     if instance:
+        type_module = process.instance_of_name if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name
         rust_body.extend([
             'unsafe fn startup() {',
-            f'{process.name}_Instance::startup();',
+            f'{type_module}::startup();',
             '}',
             ''])
 
@@ -1220,7 +1379,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             if 'PID' in TYPES:
                 param_spec = f'(dest_pid: {ASN1SCC}PID)'
 
-        if not generic and not instance:
+        if not instance:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{param_spec} {{ /* RI stub - implement me */ }}')
 
     # ── External procedure RIs ──
@@ -1231,7 +1390,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             typename = type_name(param['type'])
             params.append(f'{param["name"]}: &mut {typename}')
         params_spec = f'({", ".join(params)})' if params else '()'
-        if not generic and not instance:
+        if not instance:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{params_spec} {{ /* RI stub */ }}')
 
     # ── Timer declarations ──
@@ -1321,7 +1480,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.append('')
 
         rust_body.extend([
-            'unsafe fn execute_transition(branch: Branches) {',
+            'pub(crate) unsafe fn execute_transition(branch: Branches) {',
             f'    if !{LPREFIX}.init_done && branch != Branches::Startup_Transition {{',
             '        return;',
             '    }',
@@ -1333,7 +1492,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     elif not instance and not NO_CONTEXT:
         rust_body.extend([
-            'unsafe fn execute_transition(branch: Branches) {}',
+            'pub(crate) unsafe fn execute_transition(branch: Branches) {}',
             ''])
 
     # ── Startup ──
@@ -1467,7 +1626,9 @@ def write_statement(param, newline):
         code.append(f'print!(" {{}}", {string});')
     elif type_kind == 'RealType':
         code, string, local = expression(param, readonly=1)
-        code.append(f'print!("{{}}", {string});')
+        # Ada's Float'Image: leading space for non-negative, scientific notation
+        # Format: " d.ffffffffffffffE±dd" (1 digit before ., 14 after, 2-digit exp)
+        code.append(f'{{ let _v = {string}; if _v >= 0.0 || _v.is_nan() {{ print!(" "); }} let _abs = _v.abs(); let _exp = _abs.log10().floor() as i32; let _mant = _v / 10f64.powi(_exp); print!("{{:.14}}E{{:+03}}", _mant, _exp); }}')
     elif type_kind == 'BooleanType':
         code, string, local = expression(param, readonly=1)
         code.append(f'print!("{{}}", if {string} {{ "TRUE" }} else {{ "FALSE" }});')
@@ -1620,7 +1781,8 @@ def _call_external_function(output, **kwargs):
                 p_code, p_id, p_local = expression(param, readonly=1)
                 call_code.extend(p_code)
                 call_local.extend(p_local)
-                list_of_params.append(p_id)
+                # Procedure fpar params are &mut in Rust, so add &mut prefix
+                list_of_params.append(f'&mut {p_id}')
             full_name = f'p{SEPARATOR}{proc.inputString}'
             if list_of_params:
                 call_code.append(f'{full_name}({", ".join(list_of_params)});')
@@ -1922,7 +2084,11 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
     try:
         if sep != 'if ':
             code.append('else {')
-            code.extend(else_code)
+            if else_code:
+                code.extend(else_code)
+            elif not branch_to:
+                # Empty else block — return Branch_End to satisfy the Branches return type
+                code.append('return Branches::Branch_End;')
             code.append('}')
         else:
             code.extend(else_code)
@@ -2003,7 +2169,7 @@ def _transition(tr, **kwargs):
                                 if tr.terminator.next_is_aggregation:
                                     statement = f'{nid}();' if ns != '-*' else 'return Branches::Continuous_Signals;'
                                 else:
-                                    statement = f'return Branches::{nid};'
+                                    statement = f'return Branches::{nid},'
                                 states_prefix = [generate_state_name(s) for s in sta]
                                 done.extend(s.split(SEPARATOR)[0] for s in sta)
                                 joined = ' | '.join(states_prefix)
@@ -2020,8 +2186,11 @@ def _transition(tr, **kwargs):
             elif tr.terminator.kind == 'join':
                 kind = tr.terminator.path[-1].split()[0] if tr.terminator.path else 'PROCESS'
                 if kind == 'PROCEDURE':
-                    # Rust: no goto, use floating label mechanism
-                    code.append(f'// Join to {tr.terminator.inputString}')
+                    if PROC_LABEL_NAMES:
+                        code.append(f'__next = "{tr.terminator.inputString}";')
+                        code.append('continue;')
+                    else:
+                        code.append(f'// Join to {tr.terminator.inputString}')
                 else:
                     code.append(f'return Branches::{tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
@@ -2142,20 +2311,27 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
 
     outer_scope = dict(VARIABLES)
     local_scope = dict(LOCAL_VAR)
+    local_fpar = set(FPAR_VARS)
     VARIABLES.update(proc.variables)
     LOCAL_VAR.update(proc.variables)
     for var in proc.fpar:
         elem = {var['name']: (var['type'], None)}
         VARIABLES.update(elem)
         LOCAL_VAR.update(elem)
+        FPAR_VARS.add(var['name'])
 
     pi_header = procedure_header(proc)
-    if not proc.exported:
-        local_decl.append(pi_header + ';')
+    # Rust does not need forward declarations (function ordering doesn't matter)
 
     if proc.external:
-        # External procedure: declare as extern
-        local_decl.append(f'extern "C" {{ fn {proc.inputString}(); }}')
+        # External procedure: declare as extern with full signature
+        params = []
+        for fpar in proc.fpar:
+            typename = type_name(fpar['type'])
+            params.append(f'{fpar.get("name")}: &mut {typename}')
+        param_str = ', '.join(params) if params else ''
+        ret_str = f' -> {type_name(proc.return_type)}' if proc.return_type else ''
+        local_decl.append(f'extern "C" {{ fn {proc.inputString}({param_str}){ret_str}; }}')
     else:
         # Generate inner procedures recursively
         for inner_proc in proc.content.inner_procedures:
@@ -2186,6 +2362,18 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
 
         Helper.inner_labels_to_floating(proc)
 
+        # Check if procedure has floating labels (from inner labels extraction)
+        has_labels = len(proc.content.floating_labels) > 0
+
+        if has_labels:
+            # Generate label dispatch loop
+            label_names = [l.inputString for l in proc.content.floating_labels]
+            PROC_LABEL_NAMES[:] = label_names
+            code.append('let mut __next: &str = "__start";')
+            code.append('loop {')
+            code.append('    match __next {')
+            code.append('        "__start" => {')
+
         # Start transition
         if proc.content.start and proc.content.start.transition:
             tr_code, tr_decl = generate(proc.content.start.transition)
@@ -2196,9 +2384,22 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
         code.extend(tr_code)
 
         # Floating labels
-        for label in proc.content.floating_labels:
-            code_label, label_decl = generate(label)
-            code.extend(code_label)
+        if has_labels:
+            code.append('        }')
+            for label in proc.content.floating_labels:
+                code.append(f'        "{label.inputString}" => {{')
+                code_label, label_decl = generate(label)
+                code.extend(code_label)
+                code.append('        }')
+            code.append('        _ => { return; }')
+            code.append('    }')
+            code.append('}')
+            PROC_LABEL_NAMES[:] = []
+        else:
+            # No labels: generate floating labels inline (process-level style)
+            for label in proc.content.floating_labels:
+                code_label, label_decl = generate(label)
+                code.extend(code_label)
 
         code.append('}')
 
@@ -2209,6 +2410,8 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
     VARIABLES.update(outer_scope)
     LOCAL_VAR.clear()
     LOCAL_VAR.update(local_scope)
+    FPAR_VARS.clear()
+    FPAR_VARS.update(local_fpar)
 
     return code, local_decl
 
@@ -2218,10 +2421,12 @@ def procedure_header(proc):
     ret_type = type_name(proc.return_type) if proc.return_type else None
     sep = f'p{SEPARATOR}' if not proc.exported else ''
     proc_name = proc.inputString
+    # Exported procedures need to be pub(crate) for instance wrappers to access
+    vis = 'pub(crate) ' if proc.exported else ''
     if ret_type:
-        pi_header = f'fn {sep}{proc_name}'
+        pi_header = f'{vis}unsafe fn {sep}{proc_name}'
     else:
-        pi_header = f'fn {sep}{proc_name}'
+        pi_header = f'{vis}unsafe fn {sep}{proc_name}'
     if proc.fpar:
         params = []
         for fpar in proc.fpar:
@@ -2284,6 +2489,9 @@ def _prim_call(prim, **kwargs):
             if is_unsigned:
                 # Unsigned integer — abs is identity
                 rust_string = f'({p_str})'
+            elif bty.kind == 'RealType':
+                # REAL — use f64::abs()
+                rust_string = f'({p_str}).abs()'
             else:
                 rust_string = f'({p_str} as i64).abs()'
         elif ident == 'fix' and not unsigned:
@@ -2472,11 +2680,19 @@ def _prim_call(prim, **kwargs):
         for idx, param in enumerate(params):
             param_type = p.fpar[idx]['type']
             p_stmts, p_str, p_local = expression(param, readonly=1)
-            list_of_params.append(p_str)
+            if p.external:
+                # External procedures take &mut params
+                list_of_params.append(f'&mut {p_str}')
+            else:
+                list_of_params.append(p_str)
             stmts.extend(p_stmts)
             local_decl.extend(p_local)
-        prefix = f'p{SEPARATOR}' if not p.exported else ''
-        rust_string = f'{prefix}{ident}({", ".join(list_of_params)})'
+        if p.external:
+            # External procedures: call the extern function directly
+            rust_string = f'{ident}({", ".join(list_of_params)})'
+        else:
+            prefix = f'p{SEPARATOR}' if not p.exported else ''
+            rust_string = f'{prefix}{ident}({", ".join(list_of_params)})'
 
     return stmts, str(rust_string), local_decl
 
@@ -2729,6 +2945,11 @@ def _assign_expression(expr, **kwargs):
 
     basic_left = find_basic_type(expr.left.exprType)
 
+    # Dereference fpar parameters on the left side (they are &mut references)
+    if isinstance(expr.left, ogAST.PrimVariable):
+        left_name = expr.left.value[0].split('.')[0]
+        left_str = deref_fpar(left_str, left_name)
+
     if basic_left.kind == 'IA5StringType' and \
             isinstance(expr.right, ogAST.PrimStringLiteral):
         # IA5String assignment — convert to struct literal
@@ -2865,6 +3086,10 @@ def _not_expression(expr, **kwargs):
     expr_stmts, expr_str, expr_local = expression(expr.expr, readonly=1)
 
     bty_outer = find_basic_type(expr.exprType)
+    # Dereference fpar parameters (they are &mut references)
+    if isinstance(expr.expr, ogAST.PrimVariable):
+        var_name = expr.expr.value[0].split('.')[0]
+        expr_str = deref_fpar(expr_str, var_name)
     if bty_outer.kind == 'BooleanType':
         rust_string = f'(!{expr_str})'
     elif bty_outer.kind == 'SequenceOfType':
@@ -3087,14 +3312,20 @@ def _enumerated_value(primary, **kwargs):
         if each.lower() == enumerant:
             break
     use_prefix = getattr(basic.EnumValues[each], "IsStandardEnum", True)
-    prefix = type_name(basic, use_prefix=use_prefix)
     # In Rust, enum variants are scoped: EnumName::VariantName
     enum_id = basic.EnumValues[each].EnumID
+    # Get the enum type name (e.g., asn1SccEnum_T)
+    if hasattr(primary.exprType, 'ReferencedTypeName'):
+        enum_type = f'{ASN1SCC}{primary.exprType.ReferencedTypeName.replace("-", "_")}'
+    elif hasattr(basic, 'ReferencedTypeName'):
+        enum_type = f'{ASN1SCC}{basic.ReferencedTypeName.replace("-", "_")}'
+    else:
+        enum_type = type_name(basic, use_prefix=use_prefix)
     # ASN1SCC Rust generates enum variants as asn1Scc{value}
-    rust_string = f'{prefix}{enum_id}'
+    rust_string = f'{enum_type}::{ASN1SCC}{enum_id}'
     # For state enums, need the full path
     if basic.kind == 'StateEnumeratedType':
-        rust_string = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::{enum_id}'
+        rust_string = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::{ASN1SCC}{enum_id}'
     return [], str(rust_string), []
 
 
@@ -3111,10 +3342,15 @@ def _choice_determinant(primary, **kwargs):
 @expression.register(ogAST.PrimInteger)
 @expression.register(ogAST.PrimReal)
 def _integer(primary, **kwargs):
+    val = primary.value[0]
+    if '.' in val or 'e' in val.lower():
+        # Real literal — add f64 suffix to disambiguate float type
+        if not val.endswith('f64') and not val.endswith('f32'):
+            val = f'{val}f64'
     if float(primary.value[0]) < 0:
-        rust_string = f'({primary.value[0]})'
+        rust_string = f'({val})'
     else:
-        rust_string = primary.value[0]
+        rust_string = val
     return [], str(rust_string), []
 
 
@@ -3235,18 +3471,32 @@ def _sequence(seq, **kwargs):
     optional_fields = {field.lower().replace('-', '_'): (field, val)
                        for field, val in type_children.items()
                        if val.Optional == 'True'}
+    # Check if all fields (including optional) are present; if not, use ..Default::default()
+    all_field_names = {field.lower().replace('-', '_') for field in type_children}
     present_fields = set()
     for elem in seq.value:
         present_fields.add(elem.lower().replace('-', '_'))
+    missing_non_optional = all_field_names - present_fields - set(optional_fields.keys())
+    missing_optional = set(optional_fields.keys()) - present_fields
     for fd_name, (fd_orig, fd_data) in optional_fields.items():
         if fd_name in present_fields:
-            fields.append(f'exist: {type_name_str}_exist {{ {fd_name}: true, ..Default::default() }}')
+            # Build exist struct with all fields listed (avoid ::default() in statics)
+            exist_parts = []
+            for ofn in optional_fields:
+                exist_parts.append(f'{ofn}: {"true" if ofn == fd_name else "false"}')
+            fields.append(f'exist: {type_name_str}_exist {{ {", ".join(exist_parts)} }}')
             break
     else:
         if optional_fields:
-            fields.append(f'exist: {type_name_str}_exist::default()')
+            exist_parts = [f'{ofn}: false' for ofn in optional_fields]
+            fields.append(f'exist: {type_name_str}_exist {{ {", ".join(exist_parts)} }}')
 
-    rust_string = f'{type_name_str} {{ {", ".join(fields)} }}'
+    # If any fields are missing (optional or not), use ..unsafe { std::mem::zeroed() }
+    # (cannot use ..Default::default() in static contexts)
+    if missing_non_optional or missing_optional:
+        rust_string = f'{type_name_str} {{ {", ".join(fields)}, ..unsafe {{ std::mem::zeroed() }} }}'
+    else:
+        rust_string = f'{type_name_str} {{ {", ".join(fields)} }}'
     return stmts, str(rust_string), local_decl
 
 

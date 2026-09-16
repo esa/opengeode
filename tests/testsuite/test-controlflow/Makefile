@@ -50,7 +50,7 @@ test-rust:
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
 	  fi; \
 	done && \
 	cp controlflow_cargo.toml Cargo.toml && \

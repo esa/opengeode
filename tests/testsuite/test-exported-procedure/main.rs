@@ -10,7 +10,7 @@ fn main() {
         let mut t: asn1SccToto = asn1SccToto { elem_1: 42, elem_2: true };
         println!("{}", if !p { "OK" } else { "ERROR" });
         og_startup();
-        og_PI_hehe();
+        og_PI_hehe(&mut t, &mut p);
         println!("{}", if p { "OK" } else { "ERROR" });
     }
 }

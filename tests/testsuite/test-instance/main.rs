@@ -2,7 +2,7 @@
 unused_variables, unused_mut, unused_assignments, dead_code)]
 mod og;
 use og::*;
-use og::dataview_uniqDef::*;
+use og::og_type::dataview_uniqDef::*;
 
 fn main() {
     unsafe {

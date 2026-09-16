@@ -51,7 +51,7 @@ test-rust:
 	sed -i 's/n_count: 20 as i32, arr: \[0x68, 0x65, 0x6C, 0x6C, 0x6F/n_count: 5 as i32, arr: [0x68, 0x65, 0x6C, 0x6C, 0x6F/' dataview-uniqDef.rs && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
 	  fi; \
 	done && \
 	cp og_cargo.toml Cargo.toml && \
