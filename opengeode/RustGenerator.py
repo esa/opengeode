@@ -2544,12 +2544,20 @@ def _prim_substring(prim, **kwargs):
     # with n_count and arr fields, so concatenation works
     if bty and bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         name_of_type = type_name(prim.exprType)
+        # Determine has_n_count by looking at the actual type definition,
+        # not the substring's computed range (which always has Min==Max).
         has_n_count = True
-        try:
-            if hasattr(bty, 'Min') and hasattr(bty, 'Max'):
-                has_n_count = int(bty.Min) != int(bty.Max)
-        except (ValueError, TypeError):
-            pass
+        ref_name = prim.exprType.ReferencedTypeName if hasattr(prim.exprType, 'ReferencedTypeName') else None
+        if ref_name and ref_name in TYPES:
+            actual_bty = find_basic_type(TYPES[ref_name].type)
+            while actual_bty and actual_bty.kind == 'ReferenceType' and actual_bty.ReferencedTypeName in TYPES:
+                actual_bty = find_basic_type(TYPES[actual_bty.ReferencedTypeName].type)
+            if actual_bty and actual_bty.kind == 'SequenceOfType':
+                try:
+                    has_n_count = int(actual_bty.Min) != int(actual_bty.Max)
+                except (ValueError, TypeError):
+                    pass
+            # For OctetStringType/BitStringType, always has n_count (variable-size)
 
         # Generate a block expression that creates a new struct from the slice
         base = r_string
@@ -2579,6 +2587,7 @@ def _prim_substring(prim, **kwargs):
         rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
                        f' let n = {count_expr} as usize;'
                        f' tmp.arr[..n].copy_from_slice(&{slice_expr});'
+                       f' tmp.n_count = n as i32;'
                        f' tmp }}')
     else:
         # Non-array types: raw slice (legacy behavior)
@@ -2933,7 +2942,18 @@ def _append(expr, **kwargs):
     while bty and bty.kind == 'ReferenceType' and bty.ReferencedTypeName in TYPES:
         bty = find_basic_type(TYPES[bty.ReferencedTypeName].type)
     has_n_count = True
-    if bty and hasattr(bty, 'Min') and hasattr(bty, 'Max'):
+    # Check the actual type definition, not the expression's computed range
+    ref_name = expr.left.exprType.ReferencedTypeName if hasattr(expr.left.exprType, 'ReferencedTypeName') else None
+    if ref_name and ref_name in TYPES:
+        actual_bty = find_basic_type(TYPES[ref_name].type)
+        while actual_bty and actual_bty.kind == 'ReferenceType' and actual_bty.ReferencedTypeName in TYPES:
+            actual_bty = find_basic_type(TYPES[actual_bty.ReferencedTypeName].type)
+        if actual_bty and actual_bty.kind == 'SequenceOfType':
+            try:
+                has_n_count = int(actual_bty.Min) != int(actual_bty.Max)
+            except (ValueError, TypeError):
+                pass
+    elif bty and bty.kind == 'SequenceOfType':
         try:
             has_n_count = int(bty.Min) != int(bty.Max)
         except (ValueError, TypeError):
@@ -2954,10 +2974,8 @@ def _append(expr, **kwargs):
     # For PrimSequenceOf literals, we need to use array_content
     # For variables/constants, they already have .n_count and .arr
 
-    # Bind left side to a temp if it's not a simple variable
-    left_is_simple = isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimConstant))
-    right_is_simple = isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimConstant))
-
+    # Bind both left and right to temp variables to avoid huge inline expressions.
+    # This is critical for nested ExprAppend (e.g. a // b // c).
     left_var = left_str
     right_var = right_str
 
@@ -2975,13 +2993,6 @@ def _append(expr, **kwargs):
         except (NotImplementedError, AttributeError):
             et = expr.left.exprType
         left_var = array_content(expr.left, left_str, et)
-    elif isinstance(expr.left, ogAST.ExprAppend):
-        pass  # already a block expression returning a struct
-    elif not left_is_simple and not isinstance(expr.left, ogAST.ExprAppend):
-        # Bind to temp variable
-        tmp_l = f'tmp_app{expr.tmpVar}_l'
-        local_decl.append(f'let {tmp_l} = {left_str};')
-        left_var = tmp_l
 
     # If right is a PrimSequenceOf, use array_content
     if isinstance(expr.right, ogAST.PrimSequenceOf):
@@ -2996,11 +3007,16 @@ def _append(expr, **kwargs):
         except (NotImplementedError, AttributeError):
             et = expr.right.exprType
         right_var = array_content(expr.right, right_str, et)
-    elif isinstance(expr.right, ogAST.ExprAppend):
-        pass  # already a block expression returning a struct
-    elif not right_is_simple and not isinstance(expr.right, ogAST.ExprAppend):
+
+    # If either side is a complex expression (ExprAppend, PrimSubstring, etc.),
+    # bind it to a temp variable to keep the code readable and correct.
+    if isinstance(expr.left, (ogAST.ExprAppend, ogAST.PrimSubstring)) or not isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimConstant)):
+        tmp_l = f'tmp_app{expr.tmpVar}_l'
+        local_decl.append(f'let {tmp_l} = {left_var};')
+        left_var = tmp_l
+    if isinstance(expr.right, (ogAST.ExprAppend, ogAST.PrimSubstring)) or not isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         tmp_r = f'tmp_app{expr.tmpVar}_r'
-        local_decl.append(f'let {tmp_r} = {right_str};')
+        local_decl.append(f'let {tmp_r} = {right_var};')
         right_var = tmp_r
 
     if has_n_count:

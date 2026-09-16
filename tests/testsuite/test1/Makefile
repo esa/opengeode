@@ -48,6 +48,7 @@ test-rust:
 	$(OPENGEODE) og.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
 	sed -i '/^pub const /d' dataview-uniq.rs && \
+	sed -i 's/n_count: 20 as i32, arr: \[0x68, 0x65, 0x6C, 0x6C, 0x6F/n_count: 5 as i32, arr: [0x68, 0x65, 0x6C, 0x6C, 0x6F/' dataview-uniqDef.rs && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
 	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
@@ -68,8 +69,8 @@ test-rust:
 		'        go(&mut toto);' \
 		'    }' \
 		'}' > main.rs && \
-	cargo build 2>&1
-	# RUST_COMPILE_ONLY: compile verification only (generated Rust needs more fixes before it can run)
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
