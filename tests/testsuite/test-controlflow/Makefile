@@ -47,7 +47,15 @@ test-vhdl : test-c
 
 test-rust:
 	$(OPENGEODE) controlflow.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	  fi; \
+	done && \
+	cp controlflow_cargo.toml Cargo.toml && \
+	cargo build 2>&1
+	# RUST_COMPILE_ONLY: compile verification only (generated Rust needs more fixes before it can run)
 
 coverage:
 	coverage run -p $(OPENGEODE) controlflow.pr system_structure.pr --toAda

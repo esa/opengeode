@@ -48,7 +48,15 @@ test-llvm: challenge.o dataview-uniq.o | test_llvm.o
 
 test-rust:
 	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	  fi; \
+	done && \
+	cp challenge_cargo.toml Cargo.toml && \
+	cargo build 2>&1
+	# RUST_COMPILE_ONLY: compile verification only (generated Rust needs more fixes before it can run)
 
 coverage:
 	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda

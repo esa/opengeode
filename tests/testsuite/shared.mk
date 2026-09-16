@@ -20,7 +20,8 @@ clean:
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
-		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/
+		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
+		   Cargo.toml target
 
 test-promela: FORCE
 	 sdl2promela --sdl *.pr -o og.pml
@@ -46,13 +47,19 @@ test-promela: FORCE
 	$(OPENGEODE) $< system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
-# Fallback test-rust rule: generates Rust code from all .pr files plus
-# system_structure.pr.  This only works for tests that have a
-# system_structure.pr file; individual test Makefiles should override this
-# target with the correct .pr invocation for their layout.
+# Fallback test-rust rule: generates Rust code, compiles it.
+# Individual test Makefiles should override this with the correct .pr files.
+# The RUST_PROCESS variable should be set to the process name (lowercase).
 test-rust: FORCE
 	$(OPENGEODE) *.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	  fi; \
+	done && \
+	if [ -f "$(RUST_PROCESS)_cargo.toml" ]; then cp $(RUST_PROCESS)_cargo.toml Cargo.toml; fi && \
+	if [ -f "main.rs" ]; then cargo build 2>&1; fi
 
 %.o: %.asn FORCE
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO $<

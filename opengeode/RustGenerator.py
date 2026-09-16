@@ -333,7 +333,7 @@ def array_content(prim, values, asnty):
             items.append(val_str)
         count = len(items)
         arr_content = ', '.join(items)
-        return f'n_count: {count}, arr: [{arr_content}]'
+        return f'{{ n_count: {count}, arr: [{arr_content}] }}'
     elif isinstance(prim, ogAST.PrimStringLiteral):
         # values is already the comma-separated list of byte values
         if isinstance(prim, getattr(ogAST, 'PrimBitStringLiteral', type(None))):
@@ -342,7 +342,7 @@ def array_content(prim, values, asnty):
             length = len(prim.hexstring)
         else:
             length = len(prim.value) - 2  # remove quotes
-        return f'n_count: {length}, arr: [{values}]'
+        return f'{{ n_count: {length}, arr: [{values}] }}'
     else:
         # Fallback: use the values string directly
         return values
@@ -365,14 +365,14 @@ def state_enumerated_name(state):
     '''Generate the full Rust enum variant for a state name'''
     state_name = state.lower().replace(SEPARATOR, '_')
     state_name = state_name.replace('-', '_')
-    return f'{ASN1SCC}{PROCESS_NAME}_States::asn1Scc{state_name}'
+    return f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::asn1Scc{state_name}'
 
 
 def generate_state_name(state):
     '''Generate the Rust state enum variant name'''
     state_name = state.lower().replace(SEPARATOR, '_')
     state_name = state_name.replace('-', '_')
-    return f'{ASN1SCC}{PROCESS_NAME}_States::asn1Scc{state_name}'
+    return f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::asn1Scc{state_name}'
 
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -383,7 +383,7 @@ def generate_code_for_continuous_signals(process, generic):
     '''Generate the code to handle continuous signals (Rust)'''
     cs_template = [
         '// Process continuous signals',
-        'fn branch_continuous_signals() -> Branches {',
+        'unsafe fn branch_continuous_signals() -> Branches {',
         'let mut message_pending: bool = true;',
     ]
 
@@ -580,15 +580,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     ri_stub_code = []
 
     # ── CHOICE selector functions ──
+    # Choice selection conversion functions — skipped for Rust
+    # In Rust, CHOICE is an enum and selection is done via pattern matching,
+    # so these conversion functions are not needed.
     choice_selections = []
-    for sortname, sortdef in process.user_defined_types.items():
-        if sortdef.type.kind == "EnumeratedType" and sortdef.AddedType == "True":
-            sortRust = sortname.replace('-', '_')
-            to_type = f'{ASN1SCC}{process.name}_{sortRust}_selection'
-            from_type = f'{ASN1SCC}{sortRust}'
-            choice_selections.append(
-                f'fn to_{sortRust}(src: {from_type}) -> {to_type} {{ '
-                f'src as {to_type} }}')
 
     # ── Context declarations ──
     context_decl = []
@@ -644,20 +639,18 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
             if ctxt_parts:
                 context_decl.append(
-                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name}_Context = '
-                    f'{ASN1SCC}{process.name}_Context {{ '
-                    f'init_done: false, '
-                    f'{", ".join(ctxt_parts)}, '
-                    f'..Default::default() }};')
+                    f'// Default context with initial values')
+                context_decl.append(
+                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
+                    f'unsafe {{ std::mem::zeroed() }};')
             else:
                 context_decl.append(
-                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name}_Context = '
-                    f'{ASN1SCC}{process.name}_Context {{ '
-                    f'init_done: false, ..Default::default() }};')
+                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
+                    f'unsafe {{ std::mem::zeroed() }};')
 
             context_decl.append(
-                f'static mut {LPREFIX.upper()}: {ASN1SCC}{process.name}_Context = '
-                f'{ASN1SCC}{process.name}_Context {{ init_done: false, ..Default::default() }};')
+                f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
+                f'unsafe {{ std::mem::zeroed() }};')
 
         # Monitors
         for mon_name, (mon_type, _) in process.monitors.items():
@@ -678,8 +671,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not instance:
         for name, substates in process.aggregates.items():
             proc_name = f'{name}{SEPARATOR}START'
-            process_level_decl.append(f'fn {proc_name}();')
-            aggreg_start_proc.append(f'fn {proc_name}() {{')
+            process_level_decl.append(f'unsafe fn {proc_name}();')
+            aggreg_start_proc.append(f'unsafe fn {proc_name}() {{')
             for subname in substates:
                 aggreg_start_proc.append(
                     f'execute_branch_loop(Branches::{subname.statename}{SEPARATOR}START);')
@@ -693,11 +686,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rand_reset.append(f'gen_{rand_g}.reset();')
 
         if NO_CONTEXT:
-            start_transition = ['fn startup() {}', '']
+            start_transition = ['unsafe fn startup() {}', '']
         else:
             if process.transitions:
                 start_transition = [
-                    'fn startup() {',
+                    'unsafe fn startup() {',
                     *rand_reset,
                     'execute_transition(Branches::Startup_Transition);',
                     init_done,
@@ -705,15 +698,15 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     '']
             else:
                 start_transition = [
-                    'fn startup() {',
+                    'unsafe fn startup() {',
                     *rand_reset,
                     init_done,
                     '}',
                     '']
         if not taste:
             start_transition.extend([
-                '// Auto-elaboration',
-                'startup();'])
+                '// Auto-elaboration — call startup() before using the process'])
+            # Note: startup() must be called by the harness before any PI calls
 
     # ── Main module header ──
     rust_body = [
@@ -724,18 +717,33 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     ]
 
     # Use statements for ASN.1 modules
+    # asn1scc generates dataview-uniq.rs and dataview-uniqDef.rs
+    # These files internally use 'use crate::dataview_uniqDef::*;' so we must
+    # declare the module with the exact name asn1scc expects.
     try:
         for dv in process.asn1Modules:
-            mod = dv.replace('-', '_').lower()
-            rust_body.append(f'mod {mod}_def;')
-            rust_body.append(f'use {mod}_def::*;')
+            # Dataview type definitions and functions
+            # Module name must be 'dataview_uniqDef' (matching asn1scc's internal use)
+            rust_body.append(f'#[path = "dataview-uniqDef.rs"]')
+            rust_body.append(f'pub mod dataview_uniqDef;')
+            rust_body.append(f'use dataview_uniqDef::*;')
+            rust_body.append(f'#[path = "dataview-uniq.rs"]')
+            rust_body.append(f'pub mod dataview_uniq;')
+            rust_body.append(f'use dataview_uniq::*;')
+            break  # Only need one dataview module
         rust_body.append('use asn1rust::*;')
     except TypeError:
         rust_body.append('// No ASN.1 data types used in this model')
 
     if not getattr(process, 'no_context', False) and not stop_condition:
-        rust_body.append(f'mod {process.name.lower()}_datamodel;')
-        rust_body.append(f'use {process.name.lower()}_datamodel::*;')
+        dmn = process.name.lower()
+        # Datamodel definitions — module name must match asn1scc's internal 'use crate::<name>_datamodelDef::*;'
+        rust_body.append(f'#[path = "{dmn}_datamodelDef.rs"]')
+        rust_body.append(f'pub mod {dmn}_datamodelDef;')
+        rust_body.append(f'use {dmn}_datamodelDef::*;')
+        rust_body.append(f'#[path = "{dmn}_datamodel.rs"]')
+        rust_body.append(f'pub mod {dmn}_datamodel;')
+        rust_body.append(f'use {dmn}_datamodel::*;')
     elif stop_condition:
         rust_body.append(f'mod {stop_condition.lower()}_datamodel;')
         rust_body.append(f'use {stop_condition.lower()}_datamodel::*;')
@@ -765,7 +773,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not generic and not instance and not stop_condition and not NO_CONTEXT:
         rust_body.extend([
             f'#[no_mangle]',
-            f'pub extern "C" fn {process.name.lower()}_state() -> *const u8 {{',
+            f'pub unsafe extern "C" fn {process.name.lower()}_state() -> *const u8 {{',
             f'    // Return state as C string - simplified',
             f'    std::ptr::null()',
             f'}}',
@@ -775,7 +783,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not generic:
         rust_body.extend([
             f'#[no_mangle]',
-            f'pub extern "C" fn {process.name.lower()}_startup() {{',
+            f'pub unsafe extern "C" fn {process.name.lower()}_startup() {{',
             f'    startup();',
             f'}}',
             ''])
@@ -815,7 +823,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     # ── Observer state status ──
     if process.errorstates or process.ignorestates or process.successstates:
-        obs = ['fn observer_state_status() -> asn1SccObserver_State_Kind {']
+        obs = ['unsafe fn observer_state_status() -> asn1SccObserver_State_Kind {']
         obs.append(f'    match {LPREFIX}.state {{')
         if process.errorstates:
             for st in process.errorstates:
@@ -888,16 +896,16 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         if (not generic and not ignore_export) or (ignore_export and instance):
             # Export as C function
             export_name = f'{process.name.lower()}_PI_{signame}'
-            sig = f'pub extern "C" fn {signame}({param_decl})'
+            sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
             if param_decl:
-                sig = f'pub extern "C" fn {signame}({param_decl})'
+                sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
             rust_body.append(f'#[no_mangle]')
             rust_body.append(sig + ' {')
         else:
             if param_decl:
-                rust_body.append(f'fn {pi_name}({param_decl}) {{')
+                rust_body.append(f'unsafe fn {pi_name}({param_decl}) {{')
             else:
-                rust_body.append(f'fn {pi_name}() {{')
+                rust_body.append(f'unsafe fn {pi_name}() {{')
 
         has_transition = any(signame.lower() == k.lower()
                              for k in process.input_mapping.keys())
@@ -990,11 +998,13 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                                 'execute_transition(Branches::Continuous_Signals);')
                             if simu:
                                 dest.append('panic!("Lost_Input");')
+                    # Close the match arm
+                    dest.append('}')
                 else:
                     if execute_transition(state, statecase, simu_step):
                         dest.extend(statecase)
-                if state in process.aggregates.keys():
-                    dest.append('}')
+                        # Close the match arm
+                        dest.append('}')
 
             if has_transition and not getattr(process, 'no_context', False):
                 for each_state in reduced_statelist:
@@ -1052,7 +1062,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         if not MONITORS and not generic:
             rust_body.extend([
                 f'#[no_mangle]',
-                f'pub extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
+                f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
                 f'    // Provided by runtime',
                 f'}}',
                 ''])
@@ -1060,7 +1070,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # ── Instance startup ──
     if instance:
         rust_body.extend([
-            'fn startup() {',
+            'unsafe fn startup() {',
             f'{process.name}_Instance::startup();',
             '}',
             ''])
@@ -1081,8 +1091,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 param_spec = f'(dest_pid: {ASN1SCC}PID)'
 
         if not generic and not instance:
-            rust_body.append(f'// Required interface "{sig}"')
-            ri_stub_code.append(f'fn {sig}{param_spec} {{ /* RI stub - implement me */ }}')
+            ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{param_spec} {{ /* RI stub - implement me */ }}')
 
     # ── External procedure RIs ──
     for proc in (proc for proc in process.procedures if proc.external):
@@ -1093,7 +1102,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             params.append(f'{param["name"]}: &mut {typename}')
         params_spec = f'({", ".join(params)})' if params else '()'
         if not generic and not instance:
-            ri_stub_code.append(f'fn {sig}{params_spec} {{ /* RI stub */ }}')
+            ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{params_spec} {{ /* RI stub */ }}')
 
     # ── Timer declarations ──
     for timer in process.timers:
@@ -1128,19 +1137,17 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     for label in process.content.floating_labels:
         if NO_CONTEXT:
             break
-        rust_body.append(
-            f'fn branch_{label.inputString}() -> Branches {{')
+        # _floating_label generates the complete function (signature + body + closing brace)
+        # so we just extend with its output
         code_label, _ = generate(label)
         rust_body.extend(code_label)
-        rust_body.append('}')
-        rust_body.append('')
 
     # ── Execute_Transition and Execute_Branch_Loop ──
     if process.transitions and not instance and not NO_CONTEXT:
         if simu:
             rust_body.extend([
                 f'#[no_mangle]',
-                f'pub extern "C" fn {process.name.lower()}_simu_next(branch: Branches) -> Branches {{',
+                f'pub unsafe extern "C" fn {process.name.lower()}_simu_next(branch: Branches) -> Branches {{',
                 '    let mut next_branch = branch;',
                 '    match next_branch {'])
             for label in all_labels:
@@ -1164,7 +1171,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rust_body.append(decl)
 
         rust_body.extend([
-            'fn execute_branch_loop(branch: Branches) {',
+            'unsafe fn execute_branch_loop(branch: Branches) {',
             '    let mut next_branch = branch;',
             '    while next_branch != Branches::Branch_End {',
             '        match next_branch {'])
@@ -1184,7 +1191,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.append('')
 
         rust_body.extend([
-            'fn execute_transition(branch: Branches) {',
+            'unsafe fn execute_transition(branch: Branches) {',
             f'    if !{LPREFIX}.init_done && branch != Branches::Startup_Transition {{',
             '        return;',
             '    }',
@@ -1196,15 +1203,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     elif not instance and not NO_CONTEXT:
         rust_body.extend([
-            'fn execute_transition(branch: Branches) {}',
+            'unsafe fn execute_transition(branch: Branches) {}',
             ''])
-
-    # ── Transition code functions ──
-    for i, code_tr in enumerate(code_transitions):
-        label_name = all_labels[i] if i < len(all_labels) else f'Transition_{i}'
-        rust_body.append(f'// Transition: {label_name}')
-        rust_body.extend(code_tr)
-        rust_body.append('')
 
     # ── Startup ──
     rust_body.extend(start_transition)
@@ -1215,6 +1215,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.extend(ri_stub_code)
 
     # ── Cargo.toml ──
+    # This Cargo.toml is written to <process>_cargo.toml.
+    # The test Makefile should copy it to Cargo.toml (overwriting asn1scc's version).
     cargo_toml = f'''[package]
 name = "{process.name.lower()}"
 version = "0.1.0"
@@ -1227,6 +1229,10 @@ asn1rust = {{ path = "asn1rust" }}
 name = "{process.name.lower()}"
 path = "{process.name.lower()}.rs"
 
+[[bin]]
+name = "test_rust"
+path = "main.rs"
+
 [profile.release]
 opt-level = 3
 '''
@@ -1234,6 +1240,24 @@ opt-level = 3
     # ── Write files ──
     with open(process.name.lower() + os.extsep + 'rs', 'w') as rust_file:
         rust_file.write('\n'.join(format_rust_code(rust_body)))
+
+    # Post-process: add 'use crate::dataview_uniq::*;' to the asn1scc-generated
+    # datamodel file so it can access dataview functions (IsConstraintValid, init, etc.)
+    dmn = process.name.lower()
+    dmn_rs = f'{dmn}_datamodel.rs'
+    if os.path.exists(dmn_rs):
+        with open(dmn_rs, 'r') as f:
+            content = f.read()
+        if 'use crate::dataview_uniq::' not in content:
+            # Insert after the last 'use' line
+            lines = content.split('\n')
+            insert_idx = 0
+            for i, line in enumerate(lines):
+                if line.startswith('use '):
+                    insert_idx = i + 1
+            lines.insert(insert_idx, 'use crate::dataview_uniq::*;')
+            with open(dmn_rs, 'w') as f:
+                f.write('\n'.join(lines))
 
     if not taste:
         ri_stub_file = f'{process.name.lower()}_ri.rs'
@@ -1701,8 +1725,13 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
                 for exit in exitcalls:
                     code.append(exit)
                 code.append(f'tr_id = {branch_to};')
-            sep = 'else if '
-        code.append('}')
+            # If this was an ELSEONLY (else answer), reset sep to prevent
+            # the try block from generating another else { }
+            if exp == 'ELSEONLY':
+                sep = 'if '
+            else:
+                sep = 'else if '
+            code.append('}')
 
     try:
         if sep != 'if ':
@@ -1901,7 +1930,7 @@ def _floating_label(label, **kwargs):
     code.extend(traceability(label))
     if kind != 'PROCEDURE':
         # Function returning Branches
-        code.append(f'fn branch_{label.inputString}() -> Branches {{')
+        code.append(f'unsafe fn branch_{label.inputString}() -> Branches {{')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
         if local_trans:
@@ -2649,7 +2678,7 @@ def _enumerated_value(primary, **kwargs):
     rust_string = f'{prefix}{enum_id}'
     # For state enums, need the full path
     if basic.kind == 'StateEnumeratedType':
-        rust_string = f'{ASN1SCC}{PROCESS_NAME}_States::{enum_id}'
+        rust_string = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States::{enum_id}'
     return [], str(rust_string), []
 
 
