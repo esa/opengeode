@@ -61,6 +61,15 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) expressions.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
+	  fi; \
+	done && \
+	cp expressions_cargo.toml Cargo.toml && \
+	sed -i 's|fn ri_0_assert(res: &mut asn1SccBoolean, msg: &mut asn1SccCharString) { /\* RI stub \*/ }|fn ri_0_assert(res: \&mut asn1SccBoolean, msg: \&mut asn1SccCharString) { let mut end = 0; while end < msg.arr.len() \&\& msg.arr[end] != 0 { end += 1; } let s = std::str::from_utf8(\&msg.arr[..end]).unwrap_or(""); if *res { println!("PASS: {}", s); } else { println!("FAIL: {}", s); } }|' expressions.rs && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 
 .PHONY: all edit test-parse test-ada test-llvm test-rust coverage
