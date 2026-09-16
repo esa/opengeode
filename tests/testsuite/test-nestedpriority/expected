@@ -1,0 +1,5 @@
+[INFO] Checking challenge.pr, system_structure.pr
+[INFO] No ASN.1 file in cache (or no cache folder)
+[INFO] Parsing complete. Summary, found 0 warnings and 2 errors
+challenge.pr:99:9: error: Input "run" is already consumed in substate "well"
+challenge.pr:107:9: error: Input "run" is already consumed in substate "nested"
