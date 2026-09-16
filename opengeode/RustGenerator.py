@@ -432,8 +432,21 @@ def array_content(prim, values, asnty):
         count = len(items)
         if not max_size:
             max_size = count
+        # Determine the zero/placeholder value for padding based on element type
+        # Check the first element's type, or the SequenceOf's element type
+        zero_val = '0'
+        if prim.value:
+            first_elem_bty = find_basic_type(prim.value[0].exprType)
+            if first_elem_bty and first_elem_bty.kind == 'BooleanType':
+                zero_val = 'false'
+        else:
+            elem_bty = find_basic_type(prim.exprType)
+            while elem_bty and elem_bty.kind == 'ReferenceType' and elem_bty.ReferencedTypeName in TYPES:
+                elem_bty = find_basic_type(TYPES[elem_bty.ReferencedTypeName].type)
+            if elem_bty and elem_bty.kind == 'BooleanType':
+                zero_val = 'false'
         # Pad with zeros to fill the full array
-        padded = items + ['0'] * (max_size - len(items))
+        padded = items + [zero_val] * (max_size - len(items))
         if has_n_count:
             return f'{type_name_str} {{ n_count: {count}, arr: [{", ".join(padded)}] }}'
         else:
@@ -1376,6 +1389,33 @@ opt-level = 3
             with open(dmn_rs, 'w') as f:
                 f.write('\n'.join(lines))
 
+    # Post-process: remove duplicate constant definitions from dataview-uniq.rs
+    # (they're already in dataview-uniqDef.rs, causing ambiguity when both are glob-imported)
+    if os.path.exists('dataview-uniq.rs'):
+        with open('dataview-uniq.rs', 'r') as f:
+            dv_content = f.read()
+        # Comment out 'pub const' lines that duplicate dataview-uniqDef.rs constants
+        lines = dv_content.split('\n')
+        new_lines = []
+        skip_const_block = False
+        for line in lines:
+            if line.startswith('pub const '):
+                # Skip duplicate constant definitions (they're in dataview-uniqDef.rs)
+                # These are single-line definitions ending with ;
+                if line.rstrip().endswith(';'):
+                    continue
+                else:
+                    skip_const_block = True
+                    continue
+            if skip_const_block:
+                if ';' in line:
+                    skip_const_block = False
+                    continue
+                continue
+            new_lines.append(line)
+        with open('dataview-uniq.rs', 'w') as f:
+            f.write('\n'.join(new_lines))
+
     if not taste:
         ri_stub_file = f'{process.name.lower()}_ri.rs'
         if not os.path.exists(ri_stub_file) and ri_stub_code:
@@ -1416,17 +1456,21 @@ def write_statement(param, newline):
         elif isinstance(param, ogAST.PrimStringLiteral):
             code.append(f'print!("{param.value[1:-1]}");')
         else:
+            # For OctetString/BitString variables, print as string content
             code, string, local = expression(param, readonly=1)
-            code.append(f'print!("{{:?}}", {string});')
+            # Print the string content up to n_count
+            code.append(f'{{ let _s = {string}; let n = _s.n_count as usize; print!("{{}}", String::from_utf8_lossy(&_s.arr[..n])); }}')
     elif type_kind in ('IntegerType', 'Integer32Type', 'IntegerU8Type'):
         code, string, local = expression(param, readonly=1)
-        code.append(f'print!("{{}}", {string});')
+        # Ada's 'Image adds a leading space for non-negative integers
+        # Match that behavior for compatibility
+        code.append(f'print!(" {{}}", {string});')
     elif type_kind == 'RealType':
         code, string, local = expression(param, readonly=1)
         code.append(f'print!("{{}}", {string});')
     elif type_kind == 'BooleanType':
         code, string, local = expression(param, readonly=1)
-        code.append(f'print!("{{}}", if {string} {{ "true" }} else {{ "false" }});')
+        code.append(f'print!("{{}}", if {string} {{ "TRUE" }} else {{ "FALSE" }});')
     else:
         code, string, local = expression(param, readonly=1)
         code.append(f'print!("{{:?}}", {string});')
@@ -1548,8 +1592,8 @@ def _call_external_function(output, **kwargs):
                 param_bty = find_basic_type(param.exprType)
                 if isinstance(param, ogAST.PrimStringLiteral) and \
                         param_bty and param_bty.kind in ('IA5StringType', 'StringType', 'OctetStringType', 'BitStringType'):
-                    # Use array_content with param.exprType for correct type info
-                    p_id = array_content(param, p_id, param.exprType)
+                    # Use array_content with param_type (the RI parameter type) for correct type name
+                    p_id = array_content(param, p_id, param_type)
 
                 if param_direction == 'in' and not (
                         isinstance(param, ogAST.PrimVariable) and
@@ -2257,7 +2301,12 @@ def _prim_call(prim, **kwargs):
             stmt, operands[idx], local = expression(param, readonly=1)
             stmts.extend(stmt)
             local_decl.extend(local)
-        rust_string = f'({operands[0]} as i64).pow({operands[1]} as u32)'
+        # Determine the result type for proper casting
+        try:
+            result_type = type_name(params[0].exprType)
+        except (NotImplementedError, AttributeError):
+            result_type = 'i64'
+        rust_string = f'(({operands[0]} as i64).pow({operands[1]} as u32) as {result_type})'
 
     elif ident == 'length':
         exp = params[0]
@@ -2485,10 +2534,58 @@ def _prim_substring(prim, **kwargs):
     r2_stmts, r2_string, r2_local = expression(
         prim.value[1]['substring'][1], readonly=ro)
 
-    # SDL indexes are 0-based, Rust slices are 0-based — no conversion needed
-    if not isinstance(receiver, ogAST.PrimSubstring):
-        rust_string += '.arr'
-    rust_string += f'[{r1_string}..{r2_string}]'
+    # Determine the result type
+    bty = find_basic_type(prim.exprType)
+    # Resolve through ReferenceType
+    while bty and bty.kind == 'ReferenceType' and bty.ReferencedTypeName in TYPES:
+        bty = find_basic_type(TYPES[bty.ReferencedTypeName].type)
+
+    # For SEQUENCE OF / OctetString / IA5String types, produce a struct
+    # with n_count and arr fields, so concatenation works
+    if bty and bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
+        name_of_type = type_name(prim.exprType)
+        has_n_count = True
+        try:
+            if hasattr(bty, 'Min') and hasattr(bty, 'Max'):
+                has_n_count = int(bty.Min) != int(bty.Max)
+        except (ValueError, TypeError):
+            pass
+
+        # Generate a block expression that creates a new struct from the slice
+        base = r_string
+        if not isinstance(receiver, ogAST.PrimSubstring):
+            base += '.arr'
+        slice_expr = f'{base}[{r1_string}..{r2_string} + 1]'
+        count_expr = f'({r2_string} - {r1_string} + 1)'
+
+        if has_n_count:
+            rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                           f' let n = {count_expr} as usize;'
+                           f' tmp.arr[..n].copy_from_slice(&{slice_expr});'
+                           f' tmp.n_count = n as i32;'
+                           f' tmp }}')
+        else:
+            rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                           f' let n = {count_expr} as usize;'
+                           f' tmp.arr[..n].copy_from_slice(&{slice_expr});'
+                           f' tmp }}')
+    elif bty and bty.kind in ('IA5StringType', 'StringType'):
+        name_of_type = type_name(prim.exprType)
+        base = r_string
+        if not isinstance(receiver, ogAST.PrimSubstring):
+            base += '.arr'
+        slice_expr = f'{base}[{r1_string}..{r2_string} + 1]'
+        count_expr = f'({r2_string} - {r1_string} + 1)'
+        rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                       f' let n = {count_expr} as usize;'
+                       f' tmp.arr[..n].copy_from_slice(&{slice_expr});'
+                       f' tmp }}')
+    else:
+        # Non-array types: raw slice (legacy behavior)
+        if not isinstance(receiver, ogAST.PrimSubstring):
+            rust_string += '.arr'
+        rust_string += f'[{r1_string}..{r2_string}]'
+
     stmts.extend(r1_stmts)
     stmts.extend(r2_stmts)
     local_decl.extend(r1_local)
@@ -2630,7 +2727,8 @@ def _assign_expression(expr, **kwargs):
         strings.append(f'{left_str} = {right_str};')
     elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         if isinstance(expr.right, ogAST.PrimSubstring):
-            strings.append(f'{left_str}.arr[..{right_str}.len()].copy_from_slice(&{right_str});')
+            # PrimSubstring now returns a struct with n_count and arr
+            strings.append(f'{left_str} = {right_str};')
         elif isinstance(expr.right, ogAST.ExprAppend):
             # ExprAppend returns a block expression that creates a new concatenated array
             strings.append(f'{left_str} = {right_str};')
@@ -2642,7 +2740,8 @@ def _assign_expression(expr, **kwargs):
         # Update n_count if variable-size (Min != Max)
         if basic_left.Min != basic_left.Max:
             if isinstance(expr.right, ogAST.PrimSubstring):
-                strings.append(f'{left_str}.n_count = {right_str}.len() as i32;')
+                # PrimSubstring returns a struct with n_count
+                strings.append(f'{left_str}.n_count = {right_str}.n_count;')
             elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                 count = len(expr.right.value) if hasattr(expr.right, 'value') else 0
                 if isinstance(expr.right, ogAST.PrimStringLiteral):
@@ -2828,7 +2927,98 @@ def _append(expr, **kwargs):
     except (NotImplementedError, AttributeError):
         name_of_type = type_name(expr.left.exprType)
 
-    rust_string = f'{{ let mut tmp = {name_of_type}::default(); tmp.arr[..{left_str}.n_count as usize].copy_from_slice(&{left_str}.arr[..{left_str}.n_count as usize]); tmp.arr[{left_str}.n_count as usize..{left_str}.n_count as usize + {right_str}.n_count as usize].copy_from_slice(&{right_str}.arr[..{right_str}.n_count as usize]); tmp.n_count = {left_str}.n_count + {right_str}.n_count; tmp }}'
+    # Determine if the type has n_count (variable-size) or not (fixed-size)
+    bty = find_basic_type(expr.left.exprType)
+    # Resolve through ReferenceType
+    while bty and bty.kind == 'ReferenceType' and bty.ReferencedTypeName in TYPES:
+        bty = find_basic_type(TYPES[bty.ReferencedTypeName].type)
+    has_n_count = True
+    if bty and hasattr(bty, 'Min') and hasattr(bty, 'Max'):
+        try:
+            has_n_count = int(bty.Min) != int(bty.Max)
+        except (ValueError, TypeError):
+            has_n_count = True
+
+    # For string types (IA5String, OctetString), handle differently
+    if bty and bty.kind in ('IA5StringType', 'StringType'):
+        # String concatenation: copy bytes
+        rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                       f' let l = {left_str}; let r = {right_str};'
+                       f' let mut n = 0usize;'
+                       f' for &b in &l.arr {{ if b == 0 {{ break; }} tmp.arr[n] = b; n += 1; }}'
+                       f' for &b in &r.arr {{ if b == 0 {{ break; }} tmp.arr[n] = b; n += 1; }}'
+                       f' tmp }}')
+        return stmts, str(rust_string), local_decl
+
+    # For PrimSubstring (slicing), we need to wrap the slice in a temp struct
+    # For PrimSequenceOf literals, we need to use array_content
+    # For variables/constants, they already have .n_count and .arr
+
+    # Bind left side to a temp if it's not a simple variable
+    left_is_simple = isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimConstant))
+    right_is_simple = isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimConstant))
+
+    left_var = left_str
+    right_var = right_str
+
+    # If left is a PrimSequenceOf, use array_content to make a proper struct
+    if isinstance(expr.left, ogAST.PrimSequenceOf):
+        try:
+            et = expr.expected_type
+        except (NotImplementedError, AttributeError):
+            et = expr.left.exprType
+        left_var = array_content(expr.left, left_str, et)
+    elif isinstance(expr.left, ogAST.PrimStringLiteral):
+        # Use expected_type for correct type name resolution
+        try:
+            et = expr.expected_type
+        except (NotImplementedError, AttributeError):
+            et = expr.left.exprType
+        left_var = array_content(expr.left, left_str, et)
+    elif isinstance(expr.left, ogAST.ExprAppend):
+        pass  # already a block expression returning a struct
+    elif not left_is_simple and not isinstance(expr.left, ogAST.ExprAppend):
+        # Bind to temp variable
+        tmp_l = f'tmp_app{expr.tmpVar}_l'
+        local_decl.append(f'let {tmp_l} = {left_str};')
+        left_var = tmp_l
+
+    # If right is a PrimSequenceOf, use array_content
+    if isinstance(expr.right, ogAST.PrimSequenceOf):
+        try:
+            et = expr.expected_type
+        except (NotImplementedError, AttributeError):
+            et = expr.right.exprType
+        right_var = array_content(expr.right, right_str, et)
+    elif isinstance(expr.right, ogAST.PrimStringLiteral):
+        try:
+            et = expr.expected_type
+        except (NotImplementedError, AttributeError):
+            et = expr.right.exprType
+        right_var = array_content(expr.right, right_str, et)
+    elif isinstance(expr.right, ogAST.ExprAppend):
+        pass  # already a block expression returning a struct
+    elif not right_is_simple and not isinstance(expr.right, ogAST.ExprAppend):
+        tmp_r = f'tmp_app{expr.tmpVar}_r'
+        local_decl.append(f'let {tmp_r} = {right_str};')
+        right_var = tmp_r
+
+    if has_n_count:
+        rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                       f' tmp.arr[..{left_var}.n_count as usize].copy_from_slice(&{left_var}.arr[..{left_var}.n_count as usize]);'
+                       f' tmp.arr[{left_var}.n_count as usize..{left_var}.n_count as usize + {right_var}.n_count as usize].copy_from_slice(&{right_var}.arr[..{right_var}.n_count as usize]);'
+                       f' tmp.n_count = {left_var}.n_count + {right_var}.n_count;'
+                       f' tmp }}')
+    else:
+        # Fixed-size: no n_count, just concatenate arrays
+        try:
+            arr_size = int(bty.Max)
+        except (ValueError, TypeError):
+            arr_size = 0
+        rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
+                       f' tmp.arr[..{arr_size}].copy_from_slice(&{left_var}.arr[..{arr_size}]);'
+                       f' tmp.arr[{arr_size}..{arr_size} + {arr_size}].copy_from_slice(&{right_var}.arr[..{arr_size}]);'
+                       f' tmp }}')
 
     return stmts, str(rust_string), local_decl
 

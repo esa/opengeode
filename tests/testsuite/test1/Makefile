@@ -48,12 +48,27 @@ test-llvm: og.o dataview-uniq.o | test_llvm.o
 test-rust:
 	$(OPENGEODE) og.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	sed -i '/^pub const /d' dataview-uniq.rs && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
 	    sed -i '/^use crate::.*Def/a use crate::dataview_uniq::*;' "$$f"; \
 	  fi; \
 	done && \
 	cp og_cargo.toml Cargo.toml && \
+	python3 patch_ri.py og.rs && \
+	printf '%s\n' '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,' \
+		'unused_variables, unused_mut, unused_assignments, dead_code)]' \
+		'use og::*;' \
+		'use og::dataview_uniqDef::*;' \
+		'fn main() {' \
+		'    unsafe {' \
+		'        og_startup();' \
+		'        let mut toto = test_string;' \
+		'        go(&mut toto);' \
+		'        go(&mut toto);' \
+		'        go(&mut toto);' \
+		'    }' \
+		'}' > main.rs && \
 	cargo build 2>&1
 	# RUST_COMPILE_ONLY: compile verification only (generated Rust needs more fixes before it can run)
 
