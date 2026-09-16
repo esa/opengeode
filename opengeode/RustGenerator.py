@@ -1707,6 +1707,7 @@ def _create_request(create, **kwargs):
 def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
     '''Generate code for a decision (if/else or match)'''
     code, local_decl = [], []
+    else_code = []
 
     if dec.kind == 'any':
         code.extend(traceability(dec))

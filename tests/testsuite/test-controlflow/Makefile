@@ -54,8 +54,19 @@ test-rust:
 	  fi; \
 	done && \
 	cp controlflow_cargo.toml Cargo.toml && \
-	cargo build 2>&1
-	# RUST_COMPILE_ONLY: compile verification only (generated Rust needs more fixes before it can run)
+	python3 patch_ri.py controlflow.rs && \
+	printf '%s\n' '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,' \
+		'unused_variables, unused_mut, unused_assignments, dead_code)]' \
+		'use controlflow::*;' \
+		'use controlflow::dataview_uniqDef::*;' \
+		'fn main() {' \
+		'    unsafe {' \
+		'        controlflow_startup();' \
+		'        run();' \
+		'    }' \
+		'}' > main.rs && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 
 coverage:
 	coverage run -p $(OPENGEODE) controlflow.pr system_structure.pr --toAda
