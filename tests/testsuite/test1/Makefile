@@ -26,15 +26,14 @@ test-qgen-gt-c:
 test-ada: og.ali dataview-uniq.o | test_ada.o
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o dataview-uniq.o og.ali
-	./test_ada
-	#gcov og.adb
+	./test_ada | diff expected -
 
 test-if: og.if
 
 test-c: og.c test_c.o dataview-uniq.o
 	$(CC) og.c -c -o og.o
 	$(CC) test_c.o og.c dataview-uniq.o -lm -o test_c
-	./test_c
+	./test_c | diff expected -
 
 test-if:
 	sdl2if og.pr system_structure.pr
@@ -76,3 +75,16 @@ coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
 .PHONY: edit test-parse test-qgen-parse test-ada test-llvm coverage test-rust
+
+# Override shared.mk clean to preserve og_ri.adb
+clean:
+	-mv og_ri.adb og_ri.adb.bak 2>/dev/null
+	gnat clean *.adb
+	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
+	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
+	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
+	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
+		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
+		   Cargo.toml target
+	-mv og_ri.adb.bak og_ri.adb 2>/dev/null

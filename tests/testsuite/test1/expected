@@ -3,8 +3,21 @@ FALSE
  1
  2
  4
- 3
-test= 3
+ 5
+test= 5
 All OK (1)
 ALL OK (2)
-[C] got something]
+Calling rezult, next line should be [C] Got something
+[C] got something
+hello
+msg//! = hello!
+msg(3,4)//(1,2) = loel
+first_msg(1,2)=ay
+Calling rezult, next line should be [C] Got something
+[C] got something
+hello
+msg//! = hello!
+msg(3,4)//(1,2) = loel
+first_msg(1,2)=ay
+Calling rezult, next line should be [C] Got something
+[C] got something
