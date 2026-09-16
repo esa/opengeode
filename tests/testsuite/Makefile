@@ -9,7 +9,7 @@ BENCHMARK_CASES=$(filter-out $(DISABLED_BENCHMARKS), $(sort $(dir $(wildcard */)
 
 export EXPECTED_FAILURES=test-branchcoverage/ test-branchcoverage2/ test-procedure/ test-procedure-inparam/ test-typecheck/ test-nestedpriority/
 export RUST_EXPECTED_FAILURES=test1/ test10/ test-controlflow/ test-equal/ \
-                              test-expressions/ test-exported-procedure/ test-instance/ \
+                              test-exported-procedure/ test-instance/ \
                               test-math/ test-operators/
 export QGEN_UNSUPPORTED=test-debug/ test-demotaste/ test-instance/ test-eds2/ test-asn1constants/\
 					      test-nocif/ test-nocif2/ test-provided2/ test-processfpar1/ test-processfpar2/\

@@ -68,8 +68,18 @@ test-rust:
 	  fi; \
 	done && \
 	cp expressions_cargo.toml Cargo.toml && \
-	sed -i 's|fn ri_0_assert(res: &mut asn1SccBoolean, msg: &mut asn1SccCharString) { /\* RI stub \*/ }|fn ri_0_assert(res: \&mut asn1SccBoolean, msg: \&mut asn1SccCharString) { let mut end = 0; while end < msg.arr.len() \&\& msg.arr[end] != 0 { end += 1; } let s = std::str::from_utf8(\&msg.arr[..end]).unwrap_or(""); if *res { println!("PASS: {}", s); } else { println!("FAIL: {}", s); } }|' expressions.rs && \
-	cargo build 2>&1
-	# RUST_COMPILE_ONLY: generated Rust needs array padding fixes before it can compile
+	python3 patch_ri.py expressions.rs && \
+	printf '%s\n' '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,' \
+		'unused_variables, unused_mut, unused_assignments, dead_code)]' \
+		'use expressions::*;' \
+		'use expressions::dataview_uniqDef::*;' \
+		'fn main() {' \
+		'    unsafe {' \
+		'        expressions_startup();' \
+		'        run();' \
+		'    }' \
+		'}' > main.rs && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 
 .PHONY: all edit test-parse test-ada test-llvm test-rust coverage

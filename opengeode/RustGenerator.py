@@ -315,6 +315,101 @@ def string_payload(prim, rust_string):
     return rust_string
 
 
+def _resolve_type_info(asnty, prim_expr_type):
+    '''Resolve the actual type info (kind, Min, Max, has_n_count, type_name) from
+    various type references that may be passed to array_content.
+
+    Returns: (kind, max_size, has_n_count, type_name_str)
+    '''
+    # Try to get ReferencedTypeName from either source
+    ref_name = getattr(asnty, 'ReferencedTypeName', None) if asnty else None
+    if not ref_name:
+        ref_name = getattr(prim_expr_type, 'ReferencedTypeName', None)
+
+    # Try to get the basic type from either source
+    bty = None
+    if asnty:
+        bty = find_basic_type(asnty)
+    if not bty or bty.kind in ('ReferenceType',):
+        if prim_expr_type:
+            bty = find_basic_type(prim_expr_type)
+
+    # If we have a ReferencedTypeName, look it up in TYPES for the real Min/Max
+    if ref_name and ref_name in TYPES:
+        dv_bty = find_basic_type(TYPES[ref_name].type)
+        if dv_bty:
+            bty = dv_bty
+    elif ref_name is None and bty and bty.kind in ('IA5StringType', 'StringType'):
+        # StringType without ReferencedTypeName — try to find CharString in TYPES
+        if 'CharString' in TYPES:
+            dv_bty = find_basic_type(TYPES['CharString'].type)
+            if dv_bty and dv_bty.kind in ('IA5StringType', 'StringType'):
+                bty = dv_bty
+                ref_name = 'CharString'
+
+    kind = bty.kind if bty else None
+    max_size = None
+    has_n_count = False
+
+    if kind in ('IA5StringType', 'StringType'):
+        # CharString: fixed-size array, no n_count
+        # asn1scc generates arr: [u8; Max+1] (includes null terminator)
+        if not ref_name:
+            ref_name = 'CharString'
+        try:
+            max_size = int(bty.Max) if bty and hasattr(bty, 'Max') else 100
+            max_size += 1  # +1 for null terminator
+        except (ValueError, TypeError):
+            max_size = 101
+        has_n_count = False
+    elif kind in ('OctetStringType', 'BitStringType'):
+        try:
+            max_size = int(bty.Max) if bty and hasattr(bty, 'Max') else 0
+        except (ValueError, TypeError):
+            max_size = 0
+        # OctetString/BitString: has n_count if Min != Max
+        try:
+            min_v = int(bty.Min) if bty and hasattr(bty, 'Min') else 0
+            max_v = int(bty.Max) if bty and hasattr(bty, 'Max') else 0
+            has_n_count = min_v != max_v
+        except (ValueError, TypeError):
+            has_n_count = True
+    elif kind == 'SequenceOfType':
+        try:
+            min_v = int(bty.Min) if bty and hasattr(bty, 'Min') else 0
+            max_v = int(bty.Max) if bty and hasattr(bty, 'Max') else 0
+            max_size = max_v
+            has_n_count = min_v != max_v
+        except (ValueError, TypeError):
+            max_size = 0
+            has_n_count = True
+
+    # If ref_name is still None, try to find the type by matching Min/Max/kind in TYPES
+    if not ref_name and bty and kind in ('SequenceOfType', 'IA5StringType', 'StringType',
+                                         'OctetStringType', 'BitStringType'):
+        try:
+            bty_min = int(bty.Min) if hasattr(bty, 'Min') else None
+            bty_max = int(bty.Max) if hasattr(bty, 'Max') else None
+        except (ValueError, TypeError):
+            bty_min = bty_max = None
+        for tname, tinfo in TYPES.items():
+            t_bty = find_basic_type(tinfo.type)
+            if t_bty.kind != kind:
+                continue
+            try:
+                t_min = int(t_bty.Min) if hasattr(t_bty, 'Min') else None
+                t_max = int(t_bty.Max) if hasattr(t_bty, 'Max') else None
+            except (ValueError, TypeError):
+                continue
+            if bty_min == t_min and bty_max == t_max:
+                ref_name = tname
+                break
+
+    type_name_str = f'{ASN1SCC}{ref_name.replace("-", "_")}' if ref_name else ''
+
+    return kind, max_size, has_n_count, type_name_str
+
+
 def array_content(prim, values, asnty):
     '''Format an array literal for Rust SEQUENCE OF construction.
 
@@ -325,6 +420,9 @@ def array_content(prim, values, asnty):
     '''
     if isinstance(prim, getattr(ogAST, 'PrimEmptyString', type(None))):
         return values
+
+    kind, max_size, has_n_count, type_name_str = _resolve_type_info(asnty, prim.exprType)
+
     if isinstance(prim, ogAST.PrimSequenceOf):
         # Build the array elements from the sequence
         items = []
@@ -332,27 +430,15 @@ def array_content(prim, values, asnty):
             stmts, val_str, local = expression(val, readonly=1)
             items.append(val_str)
         count = len(items)
-        arr_content = ', '.join(items)
-        # Check if this is a fixed-size SEQUENCE OF (Min == Max)
-        bty = find_basic_type(prim.exprType)
-        # Get the ASN.1 type name (struct name in Rust)
-        ref_name = getattr(prim.exprType, 'ReferencedTypeName', None)
-        type_name_str = f'{ASN1SCC}{ref_name.replace("-", "_")}' if ref_name else 'Default::default()'
-        if bty and hasattr(bty, 'Min') and hasattr(bty, 'Max') and bty.Min == bty.Max:
-            # Fixed-size: pad with default values
-            try:
-                arr_size = int(bty.Max)
-            except (ValueError, TypeError):
-                arr_size = len(items)
-            padded = items + ['0'] * (arr_size - len(items))
+        if not max_size:
+            max_size = count
+        # Pad with zeros to fill the full array
+        padded = items + ['0'] * (max_size - len(items))
+        if has_n_count:
+            return f'{type_name_str} {{ n_count: {count}, arr: [{", ".join(padded)}] }}'
+        else:
             return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
-        # Variable-size: pad array and set n_count
-        try:
-            arr_size = int(bty.Max) if bty and hasattr(bty, 'Max') else len(items)
-        except (ValueError, TypeError):
-            arr_size = len(items)
-        padded = items + ['0'] * (arr_size - len(items))
-        return f'{type_name_str} {{ n_count: {count}, arr: [{", ".join(padded)}] }}'
+
     elif isinstance(prim, ogAST.PrimStringLiteral):
         # values is already the comma-separated list of byte values
         if isinstance(prim, getattr(ogAST, 'PrimBitStringLiteral', type(None))):
@@ -361,45 +447,15 @@ def array_content(prim, values, asnty):
             length = len(prim.hexstring)
         else:
             length = len(prim.value) - 2  # remove quotes
-        # Check if the target type is a CharString (no n_count) vs OctetString (has n_count)
-        # asnty can be either a basic type or an Asn1Type — resolve to basic type
-        asnty_bty = find_basic_type(asnty) if asnty and not hasattr(asnty, 'kind') else asnty
-        # Get the ReferencedTypeName from asnty or prim.exprType
-        ref_name = getattr(asnty, 'ReferencedTypeName', None) if asnty else None
-        if not ref_name:
-            ref_name = getattr(prim.exprType, 'ReferencedTypeName', None)
-        # For StringType/IA5StringType without ReferencedTypeName, use CharString
-        if not ref_name and asnty_bty and asnty_bty.kind in ('IA5StringType', 'StringType'):
-            ref_name = 'CharString'
-        type_name_str = f'{ASN1SCC}{ref_name.replace("-", "_")}' if ref_name else 'Default::default()'
-        if asnty_bty and asnty_bty.kind in ('IA5StringType', 'StringType'):
-            # CharString has fixed-size array — pad with 0s to full size
-            items = values.split(', ') if values else []
-            try:
-                arr_size = int(asnty_bty.Max)
-            except (ValueError, TypeError):
-                arr_size = len(items)
-            padded = items + ['0'] * (arr_size - len(items))
-            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
-        # Check if the target type is fixed-size (Min == Max)
-        if asnty_bty and hasattr(asnty_bty, 'Min') and hasattr(asnty_bty, 'Max') and asnty_bty.Min == asnty_bty.Max:
-            # Fixed-size SEQUENCE OF — pad with default values to full size
-            items = values.split(', ') if values else []
-            try:
-                arr_size = int(asnty_bty.Max)
-            except (ValueError, TypeError):
-                arr_size = len(items)
-            # Pad with 0 (works for integers and booleans)
-            padded = items + ['0'] * (arr_size - len(items))
-            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
-        # Variable-size: use n_count and pad array
         items = values.split(', ') if values else []
-        try:
-            arr_size = int(asnty_bty.Max) if asnty_bty and hasattr(asnty_bty, 'Max') else len(items)
-        except (ValueError, TypeError):
-            arr_size = len(items)
-        padded = items + ['0'] * (arr_size - len(items))
-        return f'{type_name_str} {{ n_count: {length}, arr: [{", ".join(padded)}] }}'
+        if not max_size:
+            max_size = len(items)
+        # Pad with zeros to fill the full array
+        padded = items + ['0'] * (max_size - len(items))
+        if has_n_count:
+            return f'{type_name_str} {{ n_count: {length}, arr: [{", ".join(padded)}] }}'
+        else:
+            return f'{type_name_str} {{ arr: [{", ".join(padded)}] }}'
     else:
         # Fallback: use the values string directly
         return values
@@ -688,18 +744,20 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     elif varbty.kind in ('SequenceOfType',
                                          'OctetStringType', 'BitStringType') \
                             and def_value.is_raw:
-                        dstr = array_content(def_value, dstr, varbty)
-                    elif varbty.kind == 'IA5StringType' and \
+                        dstr = array_content(def_value, dstr, var_type)
+                    elif varbty.kind in ('IA5StringType', 'StringType') and \
                             isinstance(def_value, ogAST.PrimStringLiteral):
-                        dstr = ia5string_raw(def_value)
+                        dstr = array_content(def_value, dstr, var_type)
+                    if dst or dlocal:
+                        LOG.warning(f'DCL: non-ground expression for {var_name}')
                     ctxt_parts.append(f'{var_name}: {dstr}')
 
             if ctxt_parts:
-                context_decl.append(
-                    f'// Default context with initial values')
+                context_decl.append(f'// Default context with initial values')
                 context_decl.append(
                     f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
-                    f'unsafe {{ std::mem::zeroed() }};')
+                    f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
+                    f'{", ".join(ctxt_parts)}, ..unsafe {{ std::mem::zeroed() }} }};')
             else:
                 context_decl.append(
                     f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
@@ -749,6 +807,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 start_transition = [
                     'unsafe fn startup() {',
                     *rand_reset,
+                    f'{LPREFIX} = DEFAULT_CONTEXT;',
                     'execute_transition(Branches::Startup_Transition);',
                     init_done,
                     '}',
@@ -757,6 +816,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 start_transition = [
                     'unsafe fn startup() {',
                     *rand_reset,
+                    f'{LPREFIX} = DEFAULT_CONTEXT;',
                     init_done,
                     '}',
                     '']
@@ -1694,7 +1754,13 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
     q_stmts, q_str, q_decl = expression(dec.question, readonly=1)
     code.extend(traceability(dec))
     local_decl.extend(q_decl)
-    code.extend(q_stmts)
+    if q_stmts:
+        # Wrap question statements in a block to avoid for...else syntax issues
+        code.append('{')
+        code.extend(q_stmts)
+        code.append('}')
+    else:
+        code.extend(q_stmts)
 
     if not basic:
         code.append(f'tmp{dec.tmpVar} = {q_str};')
@@ -1705,6 +1771,7 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
 
         sub_sep = ''
         exp = ''
+        ans_pre_stmts = []
         for element in a.answers:
             ans_kind = element['kind']
             ans_content = element['content']
@@ -1713,7 +1780,8 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
             if ans_kind in ('open_range', 'constant'):
                 op, constant = ans_content
                 ans_stmts, ans_str, ans_decl = expression(constant, readonly=1)
-                code.extend(ans_stmts)
+                # Collect answer statements to emit inside the if body
+                ans_pre_stmts.extend(ans_stmts)
                 local_decl.extend(ans_decl)
 
                 # Rust uses == and != instead of = and /=
@@ -1783,6 +1851,10 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
                 code.append('else {')
             else:
                 code.append(sep + exp + ' {')
+            # Emit answer pre-statements inside the if body, BEFORE the transition code
+            # This runs after the condition is checked, but the not-expression
+            # is evaluated in the condition itself (tmp was already computed)
+            code.extend(ans_pre_stmts)
             if not branch_to:
                 if a.transition:
                     stmt, tr_decl = generate(a.transition)
@@ -2523,10 +2595,10 @@ def _equality(expr, **kwargs):
             if isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
                 if lbty.kind.startswith('Integer'):
                     right_str = str(expr.right.numeric_value)
-                elif lbty.kind == 'IA5StringType':
-                    right_str = array_content(expr.right, right_str, lbty)
+                elif lbty.kind in ('IA5StringType', 'StringType'):
+                    right_str = array_content(expr.right, right_str, expr.left.exprType)
                 else:
-                    right_str = array_content(expr.right, right_str, lbty)
+                    right_str = array_content(expr.right, right_str, expr.left.exprType)
             # Use _Equal function for complex types
             # Wrap right_str in parentheses if it's a struct literal (starts with a type name + {)
             if right_str and ' { ' in right_str and right_str.startswith(ASN1SCC):
@@ -2553,16 +2625,16 @@ def _assign_expression(expr, **kwargs):
     if basic_left.kind == 'IA5StringType' and \
             isinstance(expr.right, ogAST.PrimStringLiteral):
         # IA5String assignment — convert to struct literal
-        right_str = array_content(expr.right, right_str, basic_left)
+        right_str = array_content(expr.right, right_str, expr.left.exprType)
         strings.append(f'{left_str} = {right_str};')
     elif basic_left.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         if isinstance(expr.right, ogAST.PrimSubstring):
             strings.append(f'{left_str}.arr[..{right_str}.len()].copy_from_slice(&{right_str});')
         elif isinstance(expr.right, ogAST.ExprAppend):
-            rlen = append_size(expr.right)
-            strings.append(f'{left_str}.arr[..{rlen}].copy_from_slice(&{right_str});')
+            # ExprAppend returns a block expression that creates a new concatenated array
+            strings.append(f'{left_str} = {right_str};')
         elif isinstance(expr.right, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            right_str = array_content(expr.right, right_str, basic_left)
+            right_str = array_content(expr.right, right_str, expr.left.exprType)
             strings.append(f'{left_str} = {right_str};')
         else:
             strings.append(f'{left_str} = {right_str};')
@@ -2638,18 +2710,18 @@ def _bitwise_operators(expr, **kwargs):
         # Element-wise boolean operations on SEQUENCE OF Boolean
         elem_bty = find_basic_type(basic_type.type)
         if elem_bty.kind == 'BooleanType':
-            # Generate element-wise operation
+            # Generate element-wise operation as a block expression
             tmp = f'tmp{expr.tmpVar}'
             local_decl.append(f'let mut {tmp} = {left_str};')
             if isinstance(expr, ogAST.ExprAnd):
-                code.append(f'for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] &= {right_str}.arr[i]; }}')
+                loop_body = f'{tmp}.arr[i] &= {right_str}.arr[i];'
             elif isinstance(expr, ogAST.ExprOr):
-                code.append(f'for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] |= {right_str}.arr[i]; }}')
+                loop_body = f'{tmp}.arr[i] |= {right_str}.arr[i];'
             elif isinstance(expr, ogAST.ExprXor):
-                code.append(f'for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] ^= {right_str}.arr[i]; }}')
+                loop_body = f'{tmp}.arr[i] ^= {right_str}.arr[i];'
             elif isinstance(expr, ogAST.ExprImplies):
-                code.append(f'for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] = !{tmp}.arr[i] || {right_str}.arr[i]; }}')
-            rust_string = tmp
+                loop_body = f'{tmp}.arr[i] = !{tmp}.arr[i] || {right_str}.arr[i];'
+            rust_string = f'{{ for i in 0..{tmp}.arr.len() {{ {loop_body} }} {tmp} }}'
         else:
             # Non-boolean SEQUENCE OF — fall back to bitwise
             if isinstance(expr, ogAST.ExprOr):
@@ -2690,10 +2762,11 @@ def _not_expression(expr, **kwargs):
         # Element-wise NOT on SEQUENCE OF Boolean
         elem_bty = find_basic_type(bty_outer.type)
         if elem_bty.kind == 'BooleanType':
+            # Generate as a block expression to avoid for...else syntax issues
             tmp = f'tmp{expr.tmpVar}'
             local_decl.append(f'let mut {tmp} = {expr_str};')
-            code.append(f'for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] = !{tmp}.arr[i]; }}')
-            rust_string = tmp
+            # No statement code — the loop is embedded in the expression
+            rust_string = f'{{ for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] = !{tmp}.arr[i]; }} {tmp} }}'
         else:
             try:
                 max_val = int(bty_outer.Max)
@@ -2939,10 +3012,10 @@ def _sequence(seq, **kwargs):
         if isinstance(value, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
             if elem_bty.kind.startswith('Integer'):
                 value_str = str(value.numeric_value)
-            elif elem_bty.kind == 'IA5StringType':
-                value_str = array_content(value, value_str, elem_bty)
+            elif elem_bty.kind in ('IA5StringType', 'StringType'):
+                value_str = array_content(value, value_str, elem_spec.type)
             else:
-                value_str = array_content(value, value_str, elem_bty)
+                value_str = array_content(value, value_str, elem_spec.type)
             # Wrap in parentheses if it's a struct literal (to disambiguate from blocks)
             if value_str and ' { ' in value_str and value_str.startswith(ASN1SCC):
                 value_str = f'({value_str})'
@@ -2973,21 +3046,10 @@ def _sequence(seq, **kwargs):
 @expression.register(ogAST.PrimSequenceOf)
 def _sequence_of(seqof, **kwargs):
     stmts, local_decl = [], []
-    tab = []
-    for i in range(len(seqof.value)):
-        item_stmts, item_str, local_var = expression(seqof.value[i], readonly=1)
-        if isinstance(seqof.value[i], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
-            elem_bty = find_basic_type(seqof.value[i].exprType)
-            if elem_bty.kind == 'IA5StringType':
-                item_str = ia5string_raw(seqof.value[i])
-            else:
-                item_str = array_content(seqof.value[i], item_str, elem_bty)
-        stmts.extend(item_stmts)
-        local_decl.extend(local_var)
-        tab.append(item_str)
-    count = len(tab)
-    rust_string = f'n_count: {count}, arr: [{", ".join(tab)}]'
-    return stmts, str(rust_string), local_decl
+    # Use array_content for proper struct literal with type name and padding
+    _, raw_str, _ = expression(seqof.value[0], readonly=1) if seqof.value else ('', '', [])
+    result = array_content(seqof, '', seqof.exprType)
+    return stmts, str(result), local_decl
 
 
 @expression.register(ogAST.PrimChoiceItem)
@@ -2998,8 +3060,8 @@ def _choiceitem(choice, **kwargs):
     if isinstance(choice.value['value'], (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         if bty.kind.startswith('Integer'):
             choice_str = choice.value['value'].numeric_value
-        elif bty.kind == 'IA5StringType':
-            choice_str = ia5string_raw(choice.value['value'])
+        elif bty.kind in ('IA5StringType', 'StringType'):
+            choice_str = array_content(choice.value['value'], choice_str, choice.value['value'].exprType)
         else:
             choice_str = array_content(choice.value['value'], choice_str, bty)
 
