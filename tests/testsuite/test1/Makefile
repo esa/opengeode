@@ -76,9 +76,10 @@ coverage:
 
 .PHONY: edit test-parse test-qgen-parse test-ada test-llvm coverage test-rust
 
-# Override shared.mk clean to preserve og_ri.adb
+# Override shared.mk clean to preserve og_ri.adb and main.rs
 clean:
 	-mv og_ri.adb og_ri.adb.bak 2>/dev/null
+	-mv main.rs main.rs.bak 2>/dev/null
 	gnat clean *.adb
 	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
@@ -88,3 +89,4 @@ clean:
 		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
 		   Cargo.toml target
 	-mv og_ri.adb.bak og_ri.adb 2>/dev/null
+	-mv main.rs.bak main.rs 2>/dev/null
