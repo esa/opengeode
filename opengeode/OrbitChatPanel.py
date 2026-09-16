@@ -19,6 +19,7 @@ Copyright (c) 2012-2026 Maxime Perrotin & European Space Agency
 from __future__ import annotations
 
 import os
+import shutil
 import threading
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
@@ -27,6 +28,14 @@ from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QMessageBox, QPushButton,
                                QTextEdit, QVBoxLayout, QWidget)
 
 __all__ = ["OrbitChatPanel", "orbit_acp_available"]
+
+# The name of the SDL model-construction skill bundled with OpenGEODE, as
+# declared in the YAML frontmatter of orbit_skills/SDL_SKILL_DOCUMENTATION.md.
+# The panel installs this skill into orbit's global skills directory at
+# startup so orbit discovers it and advertises it in <available_skills>
+# every turn. The briefing tells the model to load it via the skill() tool.
+SKILL_NAME = "sdl-model-construction"
+SKILL_FILENAME = "SDL_SKILL_DOCUMENTATION.md"
 
 # The orbit_acp import is wrapped so OpenGEODE never fails to start when the
 # library (or orbit itself) is absent. Everything below guards on these.
@@ -52,6 +61,63 @@ def orbit_acp_available() -> bool:
         return bool(orbit_acp.available())
     except Exception:
         return False
+
+
+# ---------------------------------------------------------------------------
+# Skill installation: copy the bundled SDL skill into orbit's global skills
+# directory so orbit can discover it. Orbit discovers skills from
+# ~/.config/orbit/skills/ (global) and <project>/.orbit/skills/
+# (per-project). The conversation's cwd is the model's directory, which
+# generally has no .orbit/skills/, so the global directory is the
+# reliable place.
+# ---------------------------------------------------------------------------
+def _orbit_global_skills_dir() -> str:
+    """The global directory orbit scans for skills, mirroring orbit's own
+    config.paths._global_dir() / "skills" logic."""
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    return os.path.join(base, "orbit", "skills")
+
+
+def _bundled_skill_path() -> str:
+    """The path to the SDL skill file bundled alongside the OpenGEODE
+    package. Checks several candidate locations so the skill is found
+    whether OpenGEODE runs from the source checkout (orbit_skills/ next
+    to the opengeode/ package dir) or from an installed wheel (the
+    orbit_skills/ directory copied into the package itself)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        # Source checkout: opengeode/../orbit_skills/
+        os.path.join(os.path.dirname(here), "orbit_skills", SKILL_FILENAME),
+        # Installed package: opengeode/orbit_skills/
+        os.path.join(here, "orbit_skills", SKILL_FILENAME),
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    return candidates[0]  # default to source-tree path
+
+
+def _install_skill() -> None:
+    """Copy the bundled SDL skill into orbit's global skills directory so
+    orbit can discover it by name. Safe to call on every startup: it only
+    copies when the destination is missing or out of date. Silently skips
+    when the source is absent (e.g. running from a build that did not ship
+    the skill)."""
+    src = _bundled_skill_path()
+    if not os.path.isfile(src):
+        return
+    dest_dir = _orbit_global_skills_dir()
+    dest = os.path.join(dest_dir, SKILL_FILENAME)
+    try:
+        os.makedirs(dest_dir, exist_ok=True)
+        if (not os.path.isfile(dest)
+                or os.path.getmtime(src) > os.path.getmtime(dest)):
+            shutil.copy2(src, dest)
+    except OSError:
+        # If we cannot write to the config directory, orbit simply will
+        # not discover the skill; the panel still works, just without
+        # the SDL guidance loaded. Not worth a user-visible error.
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +161,15 @@ def _sdl_briefing(pr_file: str, asn1_file: str) -> str:
     parts.append(
         "\nWhen you need to run a command or edit a file, ask for "
         "permission: the person using the editor will approve it."
+    )
+    parts.append(
+        f"\nA skill called '{SKILL_NAME}' is available to you. "
+        f"It contains the complete syntax and semantic reference for "
+        f"creating and modifying SDL models for OpenGEODE. Load it with "
+        f"skill(name=\'{SKILL_NAME}\') BEFORE working on any SDL "
+        f"model — do not merely mention it. The skill covers grammar, "
+        f"semantic rules, ASN.1 integration, CLI, CIF annotations, and "
+        f"the agent operating procedure for safe model editing."
     )
     return "\n".join(parts)
 
@@ -385,6 +460,8 @@ class OrbitChatPanel(QWidget):
     def _start_conversation(self):
         """Open the conversation, with the model directory as cwd and a
         briefing that tells orbit about the SDL model."""
+        # Install the bundled SDL skill so orbit can discover and load it.
+        _install_skill()
         self._messages = [
             {"role": "system", "html": "<i>Starting orbit…</i>"}
         ]

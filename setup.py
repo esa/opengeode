@@ -25,6 +25,7 @@ setup(
     install_requires=['pyside6'],
     tests_require=['tabulate'],
     include_package_data=True,
+    package_data={'opengeode': ['orbit_skills/*.md']},
     url='http://opengeode.net',
     python_requires='>=3.7',
     classifiers=[
