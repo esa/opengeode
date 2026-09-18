@@ -231,11 +231,9 @@ Both use the same four `Helper` functions for AST preprocessing, ASN.1 datamodel
 
 ## Non-Implemented / Missing Features in Rust
 
-### 1. Exported procedure RPC transitions (**MISSING**)
+### 1. Exported procedure RPC transitions (**FIXED**)
 
-Ada (`AdaGenerator.py:3868-3896`) injects `{proc_name}_Transition` procedure calls into return terminators of exported procedures, enabling state changes after RPC calls. Rust has no equivalent — exported procedure calls do not trigger state transitions.
-
-**Impact:** When an exported procedure returns, any state transition specified in the SDL model for that return is silently ignored in Rust.
+Ada (`AdaGenerator.py:3868-3896`) injects `{proc_name}_Transition` procedure calls into return terminators of exported procedures, enabling state changes after RPC calls. **Rust now implements the same logic** in `RustGenerator.py` `_inner_procedure` — walks all transitions (start + floating labels) recursively looking for `return` terminators, and appends a `ProcedureCall` AST node calling `{proc_name}_Transition`. The `ProcedureCall` handler detects `_Transition` calls and generates them without the `ri_` prefix (calling the PI function directly).
 
 ### 2. Simu PI function exports (**PARTIAL**)
 
@@ -345,7 +343,7 @@ Ada generates `null;` for empty transitions (line 3539). Rust generates `// (emp
 
 | # | Feature | Status in Rust | Severity |
 |---|---------|---------------|----------|
-| 1 | Exported procedure RPC transitions | Missing | High |
+| 1 | Exported procedure RPC transitions | Fixed | — |
 | 2 | Simu PI function exports | Partial | Medium |
 | 3 | `_simu_continue` export | Missing | Medium |
 | 4 | `Dest_PID` support for RIs | Missing | High |

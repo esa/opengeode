@@ -1378,6 +1378,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         else:
             if 'PID' in TYPES:
                 param_spec = f'(dest_pid: {ASN1SCC}PID)'
+            else:
+                param_spec = '()'
 
         if not instance:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{param_spec} {{ /* RI stub - implement me */ }}')
@@ -1713,6 +1715,7 @@ def _call_external_function(output, **kwargs):
                 code.extend(call_code)
             continue
 
+        is_transition_call = False
         proc, out_sig = None, None
         try:
             out_sig, = [sig for sig in OUT_SIGNALS
@@ -1727,15 +1730,24 @@ def _call_external_function(output, **kwargs):
                 if proc.external:
                     out_sig = proc
             except ValueError:
+                is_transition_call = False
                 for sig in PROCEDURES:
                     if signal_name.lower() == f'{sig.inputString.lower()}_transition':
                         out_sig = sig
+                        is_transition_call = True
                         break
                 else:
                     LOG.warning(f'Could not find: {signal_name}')
                     return code, []
 
         if out_sig:
+            # For _Transition calls (exported procedure RPC transitions),
+            # the target is a PI function, not an RI — call without ri_ prefix
+            if is_transition_call:
+                # _Transition PI has no parameters
+                call_code.append(f'{signal_name}();')
+                code.extend(call_code)
+                continue
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -2361,6 +2373,41 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
                 code.append(f'let mut {var_name}: {typename} = Default::default();')
 
         Helper.inner_labels_to_floating(proc)
+
+        # Check if the top level process has continuous signals. This is also
+        # taken into account to decide if there is need to call the _Transition
+        # procedure.
+        process_has_cs = any(PROCESS.cs_mapping.values())
+
+        has_transition = any(proc.inputString.lower() == k.lower()
+                             for k in PROCESS.input_mapping.keys()) or process_has_cs
+        if proc.exported and proc.content.start is not None and is_rpc and has_transition:
+            # Exported procedure end calling the corresponding transition
+            # procedure that allows user to change state after RPC call
+            # We need to update all the transitions of the procedure
+            # (including floating labels) that contain a return statement
+            # and add the call to the _Transition procedure before the return
+            trans_with_return = []
+            for each in chain([proc.content.start.transition],
+                    (lab.transition for lab in proc.content.floating_labels)):
+                def rec_transition(trans):
+                    if trans.terminator:
+                        if trans.terminator.kind == 'return':
+                            trans_with_return.append(trans)
+                    elif isinstance(trans.actions[-1], ogAST.Decision):
+                        # There is no terminator, so the transition may finish
+                        # with a DECISION, we must check it recursively
+                        for answer in trans.actions[-1].answers:
+                            rec_transition(answer.transition)
+                rec_transition(each)
+
+            for trans in trans_with_return:
+                call_trans = ogAST.ProcedureCall()
+                call_trans.inputString = f'{proc.inputString}_Transition'
+                trans_proc = f'{proc.inputString}_Transition'
+                call_trans.output = [{'outputName': trans_proc,
+                                     'params': [], 'tmpVars': []}]
+                trans.actions.append(call_trans)
 
         # Check if procedure has floating labels (from inner labels extraction)
         has_labels = len(proc.content.floating_labels) > 0
