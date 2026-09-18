@@ -23,7 +23,7 @@ Features
 - Support for state composition and state aggregation (parallel/nested states)
 - Works on pure PR+CIF files (textual SDL notation)
 - Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
-- Generates Ada code
+- Generates Ada code (and Rust code, prototype - use `--toRust`)
 - Automatic conversion to Statechart diagrams
 - Save the complete or parts of the model to PNG/SVG/PDF files
 - Hyperlinks (link a symbol content to any external document or web page)
@@ -125,6 +125,24 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.9.0 (09/2026)**
+- Introduce a Rust code generator backend (prototype), aligned with ASN1SCC's Rust backend for data types:
+    - new `--toRust` command line option to generate Rust code from SDL models
+    - generates `{process}.rs`, `{process}_ri.rs`, a `Cargo.toml` file, and the ASN.1 datamodel to be processed by `asn1scc -Rust`
+    - covers the features supported by the Ada backend (procedures, timers, continuous signals, state aggregations, process types/instances, expressions and operators, strings and bit/octet string operations, traceability, ...)
+    - new `make test-rust` target: the testsuite compiles the generated code (calling asn1scc for the data types), executes it and checks the output against expected files, like the Ada tests
+    - known limitation: instances of process types (`test-instance`) and a few model-level cases remain expected failures
+    - simulation mode (simu) is not supported in the Rust backend
+- Security fixes in the ASN.1 cache mechanism (`Asn1scc.py`), following a full security audit:
+    - fix two critical vulnerabilities allowing arbitrary code execution when opening a model: cache poisoning via `PROJECT_CACHE` (an attacker able to write to the cache folder could plant a Python module that would be executed on the next parse), and module shadowing (a planted `.py` file in the project directory took precedence over the generated module)
+    - cached ASN.1 modules are now imported by path and their content verified (sha256 + manifest binding the compiler options, the input files and the asn1scc binary) before being executed; entries owned by another user, symlinks, and group/world-writable files are rejected
+    - cache keys now use sha256 and cover all compiler options (`rename_policy`, `ast_version`, `flags`, `extraflags`, `pretty_print`) instead of an md5 of the file contents only, fixing silent reuse of a wrong AST when switching backends/options
+    - reject ASN.1 filenames starting with a dash (argument injection into asn1scc)
+    - harden `asn2dataModel` (sys.path handling, temp dir cleanup, ownership checks on reused dataview modules), fix a pre-existing bug returning a stale dataview on repeated calls with different inputs
+    - cache and debug folders are created with restrictive permissions (0700/0600); a shared cache folder is reported with a warning
+    - 25 new regression tests (`tests/pytests/test_asn1scc_cache.py`) covering all fixes; audit and hardening documentation under `docs/` (`security-audit-asn1scc-cache.md`, `security-hardening-asn1scc-cache.md`)
+- Add support for the destination PID (OUTPUT ... TO) in the C backend, aligned with the Ada backend
 
 **4.8.3 (09/2026)**
 - Add an AI Chat tab in the right panel, communicating with the orbit agent via the `orbit-acp` Python library. The tab passes the current `.pr` and ASN.1 file paths so that orbit can modify the model on disk; it degrades gracefully to a disabled placeholder when the library or orbit is not available
