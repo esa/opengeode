@@ -251,7 +251,9 @@ Ada exports `Execute_Transition` as `{process.name.lower()}_simu_continue` (line
 
 Ada adds `Dest_PID` parameter to RI function signatures when a PID type exists (lines 1120-1128, 1193-1202). Rust now adds `dest_pid` to RI stubs, RI calls, timer stubs, timer calls, and Create handler — using `default_pid()` helper that returns `SELF_PID` for process types and `asn1SccEnv` otherwise.
 
-**Impact:** Process-to-process communication with PID routing is now supported in Rust.
+The C backend now also supports `dest_pid` (matching Ada): RI declarations (output signals, external procedures, timers) gain a trailing `const asn1SccPID dest_pid` when the PID type exists; RI call sites resolve the destination from the `TO` clause (enumerants built via the EnumID lookup — `asn1SccPID_env`, `asn1SccPID_gui` — or passed through for PID variables); timer calls pass `default_pid()`; the instance wrapper forwarders also carry `dest_pid`. Unlike Ada, C has no default parameter values, so the argument is always explicit.
+
+**Impact:** Process-to-process communication with PID routing is now supported in Rust and C.
 
 ### 5. Choice selection conversion functions (**DELIBERATELY SKIPPED**)
 
