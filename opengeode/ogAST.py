@@ -1031,6 +1031,9 @@ class Procedure:
 
     def __init__(self):
         ''' Procedure AST default value '''
+        # See ogAST.Process.__init__ for the rationale: AST nodes that can be
+        # used in place of an SDL_Scene must expose a 'context' attribute.
+        self.context = 'procedure'
         self.inputString = ''
         # keep track of the process name for the context
         self.processName = ''
@@ -1112,6 +1115,12 @@ class Process:
 
     def __init__(self):
         ''' Process AST default values '''
+        # Context tag used by Pr.parse_scene and other parts of the GUI that
+        # may operate on an AST Process object in place of an SDL_Scene.
+        # A Process (and its subclasses) must always expose a 'context'
+        # attribute so that code reading 'scene.context' works regardless of
+        # whether 'scene' is a graphical SDL_Scene or an AST node.
+        self.context = 'process'
         self.processName = None
         # Optional filename containing this process (PR file)
         self.filename = None
@@ -1285,6 +1294,9 @@ class CompositeState(Process):
 
     def __init__(self):
         super().__init__()
+        # Override the 'process' context inherited from Process: a composite
+        # state is rendered in the 'state' context by Pr.parse_scene.
+        self.context = 'state'
         self.statename = ''
         self.state_entrypoints = set()
         self.state_exitpoints = set()

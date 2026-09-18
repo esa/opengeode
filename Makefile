@@ -19,6 +19,9 @@ test-promela:
 test-llvm:
 	@$(MAKE) -s -C tests/testsuite $@
 
+test-rust:
+	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
+
 benchmark:
 	@$(MAKE) -s -C tests/testsuite $@
 
@@ -39,7 +42,7 @@ flake8:
 	@cd opengeode && flake8 opengeode.py Pr.py sdlSymbols.py genericSymbols.py ogParser.py \
 	        AdaGenerator.py Renderer.py Clipboard.py Lander.py ogAST.py ogASTDumper.py \
 			sdlHelp.py undoCommands.py  Connectors.py Asn1scc.py Helper.py \
-	        Statechart.py TextInteraction.py > flake8_report
+	        Statechart.py TextInteraction.py RustGenerator.py > flake8_report
 
 compile-all:
 	# use antlr3 from Debian's python3-antlr3 package
@@ -56,11 +59,19 @@ dependencies:
 	# installing pyside6 through pip because of bugs with QML in the Debian bullseye release
 	python3 -c 'import PySide6' || python3 -m pip install pyside6
 	# python3-antlr3 runtime is not available in any official repo, taking in from TASTE
-	python3 -c 'import antlr3' || python3 -m pip install "https://gitlab.esa.int/api/v4/projects/taste%2Ftaste-setup/packages/generic/dependencies/1.0/antlr3_python3_runtime_3.4.tar.bz2"
+	# The sdist uses an ancient ez_setup.py bootstrap that breaks on modern pip/setuptools,
+	# so we download it, strip the bootstrap, and install from a local directory.
+	python3 -c 'import antlr3' || (python3 -m pip install setuptools && \
+	       cd /tmp && rm -rf antlr3_python3_runtime_3.4 && \
+	       python3 -c "import urllib.request; urllib.request.urlretrieve('https://gitlab.esa.int/api/v4/projects/taste%2Ftaste-setup/packages/generic/dependencies/1.0/antlr3_python3_runtime_3.4.tar.bz2', 'antlr3_python3_runtime_3.4.tar.bz2')" && \
+	       tar xjf antlr3_python3_runtime_3.4.tar.bz2 && \
+	       cd antlr3_python3_runtime_3.4 && \
+	       sed -i '/import ez_setup/d; /ez_setup.use_setuptools/d' setup.py && \
+	       python3 -m pip install --no-build-isolation .)
 	python3 -c 'import pygraphviz' || python3 -m pip install pygraphviz
 	# install ASN1SCC in ~/.local/bin
 	mkdir -p ~/.local/bin
-	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.6.0.1/asn1scc-bin-4.6.0.1.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
+	asn1scc -v || (cd ~/.local ; wget -q -O - https://github.com/maxime-esa/asn1scc/releases/download/4.9.0.0/asn1scc-bin-4.9.0.0.tar.bz2 | tar jxpvf - ; cd bin ; ln -sf ../asn1scc/* .)
 	# install the requirement and review widget
 	@echo "[-] Building Requirements and Review (optional widget)"
 	# Ensure shiboken6 and shiboken6-generator versions match PySide6
@@ -74,7 +85,8 @@ dependencies:
 	       git clone --depth 1 --branch ${QTASTE_VERSION} https://github.com/esa/TasteQtWidgets && \
 	       cd TasteQtWidgets && \
 	       sed -i 's/Py_LIMITED_API=0x03050000/Py_LIMITED_API=0x030D0000/' cmake/KDPySide6ModuleBuild.cmake && \
-	       cd pytastewidgets && python3 ./install.py > /dev/null || exit 1)
+	       cd pytastewidgets && python3 ./install.py > /dev/null) || \
+	       echo "[!] WARNING: Failed to build TasteQtWidgets (optional). Continuing without it."
 	@echo [-] IMPORTANT: Make sure that ~/.local/bin is in your PATH
 
 install: help
@@ -108,5 +120,5 @@ clean:
 	@rm -rf pyinstaller-pyinstaller-953f6e3
 	@rm -rf opengeode/*.pyc dist build *.egg-info
 
-.PHONY: all test-parse test-ada test-llvm benchmark benchmark-O1 benchmark-O2 \
+.PHONY: all test-parse test-ada test-llvm test-rust benchmark benchmark-O1 benchmark-O2 \
 	    benchmark-O3 flake8 coverage compile-all install publish clean help

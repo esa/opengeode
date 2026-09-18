@@ -62,7 +62,11 @@ test-python:
 	python -c "from ctypes import *; test=CDLL('./libog.so'); test.liboginit(); test.og_for_a(); test.og_for_b(); test.og_for_a(); test.og_for_b()"
 
 
+test-rust:
+	$(OPENGEODE) og.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

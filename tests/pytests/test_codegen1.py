@@ -4,8 +4,10 @@ from opengeode.ogParser import (parser_init, antlr3, sdl92Parser, lexer,
         parse_pr, parseSingleElement)
 from opengeode import AdaGenerator
 from opengeode import CGenerator
+from opengeode import RustGenerator
 Ada_Task_Assign = AdaGenerator._task_assign
 C_Task_Assign = CGenerator._task_assign
+Rust_Task_Assign = RustGenerator._task_assign
 
 # return a string corresponding to a token number:
 token = lambda num: lexer.tokenNamesMap[num]
@@ -48,7 +50,14 @@ def test_codegen():
     cmt = c_code[0]
     stmt = c_code[1]
     # check that the generated code in Ada is the expected one:
-    assert stmt == 'a = (asn1SccMyInteger) 42;'
+    assert stmt == 'a = (asn1SccMyInteger) 42;  // default assignment'
+    # Generate the code in Rust
+    RustGenerator.TYPES = process_ast.dataview
+    rust_code, rust_local_decl = Rust_Task_Assign(assign)
+    cmt = rust_code[0]
+    stmt = rust_code[1]
+    # check that the generated code in Rust is the expected one:
+    assert stmt == 'a = 42;'
 
 
 if __name__ == '__main__':

@@ -66,6 +66,41 @@ STRING_INCLUDE = False
 STDLIB_INCLUDE = False
 
 
+def default_pid():
+    ''' Default value for the Dest_PID parameter of RIs
+
+    The PID type is provided by TASTE and exists only when the system
+    defines one. The default destination is the environment ("env").
+    In C there is no default parameter value, so the caller always
+    passes an explicit value: use the "env" enumerant, built the same
+    way as _enumerated_value (the EnumID contains the type name when
+    asn1scc renames enumerants).
+    '''
+    try:
+        pid_basic = TYPES['PID'].type
+        enum_name = getattr(pid_basic, 'CName', 'PID')
+        for each in pid_basic.EnumValues.keys():
+            if each.lower() == 'env':
+                enum_id = pid_basic.EnumValues[each].EnumID
+                break
+        else:
+            enum_id = f'{enum_name}_env'
+    except (AttributeError, KeyError):
+        # PID is not an enumerated type (should not happen with TASTE)
+        return f'{ASN1SCC}PID_env'
+    if enum_id.startswith(enum_name):
+        return f'{ASN1SCC}{enum_id}'
+    return f'{ASN1SCC}{enum_name}_{enum_id}'
+
+
+def pid_type_in_view():
+    ''' True if the PID type is defined or visible in the dataview '''
+    try:
+        return 'PID' in TYPES
+    except NameError:
+        return False
+
+
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
@@ -183,13 +218,25 @@ def _process(process, instance=False, **kwargs):
         for ri in process.output_signals:
             if 'type' in ri:
                 ri_type = type_name(ri['type'])
-                sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
-                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
-                call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
+                if pid_type_in_view():
+                    # the PID type is provided by TASTE, does not exist otherwise
+                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param, dest_pid)'
+                else:
+                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
+                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
+                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
             else:
-                sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
-                sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
-                call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
+                if pid_type_in_view():
+                    # the PID type is provided by TASTE, does not exist otherwise
+                    sig_type = f'void {type_name_str}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(dest_pid)'
+                else:
+                    sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
+                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
+                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
             
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
@@ -203,6 +250,10 @@ def _process(process, instance=False, **kwargs):
                     p_type = type_name(param["type"])
                     args.append(f'{p_type} *{param["name"]}')
                     call_args.append(param["name"])
+                if pid_type_in_view():
+                    # the PID type is provided by TASTE, does not exist otherwise
+                    args.append(f'const {ASN1SCC}PID dest_pid')
+                    call_args.append('dest_pid')
                 
                 sig_type = f'void {type_name_str}_RI_{proc.inputString}({", ".join(args)})'
                 sig_inst = f'void {process_instance.processName}_RI_{proc.inputString}({", ".join(args)})'
@@ -215,18 +266,30 @@ def _process(process, instance=False, **kwargs):
 
         for timer in process.timers:
             # set
-            sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-            sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-            call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName}_RI_set_{timer}(val, dest_pid)'
+            else:
+                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
             wrapper_h.append(f'extern {sig_inst};\n')
 
             # reset
-            sig_type = f'void {type_name_str}_RI_reset_{timer}()'
-            sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
-            call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                sig_type = f'void {type_name_str}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName}_RI_reset_{timer}(dest_pid)'
+            else:
+                sig_type = f'void {type_name_str}_RI_reset_{timer}()'
+                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
+                call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
@@ -689,7 +752,11 @@ def _call_external_function(output, **kwargs):
             stmts.extend(param_stmts)
             decls.extend(p_local)
 
-            stmts.append('RESET_{}();'.format(p_id))
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                stmts.append('RESET_{}({});'.format(p_id, default_pid()))
+            else:
+                stmts.append('RESET_{}();'.format(p_id))
 
             continue
         elif signal_name.lower() == 'set_timer':
@@ -708,7 +775,11 @@ def _call_external_function(output, **kwargs):
             tmp_id = 'tmp' + str(out['tmpVars'][0])
             decls.append(f'{ASN1SCC}T_UInt32 {tmp_id};')
             stmts.append('{tmp} = {val};'.format(tmp=tmp_id, val=t_val))
-            stmts.append("SET_{timer}(&{value});".format(timer=p_id, value=tmp_id))
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                stmts.append("SET_{timer}(&{value}, {pid});".format(timer=p_id, value=tmp_id, pid=default_pid()))
+            else:
+                stmts.append("SET_{timer}(&{value});".format(timer=p_id, value=tmp_id))
 
             continue
 
@@ -767,6 +838,33 @@ def _call_external_function(output, **kwargs):
                     return stmts, decls
 
         if out_sig:
+            # Resolve the destination PID (used when the model sends a
+            # message "TO <pid>", and by process types in TASTE)
+            dest_pid = None
+            if pid_type_in_view():
+                # Build the C enumerant name for the destination, in the
+                # same way as _enumerated_value does (the EnumID contains
+                # the type name when asn1scc renames enumerants)
+                pid_basic = TYPES['PID'].type
+                enum_name = getattr(pid_basic, 'CName', 'PID')
+                wanted = (out.get('toDest') or 'env')
+                enum_id = None
+                if isinstance(wanted, ogAST.PrimVariable):
+                    _, dest_pid, _ = expression(wanted)
+                else:
+                    wanted = wanted.replace('_', '-').lower()
+                    for each in pid_basic.EnumValues.keys():
+                        if each.lower() == wanted:
+                            enum_id = pid_basic.EnumValues[each].EnumID
+                            break
+                    if enum_id is None:
+                        # Unknown destination: fall back to the environment
+                        enum_id = f'{enum_name}_env'
+                    if enum_id.startswith(enum_name):
+                        dest_pid = f'{ASN1SCC}{enum_id}'
+                    else:
+                        dest_pid = f'{ASN1SCC}{enum_name}_{enum_id}'
+
             list_of_params = []
 
             for idx, param in enumerate(out.get('params') or []):
@@ -824,6 +922,9 @@ def _call_external_function(output, **kwargs):
                 RIName = out['outputName']
             if is_transition_call and IS_INSTANCE:
                 list_of_params.insert(0, 'ctxt')
+            if dest_pid is not None:
+                # the RI has an extra dest_pid parameter (PID type exists)
+                list_of_params.append(dest_pid)
             if list_of_params:
                 params = ', '.join(list_of_params)
                 stmts.append(f'{RIName}({params});')
@@ -3675,9 +3776,18 @@ def processing_output_signals(process):
 
         if 'type' in signal:
             typename = type_name(signal['type'])
-            param_spec = u'({sort} * {pName})'.format(pName=param_name, sort=typename)
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                param_spec = u'({sort} * {pName}, const {pid} dest_pid)'.format(
+                    pName=param_name, sort=typename, pid=f'{ASN1SCC}PID')
+            else:
+                param_spec = u'({sort} * {pName})'.format(pName=param_name, sort=typename)
         else:
-            param_spec = u'()'
+            if pid_type_in_view():
+                # the PID type is provided by TASTE, does not exist otherwise
+                param_spec = u'(const {pid} dest_pid)'.format(pid=f'{ASN1SCC}PID')
+            else:
+                param_spec = u'()'
 
         output_signals_code.append(u'// Required interface "' + signal['name'] + '"')
 
@@ -3701,6 +3811,10 @@ def processing_external_procedures(process, output_signals_code):
         for param in proc.fpar:
             typename = type_name(param['type'])
             params.append(u'{ty} * {par}'.format(par=param['name'], ty=typename))
+
+        if pid_type_in_view():
+            # the PID type is provided by TASTE, does not exist otherwise
+            params.append(u'const {pid} dest_pid'.format(pid=f'{ASN1SCC}PID'))
 
         if params:
             ri_header += u'(' + u','.join(params) + ')'
@@ -3726,8 +3840,13 @@ def processing_timers(process, output_signals_code):
     for timer in process.timers:
         timers_header_file_code.append(u'// Timer {} SET and RESET functions'.format(timer))
 
-        timers_header_file_code.append(f'void {process_name.lower()}_RI_SET_{timer}(const {ASN1SCC}T_UInt32 * val);')
-        timers_header_file_code.append(f'void {process_name.lower()}_RI_RESET_{timer}();')
+        if pid_type_in_view():
+            # the PID type is provided by TASTE, does not exist otherwise
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_SET_{timer}(const {ASN1SCC}T_UInt32 * val, const {ASN1SCC}PID dest_pid);')
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_RESET_{timer}(const {ASN1SCC}PID dest_pid);')
+        else:
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_SET_{timer}(const {ASN1SCC}T_UInt32 * val);')
+            timers_header_file_code.append(f'void {process_name.lower()}_RI_RESET_{timer}();')
 
         output_signals_code.append('#define SET_{timer} {pn}_RI_SET_{timer}'.format(timer=timer, pn=process_name.lower()))
         output_signals_code.append('#define RESET_{timer} {pn}_RI_RESET_{timer}'.format(timer=timer, pn=process_name.lower()))

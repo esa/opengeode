@@ -51,4 +51,8 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) toto.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+test-rust:
+	$(OPENGEODE) toto.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

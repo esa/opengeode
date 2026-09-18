@@ -36,6 +36,9 @@ test-llvm: test-parse
 
 test-vhdl : test-parse
 
+test-rust: test-parse
+	@:
+
 coverage:
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

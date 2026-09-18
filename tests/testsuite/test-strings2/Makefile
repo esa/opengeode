@@ -37,4 +37,8 @@ test-llvm: test.o dataview-uniq.o | test_llvm.o
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+test-rust:
+	$(OPENGEODE) og.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
+.PHONY: all edit test-parse test-ada test-llvm test-rust coverage

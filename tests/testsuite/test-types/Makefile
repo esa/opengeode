@@ -32,9 +32,13 @@ test-c: function1.c
 test-if:
 	sdl2if function1.pr sytem_structure.pr
 
+test-rust:
+	$(OPENGEODE) function1.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-llvm: function1.o
 
 coverage:
 	coverage run -p $(OPENGEODE) function1.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

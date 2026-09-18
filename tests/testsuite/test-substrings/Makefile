@@ -37,6 +37,10 @@ test-c: myfunction.c | test_ada.o
 test-if:
 	sdl2if myfunction.pr system_structure.pr
 
+test-rust:
+	$(OPENGEODE) myfunction.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-llvm: myfunction.o dataview-uniq.o | test_llvm.o
 	$(CC) myfunction.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm | diff expected -
@@ -44,4 +48,4 @@ test-llvm: myfunction.o dataview-uniq.o | test_llvm.o
 coverage:
 	coverage run  -p $(OPENGEODE) myfunction.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

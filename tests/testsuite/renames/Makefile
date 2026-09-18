@@ -29,10 +29,14 @@ test-ada:
 	$(MAKE) -f Makefile.renaming
 	cp test.ada code && cd code && gnat make test.ada && ./test | diff ../expected - || exit 1
 
-test-c: 
+test-c:
 	$(OPENGEODE) *.pr --toC
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) *.c -o test_c && ./test_c | diff expected -
+
+test-rust:
+	$(OPENGEODE) *.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
 test-if:
 	sdl2if *.pr
@@ -44,4 +48,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) *.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

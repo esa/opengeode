@@ -33,6 +33,10 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 test-c:
 	$(OPENGEODE) --toC orchestrator.pr system_structure.pr 2>&1 | sort | diff expected_c - || exit 0
 
+test-rust:
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
 
@@ -50,4 +54,4 @@ test-python:
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

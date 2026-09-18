@@ -37,10 +37,14 @@ test-ada:
 	$(OPENGEODE) controller.pr system_structure.pr --toAda
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
 
-test-c: 
+test-c:
 	$(OPENGEODE) controller.pr system_structure.pr --toC
-	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn 
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(CC) -O$(O) -c *.c
+
+test-rust:
+	$(OPENGEODE) controller.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
 test-if:
 	sdl2if controller.pr system_structure.pr
@@ -55,4 +59,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) controller.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage simu
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage simu

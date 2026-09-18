@@ -32,6 +32,8 @@ def call_qgensdl(options):
         lang = 'c'
     elif options.toAda:
         lang = 'ada'
+    elif hasattr(options, 'toRust') and options.toRust:
+        lang = 'rust'
 
     LOG.debug('Generating ' + lang + ' code using QGen from ' + str(options.files))
 

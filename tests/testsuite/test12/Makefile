@@ -39,7 +39,11 @@ test-export:
 	$(OPENGEODE) --png --pdf --svg trafficlight.pr system_structure.pr
 	$(OPENGEODE) --png --pdf --svg --split trafficlight.pr system_structure.pr
 
+test-rust:
+	$(OPENGEODE) trafficlight.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) trafficlight.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm test-exports coverage
+.PHONY: all edit test-parse test-ada test-llvm test-exports coverage test-rust

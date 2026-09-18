@@ -28,8 +28,12 @@ test-qgen-gt-c:
 test-ada: 
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
 
-test-c: 
+test-c:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toC
+
+test-rust:
+	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
 test-if:
 	sdl2if DemoDeviceDSAP_fixed.pr
@@ -40,4 +44,4 @@ test-llvm:
 coverage:
 	coverage run -p $(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust test-llvm coverage

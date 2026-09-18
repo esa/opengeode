@@ -42,7 +42,11 @@ test-llvm: orchestrator.o dataview-uniq.o | test_llvm.o
 	$(CC) orchestrator.o dataview-uniq.o test_llvm.o -o test_llvm -lm
 	./test_llvm
 
+test-rust:
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm coverage test-rust

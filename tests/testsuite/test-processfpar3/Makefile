@@ -28,6 +28,10 @@ test-ada: function_in_sdl.ali dataview-uniq.o
 test-c: function_in_sdl.c dataview-uniq.o
 	$(CC) function_in_sdl.c -c -o function_in_sdl.o
 
+test-rust:
+	$(OPENGEODE) function_in_sdl.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 test-if:
 	sdl2if function_in_sdl.pr system_structure.pr
 
@@ -36,4 +40,4 @@ test-llvm: function_in_sdl.o
 coverage:
 	coverage run -p $(OPENGEODE) function_in_sdl.pr system_structure.pr --toAda
 
-.PHONY: edit test-parse test-qgen-parse test-ada test-llvm coverage
+.PHONY: edit test-parse test-qgen-parse test-ada test-rust test-llvm coverage

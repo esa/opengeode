@@ -1450,8 +1450,34 @@ def rebalance_horizontal_branches(parent, deleted_item=None):
     # Spacing between adjacent branches (same as insert_symbol)
     gap = 20
 
-    # Total width of all remaining branches
-    total_width = sum(s.boundingRect().width() for s in siblings)
+    # Total width of all remaining branches (include children, since a
+    # branch's vertical followers may be wider than the top horizontal
+    # symbol).  We compute a "symbols-only" bounding rect that excludes
+    # connections (whose boundingRect is inflated by a 15px selection
+    # stroker and by the diagonal join line back to the parent, which
+    # would corrupt the measurement).  The left edge of this rect may be
+    # negative when a child is wider than the top symbol and centered
+    # below it (see VerticalSymbol.set_valid_pos).
+    def _symbol_branch_rect(symb):
+        ''' Compute the bounding rect of symb and all its Symbol descendants
+            (excluding connections, text, grabbers) in symb's local coords.
+            childrenBoundingRect() can't be used because it includes
+            connections whose boundingRect is inflated by a 15px selection
+            stroker and the diagonal join line back to the parent. '''
+        rect = symb.boundingRect()
+        for child in symb.childItems():
+            if isinstance(child, Symbol):
+                # Recursively get the child's own branch rect (in child's
+                # local coords), then map it into symb's local coords.
+                # child.pos() is the child's origin in symb's coords; the
+                # child's local rect may have a negative left edge.
+                child_local = _symbol_branch_rect(child)
+                child_rect = child_local.translated(child.pos())
+                rect = rect.united(child_rect)
+        return rect
+
+    branch_rects = [_symbol_branch_rect(s) for s in siblings]
+    total_width = sum(r.width() for r in branch_rects)
     total_span = total_width + (len(siblings) - 1) * gap
 
     # Center the span below the parent symbol
@@ -1460,17 +1486,22 @@ def rebalance_horizontal_branches(parent, deleted_item=None):
 
     scene = parent.scene()
 
-    for sibling in siblings:
-        new_pos = QPointF(current_x, sibling.y())
+    for sibling, branch_rect in zip(siblings, branch_rects):
+        # Position the sibling's origin so that the branch's actual left
+        # edge (which may be left of the origin due to wide children)
+        # aligns with the start of its slot.  This keeps branches
+        # non-overlapping and evenly spaced.
+        new_x = current_x - branch_rect.x()
+        new_pos = QPointF(new_x, sibling.y())
         old_pos = sibling.position
         if old_pos != new_pos:
-            sibling.pos_x = current_x
+            sibling.pos_x = new_x
             if scene and hasattr(scene, 'undo_stack') and scene.undo_stack:
                 undo_cmd = undoCommands.MoveSymbol(
                     sibling, old_pos, sibling.position
                 )
                 scene.undo_stack.push(undo_cmd)
-        current_x += sibling.boundingRect().width() + gap
+        current_x += branch_rect.width() + gap
 
     # Update connections and connection points on parent and ancestors
     current = parent
@@ -1514,10 +1545,9 @@ def clean_layout(symbol):
             return
         visited.add(id(item))
 
-        # Rebalance horizontal branches directly under item if any
-        rebalance_horizontal_branches(item)
-
-        # Recursively visit all child symbols
+        # Recurse into children first (bottom-up): rebalancing a sub-branch
+        # may change its width, so the deepest levels must be balanced before
+        # the parent uses those widths to position its own branches.
         try:
             children = item.childItems()
         except AttributeError:
@@ -1526,6 +1556,9 @@ def clean_layout(symbol):
         for child in children:
             if isinstance(child, Symbol):
                 _rebalance_rec(child)
+
+        # Rebalance horizontal branches directly under item if any
+        rebalance_horizontal_branches(item)
 
     _rebalance_rec(root)
 

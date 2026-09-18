@@ -67,7 +67,11 @@ test-python:
 	$(CC) -shared -fPIC -o liborchestrator.so b~orchestrator.o orchestrator.o taste_basictypes.o adaasn1rtl.o external_proc.o
 	python -c "from ctypes import *; test=CDLL('./liborchestrator.so'); test.liborchestratorinit()"
 
+test-rust:
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage simu
+.PHONY: all edit test-parse test-ada test-llvm coverage simu test-rust

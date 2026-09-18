@@ -41,7 +41,11 @@ test-llvm:
 	$(LLC) *.ll
 	$(CC) -O$(O) -c *.s
 
+test-rust:
+	$(OPENGEODE) testsc.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) testsc.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage
+.PHONY: all edit test-parse test-ada test-llvm coverage test-rust

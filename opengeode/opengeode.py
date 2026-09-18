@@ -66,9 +66,11 @@ from . import(undoCommands,  # NOQA
               Helper,
               Pr,
               CGenerator,
+              RustGenerator,
               Connectors,  # NOQA
               TextInteraction)  # NOQA
 from .ModelMonitor import ModelLockManager, FileMonitor
+from .OrbitChatPanel import OrbitChatPanel
 try:
     import pygraphviz  # NOQA
 except ImportError:
@@ -142,6 +144,7 @@ MODULES : List[types.ModuleType] = [
     TextInteraction,
     Connectors,
     CGenerator,
+    RustGenerator,
 ]
 
 # Define custom UserRoles
@@ -2360,6 +2363,32 @@ class SDL_View(QGraphicsView):
         ''' Save As function '''
         self.save_diagram(save_as=True)
 
+    def _save_backup(self):
+        ''' Save a copy of the current model to <filename>.pr.backup
+
+        Called before reloading an externally modified model, so that the
+        last known-good state (as currently rendered in the editor) can be
+        restored if the reloaded file turns out to be unparseable. The
+        backup is a full SDL system generated from the scene, written next
+        to the original file. Returns the backup path, or None on failure.
+        '''
+        if not self.filename:
+            return None
+        scene = self.top_scene()
+        if not scene:
+            return None
+        backup_path = self.filename + '.backup'
+        try:
+            pr_raw = Pr.parse_scene(
+                scene, full_model=True if not self.readonly_pr else False)
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(pr_raw))
+            LOG.info(f'Backup of current model saved to {backup_path}')
+            return backup_path
+        except Exception as err:
+            LOG.error(f'Could not save backup file {backup_path}: {err}')
+            return None
+
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
         if getattr(self, 'is_read_only', False) and not save_as:
@@ -2469,8 +2498,8 @@ class SDL_View(QGraphicsView):
         if (not autosave
                and scene.ast is not None
                and len(scene.ast.processes) == 1
-               and (self.options.toAda or self.options.toC)):
-            # When --edit is combined with --toAda or --toC, generate the
+               and (self.options.toAda or self.options.toC or self.options.toRust)):
+            # When --edit is combined with --toAda, --toC, or --toRust, generate the
             # code at the same time as the model, to save build time in TASTE
             process, = scene.ast.processes
             try:
@@ -2611,13 +2640,21 @@ clean:
         except IOError:
             LOG.error('Aborting: could not open or parse input file')
             sdlSymbols.CONTEXT = ogAST.Block()
-            return
+            # Keep monitoring the files even on parse failure, so that a
+            # later external fix is offered for reload again.
+            self.file_monitor.track_files(set(files))
+            return False
+        # Track whether parsing produced an unrenderable model (no process
+        # was found). The caller (reload path) uses this to offer restoring
+        # from a backup file.
+        parse_failed = False
         if not ast.processes:
             LOG.error("No PROCESS was parsed in the input file(s)")
             process = ogAST.Process()
             process.processName = "Syntax_Error"
             block = ogAST.Block()
             block.processes = [process]
+            parse_failed = True
         elif len(ast.processes) == 1:
             process,         = ast.processes
             if not process.instance_of_name:
@@ -2627,7 +2664,9 @@ clean:
             else:
                 LOG.error("Unrecoverable parsing errors were detected")
                 self.messages_window.addItem("Could not parse model")
-                return
+                # Keep monitoring the files despite the parse failure.
+                self.file_monitor.track_files(set(files))
+                return False
             self.readonly_pr = ast.pr_files - {self.filename}
             try:
                 syst, = ast.systems
@@ -2643,7 +2682,9 @@ clean:
             # More than one process
             if sdlSymbols.TASTE_TARGET:
                 LOG.error("More than one process is not supported")
-                return
+                # Keep monitoring the files despite this error.
+                self.file_monitor.track_files(set(files))
+                return False
             else:
                 self.filename = list(ast.processes)[0].filename if ast.processes else None
                 self.readonly_pr = set()
@@ -2674,7 +2715,9 @@ clean:
             LOG.debug("[Rendering] " + str(err))
         self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
-        self.scene().name = 'block {}[*]'.format(block.name or list(ast.processes)[0].processName)
+        self.scene().name = 'block {}[*]'.format(
+            block.name or (block.processes[0].processName if block.processes
+                           else 'unnamed'))
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.update_phantom_rect()
         
@@ -2730,6 +2773,7 @@ clean:
         except Exception:
             pass
         self.file_monitor.track_files(monitored)
+        return not parse_failed
 
     def open_diagram(self):
         ''' Load one or several .pr file and display the state machine '''
@@ -3198,6 +3242,22 @@ class OG_MainWindow(QMainWindow):
         help_dock = self.findChild(QDockWidget, 'help_dock')
         self.tabifyDockWidget(asn1_dock, dict_dock)
         self.tabifyDockWidget(asn1_dock, help_dock)
+
+        # Set up the AI chat dock (orbit, via the orbit-acp library).
+        # The panel degrades to a disabled placeholder when the library or
+        # orbit is not available, so it never breaks OpenGEODE.
+        orbit_dock = QDockWidget("AI Chat", self)
+        orbit_dock.setObjectName('orbit_chat_dock')
+        orbit_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.orbit_chat_panel = OrbitChatPanel(self, orbit_dock)
+        orbit_dock.setWidget(self.orbit_chat_panel)
+        self.addDockWidget(Qt.RightDockWidgetArea, orbit_dock)
+        self.tabifyDockWidget(asn1_dock, orbit_dock)
+
+        # Make the Help tab the one shown by default (the last tabified
+        # dock would otherwise be raised, i.e. the AI Chat tab).
+        help_dock.raise_()
+
         self.asn1_browser = self.findChild(QTextBrowser, 'asn1_browser')
         self.view.update_asn1_dock.connect(self.set_asn1_view)
         if not options.taste_target:
@@ -4394,12 +4454,57 @@ class OG_MainWindow(QMainWindow):
                             continue
 
                     if self.view.filename:
-                        self.view.load_file([self.view.filename], is_reload=True)
+                        # Save a backup of the current model before reloading,
+                        # so it can be restored if the reloaded file is broken.
+                        backup_path = self.view._save_backup()
+                        success = self.view.load_file(
+                            [self.view.filename], is_reload=True)
+                        if not success and backup_path:
+                            # The reloaded model had syntax errors and could
+                            # not be rendered. Offer to restore the backup or
+                            # continue with the broken model (still monitored).
+                            self._offer_backup_recovery(backup_path)
                     break
                 else:
                     self.view.file_monitor.update_file(filepath)
         finally:
             self.file_check_timer.start(3000)
+
+    def _offer_backup_recovery(self, backup_path):
+        ''' After a failed reload (syntax errors), offer to restore the
+        last known-good model from the backup, or continue with the
+        broken model while keeping the file monitored. '''
+        if not backup_path or not os.path.isfile(backup_path):
+            return
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("OpenGEODE - Reload Failed")
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setText(
+            "The reloaded model contains syntax errors and could not be "
+            "rendered. A backup of the previous model was saved to:\n"
+            f"{backup_path}")
+        msg_box.setInformativeText(
+            "Restore the model from the backup, or continue with the broken "
+            "model (the file stays monitored for further changes)?")
+        btn_restore = msg_box.addButton("Restore from backup",
+                                         QMessageBox.AcceptRole)
+        btn_continue = msg_box.addButton("Continue with broken model",
+                                          QMessageBox.RejectRole)
+        msg_box.exec()
+        if msg_box.clickedButton() == btn_restore:
+            # Remember the original model file: load_file will set
+            # self.filename to the backup path, so restore it afterwards.
+            original_filename = self.view.filename
+            self.view.load_file([backup_path], is_reload=True)
+            # Restore the original filename so future saves go to the .pr
+            # file, not the .backup copy, and keep both files monitored.
+            if original_filename:
+                self.view.filename = original_filename
+                self.view.file_monitor.track_files(
+                    {original_filename, backup_path})
+        # If "Continue": do nothing special — load_file already re-tracked
+        # the files (the monitoring bug is fixed), so further external
+        # changes will be offered again.
 
     # pylint: disable=C0103
     def closeEvent(self, event):
@@ -4407,6 +4512,10 @@ class OG_MainWindow(QMainWindow):
         if not self.view.is_model_clean() and not self.view.propose_to_save():
             event.ignore()
         else:
+            # Stop the orbit chat conversation (if any) on a worker thread
+            # so closing the window does not wait for the orbit process.
+            if hasattr(self, 'orbit_chat_panel') and self.orbit_chat_panel:
+                self.orbit_chat_panel._agent_stop_on_close()
             if hasattr(self.view, 'lock_manager'):
                 self.view.lock_manager.release_locks()
             if hasattr(self.view, 'file_monitor'):
@@ -4482,6 +4591,8 @@ def parse_args():
             help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
             help='Generate C code for the .pr file ')
+    parser.add_argument('--toRust', dest='toRust', action='store_true',
+            help='Generate Rust code for the .pr file (aligned with ASN1SCC Rust backend)')
     parser.add_argument("-O", dest="optimization", metavar="level", type=int,
             action="store", choices=[0, 1, 2, 3], default=0,
             help="Set optimization level for the generated LLVM IR code")
@@ -4585,6 +4696,18 @@ def generate(process, options):
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('C generation failed')
+    if options.toRust:
+        LOG.info('Generating Rust code')
+        try:
+            RustGenerator.generate(process,
+                                    simu=options.simu,
+                                    taste=options.taste_target)
+        except (TypeError, ValueError, NameError) as err:
+            ret = 1
+            err = str(err).replace(RustGenerator.SEPARATOR, '.')
+            LOG.error(str(err))
+            LOG.debug(str(traceback.format_exc()))
+            LOG.error('Rust code generation failed')
     if options.llvm:
         LOG.info('Generating LLVM code')
         try:
@@ -4687,7 +4810,7 @@ def cli(options):
         export(ast, options)
 
     if any((options.toAda, options.llvm, options.simu,
-        options.stg, options.toC)):
+        options.stg, options.toC, options.toRust)):
         if not errors:
             errors = generate(ast.processes[0], options)
         else:
@@ -4794,11 +4917,11 @@ def opengeode():
     if options.edit and any ((options.check, options.png, options.pdf,
             options.svg, options.simu, options.stg, options.dumpAST)):
         LOG.error("Invalid combination of options. --edit can only be "
-                  "used together with --toC and --toAda. Ignoring...")
+                  "used together with --toC, --toAda, or --toRust. Ignoring...")
         return cli(options)
     if any((options.check, options.toAda, options.png, options.pdf,
             options.svg, options.llvm, options.simu, options.stg,
-            options.toC, options.dumpAST)) and not options.edit:
+            options.toC, options.toRust, options.dumpAST)) and not options.edit:
         return cli(options)
     else:
         return gui(options)
