@@ -32,7 +32,7 @@ Both use the same four `Helper` functions for AST preprocessing, ASN.1 datamodel
 - State aggregations / composite states
 - State entry/exit procedures
 - Exported procedures
-- Observer/simulation mode (partial in both)
+- Observer mode (partial in both; simu mode removed from Rust)
 - TASTE mode (partial in Rust — see gaps)
 - SDL constants (synonyms)
 - Monitors
@@ -203,8 +203,8 @@ Both use the same four `Helper` functions for AST preprocessing, ASN.1 datamodel
 |--|-----|------|
 | **Unhandled input** | `raise Lost_Input` (exception) | `panic!("Lost_Input")` |
 | **Branch coverage** | Typed `Branch_Coverage_Array` indexed by `Branches` enum | Fixed `[bool; 256]` array |
-| **Simu PI exports** | `pragma Export(C, simu_{signame}, "...")` | Functions generated but NOT exported with `#[no_mangle]` |
-| **Step functions** | Both `_simu_next` and `_simu_continue` exports | Only `_simu_next` |
+| **Simu PI exports** | `pragma Export(C, simu_{signame}, "...")` | Not supported (simu mode removed) |
+| **Step functions** | Both `_simu_next` and `_simu_continue` exports | Not supported (simu mode removed) |
 
 ### For loops
 
@@ -235,23 +235,23 @@ Both use the same four `Helper` functions for AST preprocessing, ASN.1 datamodel
 
 Ada (`AdaGenerator.py:3868-3896`) injects `{proc_name}_Transition` procedure calls into return terminators of exported procedures, enabling state changes after RPC calls. **Rust now implements the same logic** in `RustGenerator.py` `_inner_procedure` — walks all transitions (start + floating labels) recursively looking for `return` terminators, and appends a `ProcedureCall` AST node calling `{proc_name}_Transition`. The `ProcedureCall` handler detects `_Transition` calls and generates them without the `ri_` prefix (calling the PI function directly).
 
-### 2. Simu PI function exports (**PARTIAL**)
+### 2. Simu PI function exports (**REMOVED — simu mode not supported in Rust**)
 
-Ada generates `pragma Export(C, simu_{signame}, "{process.name.lower()}_simu_PI_{signame}")` for each simu PI function, making them callable from C. Rust generates the `simu_{signame}` functions but does NOT export them with `#[no_mangle]`.
+Ada generates `pragma Export(C, simu_{signame}, "{process.name.lower()}_simu_PI_{signame}")` for each simu PI function, making them callable from C. Rust does not support simu mode.
 
-**Impact:** Simu PI functions cannot be called from the simulation harness in Rust.
+**Impact:** Simulation mode is not supported in the Rust backend.
 
-### 3. `_simu_continue` export (**MISSING**)
+### 3. `_simu_continue` export (**REMOVED — simu mode not supported in Rust**)
 
-Ada exports `Execute_Transition` as `{process.name.lower()}_simu_continue` (line 1304). Rust only generates `_simu_next` but not `_simu_continue`.
+Ada exports `Execute_Transition` as `{process.name.lower()}_simu_continue` (line 1304). Rust does not support simu mode.
 
-**Impact:** Step-by-step simulation cannot continue from a paused state in Rust.
+**Impact:** Simulation mode is not supported in the Rust backend.
 
-### 4. `Dest_PID` support for RIs (**MISSING**)
+### 4. `Dest_PID` support for RIs (**FIXED**)
 
-Ada adds `Dest_PID` parameter to RI function signatures when a PID type exists (lines 1120-1128, 1193-1202). Rust does not add `Dest_PID` to RI stubs or timer stubs.
+Ada adds `Dest_PID` parameter to RI function signatures when a PID type exists (lines 1120-1128, 1193-1202). Rust now adds `dest_pid` to RI stubs, RI calls, timer stubs, timer calls, and Create handler — using `default_pid()` helper that returns `SELF_PID` for process types and `asn1SccEnv` otherwise.
 
-**Impact:** Process-to-process communication with PID routing is not supported in Rust.
+**Impact:** Process-to-process communication with PID routing is now supported in Rust.
 
 ### 5. Choice selection conversion functions (**DELIBERATELY SKIPPED**)
 
@@ -344,9 +344,9 @@ Ada generates `null;` for empty transitions (line 3539). Rust generates `// (emp
 | # | Feature | Status in Rust | Severity |
 |---|---------|---------------|----------|
 | 1 | Exported procedure RPC transitions | Fixed | — |
-| 2 | Simu PI function exports | Partial | Medium |
-| 3 | `_simu_continue` export | Missing | Medium |
-| 4 | `Dest_PID` support for RIs | Missing | High |
+| 2 | Simu PI function exports | Removed (simu not supported) | — |
+| 3 | `_simu_continue` export | Removed (simu not supported) | — |
+| 4 | `Dest_PID` support for RIs | Fixed | High |
 | 5 | Choice selection conversion functions | Deliberately skipped | None |
 | 6 | Continuous signal awareness in procedures | Missing | Medium |
 | 7 | Ground expression assertions | Missing | Low |

@@ -120,10 +120,16 @@ def external_ri_list(process) -> List:
     # Add timer RIs
     for timer in process.timers:
         ri_header = f'fn ri{SEPARATOR}set_{timer}'
-        ri_header += f'(val: &mut {ASN1SCC}T_UInt32)'
+        if 'PID' in TYPES:
+            ri_header += f'(val: &mut {ASN1SCC}T_UInt32, dest_pid: {ASN1SCC}PID)'
+        else:
+            ri_header += f'(val: &mut {ASN1SCC}T_UInt32)'
         result.append(ri_header)
         ri_header = f'fn ri{SEPARATOR}reset_{timer}'
-        result.append(ri_header + '()')
+        if 'PID' in TYPES:
+            result.append(ri_header + f'(dest_pid: {ASN1SCC}PID)')
+        else:
+            result.append(ri_header + '()')
     return result
 
 
@@ -225,6 +231,17 @@ def find_monitoring(mon):
 def is_local(var):
     '''Check if a variable is in the global context or in a local scope'''
     return var.lower() in (loc.lower() for loc in LOCAL_VAR.keys())
+
+
+def default_pid():
+    '''Return the default PID reference for RI calls.
+    For process types, uses SELF_PID (set by the instance wrapper).
+    Otherwise, uses asn1SccEnv (the environment PID).'''
+    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+        return 'SELF_PID'
+    elif 'PID' in TYPES:
+        return f'{ASN1SCC}Env'
+    return None
 
 
 def is_fpar(name):
@@ -804,7 +821,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
             const_sort = const.type.ReferencedTypeName.replace('-', '_')
             if process.process_type and const.varName == 'self' and 'PID' in TYPES:
-                pass
+                # For process types, 'self' is the PID of this instance.
+                # Generate a static that the instance wrapper sets at startup.
+                context_decl.append(
+                    f'static mut SELF_PID: {ASN1SCC}PID = {ASN1SCC}Env;')
             else:
                 context_decl.append(
                     f'const {const.varName.upper()}: {ASN1SCC}{const_sort} = {val};')
@@ -1360,7 +1380,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         type_module = process.instance_of_name if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name
         rust_body.extend([
             'unsafe fn startup() {',
-            f'{type_module}::startup();',
+            f'    {type_module}::SELF_PID = {ASN1SCC}{process.name};',
+            f'    {type_module}::startup();',
             '}',
             ''])
 
@@ -1391,7 +1412,13 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         for param in proc.fpar:
             typename = type_name(param['type'])
             params.append(f'{param["name"]}: &mut {typename}')
-        params_spec = f'({", ".join(params)})' if params else '()'
+        if 'PID' in TYPES:
+            if params:
+                params_spec = f'({", ".join(params)}, dest_pid: {ASN1SCC}PID)'
+            else:
+                params_spec = f'(dest_pid: {ASN1SCC}PID)'
+        else:
+            params_spec = f'({", ".join(params)})' if params else '()'
         if not instance:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{params_spec} {{ /* RI stub */ }}')
 
@@ -1400,9 +1427,14 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         if stop_condition:
             break
         if not generic:
-            ri_stub_code.append(
-                f'fn set_{timer}(val: &mut {ASN1SCC}T_UInt32) {{ /* timer stub */ }}')
-            ri_stub_code.append(f'fn reset_{timer}() {{ /* timer stub */ }}')
+            if 'PID' in TYPES:
+                ri_stub_code.append(
+                    f'fn set_{timer}(val: &mut {ASN1SCC}T_UInt32, dest_pid: {ASN1SCC}PID) {{ /* timer stub */ }}')
+                ri_stub_code.append(f'fn reset_{timer}(dest_pid: {ASN1SCC}PID) {{ /* timer stub */ }}')
+            else:
+                ri_stub_code.append(
+                    f'fn set_{timer}(val: &mut {ASN1SCC}T_UInt32) {{ /* timer stub */ }}')
+                ri_stub_code.append(f'fn reset_{timer}() {{ /* timer stub */ }}')
 
     # ── Branches enum ──
     all_labels = [lab.inputString for lab in process.content.floating_labels]
@@ -1685,7 +1717,10 @@ def _call_external_function(output, **kwargs):
             p_code, p_id, p_local = expression(param, readonly=1)
             call_code.extend(p_code)
             call_local.extend(p_local)
-            call_code.append(f'reset_{p_id}();')
+            if 'PID' in TYPES:
+                call_code.append(f'reset_{p_id}({default_pid()});')
+            else:
+                call_code.append(f'reset_{p_id}();')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -1705,7 +1740,10 @@ def _call_external_function(output, **kwargs):
             tmp_id = f'tmp{out["tmpVars"][0]}'
             call_local.append(f'let mut {tmp_id}: {ASN1SCC}T_UInt32;')
             call_code.append(f'{tmp_id} = {t_val} as {ASN1SCC}T_UInt32;')
-            call_code.append(f'set_{p_id}(&mut {tmp_id});')
+            if 'PID' in TYPES:
+                call_code.append(f'set_{p_id}(&mut {tmp_id}, {default_pid()});')
+            else:
+                call_code.append(f'set_{p_id}(&mut {tmp_id});')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -1748,6 +1786,15 @@ def _call_external_function(output, **kwargs):
                 call_code.append(f'{signal_name}();')
                 code.extend(call_code)
                 continue
+            # Resolve dest_pid (for process types with PID)
+            dest_pid = None
+            if 'PID' in TYPES:
+                dest_pid = out.get('toDest') or 'env'
+                if isinstance(dest_pid, ogAST.PrimVariable):
+                    _, dest_pid, _ = expression(dest_pid)
+                else:
+                    dest_pid = f'{ASN1SCC}{dest_pid}'
+                dest_pid = dest_pid.replace('-', '_')
             for idx, param in enumerate(out.get('params') or []):
                 param_direction = 'in'
                 try:
@@ -1779,11 +1826,25 @@ def _call_external_function(output, **kwargs):
                     list_of_params.append(f'&mut {p_id}')
 
             name = out["outputName"]
-            if list_of_params:
-                params = ', '.join(list_of_params)
-                call_code.append(f'ri{SEPARATOR}{name}({params});')
+            # In Rust, there are no default parameter values, so we must
+            # always pass dest_pid when PID is in TYPES (the stub always
+            # declares it). When toDest is not specified, use default_pid()
+            # (SELF_PID for process types, asn1SccEnv otherwise).
+            if dest_pid is not None:
+                # dest_pid was resolved above; if it's 'env', use the default PID
+                if dest_pid == f'{ASN1SCC}env':
+                    dest_pid = default_pid()
+                if list_of_params:
+                    params = ', '.join(list_of_params)
+                    call_code.append(f'ri{SEPARATOR}{name}({params}, {dest_pid});')
+                else:
+                    call_code.append(f'ri{SEPARATOR}{name}({dest_pid});')
             else:
-                call_code.append(f'ri{SEPARATOR}{name}();')
+                if list_of_params:
+                    params = ', '.join(list_of_params)
+                    call_code.append(f'ri{SEPARATOR}{name}({params});')
+                else:
+                    call_code.append(f'ri{SEPARATOR}{name}();')
         else:
             ident = proc.inputString
             p = [p for p in PROCEDURES
@@ -1913,12 +1974,19 @@ def _task_forloop(task, **kwargs):
 @generate.register(ogAST.Create)
 def _create_request(create, **kwargs):
     '''Dynamic creation of an external process instance'''
-    code = [], []
+    code, code_local = [], []
     code.extend(traceability(create))
     if create.comment:
         code.extend(traceability(create.comment))
-    code.append(f'{LPREFIX}.offspring = create_{create.instance_to_create.title()}(self);')
-    return code, []
+    # In process types, 'self' is SELF_PID; otherwise it's the context variable
+    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+        self_ref = 'SELF_PID'
+    elif 'PID' in TYPES:
+        self_ref = default_pid()
+    else:
+        self_ref = 'self'
+    code.append(f'{LPREFIX}.offspring = create_{create.instance_to_create.title()}({self_ref});')
+    return code, code_local
 
 
 @generate.register(ogAST.Decision)
@@ -2498,6 +2566,9 @@ def _primary_variable(prim, **kwargs):
     name = prim.value[0]
     if '.' in name:
         name = name.split('.')[0]
+    # 'self' in a process type resolves to SELF_PID (the PID of this instance)
+    if name.lower() == 'self' and PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+        return [], 'SELF_PID', []
     var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
