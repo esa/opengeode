@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) f1.pr system_structure.pr
@@ -38,10 +38,6 @@ test-c: f1.c test_c.o dataview-uniq.o
 test-if:
 	sdl2if f1.pr system_structure.pr
 
-test-llvm: f1.o dataview-uniq.o | test_llvm.o
-	$(CC) f1.o dataview-uniq.o test_llvm.o -o test_llvm -lm
-	./test_llvm
-
 test-rust:
 	$(OPENGEODE) f1.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
@@ -49,4 +45,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) f1.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage test-rust
+.PHONY: all edit test-parse test-ada coverage test-rust

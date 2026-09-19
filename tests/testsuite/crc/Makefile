@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=insdl.pr system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) ${ROOT_MODEL}
@@ -43,13 +43,8 @@ test-rust:
 test-if:
 	sdl2if ${ROOT_MODEL}
 
-test-llvm:
-	$(OPENGEODE) insdl.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) ${ROOT_MODEL} --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

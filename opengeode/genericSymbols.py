@@ -615,6 +615,11 @@ class Symbol(QObject, QGraphicsPathItem):
         if not self.text:
             return
         hlink = self.hlink_field.text()
+        # SECURITY: the hyperlink ends up in an open-external-links label;
+        # restrict it to http/https so a model cannot invoke arbitrary
+        # desktop URL scheme handlers.
+        if hlink and QUrl(hlink).scheme() not in ('http', 'https'):
+            hlink = ''
         if hlink:
             self.text.setHtml('<a href="{hlink}">{text}</a>'.format
                   (hlink=hlink, text=str(self.text).replace('\n', '<br>')))

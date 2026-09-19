@@ -143,6 +143,16 @@ Changelog
     - cache and debug folders are created with restrictive permissions (0700/0600); a shared cache folder is reported with a warning
     - 25 new regression tests (`tests/pytests/test_asn1scc_cache.py`) covering all fixes; audit and hardening documentation under `docs/` (`security-audit-asn1scc-cache.md`, `security-hardening-asn1scc-cache.md`)
 - Add support for the destination PID (OUTPUT ... TO) in the C backend, aligned with the Ada backend
+- Security fixes in the SDL parser (`ogParser.py` and related modules), following a security audit (details in `docs/security-fix-ogparser.md`):
+    - remove the insertion of the model directory into `sys.path` (module hijacking / arbitrary code execution when opening a malicious model)
+    - bound the computation of `{mantissa, base, exponent}` literals (resource exhaustion: a 40-byte literal could previously consume unbounded CPU and RAM)
+    - reject SYNTYPE re-declarations that would create circular type references (parser crash)
+    - report excessive model nesting as a clean syntax error instead of an interpreter crash (RecursionError)
+    - decode model files as UTF-8 explicitly, so the parser and its error reporter no longer crash under legacy locales on non-ASCII models
+    - replace the `eval()` used to dispatch single-element parsing with a fixed lookup table, and validate the element name coming from the system clipboard
+    - restrict CIF HYPERLINK annotations to http/https before handing them to the desktop URL handler
+    - only allow the `ctypes` symbol-id cast (error linking in the GUI) for ids that this process actually emitted, preventing a forged `/* CIF _id N */` from crashing the editor with SIGSEGV
+- Remove the LLVM backend (experimental and not up to date anymore): `LlvmGenerator.py` is deleted, the `--llvm` option and `test-llvm` targets are removed
 
 **4.8.3 (09/2026)**
 - Add an AI Chat tab in the right panel, communicating with the orbit agent via the `orbit-acp` Python library. The tab passes the current `.pr` and ASN.1 file paths so that orbit can modify the model on disk; it degrades gracefully to a disabled placeholder when the library or orbit is not available

@@ -28,4 +28,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage test-rust
+.PHONY: all edit test-parse test-ada coverage test-rust

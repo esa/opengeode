@@ -4,7 +4,7 @@ ROOT_MODEL=orchestrator.pr
 OPENGEODE=opengeode
 
 ARCH := $(shell getconf LONG_BIT)
-all: test-ada test-llvm
+all: test-ada
 
 clean:
 	rm -rf build
@@ -51,8 +51,6 @@ test-c:
 test-if:
 	sdl2if orchestrator.pr
 
-test-llvm: orchestrator.o
-
 test-rust:
 	$(OPENGEODE) orchestrator.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
@@ -60,4 +58,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-c test-rust simu test-llvm coverage
+.PHONY: all edit test-parse test-ada test-c test-rust simu coverage

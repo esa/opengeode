@@ -133,14 +133,22 @@ def paste(parent, scene):
                 and shared[1] != str(os.getpid()):
             common_name = shared[2]
             pr_text     = shared[3]
-            #  Copy to the local clipboard
-            # LOG.debug("PASTE: " + pr_text)
-            ast, _, _, _, terminators = \
-                ogParser.parseSingleElement(common_name, pr_text)
-            # Clear the local clipboard, there can be only one element
-            COPY_PASTE.clear()
-            COPY_PASTE.append(([ast], terminators))
-            remove_after_paste = True
+            # SECURITY: the system clipboard is writable by any process on
+            # the desktop. The element name it carries is untrusted input:
+            # reject anything that is not a known single-element name before
+            # handing it to the parser (which also validates independently).
+            if common_name not in ogParser.SINGLE_ELEMENTS:
+                LOG.warning(f'Ignoring clipboard content with unsupported '
+                            f'element type "{common_name}"')
+            else:
+                #  Copy to the local clipboard
+                # LOG.debug("PASTE: " + pr_text)
+                ast, _, _, _, terminators = \
+                    ogParser.parseSingleElement(common_name, pr_text)
+                # Clear the local clipboard, there can be only one element
+                COPY_PASTE.clear()
+                COPY_PASTE.append(([ast], terminators))
+                remove_after_paste = True
 
     CLIPBOARD.clear()
     if not parent:

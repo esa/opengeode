@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=og.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) og.pr
@@ -39,11 +39,6 @@ test-if:
 	sdl2if og.pr
 
 
-test-llvm:
-	$(OPENGEODE) og.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
@@ -52,4 +47,4 @@ test-rust:
 	$(OPENGEODE) og.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
-.PHONY: all edit test-parse test-ada test-llvm test-rust coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

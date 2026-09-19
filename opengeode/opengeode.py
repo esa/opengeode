@@ -154,12 +154,6 @@ PATH = Qt.UserRole + 3
 SCENE = Qt.UserRole + 4
 
 try:
-    import LlvmGenerator
-    MODULES.append(LlvmGenerator)
-except ImportError:
-    pass
-
-try:
     import StgBackend
     MODULES.append(StgBackend)
 except ImportError:
@@ -2918,6 +2912,18 @@ clean:
                         err = line.text()
                         kind = "ERROR" if err.startswith("[ERROR]") else "WARNING"
                         LOG.debug(f"id : {symbol_id} {line.text()}")
+                        # SECURITY: a "/* CIF _id N */" annotation can come
+                        # from a hand-written .pr file, where N is any
+                        # integer. Blindly casting it to a Python object
+                        # dereferences an arbitrary address (SIGSEGV, or an
+                        # arbitrary object when a valid address is given).
+                        # Only ids that Pr.cif_symbolid() actually emitted in
+                        # this process may be cast.
+                        if symbol_id not in Pr.SYMBOL_ID_REGISTRY:
+                            LOG.debug(f'ignoring unknown symbol id '
+                                      f'{symbol_id} (not emitted by this '
+                                      f'process)')
+                            continue
                         # Retrieve the symbol from its id, put it in G_ERRORS
                         # and update its ast.path value and errors/warnings fields
                         # Cast the symbol id to retrieve the (existing) symbol
@@ -3912,6 +3918,13 @@ class OG_MainWindow(QMainWindow):
                 
             args = ['-typePrefix', 'asn1Scc', '-equal']
             for file_path in asn1_files:
+                # SECURITY (parity with Asn1scc._validate_input_files):
+                # the file paths come from the model (USE clause / CIF
+                # annotations). A leading '-' would be interpreted as an
+                # option by the compiler, so reject such names explicitly.
+                if file_path.startswith('-'):
+                    return False, (f'Invalid ASN.1 file name "{file_path}": '
+                                   'file names must not start with "-"')
                 if os.path.abspath(file_path) == os.path.abspath(self.current_asn1_file):
                     args.append(tmp_file_path)
                 else:
@@ -4587,15 +4600,13 @@ def parse_args():
             help='Check a .pr file for syntax and semantics')
     parser.add_argument('--toAda', dest='toAda', action='store_true',
             help='Generate Ada code for the .pr file')
-    parser.add_argument('--llvm', dest='llvm', action='store_true',
-            help='Generate LLVM IR code for the .pr file (experimental)')
     parser.add_argument('--toC', dest='toC', action='store_true',
             help='Generate C code for the .pr file ')
     parser.add_argument('--toRust', dest='toRust', action='store_true',
             help='Generate Rust code for the .pr file (aligned with ASN1SCC Rust backend)')
-    parser.add_argument("-O", dest="optimization", metavar="level", type=int,
-            action="store", choices=[0, 1, 2, 3], default=0,
-            help="Set optimization level for the generated LLVM IR code")
+    parser.add_argument('-O', dest='optimization', metavar='level', type=int,
+            action='store', choices=[0, 1, 2, 3], default=0,
+            help='Set optimization level for the generated C code')
     parser.add_argument('--png', dest='png', action='store_true',
             help='Generate a PNG file for the process')
     parser.add_argument('--pdf', dest='pdf', action='store_true',
@@ -4708,16 +4719,6 @@ def generate(process, options):
             LOG.error(str(err))
             LOG.debug(str(traceback.format_exc()))
             LOG.error('Rust code generation failed')
-    if options.llvm:
-        LOG.info('Generating LLVM code')
-        try:
-            LlvmGenerator.generate(process, options=options)
-        except (TypeError, ValueError, NameError) as err:
-            ret = 1
-            LOG.error(str(err))
-            LOG.debug(str(traceback.format_exc()))
-            LOG.error('LLVM IR generation failed')
-
     if options.stg:
         LOG.info('Using backend file {}'.format(options.stg))
         StgBackend.generate(process, simu=options.simu, stgfile=options.stg)
@@ -4809,7 +4810,7 @@ def cli(options):
     if options.png or options.pdf or options.svg:
         export(ast, options)
 
-    if any((options.toAda, options.llvm, options.simu,
+    if any((options.toAda, options.simu,
         options.stg, options.toC, options.toRust)):
         if not errors:
             errors = generate(ast.processes[0], options)
@@ -4920,7 +4921,7 @@ def opengeode():
                   "used together with --toC, --toAda, or --toRust. Ignoring...")
         return cli(options)
     if any((options.check, options.toAda, options.png, options.pdf,
-            options.svg, options.llvm, options.simu, options.stg,
+            options.svg, options.simu, options.stg,
             options.toC, options.toRust, options.dumpAST)) and not options.edit:
         return cli(options)
     else:

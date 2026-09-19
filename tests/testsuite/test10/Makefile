@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) challenge.pr system_structure.pr
@@ -42,10 +42,6 @@ test-c: challenge.c test_c.o dataview-uniq.o
 test-if:
 	sdl2if challenge.pr system_structure.pr
 
-test-llvm: challenge.o dataview-uniq.o | test_llvm.o
-	$(CC) challenge.o dataview-uniq.o test_llvm.o -o test_llvm -lm
-	./test_llvm| diff expected -
-
 test-rust:
 	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
@@ -63,7 +59,7 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage test-rust
+.PHONY: all edit test-parse test-ada coverage test-rust
 
 # Override shared.mk clean to preserve main.rs
 clean:
@@ -71,7 +67,7 @@ clean:
 	gnat clean *.adb
 	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
-	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
 		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \

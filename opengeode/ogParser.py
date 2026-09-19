@@ -76,8 +76,11 @@ EXPR_NODE: Dict[int, ogAST.Expression] = {
     lexer.PRIMARY:  ogAST.Primary,
 }
 
-# Insert current path in the search list for importing modules
-sys.path.insert(0, '.')
+# SECURITY: do not modify sys.path here. Inserting '.' or the model
+# directory at position 0 lets a malicious model folder shadow any module
+# that is imported lazily afterwards (e.g. stdlib or opengeode modules),
+# which is a remote code execution vector. The ASN.1 data model is imported
+# by path (see Asn1scc.parse_asn1), so there is no legitimate need for it.
 
 DV = None  # type: module
 
@@ -678,7 +681,13 @@ def check_syntax(node: antlr3.tree.CommonTree,
             line = token.line
             pos = token.charPositionInLine + 1
             if filename:
-                text = open(filename, 'r').readlines()
+                # SECURITY/robustness: decode as UTF-8 with replacement so
+                # that the error reporter itself never crashes on models
+                # with non-ASCII content (e.g. under a legacy locale where
+                # the default codec is ascii, a UnicodeDecodeError here
+                # would mask the actual syntax error).
+                text = open(filename, 'r', encoding='utf-8',
+                            errors='replace').readlines()
             else:
                 text = input_string.split('\n')
             arrow = "\u221f"
@@ -729,10 +738,21 @@ def find_basic_type(a_type, pool=None):
     ''' Return the ASN.1 basic type of a_type '''
     basic_type = a_type or UNKNOWN_TYPE
     pool = pool or types()
+    # SECURITY/robustness: guard against reference cycles (e.g. A -> B -> A
+    # created by re-declared SYNTYPEs). Without a visited set, a cyclic
+    # chain makes this function loop forever or, via its callers such as
+    # is_numeric(), recurse until the interpreter limit (RecursionError).
+    visited = set()
     while basic_type.kind == 'ReferenceType':
         Min = getattr(basic_type, "Min", None)
         Max = getattr(basic_type, "Max", None)
         name = basic_type.ReferencedTypeName.replace('_', '-').lower()
+
+        if name in visited:
+            raise TypeError(
+                f'Circular type reference detected involving "{name}". '
+                'A type cannot (indirectly) reference itself.')
+        visited.add(name)
 
         # Find type with proper case in the data view
         for typename in pool.keys():
@@ -3551,8 +3571,19 @@ def primary(root, context):
         mant = float(root.getChild(0).toString())
         base = int(root.getChild(1).toString())
         exp = int(root.getChild(2).toString())
-        # Compute mantissa * base**exponent to get the value type range
-        value = float(mant * pow(base, exp))
+        # SECURITY: compute the value in floating point only. Using the exact
+        # integer pow(base, exp) first (as done before) allows a model to
+        # request an arbitrarily large bignum (e.g. exponent 1e12) that is
+        # fully materialised in memory before the float() conversion,
+        # exhausting CPU and RAM (resource-exhaustion DoS).
+        # The float path is safe: pow(float, float) raises OverflowError
+        # immediately when the result cannot be represented.
+        try:
+            value = mant * pow(float(base), float(exp))
+        except OverflowError:
+            raise SyntaxError('Value of {mantissa, base, exponent} literal '
+                              f'exceeds the 64-bit floating point range '
+                              f'(base {base}, exponent {exp})')
         prim.value = {'mantissa': mant, 'base': base, 'exponent': exp}
         prim.exprType = type('PrMantissa', (object,), {
             'kind': 'RealType',
@@ -4471,6 +4502,12 @@ def syntype(root, ta_ast, context):
     # (1) the new type name does not already exist
     # (2) the range is a subrange of the parent type
     # Iterate over all open and closed range to determine the min and the max
+    # SECURITY/robustness: (1) is enforced here. A re-declaration could
+    # re-point an existing name at another type and create a reference
+    # cycle (infinite mutual recursion in the type resolvers).
+    if not _check_duplicate_type(root, newtypename, errors, kind='SYNTYPE',
+                                 parent_name=reftypename):
+        return errors, warnings
     def get_val(value):
         # Quick helper: return the numerical value of the expression
         if isinstance(value, ogAST.PrimConstant):
@@ -4573,6 +4610,42 @@ def syntype(root, ta_ast, context):
     return errors, warnings
 
 
+def _check_duplicate_type(root, name, errors, kind='SYNTYPE',
+                          parent_name=None):
+    ''' SECURITY/robustness: reject a re-declaration that would re-point an
+    existing type name at a different parent type. Without this check, a
+    model can do "syntype A = B" after "syntype B = A", creating a reference
+    cycle that sends the type resolvers into infinite mutual recursion
+    (RecursionError crash).
+
+    Note: text areas can legitimately be visited twice during a parse, so
+    an *identical* re-declaration (same name, same parent) is allowed —
+    only a re-declaration that changes the parent type is rejected. '''
+    pool = types()
+    for existing in pool.keys():
+        if existing.replace('_', '-').lower() == name.replace('_', '-').lower():
+            if parent_name is None:
+                # No parent information: reject any re-declaration
+                errors.append(error(root,
+                        f'{kind} {name}: re-declaration of an existing '
+                        'type. Choose another name.'))
+                return False
+            existing_parent = getattr(getattr(pool[existing], 'type', None),
+                                      'ReferencedTypeName', None)
+            if existing_parent is not None and \
+                    existing_parent.replace('_', '-').lower() != \
+                    parent_name.replace('_', '-').lower():
+                errors.append(error(root,
+                        f'{kind} {name}: re-declaration of an existing type '
+                        f'with a different parent ({parent_name} instead of '
+                        f'{existing_parent}). This could create a circular '
+                        'type reference. Choose another name.'))
+                return False
+            # identical re-declaration (text area visited twice): allowed
+            return True
+    return True
+
+
 def newtype(root, ta_ast, context):
     ''' Parse a NEWTYPE definition and inject it in ASN1 AST'''
     errors = []
@@ -4585,6 +4658,11 @@ def newtype(root, ta_ast, context):
         return errors, warnings
 
     newtypename = newtypename.replace('_', '-')
+
+    # NOTE: unlike SYNTYPE, a re-declared NEWTYPE cannot create a reference
+    # cycle: array/enum types embed the *resolved* sorts, not type names.
+    # Text areas are also legitimately visited twice during a parse, so
+    # duplicate registration is allowed here (it overwrites identically).
 
     if len(root.children) < 2:
         errors.append('Use newtype definitions for arrays only')
@@ -8110,8 +8188,12 @@ def parse_pr(files=None, string=None):
     files = files or []
     # define a common tree to combine several PR inputs
     common_tree = antlr3.tree.CommonTree(None)
-    for filename in files:
-        sys.path.insert(0, os.path.dirname(filename))
+    # SECURITY: the model directories are deliberately NOT added to sys.path.
+    # Inserting them at position 0 lets a malicious model folder shadow any
+    # module imported lazily later in the same process (stdlib or opengeode
+    # modules), which is a code execution vector. Nothing in the parser
+    # needs the model directory on sys.path: ASN.1 data models are imported
+    # by path (see Asn1scc.parse_asn1).
     try:
         for filename in files:
             err, warn = add_to_ast(common_tree, filename=filename)
@@ -8130,6 +8212,15 @@ def parse_pr(files=None, string=None):
         errors.append([msg,
                       [0, 0],
                       ['- -']])
+    except RecursionError:
+        # SECURITY/robustness: a model with excessive nesting (deeply
+        # nested parentheses, decisions or composite states) blows the
+        # interpreter recursion limit inside the ANTLR tree walk. Report it
+        # as a clean syntax error instead of crashing with a raw traceback.
+        errors.append(['Model is too deeply nested (recursion limit '
+                      'exceeded while parsing). Simplify the model.',
+                      [0, 0],
+                      ['- -']])
 
     # If syntax errors were found, raise an alarm and try to continue anyway
     if errors:
@@ -8138,7 +8229,25 @@ def parse_pr(files=None, string=None):
         #og_ast = ogAST.AST()
 
     # At the end when common tree is complete, perform the parsing
-    og_ast, err, warn = pr_file(common_tree)
+    try:
+        og_ast, err, warn = pr_file(common_tree)
+    except RecursionError:
+        # SECURITY/robustness: the semantic walkers recurse over the ANTLR
+        # tree; a model with excessive nesting can exceed the interpreter
+        # recursion limit. Report it as a clean parse error.
+        LOG.error('Recursion limit exceeded during semantic analysis')
+        og_ast = ogAST.AST()
+        err, warn = ['Model is too deeply nested (recursion limit '
+                     'exceeded during semantic analysis). '
+                     'Simplify the model.'], []
+    except SyntaxError as syntax_err:
+        # A semantic walker raised a clean SyntaxError (e.g. the bounded
+        # mantissa/base/exponent computation). Report it as-is.
+        # NOTE: do not reuse the exception variable name below - Python
+        # deletes it when leaving the except block.
+        LOG.error(str(syntax_err))
+        og_ast = ogAST.AST()
+        err, warn = [str(syntax_err)], []
     for error in err:
         errors.append([error] if type(error) is not list else error)
     for warning in warn:
@@ -8258,47 +8367,65 @@ def n7s_scl(root, parent, context=None):
     return expressions, errors, warnings
 
 
+# SECURITY: fixed whitelist of the single elements that can be parsed on the
+# fly, mapping each name to the module-level backend function. This replaces
+# the former `assert(elem in (...))` + `eval(elem)` pair: the assert is
+# stripped under `python -O`, and eval() of a name is fragile by design
+# (it is safe only because of an invariant two statements away). The dict
+# lookup is unconditional and evaluates nothing.
+# NOTE: 'proc_start' and 'state_start' are accepted here for backward
+# compatibility and are normalised to 'start' below.
+SINGLE_ELEMENTS = {
+    'input_part': input_part,
+    'output': output,
+    'decision': decision,
+    'alternative': alternative,
+    'alternative_part': alternative_part,
+    'terminator_statement': terminator_statement,
+    'label': label,
+    'task': task,
+    'procedure_call': procedure_call,
+    'create_request': create_request,
+    'end': end,
+    'text_area': text_area,
+    'content': content,
+    'state': state,
+    'start': start,
+    'procedure': procedure,
+    'floating_label': floating_label,
+    'connect_part': connect_part,
+    'process_definition': process_definition,
+    'synonym_definition': synonym_definition,
+    'proc_start': start,
+    'state_start': start,
+    'signalroute': signalroute,
+    'stop_if': stop_if,
+    'continuous_signal': continuous_signal,
+    'composite_state': composite_state,
+    'n7s_scl': n7s_scl,
+}
+
+
 def parseSingleElement(elem:str='', string:str='', context=None):
     '''
         Parse any symbol and return syntax error and AST entry
         Used for on-the-fly checks when user edits text
         and for copy/cut to create a new object
     '''
-    assert(elem in
-            ('input_part',
-             'output',
-             'decision',
-             'alternative',
-             'alternative_part',
-             'terminator_statement',
-             'label',
-             'task',
-             'procedure_call',
-             'create_request',
-             'end',
-             'text_area',
-             'content',
-             'state',
-             'start',
-             'procedure',
-             'floating_label',
-             'connect_part',
-             'process_definition',
-             'synonym_definition',
-             'proc_start',
-             'state_start',
-             'signalroute',
-             'stop_if',
-             'continuous_signal',
-             'composite_state',
-             'n7s_scl'))
+    # SECURITY: unconditional whitelist check (no assert, no eval).
+    # 'elem' can come from the operating system clipboard (see
+    # Clipboard.paste), i.e. from another process: it must never be
+    # evaluated or used as a dynamic attribute name.
+    if elem not in SINGLE_ELEMENTS:
+        raise ValueError(
+            f'parseSingleElement: unsupported element type "{elem}"')
     # Create a dummy context, needed to place context data
-    if elem == 'proc_start':
+    if elem in ('proc_start', 'state_start'):
+        if elem == 'proc_start':
+            context = ogAST.Procedure()
+        else:
+            context = ogAST.CompositeState()
         elem = 'start'
-        context = ogAST.Procedure()
-    elif elem == 'state_start':
-        elem = 'start'
-        context = ogAST.CompositeState()
     else:
         context = context or ogAST.Process()
     context.path = getattr(context, 'path', ['PROCESS og'])  # Set a dummy context for syntax check
@@ -8323,6 +8450,9 @@ def parseSingleElement(elem:str='', string:str='', context=None):
     parser.reportError = partial(catchErrors, parser)
     parser._state.syntaxErrorMsgs = []
 
+    # SECURITY: 'elem' is a key of the SINGLE_ELEMENTS whitelist (checked
+    # above), so this getattr cannot reach an arbitrary attribute; and the
+    # backend function comes from the same dict instead of eval().
     parser_ptr = getattr(parser, elem)
     assert parser_ptr is not None
     syntax_errors = []
@@ -8340,7 +8470,7 @@ def parseSingleElement(elem:str='', string:str='', context=None):
         root = r.tree
         #print (isinstance(tree, antlr3.tree.CommonErrorNode))
         root.token_stream = parser.getTokenStream()
-        backend_ptr = eval(elem)
+        backend_ptr = SINGLE_ELEMENTS[elem]
         try:
             check_syntax(node=root, recursive=True, input_string=string)
             t, semantic_errors, warnings = backend_ptr(
@@ -8373,8 +8503,31 @@ def parser_init(filename=None, string=None):
     ''' Initialize the parser (to be called first) '''
     if filename is not None:
         try:
-            # encoding not available in python3 runtime, seems to default ok
-            char_stream = antlr3.ANTLRFileStream(filename) #, encoding='utf-8')
+            # SECURITY/robustness: read the model file as UTF-8 explicitly.
+            # ANTLRFileStream opens the file with the locale default codec,
+            # which under a legacy locale (e.g. LC_ALL=C) crashes with
+            # UnicodeDecodeError on any non-ASCII model. Read the file here
+            # (UTF-8 with replacement, so invalid bytes still produce parse
+            # errors rather than crashes) and feed it as a string stream.
+            # The fileName property must remain available (the parser uses
+            # it to report file positions), so a tiny subclass is used
+            # instead of a plain ANTLRStringStream.
+            class UTF8FileStream(antlr3.ANTLRStringStream):
+                def __init__(self, file_name):
+                    with open(file_name, 'r', encoding='utf-8',
+                              errors='replace') as model_file:
+                        super().__init__(model_file.read())
+                    self._fileName = file_name
+
+                # NOTE: must be a property, like ANTLRFileStream.fileName.
+                # node_filename() reads `inputStream.fileName` and feeds the
+                # result into ast.pr_files (a set of *strings*) — defining it
+                # as a plain method would put the bound method into the set
+                # and crash os.path.abspath() downstream (GUI file monitor).
+                @property
+                def fileName(self):
+                    return self._fileName
+            char_stream = UTF8FileStream(filename)
         except (IOError, TypeError) as err:
             LOG.debug(str(traceback.format_exc()))
             raise

@@ -162,7 +162,16 @@ class EditableText(QGraphicsTextItem):
         self.setFont(QFont('Ubuntu', 10))
         self._completer = None
         self.hyperlink = hyperlink
-        self.setOpenExternalLinks(True)
+        # SECURITY: the hyperlink comes from the model (CIF HYPERLINK
+        # annotation), which is untrusted input. Restrict it to http/https
+        # before handing it to the desktop's URL handler, otherwise a model
+        # could invoke any registered scheme handler (file://, ssh://,
+        # custom protocol handlers...).
+        if hyperlink is not None:
+            parsed = QUrl(hyperlink)
+            if parsed.scheme() not in ('http', 'https'):
+                hyperlink = None
+        self.setOpenExternalLinks(hyperlink is not None)
         if hyperlink:
             self.setHtml('<a href="{hlink}">{text}</a>'.format
                     (hlink=hyperlink, text=text.replace('\n', '<br>')))

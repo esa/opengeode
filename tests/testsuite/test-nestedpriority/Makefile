@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) challenge.pr system_structure.pr
@@ -32,8 +32,6 @@ test-c: test-parse
 test-if:
 	sdl2if challenge.pr system_structure.pr
 
-test-llvm: test-parse
-
 test-vhdl : test-parse
 
 test-rust: test-parse
@@ -41,4 +39,4 @@ test-rust: test-parse
 
 coverage:
 
-.PHONY: all edit test-parse test-ada test-llvm test-rust coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

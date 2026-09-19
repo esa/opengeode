@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=controller.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) controller.pr system_structure.pr
@@ -50,13 +50,8 @@ test-if:
 	sdl2if controller.pr system_structure.pr
 
 
-test-llvm:
-	$(OPENGEODE) controller.pr system_structure.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) controller.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage simu
+.PHONY: all edit test-parse test-ada test-rust coverage simu
