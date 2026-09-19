@@ -261,11 +261,11 @@ Ada generates `To_{sort}` conversion functions for choice selector types (lines 
 
 **Impact:** None — this is a design decision. Rust's enum system handles choice selection natively.
 
-### 6. Continuous signal awareness in procedures (**MISSING**)
+### 6. Continuous signal awareness in procedures (**FIXED**)
 
-Ada checks `process_has_cs` in the procedure handler to determine if `_Transition` calls are needed after procedure returns (line 3864). Rust does not check this.
+Ada checks `process_has_cs` in the procedure handler to determine if `_Transition` calls are needed after procedure returns (line 3864). Rust now does the same (`RustGenerator.py:2448-2451`), and the PI wrapper's `has_cs` fallback is mirrored too (`RustGenerator.py:1322-1323`, matching Ada's line 1048). This was fixed as part of the item-1 remediation (the whole Ada block, including `process_has_cs`, was ported when adding the RPC transition injection).
 
-**Impact:** Procedures in processes with continuous signals may not properly trigger continuous signal evaluation after returning.
+**Impact:** None anymore — exported (referenced) procedures in processes with continuous signals re-evaluate the CS conditions after returning, exactly like Ada.
 
 ### 7. Ground expression assertions (**MISSING**)
 
@@ -350,7 +350,7 @@ Ada generates `null;` for empty transitions (line 3539). Rust generates `// (emp
 | 3 | `_simu_continue` export | Removed (simu not supported) | — |
 | 4 | `Dest_PID` support for RIs | Fixed | High |
 | 5 | Choice selection conversion functions | Deliberately skipped | None |
-| 6 | Continuous signal awareness in procedures | Missing | Medium |
+| 6 | Continuous signal awareness in procedures | Fixed | — |
 | 7 | Ground expression assertions | Missing | Low |
 | 8 | Integer type casting in arithmetic | Missing | Medium |
 | 9 | Constant folding | Missing | Low |
