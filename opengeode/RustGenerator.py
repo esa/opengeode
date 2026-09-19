@@ -936,7 +936,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not instance:
         for name, substates in process.aggregates.items():
             proc_name = f'{name}{SEPARATOR}START'
-            process_level_decl.append(f'unsafe fn {proc_name}();')
+            # Rust does not need forward declarations (unlike Ada) — only
+            # emit the definition, otherwise the name is defined twice.
             aggreg_start_proc.append(f'unsafe fn {proc_name}() {{')
             for subname in substates:
                 aggreg_start_proc.append(
@@ -1268,8 +1269,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                                 f'{generate_state_name(inst_name)} =>')
                             if inp_def.transition:
                                 dest.append(
-                                    f'execute_transition(Branches::{inp_def.branch_label});')
-                        dest.append('_ => execute_transition(Branches::Continuous_Signals);')
+                                    f'execute_transition(Branches::{inp_def.branch_label}),')
+                        dest.append('_ => execute_transition(Branches::Continuous_Signals),')
                         dest.append('}')
                 else:
                     return False
@@ -1291,7 +1292,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                             for par in sub.mapping.keys():
                                 case_state(par, dest, simu_step)
                             dest.append(
-                                '_ => execute_transition(Branches::Continuous_Signals);')
+                                '_ => execute_transition(Branches::Continuous_Signals),')
                             if simu:
                                 dest.append('panic!("Lost_Input");')
                             dest.append('}')
@@ -2286,12 +2287,21 @@ def _transition(tr, **kwargs):
                 aggregate = False
                 if tr.terminator.substate:
                     aggregate = True
+                    # Within a state aggregation, a return means that ONE
+                    # parallel substate finished. Set it to the "finished"
+                    # pseudo-state; only when ALL siblings are finished may
+                    # the aggregation exit procedure run. The return value
+                    # (branch/Continuous_Signals) is therefore emitted
+                    # inside the if/else on the sibling condition.
                     code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state = {generate_state_name("state" + SEPARATOR + "end")};')
                     conds = [f'{LPREFIX}.{sib}{SEPARATOR}state == {generate_state_name("state" + SEPARATOR + "end")}'
                              for sib in tr.terminator.siblings
                              if sib.lower() != tr.terminator.substate.lower()]
                     if conds:
                         code.append(f'if {" && ".join(conds)} {{')
+                    else:
+                        # No unfinished sibling: aggregation exit runs now
+                        aggregate = False
 
                 if tr.terminator.next_id == -1:
                     retexp = tr.terminator.return_expr
@@ -2344,6 +2354,10 @@ def _transition(tr, **kwargs):
                     else:
                         code.append('return Branches::Branch_End;')
                 if aggregate:
+                    # close the "all siblings finished" if-block, then the
+                    # else branch runs when at least one sibling is still
+                    # active: stay in the aggregation (Continuous_Signals)
+                    code.append('}')
                     code.append('else {')
                     if not MONITORS:
                         code.append('return Branches::Continuous_Signals;')
