@@ -23,7 +23,7 @@ Features
 - Support for state composition and state aggregation (parallel/nested states)
 - Works on pure PR+CIF files (textual SDL notation)
 - Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
-- Generates Ada code (and Rust code, prototype - use `--toRust`)
+- Generates Ada and C code, and Rust code (prototype - use `--toRust`)
 - Automatic conversion to Statechart diagrams
 - Save the complete or parts of the model to PNG/SVG/PDF files
 - Hyperlinks (link a symbol content to any external document or web page)
@@ -125,6 +125,11 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.10.0 (09/2026)**
+- Add support for state aggregations (nested/parallel states) in the Rust backend
+- Support instances of process types in the Rust backend, removing the last expected failures of `make test-rust`
+- Further Rust backend improvements and documentation fixes
 
 **4.9.0 (09/2026)**
 - Introduce a Rust code generator backend (prototype), aligned with ASN1SCC's Rust backend for data types:

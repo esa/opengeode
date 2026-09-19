@@ -45,8 +45,8 @@ test-rust:
 	  fi; \
 	done && \
 	sed -i '/^pub const /d' dataview-uniq.rs && \
-	sed -i 's/use crate::dataview_uniqDef/use super::dataview_uniqDef/g; s/use crate::dataview_uniq/use super::dataview_uniq/g; s/use crate::og_type_datamodelDef/use super::og_type_datamodelDef/g' og_type_datamodel.rs og_type_datamodelDef.rs dataview-uniq.rs 2>/dev/null; \
-	sed -i 's/fn ri_0_rezult[^}]*/fn ri_0_rezult(_res: \&mut asn1SccMy_OctStr) { print!("[C] got something]\\n"); /' og_type.rs 2>/dev/null || true && \
+	sed -i 's/use crate::dataview_uniqDef/use super::dataview_uniqDef/g; s/use crate::dataview_uniq/use super::dataview_uniq/g; s/use crate::og_type_datamodelDef/use super::og_type_datamodelDef/g' og_type_datamodel.rs og_type_datamodelDef.rs dataview-uniq.rs 2>/dev/null && \
+	python3 patch_ri.py og_ri.rs && \
 	cp og_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
 	./target/debug/test_rust | diff expected -

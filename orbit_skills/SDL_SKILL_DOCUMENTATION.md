@@ -111,7 +111,7 @@ flowchart TD
     C --> D[AST CommonTree]
     D --> E[ogParser.py Semantic Analysis]
     E --> F[ogAST.AST]
-    F --> G[Code Generator<br/>Ada/C/Rust/LLVM]
+    F --> G[Code Generator<br/>Ada/C/Rust]
     F --> H[Renderer PNG/PDF/SVG]
     F --> I[Statechart Export]
     J[.asn File] --> K[ASN1SCC Compiler]
@@ -243,10 +243,9 @@ With no flags: opens the **graphical editor** (GUI mode).
 | `--toAda` | CLI | Generate Ada code |
 | `--toC` | CLI | Generate C code |
 | `--toRust` | CLI | Generate Rust code |
-| `--llvm` | CLI | Generate LLVM IR code (experimental) |
 | `--simu` | CLI | Generate Ada code with TASTE simulation wrapper |
 | `--stg <file>` | CLI | Generate code using a custom String Template file |
-| `-O <0-3>` | CLI | LLVM IR optimization level (default 0) |
+| `-O <0-3>` | CLI | Set optimization level for the generated C code |
 | `--png` | CLI | Export process diagram to PNG |
 | `--pdf` | CLI | Export process diagram to PDF |
 | `--svg` | CLI | Export process diagram to SVG |
@@ -259,7 +258,7 @@ With no flags: opens the **graphical editor** (GUI mode).
 ### CLI Mode vs GUI Mode
 
 CLI mode is triggered when any of `--check`, `--toAda`, `--toC`, `--toRust`,
-`--llvm`, `--simu`, `--stg`, `--png`, `--pdf`, `--svg`, `--dumpAST` is set **and**
+`--simu`, `--stg`, `--png`, `--pdf`, `--svg`, `--dumpAST` is set **and**
 `--edit` is NOT set. In CLI mode, the tool:
 
 1. Parses all `.pr` files
