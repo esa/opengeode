@@ -849,8 +849,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     elif varbty.kind in ('IA5StringType', 'StringType') and \
                             isinstance(def_value, ogAST.PrimStringLiteral):
                         dstr = array_content(def_value, dstr, var_type)
-                    if dst or dlocal:
-                        LOG.warning(f'DCL: non-ground expression for {var_name}')
+                    # The expression must be ground: it must not need any
+                    # temporary variable to store a computed result
+                    assert not dst and not dlocal, \
+                            'DCL: Expecting a ground expression'
                     ctxt_parts.append(f'{var_name}: {dstr}')
 
             if ctxt_parts:
@@ -2426,6 +2428,8 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
+                # Expression must be a ground expression, i.e. must not
+                # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
                 if varbty.kind.startswith('Integer') and \
@@ -2436,6 +2440,7 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
                     dstr = array_content(def_value, dstr, varbty)
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
+                assert not dst and not dlocal, 'Ground expression error'
                 code.append(f'let mut {var_name}: {typename} = {dstr};')
             else:
                 code.append(f'let mut {var_name}: {typename} = Default::default();')
@@ -2999,7 +3004,50 @@ def _basic_operators(expr, **kwargs):
                                    ogAST.PrimBitStringLiteral)):
         left_str = str(expr.left.numeric_value)
 
-    rust_string = f'({left_str} {rust_op} {right_str})'
+    # Check if either side is a literal number (after the possible
+    # octet/bit string literal substitution above, as in the Ada backend).
+    # Rust real literals carry an f64/f32 suffix: strip it for the check.
+    left_is_numeric = is_numeric(left_str)
+    right_is_numeric = is_numeric(right_str)
+
+    if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
+        # No cast is needed if:
+        # - one of the two sides only is a literal
+        # - or if the basic types are identical
+        rust_string = f'({left_str} {rust_op} {right_str})'
+
+    elif left_is_numeric and right_is_numeric:
+        # Both sides are literals : compute the result on the fly
+        # (constant folding, as in the Ada backend). Strip the Rust f64/f32
+        # literal suffixes before evaluating, and map the SDL mod/rem
+        # operators to Python's % operator.
+        lval = left_str.replace('f64', '').replace('f32', '')
+        rval = right_str.replace('f64', '').replace('f32', '')
+        py_op = {'mod': '%', 'rem': '%'}.get(expr.operand, expr.operand)
+        result = eval(f'{lval} {py_op} {rval}')
+        if isinstance(result, bool):
+            # Comparison operators folded to a boolean
+            rust_string = 'true' if result else 'false'
+        elif isinstance(result, float) \
+                and not (lbty.kind.startswith('Integer')
+                         and rbty.kind.startswith('Integer')):
+            # Real result: re-add the f64 suffix, as in _integer()
+            rust_string = f'{result}f64'
+        else:
+            # Integer result (or whole float from integer division):
+            # bracket negative values to preserve precedence,
+            # like the _integer() handler does
+            result = int(result)
+            rust_string = f'({result})' if result < 0 else f'{result}'
+
+    elif rbty.kind != lbty.kind:
+        # Basic types are different (one is an Integer32, eg. loop iterator)
+        # => We must cast it to the type of the other side (Rust 'as' cast)
+        if lbty.kind == 'Integer32Type':
+            left_str = f'({left_str} as {type_name(expr.right.exprType)})'
+        else:
+            right_str = f'({right_str} as {type_name(expr.left.exprType)})'
+        rust_string = f'({left_str} {rust_op} {right_str})'
 
     code.extend(left_stmts)
     code.extend(right_stmts)
@@ -3030,6 +3078,11 @@ def _equality(expr, **kwargs):
         if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
                                    ogAST.PrimOctetStringLiteral)):
             right_str = str(expr.right.numeric_value)
+        # Cast in case a side is using a 32bits int (eg. when using Length(..))
+        if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
+            right_str = f'({right_str} as {type_name(lbty)})'
+        elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
+            left_str = f'({left_str} as {type_name(rbty)})'
         rust_string = f'({left_str} {rust_op} {right_str})'
     else:
         if asn1_type in TYPES:
