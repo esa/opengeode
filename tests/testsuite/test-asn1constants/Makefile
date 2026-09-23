@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
@@ -41,8 +41,6 @@ test-if:
 testif:
 	sdl2if orchestrator.pr system_structure.pr
 
-test-llvm: orchestrator.o
-
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
@@ -62,4 +60,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

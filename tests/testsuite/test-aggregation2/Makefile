@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=og.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) og.pr
@@ -46,11 +46,6 @@ test-c:
 	$(CC) test_c.o og.c dataview-uniq.o og_datamodel.o -lm -o test_c
 	./test_c | diff expected.log -
 
-test-llvm:
-	$(OPENGEODE) og.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 test-python:
 	$(OPENGEODE) og.pr --shared
 	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
@@ -64,9 +59,48 @@ test-python:
 
 test-rust:
 	$(OPENGEODE) og.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
+	  fi; \
+	done && \
+	cp og_cargo.toml Cargo.toml && \
+	printf '%s\n' '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,' \
+		'unused_variables, unused_mut, unused_assignments, dead_code)]' \
+		'use og::*;' \
+		'use og::dataview_uniqDef::*;' \
+		'fn main() {' \
+		'    unsafe {' \
+		'        og_startup();' \
+		'        for_a();' \
+		'        for_a();' \
+		'        for_a();' \
+		'        for_b();' \
+		'        for_b();' \
+		'        let mut param: asn1SccMyInteger = 1;' \
+		'        reset_all(&mut param);' \
+		'        reset_all(&mut param);' \
+		'        exit_aggreg();' \
+		'    }' \
+		'}' > main.rs && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected.log -
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm test-rust coverage
+.PHONY: all edit test-parse test-ada test-rust coverage
+
+# Override shared.mk clean to preserve main.rs (hand-authored harness)
+clean:
+	-mv main.rs main.rs.bak 2>/dev/null
+	gnat clean *.adb
+	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
+	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_c \
+	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
+	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
+		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
+		   Cargo.toml target
+	-mv main.rs.bak main.rs 2>/dev/null

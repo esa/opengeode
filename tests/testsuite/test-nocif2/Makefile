@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=DemoDeviceDSAP_fixed.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr
@@ -38,10 +38,7 @@ test-rust:
 test-if:
 	sdl2if DemoDeviceDSAP_fixed.pr
 
-test-llvm:
-	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --llvm -O$(O)
-
 coverage:
 	coverage run -p $(OPENGEODE) DemoDeviceDSAP_fixed.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

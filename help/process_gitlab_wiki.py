@@ -169,13 +169,13 @@ qhp_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <QtHelpProject version="1.0">
     <namespace>esa.int.taste.opengeode</namespace>
     <virtualFolder>doc</virtualFolder>
-    <customFilter name="OpenGEODE 3.9">
+    <customFilter name="OpenGEODE 4.10">
         <filterAttribute>opengeode</filterAttribute>
-        <filterAttribute>3.9</filterAttribute>
+        <filterAttribute>4.10</filterAttribute>
     </customFilter>
     <filterSection>
         <filterAttribute>opengeode</filterAttribute>
-        <filterAttribute>3.9</filterAttribute>
+        <filterAttribute>4.10</filterAttribute>
         <toc>
 """
 

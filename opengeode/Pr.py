@@ -28,6 +28,16 @@ __all__ = ['parse_scene', 'generate']
 
 g_useSymbolId = False
 
+# SECURITY: registry of the symbol ids that this process emitted in the
+# CIF _id annotations. The error-linking code in opengeode.py casts the
+# value found in a "/* CIF _id N */" annotation back into a Python object
+# (ctypes.cast). A hand-written .pr file can carry any integer there,
+# which would be dereferenced blindly (SIGSEGV or worse). Only ids present
+# in this registry may be cast; everything else is ignored.
+# The registry is filled by cif_symbolid() when the scene is re-parsed
+# (the only legitimate producer of such ids).
+SYMBOL_ID_REGISTRY = set()
+
 class Indent(deque):
     ''' Extension of the deque class to support automatic indentation '''
     indent = 0
@@ -219,7 +229,12 @@ def cif_symbolid(symbol):
     when parsing an already rendered diagram. This allows to keep the link
     between the re-parsed AST and the existing symbols, that is useful when
     reporting errors '''
-    return f'/* CIF _id {id(symbol)} */'
+    symbol_id = id(symbol)
+    # SECURITY: remember the ids we actually handed out, so that the
+    # error-linking code can distinguish them from forged values coming
+    # from a hand-written or tampered .pr file.
+    SYMBOL_ID_REGISTRY.add(symbol_id)
+    return f'/* CIF _id {symbol_id} */'
 
 
 def hyperlink(symbol):

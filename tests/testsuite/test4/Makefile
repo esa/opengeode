@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
@@ -30,8 +30,6 @@ test-ada: orchestrator.ali
 test-c: orchestrator.c
 	$(CC) -include missing.h -c orchestrator.c
 
-test-llvm: orchestrator.o
-
 test-if:
 	sdl2if orchestrator.pr sytem_structure.pr
 
@@ -43,4 +41,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage test-rust
+.PHONY: all edit test-parse test-ada coverage test-rust

@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) og.pr system_structure.pr
@@ -38,10 +38,6 @@ test-c: og.c test_c.o dataview-uniq.o
 test-if:
 	sdl2if og.pr system_structure.pr
 
-test-llvm: og.o dataview-uniq.o | test_llvm.o
-	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
-	./test_llvm
-
 test-vhdl : test-c
 	bambu og.c test_c.c --experimental-setup=BAMBU
 
@@ -61,7 +57,7 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage
 
 # Override shared.mk clean to preserve main.rs
 clean:
@@ -69,7 +65,7 @@ clean:
 	gnat clean *.adb
 	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
-	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
 		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \

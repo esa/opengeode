@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
@@ -41,10 +41,6 @@ test-c: orchestrator.c test_c.o dataview-uniq.o
 test-if:
 	sdl2if orchestrator.pr sytem_structure.pr
 
-test-llvm: orchestrator.o dataview-uniq.o | test_llvm.o
-	$(CC) orchestrator.o dataview-uniq.o test_llvm.o -o test_llvm -lm
-	./test_llvm | diff expected -
-
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
@@ -52,4 +48,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm coverage test-rust
+.PHONY: all edit test-parse test-ada coverage test-rust

@@ -16,9 +16,6 @@ test-if:
 test-promela:
 	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
 
-test-llvm:
-	@$(MAKE) -s -C tests/testsuite $@
-
 test-rust:
 	@PATH=~/.local/bin:"${PATH}" $(MAKE) -s -C tests/testsuite $@
 
@@ -120,5 +117,5 @@ clean:
 	@rm -rf pyinstaller-pyinstaller-953f6e3
 	@rm -rf opengeode/*.pyc dist build *.egg-info
 
-.PHONY: all test-parse test-ada test-llvm test-rust benchmark benchmark-O1 benchmark-O2 \
+.PHONY: all test-parse test-ada test-rust benchmark benchmark-O1 benchmark-O2 \
 	    benchmark-O3 flake8 coverage compile-all install publish clean help

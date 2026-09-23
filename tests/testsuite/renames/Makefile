@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=*.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) *.pr
@@ -41,11 +41,8 @@ test-rust:
 test-if:
 	sdl2if *.pr
 
-test-llvm:
-	$(warning llvm backend does not support this project)
-
 
 coverage:
 	coverage run -p $(OPENGEODE) *.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

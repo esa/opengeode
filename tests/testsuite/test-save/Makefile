@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=og.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) og.pr
@@ -56,13 +56,8 @@ simu:
 	$(OPENGEODE) og.pr --shared
 	./og_simu.sh
 
-test-llvm:
-	$(OPENGEODE) og.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

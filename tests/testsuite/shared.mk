@@ -2,7 +2,6 @@ OPENGEODE=opengeode
 SDL2IF=sdl2if
 ASN1SCC=asn1scc
 CC=gcc
-LLC=llc
 GNATMAKE=gnatmake -gnat2022
 GNATBIND=gnatbind
 GNATLINK=gnatlink -lgcov -coverage 
@@ -17,19 +16,14 @@ clean:
 	gnat clean *.adb
 	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
-	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
 		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
 		   Cargo.toml target
 
 test-promela: FORCE
-	 sdl2promela --sdl *.pr -o og.pml
-
-%.o: %.pr FORCE
-	$(OPENGEODE) $< system_structure.pr --llvm -O$(O)
-	$(LLC) $*.ll
-	$(CC) -O$(O) -c -g $*.s
+		 sdl2promela --sdl *.pr -o og.pml
 
 %.c: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toC

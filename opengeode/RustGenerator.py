@@ -58,6 +58,13 @@ ASN1SCC = 'asn1Scc'
 NO_CONTEXT = False
 VAR_COUNTER = 0
 
+# True while generating the process TYPE module (the "generic" part of a
+# process type / instance pair, mirroring Ada's generic packages). In that
+# case all the state machine entry points are generic over a required-
+# interface implementation: `fn go<Ri: {Type}Ri>(ri: &mut Ri, ...)`.
+# The instance wrapper (instance=True) provides that implementation.
+GENERIC = False
+
 # When inside a procedure that uses label dispatch (loop+match), this is set
 # so that join terminators generate __next = "label"; continue; instead of comments
 PROC_LABEL_NAMES = []  # list of label names in the current procedure dispatch
@@ -79,57 +86,57 @@ def is_numeric(string) -> bool:
     return True
 
 
-def external_ri_list(process) -> List:
-    '''Helper: create a list of RI with proper signature.
-    Used for process type generic parameters.'''
+def external_ri_list(process, has_cs=False) -> List:
+    '''Helper: create the list of required interfaces of a process type.
+
+    Returns, in a fixed order, one entry per required interface that the
+    process type needs from its environment — the exact set that the Ada
+    backend passes as "with procedure" generic formals:
+      - one `ri_0_{signal}` per output signal,
+      - one `ri_0_{procedure}` per external (RI) procedure,
+      - `set_{timer}` / `reset_{timer}` per timer,
+      - `delete_instance` when a PID type is present (stop terminator),
+      - `check_queue` when the model uses continuous signals.
+
+    Each entry is a dict:
+        'method':  trait method name (called as ri.<method> in generic code)
+        'params':  list of (param_name, param_type) pairs
+    '''
     result = []
+
+    def add(method, params):
+        # params: list of (param_name, param_type) — e.g. ('ze_rezult',
+        # '&mut asn1SccMy_OctStr') or ('dest_pid', 'asn1SccPID')
+        result.append({'method': method, 'params': params})
+
     for signal in process.output_signals:
         param_name = signal.get('param_name') or f'{signal["name"]}_param'
-        param_spec = ''
-        if 'type' in signal:
-            typename = type_name(signal['type'])
-            if 'PID' in TYPES:
-                param_spec = (f'({param_name}: &mut {typename}, '
-                              f'dest_pid: {ASN1SCC}PID)')
-            else:
-                param_spec = f'({param_name}: &mut {typename})'
-        elif 'PID' in TYPES:
-            param_spec = f'(dest_pid: {ASN1SCC}PID)'
-        result.append(f"fn ri{SEPARATOR}{signal['name']}{param_spec}")
-    for proc in (proc for proc in process.procedures if proc.external):
-        ri_header = f'fn ri{SEPARATOR}{proc.inputString}'
         params = []
-        params_spec = ''
-        for param in proc.fpar:
-            typename = type_name(param['type'])
-            if param['direction'] == 'in':
-                direct = '&mut '
-            else:
-                direct = '&mut '
-            params.append(f'{param["name"]}: {direct}{typename}')
-        if params:
-            if 'PID' in TYPES:
-                params_spec = f"({', '.join(params)}, dest_pid: {ASN1SCC}PID)"
-            else:
-                params_spec = "({})".format(", ".join(params))
-            ri_header += params_spec
-        elif 'PID' in TYPES:
-            params_spec = f'(dest_pid: {ASN1SCC}PID)'
-            ri_header += params_spec
-        result.append(ri_header)
-    # Add timer RIs
+        if 'type' in signal:
+            params.append((param_name, f'&mut {type_name(signal["type"])}'))
+        if 'PID' in TYPES:
+            params.append(('dest_pid', f'{ASN1SCC}PID'))
+        add(f'ri{SEPARATOR}{signal["name"]}', params)
+    for proc in (proc for proc in process.procedures if proc.external):
+        params = [(param['name'], f'&mut {type_name(param["type"])}')
+                  for param in proc.fpar]
+        if 'PID' in TYPES:
+            params.append(('dest_pid', f'{ASN1SCC}PID'))
+        add(f'ri{SEPARATOR}{proc.inputString}', params)
     for timer in process.timers:
-        ri_header = f'fn ri{SEPARATOR}set_{timer}'
+        params = [('val', f'&mut {ASN1SCC}T_UInt32')]
         if 'PID' in TYPES:
-            ri_header += f'(val: &mut {ASN1SCC}T_UInt32, dest_pid: {ASN1SCC}PID)'
-        else:
-            ri_header += f'(val: &mut {ASN1SCC}T_UInt32)'
-        result.append(ri_header)
-        ri_header = f'fn ri{SEPARATOR}reset_{timer}'
+            params.append(('dest_pid', f'{ASN1SCC}PID'))
+        add(f'set_{timer}', params)
+        params = []
         if 'PID' in TYPES:
-            result.append(ri_header + f'(dest_pid: {ASN1SCC}PID)')
-        else:
-            result.append(ri_header + '()')
+            params.append(('dest_pid', f'{ASN1SCC}PID'))
+        add(f'reset_{timer}', params)
+    if has_cs and not MONITORS:
+        add('check_queue', [('res', '&mut bool')])
+    if 'PID' in TYPES:
+        # The stop terminator of a process type deletes its own instance
+        add('delete_instance', [('pid', f'{ASN1SCC}PID')])
     return result
 
 
@@ -242,6 +249,41 @@ def default_pid():
     elif 'PID' in TYPES:
         return f'{ASN1SCC}Env'
     return None
+
+
+def ri_trait_name():
+    '''Name of the generated RI trait for a process type.
+
+    The instance wrapper implements this trait to plug its own RI
+    implementations into the process type module, mirroring the
+    "with procedure" generic formals of the Ada backend.
+    '''
+    return f'{PROCESS_NAME.capitalize()}Ri'
+
+
+def ri_generic_sig(params=()):
+    '''Return the generic formal-parameter part of a state machine function.
+
+    For a process type, every function that (indirectly) calls a required
+    interface is generic over the RI implementation:
+        <Ri: Og_typeRi>(ri: &mut Ri, ze_param: &mut asn1SccMy_OctStr)
+    For a standalone process the parameters are passed through unchanged.
+    '''
+    if GENERIC:
+        rest = ''.join(f', {p}' for p in params)
+        return f'<Ri: {ri_trait_name()}>(ri: &mut Ri{rest})'
+    return f'({", ".join(params)})' if params else '()'
+
+
+def ri_call_args(args=()):
+    '''Return a call argument list, with "ri" first when generic.
+
+    In generic mode the callee expects the RI implementation as its
+    first argument (see ri_generic_sig).
+    '''
+    if GENERIC:
+        return f'(ri, {", ".join(args)})' if args else '(ri)'
+    return f'({", ".join(args)})' if args else '()'
 
 
 def is_fpar(name):
@@ -594,15 +636,19 @@ def generate_code_for_continuous_signals(process, generic):
     '''Generate the code to handle continuous signals (Rust)'''
     cs_template = [
         '// Process continuous signals',
-        'unsafe fn branch_continuous_signals() -> Branches {',
+        f'unsafe fn branch_continuous_signals{ri_generic_sig()} -> Branches {{',
         'let mut message_pending: bool = true;',
     ]
 
     # Queue check
     if not MONITORS:
+        if GENERIC:
+            queue_call = 'ri.check_queue(&mut message_pending);'
+        else:
+            queue_call = 'check_queue(&mut message_pending);'
         cs_template.extend([
             f'if {LPREFIX}.init_done {{',
-            'check_queue(&mut message_pending);',
+            queue_call,
             '}',
         ])
     else:
@@ -742,6 +788,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     PROCESS_NAME = process.name or process.processName
     global PROCESS
     PROCESS = process
+    global GENERIC
+    # When generating the process type module, all the code that can reach
+    # a required interface (RI, timers, ...) is generic over the RI
+    # implementation — the Rust equivalent of Ada's generic packages.
+    GENERIC = bool(generic)
 
     global TYPES
     TYPES = process.dataview
@@ -822,12 +873,26 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             const_sort = const.type.ReferencedTypeName.replace('-', '_')
             if process.process_type and const.varName == 'self' and 'PID' in TYPES:
                 # For process types, 'self' is the PID of this instance.
-                # Generate a static that the instance wrapper sets at startup.
+                # The static is emitted below (decoupled from this loop) and
+                # the instance wrapper sets it at startup.
+                continue
+            elif const.varName == 'self':
+                # Standalone process: 'self' is a constant (the PID of this
+                # process in the environment)
                 context_decl.append(
-                    f'static mut SELF_PID: {ASN1SCC}PID = {ASN1SCC}Env;')
+                    f'const SELF: {ASN1SCC}{const_sort} = {val};')
             else:
                 context_decl.append(
                     f'const {const.varName.upper()}: {ASN1SCC}{const_sort} = {val};')
+
+        # For process types with a PID type in the dataview, the PID of the
+        # running instance is only known by the instance wrapper: keep it in
+        # a pub(crate) static that the wrapper sets at startup. When the
+        # dataview has no PID type nothing PID-related is emitted.
+        if generic and 'PID' in TYPES:
+            context_decl.append(
+                f'pub(crate) static mut SELF_PID: {ASN1SCC}PID = '
+                f'{ASN1SCC}PID::{ASN1SCC}env;')
 
         if not process.no_context:
             # Default context initialization
@@ -849,8 +914,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     elif varbty.kind in ('IA5StringType', 'StringType') and \
                             isinstance(def_value, ogAST.PrimStringLiteral):
                         dstr = array_content(def_value, dstr, var_type)
-                    if dst or dlocal:
-                        LOG.warning(f'DCL: non-ground expression for {var_name}')
+                    # The expression must be ground: it must not need any
+                    # temporary variable to store a computed result
+                    assert not dst and not dlocal, \
+                            'DCL: Expecting a ground expression'
                     ctxt_parts.append(f'{var_name}: {dstr}')
 
             if ctxt_parts:
@@ -934,11 +1001,13 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not instance:
         for name, substates in process.aggregates.items():
             proc_name = f'{name}{SEPARATOR}START'
-            process_level_decl.append(f'unsafe fn {proc_name}();')
-            aggreg_start_proc.append(f'unsafe fn {proc_name}() {{')
+            # Rust does not need forward declarations (unlike Ada) — only
+            # emit the definition, otherwise the name is defined twice.
+            aggreg_start_proc.append(
+                f'unsafe fn {proc_name}{ri_generic_sig()} {{')
             for subname in substates:
                 aggreg_start_proc.append(
-                    f'execute_branch_loop(Branches::{subname.statename}{SEPARATOR}START);')
+                    f'execute_branch_loop{ri_call_args([f"Branches::{subname.statename}{SEPARATOR}START"])};')
             aggreg_start_proc.append('}')
             aggreg_start_proc.append('')
 
@@ -949,20 +1018,20 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rand_reset.append(f'gen_{rand_g}.reset();')
 
         if NO_CONTEXT:
-            start_transition = ['pub(crate) unsafe fn startup() {}', '']
+            start_transition = [f'pub(crate) unsafe fn startup{ri_generic_sig()} {{}}', '']
         else:
             if process.transitions:
                 start_transition = [
-                    'pub(crate) unsafe fn startup() {',
+                    f'pub(crate) unsafe fn startup{ri_generic_sig()} {{',
                     *rand_reset,
                     f'{LPREFIX} = DEFAULT_CONTEXT;',
-                    'execute_transition(Branches::Startup_Transition);',
+                    f'execute_transition{ri_call_args(["Branches::Startup_Transition"])};',
                     init_done,
                     '}',
                     '']
             else:
                 start_transition = [
-                    'pub(crate) unsafe fn startup() {',
+                    f'pub(crate) unsafe fn startup{ri_generic_sig()} {{',
                     *rand_reset,
                     f'{LPREFIX} = DEFAULT_CONTEXT;',
                     init_done,
@@ -1007,7 +1076,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         ptype_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
         rust_body.append(f'use {ptype_module}::dataview_uniqDef::*;')
         rust_body.append(f'use {ptype_module}::dataview_uniq::*;')
-        rust_body.append(f'use {ptype_module}::og_type_datamodelDef::*;' if ptype_module == 'og_type' else '')
+        # The datamodelDef module is declared by the process type module
+        # (only when the type has a context). Re-export it here so that
+        # code using the wrapper can reach the context types.
+        if (getattr(process, 'instance_of_ref', None) is not None
+                and not getattr(process.instance_of_ref, 'no_context', False)):
+            rust_body.append(f'use {ptype_module}::{ptype_module}_datamodelDef::*;')
         rust_body.append('use asn1rust::*;')
 
     if not getattr(process, 'no_context', False) and not stop_condition and not instance:
@@ -1028,6 +1102,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         ptype_module = process.instance_of_name.lower()
         rust_body.append(f'#[path = "{ptype_module}.rs"]')
         rust_body.append(f'pub mod {ptype_module};')
+        # Include the user-editable RI stub file of THIS instance: it is the
+        # single hook where the environment implements the required
+        # interfaces (mirrors Ada's {instance}_RI package). The trait impl
+        # below forwards every trait method to it.
+        rust_body.append(f'#[path = "{process.name.lower()}_ri.rs"]')
+        rust_body.append(f'mod {process.name.lower()}_ri;')
         rust_body.append(f'use {ptype_module}::*;')
     elif stop_condition:
         rust_body.append(f'mod {stop_condition.lower()}_datamodel;')
@@ -1042,6 +1122,27 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # Context declarations at module level
     if not instance:
         rust_body.extend(context_decl)
+
+    # ── RI trait for process types ──
+    # This is the Rust equivalent of the "with procedure" generic formals of
+    # the Ada backend: one method per required interface. The instance
+    # wrapper implements the trait so that the RI behaviour is supplied by
+    # the instance (and its user-editable RI stub file) without any edit of
+    # this generated module.
+    ri_entries = []
+    if generic and not stop_condition:
+        ri_entries = external_ri_list(process, has_cs)
+        rust_body.append(
+            f'// Required interfaces of process type {process.name} '
+            f'(implemented by the instance)')
+        rust_body.append(f'pub trait {ri_trait_name()} {{')
+        for entry in ri_entries:
+            params = ', '.join(f'{n}: {t}' for n, t in entry['params'])
+            rust_body.append('    #[allow(unused_variables)]')
+            rust_body.append(
+                f'    unsafe fn {entry["method"]}(&mut self, {params});')
+        rust_body.append('}')
+        rust_body.append('')
 
     # ── Random generator declarations ──
     for each in process.random_generator:
@@ -1205,6 +1306,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
             rust_body.append(f'#[no_mangle]')
             rust_body.append(sig + ' {')
+        elif generic:
+            # Process type: PI is generic over the RI implementation. The
+            # instance wrapper calls it with its own RI impl (the Rust
+            # equivalent of instantiating the Ada generic package).
+            rust_body.append(
+                f'pub(crate) unsafe fn {pi_name}{ri_generic_sig([param_decl] if param_decl else [])} {{')
         else:
             if param_decl:
                 rust_body.append(f'pub(crate) unsafe fn {pi_name}({param_decl}) {{')
@@ -1241,7 +1348,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 for each in reversed(exitlist):
                     if trans and all(each.startswith(trans_st)
                                     for trans_st in trans.possible_states):
-                        dest.append(f'p{SEPARATOR}{each}{SEPARATOR}exit();')
+                        dest.append(
+                            f'p{SEPARATOR}{each}{SEPARATOR}exit{ri_call_args()};')
 
                 if first_input_def:
                     for inp in first_input_def.parameters:
@@ -1254,7 +1362,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                                     f'return Branches::{first_input_def.branch_label};')
                             else:
                                 dest.append(
-                                    f'execute_transition(Branches::{first_input_def.branch_label});')
+                                    f'execute_transition{ri_call_args([f"Branches::{first_input_def.branch_label}"])};')
                         else:
                             return False
                     else:
@@ -1266,8 +1374,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                                 f'{generate_state_name(inst_name)} =>')
                             if inp_def.transition:
                                 dest.append(
-                                    f'execute_transition(Branches::{inp_def.branch_label});')
-                        dest.append('_ => execute_transition(Branches::Continuous_Signals);')
+                                    f'execute_transition{ri_call_args([f"Branches::{inp_def.branch_label}"])},')
+                        dest.append(f'_ => execute_transition{ri_call_args(["Branches::Continuous_Signals"])},')
                         dest.append('}')
                 else:
                     return False
@@ -1289,7 +1397,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                             for par in sub.mapping.keys():
                                 case_state(par, dest, simu_step)
                             dest.append(
-                                '_ => execute_transition(Branches::Continuous_Signals);')
+                                f'_ => execute_transition{ri_call_args(["Branches::Continuous_Signals"])},')
                             if simu:
                                 dest.append('panic!("Lost_Input");')
                             dest.append('}')
@@ -1299,7 +1407,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                             execute_transition(state, dest, simu_step)
                         else:
                             dest.append(
-                                'execute_transition(Branches::Continuous_Signals);')
+                                f'execute_transition{ri_call_args(["Branches::Continuous_Signals"])};')
                             if simu:
                                 dest.append('panic!("Lost_Input");')
                     # Close the match arm
@@ -1314,17 +1422,19 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 for each_state in reduced_statelist:
                     case_state(each_state, rust_body, False)
                 rust_body.append('_ => {')
-                rust_body.append('execute_transition(Branches::Continuous_Signals);')
+                rust_body.append(
+                    f'execute_transition{ri_call_args(["Branches::Continuous_Signals"])};')
                 if simu and fake_name is False:
                     rust_body.append('panic!("Lost_Input");')
                 rust_body.append('}')
                 rust_body.append('}')
             elif has_cs:
-                rust_body.append('execute_transition(Branches::Continuous_Signals);')
+                rust_body.append(
+                    f'execute_transition{ri_call_args(["Branches::Continuous_Signals"])};')
             else:
                 rust_body.append('// no transition')
 
-            if simu and fake_name is False:
+            if simu and fake_name is False and not generic:
                 simu_code = []
                 simu_code.append(
                     f'fn simu_{signame}({param_decl}) -> Branches {{')
@@ -1343,17 +1453,21 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 simu_pi_decl.append(simu_code)
 
         elif not fake_name or instance:
-            # Use the process type name as module (e.g., og_type::go)
-            type_module = process.instance_of_name if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name
-            inst_call = f'{type_module}::{signame}'
+            # Instance wrapper: forward to the process type module with our
+            # RI implementation — the analog of "package og_Instance is
+            # new og_type (RI_0_rezult => Og_RI.rezult)" in the Ada backend.
+            type_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
             if 'type' in signal:
-                inst_call += f'({param_name})'
+                call_args = [param_name]
             elif proc_to_declare and proc_to_declare.fpar:
-                params = [p['name'] for p in proc_to_declare.fpar]
-                inst_call += f'({", ".join(params)})'
+                call_args = [p['name'] for p in proc_to_declare.fpar]
             else:
-                inst_call += '()'
-            rust_body.append(f'{inst_call};')
+                call_args = []
+            rust_body.append(
+                f'let mut ri = {process.name.capitalize()}Ri;')
+            args = ''.join(f', {a}' for a in call_args)
+            rust_body.append(
+                f'{type_module}::{signame}(&mut ri{args});')
 
         rust_body.append('}')
         rust_body.append('')
@@ -1377,13 +1491,55 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     # ── Instance startup ──
     if instance:
-        type_module = process.instance_of_name if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name
-        rust_body.extend([
-            'unsafe fn startup() {',
-            f'    {type_module}::SELF_PID = {ASN1SCC}{process.name};',
-            f'    {type_module}::startup();',
-            '}',
-            ''])
+        type_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
+        startup_lines = ['unsafe fn startup() {']
+        # The PID of this instance is only meaningful when the dataview
+        # defines a PID type; the process type module declares SELF_PID
+        # in that case only (mirrors the Ada "self" generic formal).
+        if 'PID' in TYPES:
+            startup_lines.append(
+                f'    {type_module}::SELF_PID = '
+                f'{ASN1SCC}PID::{ASN1SCC}{process.name.lower()};')
+        startup_lines.append(
+            f'    let mut ri = {process.name.capitalize()}Ri;')
+        startup_lines.append(f'    {type_module}::startup(&mut ri);')
+        startup_lines.append('}')
+        startup_lines.append('')
+        rust_body.extend(startup_lines)
+
+    # ── Instance RI implementation ──
+    # The instance implements the process type's RI trait by forwarding each
+    # method to the user-editable stubs in {instance}_ri.rs (the analog of
+    # the Ada {instance}_RI package, e.g. og_RI.ads/adb). The trait methods
+    # are derived from the process TYPE node so that every method declared
+    # in the trait is implemented, whatever this instance's wiring.
+    if instance and process.instance_of_name:
+        ptype_module = process.instance_of_name.lower()
+        ptype_node = getattr(process, 'instance_of_ref', None) or process
+        inst_ri_list = external_ri_list(ptype_node, has_cs)
+        rust_body.append(
+            f'// RI implementation for instance {process.name} — '
+            f'edit {process.name.lower()}_ri.rs')
+        rust_body.append(f'pub struct {process.name.capitalize()}Ri;')
+        rust_body.append('')
+        rust_body.append(
+            f'impl {ptype_module.capitalize()}Ri for '
+            f'{process.name.capitalize()}Ri {{')
+        for entry in inst_ri_list:
+            params = ', '.join(f'{n}: {t}' for n, t in entry['params'])
+            # User-facing stub name: plain SDL interface name
+            stub_name = entry['method'].replace(f'ri{SEPARATOR}', '')
+            stub_mod = f'{process.name.lower()}_ri'
+            forward_args = ', '.join(n for n, _ in entry['params'])
+            body_lines = [
+                f'    #[allow(unused_variables)]',
+                f'    unsafe fn {entry["method"]}(&mut self, {params}) {{',
+                f'        {stub_mod}::{stub_name}({forward_args});',
+                '}',
+                '']
+            rust_body.extend(body_lines)
+        rust_body.append('}')
+        rust_body.append('')
 
     # ── RI declarations ──
     for signal in process.output_signals:
@@ -1402,7 +1558,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             else:
                 param_spec = '()'
 
-        if not instance:
+        if not instance and not generic:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{param_spec} {{ /* RI stub - implement me */ }}')
 
     # ── External procedure RIs ──
@@ -1419,7 +1575,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 params_spec = f'(dest_pid: {ASN1SCC}PID)'
         else:
             params_spec = f'({", ".join(params)})' if params else '()'
-        if not instance:
+        if not instance and not generic:
             ri_stub_code.append(f'fn ri{SEPARATOR}{sig}{params_spec} {{ /* RI stub */ }}')
 
     # ── Timer declarations ──
@@ -1467,7 +1623,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     # ── Execute_Transition and Execute_Branch_Loop ──
     if process.transitions and not instance and not NO_CONTEXT:
-        if simu:
+        if simu and not generic:
             rust_body.extend([
                 f'#[no_mangle]',
                 f'pub unsafe extern "C" fn {process.name.lower()}_simu_next(branch: Branches) -> Branches {{',
@@ -1494,16 +1650,16 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rust_body.append(decl)
 
         rust_body.extend([
-            'unsafe fn execute_branch_loop(branch: Branches) {',
+            f'unsafe fn execute_branch_loop{ri_generic_sig(["branch: Branches"])} {{',
             '    let mut next_branch = branch;',
             '    while next_branch != Branches::Branch_End {',
             '        match next_branch {'])
         for label in all_labels:
             rust_body.append(
-                f'            Branches::{label} => next_branch = branch_{label}(),')
+                f'            Branches::{label} => next_branch = branch_{label}{ri_call_args()},')
         if has_cs:
             rust_body.append(
-                '            Branches::Continuous_Signals => next_branch = branch_continuous_signals(),')
+                f'            Branches::Continuous_Signals => next_branch = branch_continuous_signals{ri_call_args()},')
         else:
             rust_body.append(
                 '            Branches::Continuous_Signals => next_branch = Branches::Branch_End,')
@@ -1514,11 +1670,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.append('')
 
         rust_body.extend([
-            'pub(crate) unsafe fn execute_transition(branch: Branches) {',
+            f'pub(crate) unsafe fn execute_transition{ri_generic_sig(["branch: Branches"])} {{',
             f'    if !{LPREFIX}.init_done && branch != Branches::Startup_Transition {{',
             '        return;',
             '    }',
-            '    execute_branch_loop(branch);',
+            f'    execute_branch_loop{ri_call_args(["branch"])};',
             '}',
             ''])
 
@@ -1526,7 +1682,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
 
     elif not instance and not NO_CONTEXT:
         rust_body.extend([
-            'pub(crate) unsafe fn execute_transition(branch: Branches) {}',
+            f'pub(crate) unsafe fn execute_transition{ri_generic_sig(["branch: Branches"])} {{}}',
             ''])
 
     # ── Startup ──
@@ -1609,13 +1765,57 @@ opt-level = 3
         with open('dataview-uniq.rs', 'w') as f:
             f.write('\n'.join(new_lines))
 
-    if not taste:
+    if instance or not taste:
+        # Write the user-editable RI stub file (only once, never clobbering
+        # user edits). For a standalone process it mirrors the inline stubs;
+        # for a process type INSTANCE it is the single hook where the user
+        # implements the required interfaces — the instance wrapper's trait
+        # impl (above) forwards every RI to it, mirroring Ada's
+        # {instance}_RI.ads/adb stub package. In taste mode the wrapper still
+        # needs the file because it declares `mod {instance}_ri;` and the
+        # middleware provides the implementation there.
         ri_stub_file = f'{process.name.lower()}_ri.rs'
-        if not os.path.exists(ri_stub_file) and ri_stub_code:
-            with open(ri_stub_file, 'w') as ri_stub:
-                ri_stub.write('\n'.join(format_rust_code([
+        if not os.path.exists(ri_stub_file):
+            stub_lines = []
+            if instance and process.instance_of_name:
+                # Instance of a process type: one plain-named function per
+                # required interface of the TYPE (the trait impl in the
+                # wrapper forwards to these — both derive from the type
+                # node, so they always match).
+                ptype_module = process.instance_of_name.lower()
+                ptype_node = getattr(process, 'instance_of_ref', None) or process
+                stub_lines = [
+                    f'// RI stubs for instance {process.name} of process '
+                    f'type {process.instance_of_name}',
+                    '// Implement here the required interfaces (RI) of the',
+                    '// process type. This file is generated only once and is',
+                    '// never overwritten by the code generator.',
+                    '#![allow(non_snake_case, unused_variables, '
+                    'unused_mut, dead_code)]',
+                    f'use super::{ptype_module}::dataview_uniqDef::*;',
+                    f'use super::{ptype_module}::dataview_uniq::*;',
+                    f'use super::{ptype_module}::{ptype_module}_datamodelDef::*;'
+                    if not getattr(process, 'instance_of_ref', None) or
+                    not getattr(process.instance_of_ref, 'no_context', False)
+                    else '',
+                    '',
+                ]
+                for entry in external_ri_list(ptype_node, has_cs):
+                    params = ', '.join(f'{n}: {t}'
+                                      for n, t in entry['params'])
+                    stub_name = entry['method'].replace(f'ri{SEPARATOR}', '')
+                    stub_lines.append(f'pub unsafe fn {stub_name}({params}) {{')
+                    stub_lines.append('    // TODO: implement this RI')
+                    stub_lines.append('}')
+                    stub_lines.append('')
+            elif ri_stub_code:
+                stub_lines = [
                     f'// RI stubs for {process.name} - implement these functions',
-                    f'#![allow(non_snake_case)]'] + ri_stub_code)))
+                    '#![allow(non_snake_case)]'] + ri_stub_code
+            if stub_lines:
+                with open(ri_stub_file, 'w') as ri_stub:
+                    ri_stub.write(
+                        '\n'.join(format_rust_code(stub_lines)))
 
     with open(f'{process.name.lower()}_cargo.toml', 'w') as cargo:
         cargo.write(cargo_toml)
@@ -1718,9 +1918,13 @@ def _call_external_function(output, **kwargs):
             call_code.extend(p_code)
             call_local.extend(p_local)
             if 'PID' in TYPES:
-                call_code.append(f'reset_{p_id}({default_pid()});')
+                call_code.append(
+                    f'ri.reset_{p_id}({default_pid()});' if GENERIC
+                    else f'reset_{p_id}({default_pid()});')
             else:
-                call_code.append(f'reset_{p_id}();')
+                call_code.append(
+                    f'ri.reset_{p_id}();' if GENERIC
+                    else f'reset_{p_id}();')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -1741,9 +1945,13 @@ def _call_external_function(output, **kwargs):
             call_local.append(f'let mut {tmp_id}: {ASN1SCC}T_UInt32;')
             call_code.append(f'{tmp_id} = {t_val} as {ASN1SCC}T_UInt32;')
             if 'PID' in TYPES:
-                call_code.append(f'set_{p_id}(&mut {tmp_id}, {default_pid()});')
+                call_code.append(
+                    f'ri.set_{p_id}(&mut {tmp_id}, {default_pid()});' if GENERIC
+                    else f'set_{p_id}(&mut {tmp_id}, {default_pid()});')
             else:
-                call_code.append(f'set_{p_id}(&mut {tmp_id});')
+                call_code.append(
+                    f'ri.set_{p_id}(&mut {tmp_id});' if GENERIC
+                    else f'set_{p_id}(&mut {tmp_id});')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -1783,7 +1991,7 @@ def _call_external_function(output, **kwargs):
             # the target is a PI function, not an RI — call without ri_ prefix
             if is_transition_call:
                 # _Transition PI has no parameters
-                call_code.append(f'{signal_name}();')
+                call_code.append(f'{signal_name}{ri_call_args()};')
                 code.extend(call_code)
                 continue
             # Resolve dest_pid (for process types with PID)
@@ -1830,21 +2038,27 @@ def _call_external_function(output, **kwargs):
             # always pass dest_pid when PID is in TYPES (the stub always
             # declares it). When toDest is not specified, use default_pid()
             # (SELF_PID for process types, asn1SccEnv otherwise).
+            if GENERIC:
+                # Process type: the RI is provided by the caller through the
+                # generic Ri parameter (trait method call).
+                prefix = 'ri.'
+            else:
+                prefix = ''
             if dest_pid is not None:
                 # dest_pid was resolved above; if it's 'env', use the default PID
                 if dest_pid == f'{ASN1SCC}env':
                     dest_pid = default_pid()
                 if list_of_params:
                     params = ', '.join(list_of_params)
-                    call_code.append(f'ri{SEPARATOR}{name}({params}, {dest_pid});')
+                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params}, {dest_pid});')
                 else:
-                    call_code.append(f'ri{SEPARATOR}{name}({dest_pid});')
+                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({dest_pid});')
             else:
                 if list_of_params:
                     params = ', '.join(list_of_params)
-                    call_code.append(f'ri{SEPARATOR}{name}({params});')
+                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params});')
                 else:
-                    call_code.append(f'ri{SEPARATOR}{name}();')
+                    call_code.append(f'{prefix}ri{SEPARATOR}{name}();')
         else:
             ident = proc.inputString
             p = [p for p in PROCEDURES
@@ -1858,9 +2072,10 @@ def _call_external_function(output, **kwargs):
                 list_of_params.append(f'&mut {p_id}')
             full_name = f'p{SEPARATOR}{proc.inputString}'
             if list_of_params:
-                call_code.append(f'{full_name}({", ".join(list_of_params)});')
+                call_code.append(
+                    f'{full_name}{ri_call_args(list_of_params)};')
             else:
-                call_code.append(f'{full_name}();')
+                call_code.append(f'{full_name}{ri_call_args()};')
 
         if call_local:
             code.append('{')
@@ -2275,7 +2490,12 @@ def _transition(tr, **kwargs):
                     code.append(f'return Branches::{tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
                 if 'PID' in TYPES:
-                    code.append(f'delete_instance(self);')
+                    if GENERIC:
+                        # Process type: delete the instance via the RI
+                        # (generic formal "with procedure Delete_Instance")
+                        code.append(f'ri.delete_instance(SELF_PID);')
+                    else:
+                        code.append(f'delete_instance(self);')
                     code.append(f'unsafe {{ {LPREFIX} = Default::default(); }}')
                     code.append(f'{LPREFIX}.init_done = false;')
                 code.append('return Branches::Continuous_Signals;')
@@ -2284,12 +2504,21 @@ def _transition(tr, **kwargs):
                 aggregate = False
                 if tr.terminator.substate:
                     aggregate = True
+                    # Within a state aggregation, a return means that ONE
+                    # parallel substate finished. Set it to the "finished"
+                    # pseudo-state; only when ALL siblings are finished may
+                    # the aggregation exit procedure run. The return value
+                    # (branch/Continuous_Signals) is therefore emitted
+                    # inside the if/else on the sibling condition.
                     code.append(f'{LPREFIX}.{tr.terminator.substate}{SEPARATOR}state = {generate_state_name("state" + SEPARATOR + "end")};')
                     conds = [f'{LPREFIX}.{sib}{SEPARATOR}state == {generate_state_name("state" + SEPARATOR + "end")}'
                              for sib in tr.terminator.siblings
                              if sib.lower() != tr.terminator.substate.lower()]
                     if conds:
                         code.append(f'if {" && ".join(conds)} {{')
+                    else:
+                        # No unfinished sibling: aggregation exit runs now
+                        aggregate = False
 
                 if tr.terminator.next_id == -1:
                     retexp = tr.terminator.return_expr
@@ -2342,6 +2571,10 @@ def _transition(tr, **kwargs):
                     else:
                         code.append('return Branches::Branch_End;')
                 if aggregate:
+                    # close the "all siblings finished" if-block, then the
+                    # else branch runs when at least one sibling is still
+                    # active: stay in the aggregation (Continuous_Signals)
+                    code.append('}')
                     code.append('else {')
                     if not MONITORS:
                         code.append('return Branches::Continuous_Signals;')
@@ -2365,7 +2598,8 @@ def _floating_label(label, **kwargs):
     code.extend(traceability(label))
     if kind != 'PROCEDURE':
         # Function returning Branches
-        code.append(f'unsafe fn branch_{label.inputString}() -> Branches {{')
+        code.append(
+            f'unsafe fn branch_{label.inputString}{ri_generic_sig()} -> Branches {{')
     if label.transition:
         code_trans, local_trans = generate(label.transition)
         if local_trans:
@@ -2426,6 +2660,8 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
         for var_name, (var_type, def_value) in proc.variables.items():
             typename = type_name(var_type)
             if def_value:
+                # Expression must be a ground expression, i.e. must not
+                # require temporary variable to store computed result
                 dst, dstr, dlocal = expression(def_value, readonly=1)
                 varbty = find_basic_type(var_type)
                 if varbty.kind.startswith('Integer') and \
@@ -2436,6 +2672,7 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
                     dstr = array_content(def_value, dstr, varbty)
                 elif varbty.kind == 'IA5StringType':
                     dstr = ia5string_raw(def_value)
+                assert not dst and not dlocal, 'Ground expression error'
                 code.append(f'let mut {var_name}: {typename} = {dstr};')
             else:
                 code.append(f'let mut {var_name}: {typename} = Default::default();')
@@ -2538,21 +2775,25 @@ def procedure_header(proc):
     proc_name = proc.inputString
     # Exported procedures need to be pub(crate) for instance wrappers to access
     vis = 'pub(crate) ' if proc.exported else ''
-    if ret_type:
-        pi_header = f'{vis}unsafe fn {sep}{proc_name}'
+    params = []
+    for fpar in proc.fpar:
+        typename = type_name(fpar['type'])
+        # Rust: in params are &mut, out params are &mut
+        params.append(f'{fpar.get("name")}: &mut {typename}')
+    if GENERIC and not proc.external:
+        # In a process type, inner/exported procedures can call required
+        # interfaces: they are generic over the RI implementation too.
+        if ret_type:
+            pi_header = (f'{vis}unsafe fn {sep}{proc_name}'
+                         f'{ri_generic_sig(params)} -> {ret_type}')
+        else:
+            pi_header = f'{vis}unsafe fn {sep}{proc_name}{ri_generic_sig(params)}'
     else:
-        pi_header = f'{vis}unsafe fn {sep}{proc_name}'
-    if proc.fpar:
-        params = []
-        for fpar in proc.fpar:
-            typename = type_name(fpar['type'])
-            # Rust: in params are &mut, out params are &mut
-            params.append(f'{fpar.get("name")}: &mut {typename}')
-        pi_header += '(' + ', '.join(params) + ')'
-    else:
-        pi_header += '()'
-    if ret_type:
-        pi_header += f' -> {ret_type}'
+        params_str = ', '.join(params) if params else ''
+        if ret_type:
+            pi_header = f'{vis}unsafe fn {sep}{proc_name}({params_str}) -> {ret_type}'
+        else:
+            pi_header = f'{vis}unsafe fn {sep}{proc_name}({params_str})'
     return pi_header
 
 
@@ -2810,7 +3051,7 @@ def _prim_call(prim, **kwargs):
             rust_string = f'{ident}({", ".join(list_of_params)})'
         else:
             prefix = f'p{SEPARATOR}' if not p.exported else ''
-            rust_string = f'{prefix}{ident}({", ".join(list_of_params)})'
+            rust_string = f'{prefix}{ident}{ri_call_args(list_of_params)}'
 
     return stmts, str(rust_string), local_decl
 
@@ -2999,7 +3240,50 @@ def _basic_operators(expr, **kwargs):
                                    ogAST.PrimBitStringLiteral)):
         left_str = str(expr.left.numeric_value)
 
-    rust_string = f'({left_str} {rust_op} {right_str})'
+    # Check if either side is a literal number (after the possible
+    # octet/bit string literal substitution above, as in the Ada backend).
+    # Rust real literals carry an f64/f32 suffix: strip it for the check.
+    left_is_numeric = is_numeric(left_str)
+    right_is_numeric = is_numeric(right_str)
+
+    if left_is_numeric != right_is_numeric or rbty.kind == lbty.kind:
+        # No cast is needed if:
+        # - one of the two sides only is a literal
+        # - or if the basic types are identical
+        rust_string = f'({left_str} {rust_op} {right_str})'
+
+    elif left_is_numeric and right_is_numeric:
+        # Both sides are literals : compute the result on the fly
+        # (constant folding, as in the Ada backend). Strip the Rust f64/f32
+        # literal suffixes before evaluating, and map the SDL mod/rem
+        # operators to Python's % operator.
+        lval = left_str.replace('f64', '').replace('f32', '')
+        rval = right_str.replace('f64', '').replace('f32', '')
+        py_op = {'mod': '%', 'rem': '%'}.get(expr.operand, expr.operand)
+        result = eval(f'{lval} {py_op} {rval}')
+        if isinstance(result, bool):
+            # Comparison operators folded to a boolean
+            rust_string = 'true' if result else 'false'
+        elif isinstance(result, float) \
+                and not (lbty.kind.startswith('Integer')
+                         and rbty.kind.startswith('Integer')):
+            # Real result: re-add the f64 suffix, as in _integer()
+            rust_string = f'{result}f64'
+        else:
+            # Integer result (or whole float from integer division):
+            # bracket negative values to preserve precedence,
+            # like the _integer() handler does
+            result = int(result)
+            rust_string = f'({result})' if result < 0 else f'{result}'
+
+    elif rbty.kind != lbty.kind:
+        # Basic types are different (one is an Integer32, eg. loop iterator)
+        # => We must cast it to the type of the other side (Rust 'as' cast)
+        if lbty.kind == 'Integer32Type':
+            left_str = f'({left_str} as {type_name(expr.right.exprType)})'
+        else:
+            right_str = f'({right_str} as {type_name(expr.left.exprType)})'
+        rust_string = f'({left_str} {rust_op} {right_str})'
 
     code.extend(left_stmts)
     code.extend(right_stmts)
@@ -3030,6 +3314,11 @@ def _equality(expr, **kwargs):
         if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
                                    ogAST.PrimOctetStringLiteral)):
             right_str = str(expr.right.numeric_value)
+        # Cast in case a side is using a 32bits int (eg. when using Length(..))
+        if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
+            right_str = f'({right_str} as {type_name(lbty)})'
+        elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
+            left_str = f'({left_str} as {type_name(rbty)})'
         rust_string = f'({left_str} {rust_op} {right_str})'
     else:
         if asn1_type in TYPES:

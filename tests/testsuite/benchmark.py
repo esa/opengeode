@@ -41,15 +41,16 @@ def benchmark(testfolder, opt_level):
         "name": testfolder[:-1],
     }
 
-    for rule in ("test-llvm", "test-ada"):
+    # NOTE: the LLVM backend was removed from OpenGEODE (out of date).
+    # The benchmark now measures the Ada backend only.
+    for rule in ("test-ada",):
         if make(testfolder, rule, "O=%d" % opt_level) != 0:
             result["status"] = "ERROR"
             return result
 
-    llvm_bin = os.path.join(testfolder, "test_llvm")
     ada_bin = os.path.join(testfolder, "test_ada")
 
-    for bin_name in (llvm_bin, ada_bin):
+    for bin_name in (ada_bin,):
         if not os.path.isfile(bin_name):
             result["status"] = "ERROR"
             return result
@@ -58,11 +59,9 @@ def benchmark(testfolder, opt_level):
         "status": "OK",
         "size": {
             "ada": size(ada_bin),
-            "llvm": size(llvm_bin),
         },
         "time": {
             "ada": time(ada_bin),
-            "llvm": time(llvm_bin),
         }
     })
 
@@ -109,32 +108,19 @@ def summarize(results, elapsed, options):
     if options.optimization != 0:
         print ("Optimization level: %d" % options.optimization)
         print ("")
-    print ("Size: Ada %.2f%% LLVM %.2f%%" % diff([r["size"] for r in valid_results]))
-    print ("Time: Ada %.2f%% LLVM %.2f%%" % diff([r["time"] for r in valid_results]))
-    print ("")
 
-    headers = ["Benchmark", "Ada size (B)", "LLVM size (B)", "Ada time (us)", "LLVM time (us)"]
+    headers = ["Benchmark", "Ada size (B)", "Ada time (us)"]
     table = []
     for r in valid_results:
         table.append([
             r["name"],
             r["size"]["ada"],
-            r["size"]["llvm"],
             int(round(r["time"]["ada"] * (10 ** 6))),
-            int(round(r["time"]["llvm"] * (10 ** 6))),
         ])
 
     print (tabulate(table, headers, tablefmt="orgtbl"))
 
     return 0 if num_errors == 0 else 1
-
-
-def diff(results):
-    return 100, mean(([float(r["llvm"]) / float(r["ada"]) * 100 for r in results]))
-
-
-def mean(values):
-    return sum(values) / len(values)
 
 
 def make(path, rule, *args):

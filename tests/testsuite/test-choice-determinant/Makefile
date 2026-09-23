@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=toto.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) toto.pr
@@ -42,11 +42,6 @@ test-if:
 	sdl2if toto.pr
 
 
-test-llvm:
-	$(OPENGEODE) toto.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) toto.pr --toAda
@@ -55,4 +50,4 @@ test-rust:
 	$(OPENGEODE) toto.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
-.PHONY: all edit test-parse test-ada test-llvm test-rust coverage
+.PHONY: all edit test-parse test-ada test-rust coverage

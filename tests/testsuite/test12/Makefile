@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) trafficlight.pr system_structure.pr
@@ -30,8 +30,6 @@ test-ada: trafficlight.ali
 test-c: trafficlight.c
 	$(CC) trafficlight.c -c -o trafficlight.o
 
-test-llvm: trafficlight.o
-
 test-if:
 	sdl2if trafficlight.pr system_structure.pr
 
@@ -46,4 +44,4 @@ test-rust:
 coverage:
 	coverage run -p $(OPENGEODE) trafficlight.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-llvm test-exports coverage test-rust
+.PHONY: all edit test-parse test-ada test-exports coverage test-rust

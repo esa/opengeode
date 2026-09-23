@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=test.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) test.pr
@@ -51,13 +51,8 @@ test-rust:
 	$(OPENGEODE) test.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
 
-test-llvm:
-	$(OPENGEODE) test.pr --llvm -O$(O)
-	$(LLC) *.ll
-	$(CC) -O$(O) -c *.s
-
 
 coverage:
 	coverage run -p $(OPENGEODE) test.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage simu
+.PHONY: all edit test-parse test-ada test-rust coverage simu

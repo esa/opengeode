@@ -34,7 +34,9 @@ Feel free to browse the source code [https://github.com/esa/opengeode here], tha
 
 * Generates Ada code with ASN.1 types using TASTE ASN.1 "space-certified" (SPARK) compiler
 
-* Generates optimized LLVM code for speed and performance on targets without Ada runtime
+* Generates C code (aligned with the Ada backend)
+
+* Generates Rust code (prototype, using the --toRust option)
 
 * Complete syntax and semantic checks
 

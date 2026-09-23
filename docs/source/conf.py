@@ -3,11 +3,11 @@
 # -- Project information
 
 project = 'Opengeode'
-copyright = '2012-2023, Maxime Perrotin / European Space Agency'
+copyright = '2012-2026, Maxime Perrotin / European Space Agency'
 author = 'Maxime Perrotin'
 
-release = '1.0'
-version = '4.0.6'
+release = '4.10.0'
+version = '4.10'
 
 # -- General configuration
 

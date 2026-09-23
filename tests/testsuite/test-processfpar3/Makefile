@@ -35,9 +35,7 @@ test-rust:
 test-if:
 	sdl2if function_in_sdl.pr system_structure.pr
 
-test-llvm: function_in_sdl.o
-
 coverage:
 	coverage run -p $(OPENGEODE) function_in_sdl.pr system_structure.pr --toAda
 
-.PHONY: edit test-parse test-qgen-parse test-ada test-rust test-llvm coverage
+.PHONY: edit test-parse test-qgen-parse test-ada test-rust coverage

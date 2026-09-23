@@ -261,29 +261,29 @@ Ada generates `To_{sort}` conversion functions for choice selector types (lines 
 
 **Impact:** None — this is a design decision. Rust's enum system handles choice selection natively.
 
-### 6. Continuous signal awareness in procedures (**MISSING**)
+### 6. Continuous signal awareness in procedures (**FIXED**)
 
-Ada checks `process_has_cs` in the procedure handler to determine if `_Transition` calls are needed after procedure returns (line 3864). Rust does not check this.
+Ada checks `process_has_cs` in the procedure handler to determine if `_Transition` calls are needed after procedure returns (line 3864). Rust now does the same (`RustGenerator.py:2448-2451`), and the PI wrapper's `has_cs` fallback is mirrored too (`RustGenerator.py:1322-1323`, matching Ada's line 1048). This was fixed as part of the item-1 remediation (the whole Ada block, including `process_has_cs`, was ported when adding the RPC transition injection).
 
-**Impact:** Procedures in processes with continuous signals may not properly trigger continuous signal evaluation after returning.
+**Impact:** None anymore — exported (referenced) procedures in processes with continuous signals re-evaluate the CS conditions after returning, exactly like Ada.
 
-### 7. Ground expression assertions (**MISSING**)
+### 7. Ground expression assertions (**FIXED**)
 
-Ada asserts that ground expressions (default values) have no side effects: `assert not dst and not dlocal` (line 3907). Rust does not assert this.
+Ada asserts that ground expressions (default values) need no temporary variables: `assert not dst and not dlocal` at the DEFAULT_CONTEXT site ('DCL: Expecting a ground expression', line 513) and at the procedure-local site ('Ground expression error', line 3854). Rust now asserts identically at both of its sites (DEFAULT_CONTEXT and `let mut` procedure locals). Note both backends' asserts are safety nets: the parser (`ogParser.py` `dcl()` via `rec_find_ref_to_variable`) already rejects variable-referencing DCL defaults before code generation.
 
-**Impact:** Side-effecting default values could pass silently in Rust without detection.
+**Impact:** None anymore — non-ground default values are caught at both sites, same as Ada.
 
-### 8. Integer type casting in arithmetic (**MISSING**)
+### 8. Integer type casting in arithmetic (**FIXED**)
 
-Ada casts mismatched integer types in binary operations (e.g., `Integer32Type` vs `IntegerType`) to the wider type (lines 2352-2364). Rust does not — it emits the raw expression `({left} op {right})`.
+Ada casts mismatched integer kinds in binary operations (e.g. `Integer32Type` from a loop iterator or `length()` vs `IntegerType`) to the other side's type (lines 2377-2384), and in `_equality` for `IntegerType`-vs-other comparisons (lines 2419-2422). Rust now does the same using `as`-casts at both sites: `((x as asn1SccMyInt) + ctxt.i)`, and the `_equality` cast mirrors Ada's exactly.
 
-**Impact:** Mixed-width integer arithmetic will fail to compile in Rust without manual casts.
+**Impact:** None anymore — mixed-width integer arithmetic and comparisons compile without manual casts, matching Ada's behavior (verified: loop iterator + variable, `length() + variable` both cast).
 
-### 9. Constant folding (**MISSING**)
+### 9. Constant folding (**FIXED**)
 
-Ada constant-folds binary operations when both operands are numeric literals via `eval()` (lines 2384-2389). Rust does not — it always emits the full expression.
+Ada folds binary operations when both operands are numeric literals via `eval()` (lines 2370-2375). Rust now folds identically, with two Rust-specific adaptations: the Rust `f64`/`f32` literal suffixes are stripped before evaluation (and re-added for real results), and the SDL `mod`/`rem` operands map to Python's `%` for the fold. Note: in practice the parser (`ogParser.py` lines 2700-2727) already folds both-literal arithmetic into a single `PrimInteger`/`PrimReal` before the backend sees it, so this branch is a residual path (e.g. hex/octet-string literals in arithmetic) — identical situation in Ada.
 
-**Impact:** No functional impact, but Rust generates slightly less optimal code (e.g., `2 + 3` instead of `5`).
+**Impact:** None anymore — the generated code is byte-identical to Ada's folding behavior (verified: `2 * 3` → `6`).
 
 ### 10. `mod` vs `rem` semantics (**POTENTIAL BUG**)
 
@@ -350,10 +350,10 @@ Ada generates `null;` for empty transitions (line 3539). Rust generates `// (emp
 | 3 | `_simu_continue` export | Removed (simu not supported) | — |
 | 4 | `Dest_PID` support for RIs | Fixed | High |
 | 5 | Choice selection conversion functions | Deliberately skipped | None |
-| 6 | Continuous signal awareness in procedures | Missing | Medium |
-| 7 | Ground expression assertions | Missing | Low |
-| 8 | Integer type casting in arithmetic | Missing | Medium |
-| 9 | Constant folding | Missing | Low |
+| 6 | Continuous signal awareness in procedures | Fixed | — |
+| 7 | Ground expression assertions | Fixed | — |
+| 8 | Integer type casting in arithmetic | Fixed | — |
+| 9 | Constant folding | Fixed | — |
 | 10 | `mod` vs `rem` semantics | Potential bug | High |
 | 11 | Decision answer statement ordering | Semantic difference | Medium |
 | 12 | `PrimEmptyString` for SEQUENCE with optional fields | Simplified | Low |

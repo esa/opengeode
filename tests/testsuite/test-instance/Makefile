@@ -2,7 +2,7 @@ include ../shared.mk
 
 ROOT_MODEL=system_structure.pr
 
-all: test-ada test-llvm
+all: test-ada
 
 edit:
 	$(OPENGEODE) og.pr system_structure.pr
@@ -45,8 +45,8 @@ test-rust:
 	  fi; \
 	done && \
 	sed -i '/^pub const /d' dataview-uniq.rs && \
-	sed -i 's/use crate::dataview_uniqDef/use super::dataview_uniqDef/g; s/use crate::dataview_uniq/use super::dataview_uniq/g; s/use crate::og_type_datamodelDef/use super::og_type_datamodelDef/g' og_type_datamodel.rs og_type_datamodelDef.rs dataview-uniq.rs 2>/dev/null; \
-	sed -i 's/fn ri_0_rezult[^}]*/fn ri_0_rezult(_res: \&mut asn1SccMy_OctStr) { print!("[C] got something]\\n"); /' og_type.rs 2>/dev/null || true && \
+	sed -i 's/use crate::dataview_uniqDef/use super::dataview_uniqDef/g; s/use crate::dataview_uniq/use super::dataview_uniq/g; s/use crate::og_type_datamodelDef/use super::og_type_datamodelDef/g' og_type_datamodel.rs og_type_datamodelDef.rs dataview-uniq.rs 2>/dev/null && \
+	python3 patch_ri.py og_ri.rs && \
 	cp og_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
 	./target/debug/test_rust | diff expected -
@@ -55,15 +55,11 @@ test-if:
 	sdl2if og.pr system_structure.pr
 
 
-test-llvm: og.o dataview-uniq.o | test_llvm.o
-	$(CC) og.o dataview-uniq.o test_llvm.o -o test_llvm -lm
-	./test_llvm
-
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr system_structure.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-rust test-llvm coverage
+.PHONY: all edit test-parse test-ada test-rust coverage
 
 # Override shared.mk clean to preserve main.rs
 clean:
@@ -71,7 +67,7 @@ clean:
 	gnat clean *.adb
 	rm -rf *.if *.adb *.ads *.pyc runSpark.sh spark.idx *.o *.so *.ali gnat.cfg \
 	       examiner bin *.wrn GPS_project.gpr *.ll *.s dataview-uniq.c dataview-uniq.h \
-	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada test_llvm \
+	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
 		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
