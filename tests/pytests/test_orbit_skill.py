@@ -214,3 +214,43 @@ def test_agent_stages_the_skill_before_ready():
         agent.stop()
     finally:
         monkeypatched.undo()
+
+
+def test_eventfilter_modifier_combo_is_a_flag_or():
+    '''Regression: `modifiers() & (Qt.ShiftModifier, Qt.ControlModifier)`
+    raised TypeError ("KeyboardModifier and tuple") on every key press
+    in the chat entry, breaking the chat panel. The mask must be a
+    flag OR, not a tuple.'''
+    import os
+    os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import Qt, QEvent
+    from PySide6.QtGui import QKeyEvent
+    from opengeode.OrbitChatPanel import OrbitChatPanel
+
+    app = QApplication.instance() or QApplication([])
+    from PySide6.QtWidgets import QMainWindow
+
+    window = QMainWindow()
+    panel = OrbitChatPanel(window)
+    window.show()
+    panel.show()
+    app.processEvents()
+
+    def key(key_, mod):
+        return QKeyEvent(QEvent.KeyPress, key_, mod)
+
+    # Plain Return must be consumed and must not raise.
+    assert panel.eventFilter(panel.entry,
+                             key(Qt.Key_Return, Qt.NoModifier)) is True
+    # Shift+Return and Ctrl+Return fall through to insert a newline.
+    assert panel.eventFilter(panel.entry,
+                             key(Qt.Key_Return, Qt.ShiftModifier)) is False
+    assert panel.eventFilter(panel.entry,
+                             key(Qt.Key_Return, Qt.ControlModifier)) is False
+    # Any other key is untouched.
+    assert panel.eventFilter(panel.entry,
+                             key(Qt.Key_A, Qt.NoModifier)) is False
+
+    panel.hide()
+    window.hide()

@@ -752,7 +752,7 @@ class OrbitChatPanel(QWidget):
         if watched is self.entry and event.type() == QEvent.KeyPress:
             key = event.key()
             if key in (Qt.Key_Return, Qt.Key_Enter):
-                if event.modifiers() & (Qt.ShiftModifier,
+                if event.modifiers() & (Qt.ShiftModifier |
                                         Qt.ControlModifier):
                     return False          # let the editor insert the newline
                 self._send()
