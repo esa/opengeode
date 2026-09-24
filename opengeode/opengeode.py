@@ -38,8 +38,8 @@ import enum  # NOQA
 import string  # NOQA
 import fnmatch  # NOQA
 import operator  # NOQA
+import shutil
 import subprocess  # NOQA
-import distutils  # NOQA
 import tempfile  # NOQA
 import uuid  # NOQA
 import importlib  # NOQA
@@ -3877,9 +3877,7 @@ class OG_MainWindow(QMainWindow):
             
             # Start LSP client
             try:
-                import shutil
-                from distutils import spawn
-                path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+                path_to_asn1scc = shutil.which('asn1scc')
                 if path_to_asn1scc:
                     server_path = os.path.join(os.path.dirname(path_to_asn1scc), "Server")
                     if os.path.exists(server_path):
@@ -3910,9 +3908,7 @@ class OG_MainWindow(QMainWindow):
             tmp_file_path = tmp_file.name
             
         try:
-            import shutil
-            from distutils import spawn
-            path_to_asn1scc = shutil.which('asn1scc') or spawn.find_executable('asn1scc')
+            path_to_asn1scc = shutil.which('asn1scc')
             if not path_to_asn1scc:
                 return False, "ASN.1 Compiler (asn1scc) not found in PATH"
                 

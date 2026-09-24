@@ -126,6 +126,15 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.11.0 (09/2026)**
+- Orbit chat panel improvements:
+    - the prompt zone is now 3 lines (Enter sends, Shift+Enter inserts a newline)
+    - a note in the chat window confirms which skills are loaded for the conversation
+    - closing OpenGEODE deletes the chat session on orbit (ACP `session/delete`)
+- New MCP server (`opengeode/SdlMcpServer.py`, run with `python -m opengeode.SdlMcpServer <model.pr>`) for remote control of an SDL model: a local stdio server (no sockets) exposing ten tools — list/find/get symbols, add and remove symbols (floating, vertical chains, horizontal branches), edit text, move, check the model (syntax and semantics), syntax-check a single element, and save. All arguments are validated against a published JSON Schema and fixed whitelists; malformed input never stops the server. Add it to an orbit config under `mcp` to let a model edit diagrams remotely.
+- New skill `sdl-mcp-remote-control` (bundled and staged together with `sdl-model-construction`) documenting the MCP interface for agents
+- Regression tests for the MCP server (`tests/pytests/test_sdl_mcp_server.py`, 12 tests)
+
 **4.10.0 (09/2026)**
 - Add support for state aggregations (nested/parallel states) in the Rust backend
 - Support instances of process types in the Rust backend, removing the last expected failures of `make test-rust`

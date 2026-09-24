@@ -38,6 +38,8 @@
      <file>fonts/UbuntuMono-RI.ttf</file>
      <file>misc/pretty_print_asn1.stg</file>
      <file>misc/lander.mp3</file>
+     <file>orbit_skills/SDL_SKILL_DOCUMENTATION.md</file>
+     <file>orbit_skills/SDL_MCP_REMOTE_CONTROL.md</file>
      <file>help/opengeode.qhc</file>
      <file>help/opengeode.qch</file>
  </qresource>

@@ -19,23 +19,38 @@ Copyright (c) 2012-2026 Maxime Perrotin & European Space Agency
 from __future__ import annotations
 
 import os
-import shutil
 import threading
 
-from PySide6.QtCore import QObject, Qt, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, Qt, Signal, Slot
 from PySide6.QtGui import QTextDocument
-from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QMessageBox, QPushButton,
+from PySide6.QtWidgets import (QHBoxLayout, QMessageBox, QPushButton,
                                QTextEdit, QVBoxLayout, QWidget)
 
 __all__ = ["OrbitChatPanel", "orbit_acp_available"]
 
 # The name of the SDL model-construction skill bundled with OpenGEODE, as
 # declared in the YAML frontmatter of orbit_skills/SDL_SKILL_DOCUMENTATION.md.
-# The panel installs this skill into orbit's global skills directory at
-# startup so orbit discovers it and advertises it in <available_skills>
-# every turn. The briefing tells the model to load it via the skill() tool.
+# When the connection to orbit is established the panel hands the skill's
+# body to the agent itself, with orbit-acp's use_skill(name, text): orbit
+# stages that text under the name for the conversation's first question and
+# looks nothing up on disk, so no skill file has to be installed anywhere.
 SKILL_NAME = "sdl-model-construction"
 SKILL_FILENAME = "SDL_SKILL_DOCUMENTATION.md"
+
+# The second skill OpenGEODE ships: the interface of the MCP server
+# that lets the model drive the SDL editor remotely (see
+# opengeode/SdlMcpServer.py). Staged together with the construction
+# skill, it tells the model how to send the commands.
+MCP_SKILL_NAME = "sdl-mcp-remote-control"
+MCP_SKILL_FILENAME = "SDL_MCP_REMOTE_CONTROL.md"
+
+#: Every skill OpenGEODE hands to orbit at connect time:
+#: (name, filename). The construction skill first (it is the language
+#: reference), then the remote-control interface.
+BUNDLED_SKILLS = (
+    (SKILL_NAME, SKILL_FILENAME),
+    (MCP_SKILL_NAME, MCP_SKILL_FILENAME),
+)
 
 # The orbit_acp import is wrapped so OpenGEODE never fails to start when the
 # library (or orbit itself) is absent. Everything below guards on these.
@@ -64,60 +79,124 @@ def orbit_acp_available() -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Skill installation: copy the bundled SDL skill into orbit's global skills
-# directory so orbit can discover it. Orbit discovers skills from
-# ~/.config/orbit/skills/ (global) and <project>/.orbit/skills/
-# (per-project). The conversation's cwd is the model's directory, which
-# generally has no .orbit/skills/, so the global directory is the
-# reliable place.
+# Skill handling: read the bundled SDL skill and hand it to orbit directly,
+# with orbit-acp's use_skill(name, text) — the API for a skill the app ships
+# itself. orbit stages the text under the name for the session's next
+# prompt and looks nothing up on disk, so the skill travels with OpenGEODE
+# without touching orbit's global skills directory, and it needs no
+# cooperation from the model.
+#
+# The skill file ships the same way the fonts, the help files and the
+# StringTemplate files do: embedded in the Qt resource collection
+# (opengeode.qrc → compiled by pyside6-rcc into opengeode/icons.py, a
+# package module every pip install carries). The resource is the primary
+# source — it is what makes the skill available in an installation — with
+# the on-disk file as a fallback for a source checkout whose icons.py has
+# not been regenerated to embed it yet.
 # ---------------------------------------------------------------------------
-def _orbit_global_skills_dir() -> str:
-    """The global directory orbit scans for skills, mirroring orbit's own
-    config.paths._global_dir() / "skills" logic."""
-    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
-    return os.path.join(base, "orbit", "skills")
+# The path of the skill inside the compiled Qt resource collection.
+SKILL_RESOURCE = ":/orbit_skills/" + SKILL_FILENAME
+MCP_SKILL_RESOURCE = ":/orbit_skills/" + MCP_SKILL_FILENAME
 
 
-def _bundled_skill_path() -> str:
-    """The path to the SDL skill file bundled alongside the OpenGEODE
-    package. Checks several candidate locations so the skill is found
-    whether OpenGEODE runs from the source checkout (orbit_skills/ next
-    to the opengeode/ package dir) or from an installed wheel (the
-    orbit_skills/ directory copied into the package itself)."""
+def _bundled_skill_path(filename=SKILL_FILENAME) -> str:
+    """The path to a skill file on disk next to the OpenGEODE package,
+    when running from a source checkout (orbit_skills/ at the repository
+    root). An installed package has no skill file on disk: it carries
+    the skill inside the compiled Qt resources instead (see
+    _read_skill_text)."""
     here = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        # Source checkout: opengeode/../orbit_skills/
-        os.path.join(os.path.dirname(here), "orbit_skills", SKILL_FILENAME),
-        # Installed package: opengeode/orbit_skills/
-        os.path.join(here, "orbit_skills", SKILL_FILENAME),
-    ]
-    for path in candidates:
-        if os.path.isfile(path):
-            return path
-    return candidates[0]  # default to source-tree path
+    # Source checkout: opengeode/../orbit_skills/
+    return os.path.join(os.path.dirname(here), "orbit_skills", filename)
 
 
-def _install_skill() -> None:
-    """Copy the bundled SDL skill into orbit's global skills directory so
-    orbit can discover it by name. Safe to call on every startup: it only
-    copies when the destination is missing or out of date. Silently skips
-    when the source is absent (e.g. running from a build that did not ship
-    the skill)."""
-    src = _bundled_skill_path()
-    if not os.path.isfile(src):
-        return
-    dest_dir = _orbit_global_skills_dir()
-    dest = os.path.join(dest_dir, SKILL_FILENAME)
+def _read_skill_text(resource=SKILL_RESOURCE,
+                     filename=SKILL_FILENAME) -> str:
+    """The raw text of a bundled skill.
+
+    Reads the skill from the compiled Qt resource first — that is where
+    a pip installation carries it (opengeode.qrc is compiled by
+    pyside6-rcc into opengeode/icons.py, a package module, so the skill
+    ships with every install and no data file has to be found on disk)
+    — and falls back to the file at the repository root for a source
+    checkout whose resources have not been recompiled to embed it yet.
+
+    Returns "" when neither source has the skill (a build without it),
+    in which case no skill is staged and the panel still works.
+    """
+    # The Qt resource path: pyside6-rcc keeps the file's path in the
+    # qrc as the resource name, so a skill is at :/orbit_skills/<file>.
+    from PySide6.QtCore import QFile, QIODevice
+    f = QFile(resource)
+    if f.open(QIODevice.ReadOnly):
+        try:
+            data = bytes(f.readAll().data())
+            if data:
+                return data.decode("utf-8", errors="replace")
+        finally:
+            f.close()
+    # Source-checkout fallback: the skill file next to the package.
     try:
-        os.makedirs(dest_dir, exist_ok=True)
-        if (not os.path.isfile(dest)
-                or os.path.getmtime(src) > os.path.getmtime(dest)):
-            shutil.copy2(src, dest)
+        with open(_bundled_skill_path(filename),
+                  encoding="utf-8-sig") as fp:
+            return fp.read()
     except OSError:
-        # If we cannot write to the config directory, orbit simply will
-        # not discover the skill; the panel still works, just without
-        # the SDL guidance loaded. Not worth a user-visible error.
-        pass
+        return ""
+
+
+def _skill_body(text=None) -> str:
+    """The instruction body of a skill, without the YAML frontmatter, as
+    orbit's own skill loader would read it from disk.
+
+    orbit stages exactly the body (it adds the "# Skill: …" heading itself
+    when the skill is used), so the frontmatter — which is metadata for
+    discovery, not instructions — is stripped here the same way orbit's
+    _parse_frontmatter does: a block that opens with a ``---`` line as the
+    very first line and closes at the next line that is only ``---``.
+    With no argument, the construction skill's text is read.
+    """
+    if text is None:
+        text = _read_skill_text()
+    if not text:
+        return ""
+    lines = text.split("\n")
+    # A fence is a whole line of three dashes (optionally with trailing
+    # spaces), mirroring orbit's _FENCE_RE.
+    if not lines or lines[0].strip() != "---":
+        return text.strip()
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            return "\n".join(lines[idx + 1:]).strip()
+    # An unclosed frontmatter block: treat the whole file as the body.
+    return text.strip()
+
+
+def _stage_skill(chat) -> bool:
+    """Hand every bundled skill to the conversation just opened, with
+    orbit-acp's use_skill(name, text): orbit stages the texts for the
+    next question — the conversation's first — so the SDL reference and
+    the remote-control interface ride along from the very first prompt.
+
+    Returns True when at least one skill was staged. Silently degrades
+    (returns False) when no skill body is available or when this orbit
+    does not offer the skill_load extension: the conversation still
+    works, just without the guidance pre-loaded.
+    """
+    staged_any = False
+    for name, filename in BUNDLED_SKILLS:
+        body = _skill_body(_read_skill_text(
+                ":/orbit_skills/" + filename, filename))
+        if not body:
+            continue
+        try:
+            chat.use_skill(name, body)
+        except Exception:
+            # An older orbit without the text form, or anything else
+            # that went wrong while staging: not fatal — try the next
+            # skill, and the chat remains usable.
+            return staged_any
+        staged_any = True
+    return staged_any
 
 
 # ---------------------------------------------------------------------------
@@ -163,13 +242,10 @@ def _sdl_briefing(pr_file: str, asn1_file: str) -> str:
         "permission: the person using the editor will approve it."
     )
     parts.append(
-        f"\nA skill called '{SKILL_NAME}' is available to you. "
-        f"It contains the complete syntax and semantic reference for "
-        f"creating and modifying SDL models for OpenGEODE. Load it with "
-        f"skill(name=\'{SKILL_NAME}\') BEFORE working on any SDL "
-        f"model — do not merely mention it. The skill covers grammar, "
-        f"semantic rules, ASN.1 integration, CLI, CIF annotations, and "
-        f"the agent operating procedure for safe model editing."
+        "\nA reference skill for building SDL models — the complete "
+        "syntax and semantic rules for OpenGEODE — has been pre-loaded "
+        "into this conversation ahead of your first question. Follow it "
+        "when creating or modifying the model."
     )
     return "\n".join(parts)
 
@@ -197,6 +273,7 @@ class OrbitAgent(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.chat = None
+        self.skill_staged = False
         self._answer = REJECT
         self._answered = threading.Event()
         # A files handler the panel can set so orbit reads/writes through
@@ -209,7 +286,13 @@ class OrbitAgent(QObject):
     # -- setup ---------------------------------------------------------------
     def start(self, cwd, briefing=""):
         """Open the conversation on a worker thread (starting orbit takes a
-        moment). Emits ``ready`` when it is usable, or ``failed``."""
+        moment). Emits ``ready`` when it is usable, or ``failed``.
+
+        The bundled SDL skill is staged onto the just-opened conversation
+        before ``ready`` is emitted, so it rides the first question: the
+        skill applies to the next prompt, and no prompt can be sent before
+        the panel enables its input on ``ready``.
+        """
         def work():
             try:
                 self.chat = Conversation(
@@ -223,6 +306,11 @@ class OrbitAgent(QObject):
             except Exception as exc:  # pragma: no cover - defensive
                 self.failed.emit(f"{type(exc).__name__}: {exc}")
                 return
+            # The connection is established: hand the SDL skill to orbit
+            # now so it is staged for the conversation's first question.
+            # A staging failure is not fatal — the chat still works.
+            staged = _stage_skill(self.chat)
+            self.skill_staged = staged
             self.ready.emit()
         threading.Thread(target=work, daemon=True).start()
 
@@ -269,12 +357,31 @@ class OrbitAgent(QObject):
         self._answered.set()
 
     # -- teardown -----------------------------------------------------------
-    def stop(self):
+    def stop(self, delete_session=False):
         """Close the conversation on a worker so the window does not freeze
-        for the process to end."""
+        for the process to end.
+
+        With ``delete_session`` the conversation's session is also removed
+        from orbit's storage (the ACP ``session/delete``), so closing
+        OpenGEODE does not leave a stored chat session behind. The two
+        steps are separate RPCs on one worker thread: the session id must
+        be taken before the conversation is closed."""
         chat, self.chat = self.chat, None
         if chat is not None:
-            threading.Thread(target=chat.close, daemon=True).start()
+            def work():
+                session_id = chat.id
+                cwd = chat.cwd
+                chat.close()
+                if delete_session and session_id:
+                    try:
+                        Conversation.delete(session_id, cwd=cwd)
+                    except Exception:
+                        # The session stays stored on orbit when it cannot
+                        # be deleted (orbit gone, storage error, older
+                        # orbit without the API): nothing left to do, and
+                        # not worth failing OpenGEODE's shutdown on.
+                        pass
+            threading.Thread(target=work, daemon=True).start()
 
 
 # ---------------------------------------------------------------------------
@@ -325,10 +432,16 @@ class OrbitChatPanel(QWidget):
         # --- UI ---
         self.view = QTextEdit(readOnly=True)
         self.view.setPlaceholderText("The orbit chat will appear here.")
-        self.entry = QLineEdit()
+        # A 3-line prompt zone: Enter sends, Shift+Enter adds a newline —
+        # the usual convention for a multi-line chat entry.
+        self.entry = QTextEdit()
         self.entry.setPlaceholderText("orbit not available")
+        self.entry.setAcceptRichText(False)
+        self.entry.setFixedHeight(
+            3 * self.entry.fontMetrics().lineSpacing()
+            + 2 * self.entry.frameWidth() + 6)
         self.entry.setEnabled(False)
-        self.entry.returnPressed.connect(self._send)
+        self.entry.installEventFilter(self)
         self.stop_btn = QPushButton("Stop")
         self.stop_btn.setEnabled(False)
         self.stop_btn.clicked.connect(self._stop)
@@ -459,9 +572,9 @@ class OrbitChatPanel(QWidget):
 
     def _start_conversation(self):
         """Open the conversation, with the model directory as cwd and a
-        briefing that tells orbit about the SDL model."""
-        # Install the bundled SDL skill so orbit can discover and load it.
-        _install_skill()
+        briefing that tells orbit about the SDL model. The bundled SDL
+        skill is handed to orbit by the agent bridge once the connection
+        is established (see OrbitAgent.start)."""
         self._messages = [
             {"role": "system", "html": "<i>Starting orbit…</i>"}
         ]
@@ -478,11 +591,25 @@ class OrbitChatPanel(QWidget):
         self.entry.setEnabled(True)
         self.entry.setFocus()
         pr_file = self._pr_file() or 'unsaved'
+        line = (f"<i>Connected to orbit. The current model is "
+                f"{self._html_escape(pr_file)}.</i>")
         self._messages.append({
             "role": "system",
-            "html": f"<i>Connected to orbit. The current model is "
-                    f"{self._html_escape(pr_file)}.</i>",
+            "html": line,
         })
+        # The note for the skills the panel handed to orbit when the
+        # connection was established: one clear, visible line.
+        staged = getattr(self._agent, "skill_staged", False)
+        if staged:
+            self._messages.append({
+                "role": "system",
+                "html": (
+                    "<i>✔ Skills loaded for this conversation: "
+                    "<b>sdl-model-construction</b> (the complete SDL "
+                    "reference) and <b>sdl-mcp-remote-control</b> "
+                    "(the MCP interface for editing the model) — orbit "
+                    "will follow them when working on the model.</i>"),
+            })
         self._render_view()
 
     @Slot(object)
@@ -618,10 +745,24 @@ class OrbitChatPanel(QWidget):
         self.stop_btn.setEnabled(False)
 
     # -- user actions -------------------------------------------------------
+    def eventFilter(self, watched, event):
+        """Enter in the entry sends the question; Shift+Enter inserts a
+        newline, so the 3-line prompt zone supports multi-line input.
+        Ctrl+Enter sends too (a common alternative)."""
+        if watched is self.entry and event.type() == QEvent.KeyPress:
+            key = event.key()
+            if key in (Qt.Key_Return, Qt.Key_Enter):
+                if event.modifiers() & (Qt.ShiftModifier,
+                                        Qt.ControlModifier):
+                    return False          # let the editor insert the newline
+                self._send()
+                return True              # do not also insert a newline
+        return super().eventFilter(watched, event)
+
     def _send(self):
         if self._agent is None:
             return
-        question = self.entry.text().strip()
+        question = self.entry.toPlainText().strip()
         if not question or self._busy:
             return
         self.entry.clear()
@@ -631,7 +772,7 @@ class OrbitChatPanel(QWidget):
         self._assistant_text = ""
         self._messages.append({
             "role": "user",
-            "html": self._html_escape(question),
+            "html": self._html_escape(question).replace("\n", "<br>"),
         })
         self._render_view()
         self._agent.ask(question)
@@ -655,11 +796,14 @@ class OrbitChatPanel(QWidget):
     # -- shutdown -----------------------------------------------------------
     def closeEvent(self, event):
         if self._agent is not None:
-            self._agent.stop()
+            # Closing OpenGEODE: also remove the chat session from orbit's
+            # storage, so no stored conversation is left behind.
+            self._agent.stop(delete_session=True)
         super().closeEvent(event)
 
     def _agent_stop_on_close(self):
         """Called by the main window on close: stop the conversation on a
-        worker thread so the window does not wait for the orbit process."""
+        worker thread so the window does not wait for the orbit process,
+        and delete the session from orbit's storage."""
         if self._agent is not None:
-            self._agent.stop()
+            self._agent.stop(delete_session=True)
