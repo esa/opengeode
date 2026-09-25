@@ -11,10 +11,9 @@ description: >
 
 > **Purpose**: This document provides comprehensive guidance for constructing
 > syntactically and semantically correct SDL (Specification and Description Language)
-> models for use with the OpenGEODE tool. It is derived from deep analysis of the
-> ANTLR3 grammar (`sdl92.g`), the semantic parser (`ogParser.py`), the command-line
-> interface (`opengeode.py`), the complete test suite, and the official
-> documentation (tutorial, wiki, operator reference).
+> models for use with the OpenGEODE tool. It is self-contained: the language
+> syntax, the semantic rules, complete worked examples, and the validation
+> procedure needed to build a valid model are all described in this document.
 
 ---
 
@@ -71,8 +70,9 @@ symbol has a precise textual representation stored in `.pr` files.
 | SDL2010 | 2010 | Baseline of current version (latest 2019) |
 
 OpenGEODE supports a **subset of SDL2010** that is sufficient for developing
-real-time applications. The ANTLR3 grammar file `sdl92.g` defines the complete
-syntax. Key supported features include:
+real-time applications. This document describes that supported subset in
+full — nothing outside it is needed to write a valid model. Key supported
+features include:
 
 - Process-level state machines with states, transitions, inputs, outputs
 - Procedures (local, external, exported, referenced)
@@ -2608,11 +2608,10 @@ endstate;
 
 ---
 
-*This document is based on analysis of OpenGEODE's grammar (`sdl92.g`), semantic
-parser (`ogParser.py`), command-line interface (`opengeode.py`), test suite
-(100+ test cases), and official documentation (SDL tutorial, wiki, operator
-reference). For the complete ANTLR3 grammar, see:
-https://github.com/esa/opengeode/blob/master/sdl92.g*
+*This document is self-contained: everything needed to create, modify, and
+validate an SDL model for OpenGEODE is described above — the language syntax,
+the semantic rules, complete worked examples, and the validation procedure.
+No external reference is needed to apply it.*
 
 ---
 
@@ -2668,12 +2667,13 @@ dependencies** in a temporary working directory.
 4. **Preserve the original directory path.** Record the absolute paths of the
    user's original files so they can be overwritten in Phase 3.
 
-**Example shell commands:**
+**Example shell commands** (the source paths are the *user's* model
+files, wherever the model lives):
 ```bash
 WORKDIR=$(mktemp -d /tmp/opengeode-work-XXXXXX)
-cp /home/taste/workspace/opengeode/tests/testsuite/test1/og.pr "$WORKDIR/"
-cp /home/taste/workspace/opengeode/tests/testsuite/test1/system_structure.pr "$WORKDIR/"
-cp /home/taste/workspace/opengeode/tests/testsuite/test1/dataview-uniq.asn "$WORKDIR/"
+cp "<user-model-dir>/my_process.pr" "$WORKDIR/"
+cp "<user-model-dir>/system_structure.pr" "$WORKDIR/"      # if the model uses one
+cp "<user-model-dir>/dataview-uniq.asn" "$WORKDIR/"         # the ASN.1 data view
 ```
 
 **Important:** If the model uses the split-file pattern (separate
@@ -2724,12 +2724,12 @@ All edits are made exclusively inside the temporary directory.
 **Example validation loop:**
 ```bash
 cd "$WORKDIR"
-opengeode --check og.pr system_structure.pr 2>&1
+opengeode --check my_process.pr system_structure.pr 2>&1
 RC=$?
 if [ $RC -ne 0 ]; then
     echo "Errors found — fixing..."
     # ... apply fixes ...
-    opengeode --check og.pr system_structure.pr 2>&1
+    opengeode --check my_process.pr system_structure.pr 2>&1
     RC=$?
 fi
 if [ $RC -eq 0 ]; then
@@ -2744,12 +2744,12 @@ fi
 
 Only after the temporary copy passes `opengeode --check` with zero errors:
 
-1. **Copy the validated files back** to the user's original directory,
-   overwriting the originals:
+1. **Copy the validated files back** to the user's original directory
+   (the paths recorded in Phase 1, step 4), overwriting the originals:
    ```bash
-   cp "$WORKDIR/og.pr" /home/taste/workspace/opengeode/tests/testsuite/test1/og.pr
-   cp "$WORKDIR/system_structure.pr" /home/taste/workspace/opengeode/tests/testsuite/test1/system_structure.pr
-   cp "$WORKDIR/dataview-uniq.asn" /home/taste/workspace/opengeode/tests/testsuite/test1/dataview-uniq.asn
+   cp "$WORKDIR/my_process.pr" "<user-model-dir>/my_process.pr"
+   cp "$WORKDIR/system_structure.pr" "<user-model-dir>/system_structure.pr"
+   cp "$WORKDIR/dataview-uniq.asn" "<user-model-dir>/dataview-uniq.asn"
    ```
 
 2. **Clean up the temporary directory:**
@@ -2802,10 +2802,10 @@ signal called start_proc that transitions to it."*
 ```bash
 # Phase 1: Stage
 WORKDIR=$(mktemp -d /tmp/opengeode-work-XXXXXX)
-cp og.pr system_structure.pr dataview-uniq.asn "$WORKDIR/"
+cp my_process.pr system_structure.pr dataview-uniq.asn "$WORKDIR/"
 cd "$WORKDIR"
 
-# Phase 2: Modify (agent edits og.pr to add state + input)
+# Phase 2: Modify (edit my_process.pr to add the state and input)
 # ... editing tool calls to add:
 #   state Processing;
 #       input start_proc;
@@ -2814,13 +2814,13 @@ cd "$WORKDIR"
 # ... and add signal declaration + channel/route entry in system_structure.pr ...
 
 # Phase 2: Validate
-opengeode --check og.pr system_structure.pr 2>&1
+opengeode --check my_process.pr system_structure.pr 2>&1
 RC=$?
 # If RC != 0, fix errors and re-run...
 # Assume RC == 0 after fixes:
 
 # Phase 3: Commit
-cp og.pr ../og.pr
+cp my_process.pr ../my_process.pr
 cp system_structure.pr ../system_structure.pr
 cp dataview-uniq.asn ../dataview-uniq.asn  # if asn was also modified
 cd ..
@@ -3083,9 +3083,9 @@ process, using it in an `output` or `input` symbol will produce:
 
 ### 30.7 Multi-Process Pattern: PingPong Example
 
-This is the pattern from `workspace/work/ping.pr` — two processes
-(`Pinger` and `Ponger`) that exchange `ping` and `pong` signals, with
-the environment also participating.
+Two processes (`Pinger` and `Ponger`) that exchange `ping` and `pong`
+signals, with the environment also participating — the complete,
+self-contained model follows.
 
 ```sdl
 /* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */

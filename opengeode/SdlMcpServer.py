@@ -125,6 +125,60 @@ SINGLE_ELEMENTS = [
     "stop_if", "continuous_signal", "composite_state", "n7s_scl",
 ]
 
+#: The grammar keyword that precedes an element's text in the .pr file
+#: (what Pr.generate emits: "output restart;" has text "restart"). An
+#: agent validating text BEFORE adding a symbol naturally sends the bare
+#: text (what add_symbol will store), not the full statement — and the
+#: parser needs the full one. This map turns the bare form into the
+#: complete statement the grammar accepts. Elements whose grammar rule
+#: expects the whole construct (state needs its content; label takes a
+#: "name:" form; decision needs its answers) are not listed: for those,
+#: the full text is the only valid input and the skill says so.
+_ELEMENT_KEYWORD = {
+    "input_part": "input",
+    "output": "output",
+    "task": "task",
+    "procedure_call": "call",
+    "continuous_signal": "provided",
+    "connect_part": "connect",
+    "stop_if": "stop",
+    "floating_label": "",
+    # The NEXTSTATE terminator: the editor stores the state name and
+    # Pr.generate emits "NEXTSTATE Wait;". (Other terminator forms —
+    # join, stop, return — carry their own keyword in the text.)
+    "terminator_statement": "NEXTSTATE",
+}
+
+#: Elements where a bare-text form exists only inside the full construct
+#: (state needs its branches; label is "name:" in a branch; decision
+#: needs answers; terminator_statement's NEXTSTATE form does parse
+#: bare). check_syntax accepts the bare text for the first group by
+#: completing it, and the skill documents the full form for the rest.
+_FULL_TEXT_ELEMENTS = {"state", "label", "decision", "alternative",
+                       "alternative_part", "content", "text_area",
+                       "procedure", "process_definition", "composite_state",
+                       "start", "proc_start", "state_start", "end"}
+
+
+def _complete_element_text(element, text):
+    """The text the grammar accepts for a single-element check: the
+    bare text an agent sends (what add_symbol stores) completed into
+    the full statement when the element's grammar needs the keyword.
+
+    The editor stores a symbol's bare text ("test = 0" for a continuous
+    signal) and Pr.generate re-adds the keyword when serialising
+    ("provided test = 0;"). check_syntax is the validation half of an
+    add: it must accept exactly the text add_symbol will store, so the
+    keyword is re-added here the same way."""
+    if element in _FULL_TEXT_ELEMENTS or not text:
+        return text
+    kw = _ELEMENT_KEYWORD.get(element)
+    if kw is None:
+        return text
+    if kw:
+        return f"{kw} {text};"
+    return f"{text};"
+
 
 def _kind_of(symbol):
     """The whitelisted kind name of a scene symbol, or None for symbols
@@ -215,6 +269,10 @@ class SdlModel:
         scene.render_everything(block)
         self.block = block
         self.scene = scene
+        # The scene's AST drives the ASN.1 header of a full-model
+        # serialisation (Pr.asn1_header reads scene.ast.use_clauses):
+        # keep it current with the parse the scene was built from.
+        scene.ast = ast
 
     def _scene_name_of(self, scene):
         """The scene's name as the tools report it, building it on the
@@ -666,6 +724,11 @@ class SdlModel:
         readonly = [p for p in self.pr_files
                     if os.path.basename(p) not in {os.path.basename(f)
                                                    for f in saved}]
+        # The serialisation needs the model's USE clauses (the ASN.1
+        # header): seed the scene's AST with the one the model was
+        # loaded with — the re-parse below refreshes it afterwards.
+        if getattr(self.scene, 'ast', None) is None:
+            self.scene.ast = self.ast
         pr_raw = Pr.parse_scene(self.scene, full_model=self._full_model())
         pr_data = "\n".join(pr_raw)
         if not pr_data:
@@ -680,6 +743,7 @@ class SdlModel:
         finally:
             os.chdir(self._cwd)
         self.ast = ast
+        self.scene.ast = ast
         return [e.msg for e in errs], [w.msg for w in warnings]
 
     def _main_file(self):
@@ -714,12 +778,25 @@ class SdlModel:
         ever reaches the model."""
         if element not in SINGLE_ELEMENTS:
             raise ValueError(f"unknown element: {element}")
+        # Accept the bare text add_symbol will store (the agent's
+        # natural input): complete it into the full statement the
+        # grammar parses. When the bare form does not parse, the raw
+        # text is tried too so a full statement still validates.
+        completed = _complete_element_text(element, text)
         self._cwd = os.getcwd()
         os.chdir(self.model_dir)
         try:
             _, syntax_errors, semantic_errors, warnings, _ = \
-                ogParser.parseSingleElement(elem=element, string=text,
+                ogParser.parseSingleElement(elem=element, string=completed,
                                             context=self._context(context))
+            if syntax_errors and completed != text:
+                _, raw_errors, raw_sem, raw_warn, _ = \
+                    ogParser.parseSingleElement(elem=element, string=text,
+                                                context=self._context(
+                                                    context))
+                if not raw_errors:
+                    syntax_errors, semantic_errors, warnings = \
+                        raw_errors, raw_sem, raw_warn
         finally:
             os.chdir(self._cwd)
         return {"syntax_errors": syntax_errors,
@@ -1279,10 +1356,11 @@ class Server:
         if self.live:
             # The tool's implementation runs in the editor, against the
             # open scene: this server only forwards the (validated)
-            # call and relays the result back to orbit.
+            # call and relays the result back to orbit. A dead or out-
+            # of-sync connection is re-made once (the editor may have
+            # been restarted); a fresh failure is reported to orbit.
             try:
-                result = self.bridge.call("tools/call",
-                                          {"name": name, "arguments": args})
+                result = self._bridge_call(name, args)
             except ValueError as exc:
                 return self._error_result(str(exc))
             except Exception as exc:  # noqa: BLE001
@@ -1297,6 +1375,28 @@ class Server:
                              "text": json.dumps(result, ensure_ascii=False,
                                                 indent=2)}],
                 "isError": False}
+
+    def _bridge_call(self, name, args):
+        """Forward one tool call to the editor's live bridge, making
+        the connection first if it broke (an editor restart, a
+        desynced stream after a timeout)."""
+        if self.bridge is None or not self._bridge_alive():
+            client = _connect_bridge(os.environ.get(BRIDGE_ENV_VAR))
+            if client is None:
+                raise ValueError(
+                    "the editor's live bridge is not reachable — "
+                    "opengeode may have been closed; the tool cannot "
+                    "run in live mode")
+            self.bridge = client
+        return self.bridge.call("tools/call",
+                                {"name": name, "arguments": args})
+
+    def _bridge_alive(self):
+        try:
+            self.bridge.call("ping")
+            return True
+        except Exception:  # noqa: BLE001
+            return False
 
     def _error_result(self, message):
         return {"content": [{"type": "text", "text": message}],
@@ -1391,6 +1491,10 @@ BRIDGE_ENV_VAR = "OPENGEODE_SDL_BRIDGE"
 #: How long to wait for the bridge to answer a request, seconds.
 BRIDGE_TIMEOUT = 20.0
 
+#: How many stale replies (left over after a timeout) to drain before
+#: giving up on a desynced bridge connection.
+_MAX_STALE_BRIDGE_REPLIES = 64
+
 
 class _BridgeClient:
     """The relay's end: a synchronous client to the editor's live
@@ -1407,16 +1511,28 @@ class _BridgeClient:
         self._file = self.sock.makefile("rwb")
 
     def call(self, method, params=None):
-        """One JSON-RPC request/reply. Returns the result, or raises
-        ValueError with the message the bridge sent."""
-        req = {"jsonrpc": "2.0", "id": next(self._ids), "method": method,
+        """One JSON-RPC request/reply. The reply's id must match the
+        request — a late reply left over after a timeout is discarded,
+        never misread as this call's answer. Returns the result, or
+        raises ValueError with the message the bridge sent."""
+        req_id = next(self._ids)
+        req = {"jsonrpc": "2.0", "id": req_id, "method": method,
                "params": params or {}}
         self._file.write((json.dumps(req) + "\n").encode("utf-8"))
         self._file.flush()
-        line = self._file.readline()
-        if not line:
-            raise ValueError("the editor closed the bridge connection")
-        reply = json.loads(line.decode("utf-8"))
+        # Drain at most a few stale replies (each a line that answered
+        # an earlier, timed-out request) before this one arrives.
+        for _ in range(_MAX_STALE_BRIDGE_REPLIES):
+            line = self._file.readline()
+            if not line:
+                raise ValueError("the editor closed the bridge connection")
+            reply = json.loads(line.decode("utf-8"))
+            if reply.get("id") == req_id:
+                break
+        else:
+            raise ValueError(
+                "the editor bridge is out of sync (no reply matched "
+                f"request {req_id}); reconnecting is required")
         if "error" in reply:
             raise ValueError(reply["error"].get("message", "bridge error"))
         return reply.get("result")
@@ -1431,15 +1547,21 @@ class _BridgeClient:
             pass
 
 
-def _connect_bridge(path, timeout=2.0):
+def _connect_bridge(path, ping_timeout=2.0):
     """Connect to the editor's live bridge when the path names a live
     socket, and verify it answers. Returns the client, or None — a
-    missing or dead bridge must not break the standalone server."""
+    missing or dead bridge must not break the standalone server.
+    The 2-second bound applies to the PING only: the returned client
+    keeps the full BRIDGE_TIMEOUT for the session, so a slow tool call
+    (a big check_model, a save) is not cut off mid-flight."""
     if not path:
         return None
     try:
-        client = _BridgeClient(path, timeout=timeout)
+        client = _BridgeClient(path, timeout=ping_timeout)
         client.call("ping")
+        # Verified alive: give the session the full timeout.
+        client.timeout = BRIDGE_TIMEOUT
+        client.sock.settimeout(BRIDGE_TIMEOUT)
         return client
     except Exception:
         return None

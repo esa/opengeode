@@ -16,6 +16,7 @@
 
 
 import logging
+import os
 from collections import deque
 from itertools import chain
 from functools import singledispatch
@@ -47,6 +48,44 @@ class Indent(deque):
         super().append('    ' * Indent.indent + string)
 
 
+def asn1_header(scene):
+    '''The ASN.1 reference lines a full-model serialization must start
+    with: the CIF pragma naming the dataview file and the USE clauses.
+    Without them a saved single-file model loses its dataview, and the
+    next parse reports every ASN.1 type as unknown. The data comes from
+    the scene's AST (set when the model was checked) and from the
+    ASN.1 view the parser holds (DV): both were populated when the
+    model was loaded, so nothing has to be guessed.
+    Returns a list of lines (possibly empty).'''
+    header = []
+    ast_obj = getattr(scene, 'ast', None)
+    if ast_obj is None or not getattr(ast_obj, 'use_clauses', None):
+        # Before the model's first check the scene has no AST yet; the
+        # editor keeps the load-time one on the sdlSymbols module —
+        # it carries the USE clauses this header needs.
+        ast_obj = getattr(sdlSymbols, 'AST', None)
+    dv = None
+    try:
+        from . import ogParser
+        dv = getattr(ogParser, 'DV', None)
+    except Exception:
+        dv = None
+    # The dataview file: what the ASNFilename pragma must name
+    asn1_file = ''
+    try:
+        asn1_file = os.path.basename(dv.asn1Files[0])
+    except (AttributeError, IndexError, TypeError):
+        asn1_file = ''
+    if asn1_file:
+        header.append(
+                "/* CIF Keep Specific Geode ASNFilename '"
+                + asn1_file + "' */")
+    # The USE clauses the model declared (ast.use_clauses holds them)
+    for module in (getattr(ast_obj, 'use_clauses', None) or []):
+        header.append('use {};'.format(module))
+    return header
+
+
 def parse_scene(scene, full_model=False, use_symbol_id=False):
     ''' Return the PR string for a complete scene
         Optionally, also generate the SYSTEM structure, with channels, etc. '''
@@ -59,6 +98,10 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
         # (1) get system name
         # (2) get signal directions from the connection of the process to env
         # (3) generate all the text
+        # The ASN.1 header first: without the USE clause and the
+        # ASNFilename pragma the saved model loses its dataview, and
+        # the next parse would report every ASN.1 type as unknown.
+        pr_data.extend(asn1_header(scene))
         processes = list(scene.processes)
         system_name = 'sys'
         block_name = 'block1'
@@ -177,6 +220,14 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
         if scene.context == 'process':
             partitions = scene.partitions.values() if getattr(scene, 'partitions', None) else [scene]
             for part in partitions:
+                # A partition entry can be a scene OR an ogAST node
+                # (the tree stores the AST when no scene exists yet,
+                # e.g. the placeholder built when no process parsed).
+                # Only scenes are serialisable; an AST entry here has
+                # no content to emit, so it is skipped instead of
+                # crashing the save.
+                if not hasattr(part, 'texts'):
+                    continue
 
                 # this includes the current scene
                 texts.extend(part.texts)

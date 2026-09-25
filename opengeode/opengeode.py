@@ -2383,6 +2383,45 @@ class SDL_View(QGraphicsView):
             LOG.error(f'Could not save backup file {backup_path}: {err}')
             return None
 
+    def save_diagram_silent(self, save_as=False, autosave=False):
+        ''' Save like save_diagram but NEVER open a dialog.
+
+        For non-interactive callers (the orbit MCP bridge, running on
+        the GUI thread): a modal dialog there would block the editor
+        until a human clicks it, freezing every later tool call with
+        it. What save_diagram asks interactively is decided here
+        instead and reported through the return value:
+          False + reason — the save did not happen.
+        Everything else (the serialisation, the file write, the
+        monitor and title updates) is save_diagram's own path. '''
+        reason = ''
+        if getattr(self, 'is_read_only', False) and not save_as:
+            reason = ('the model is open in read-only mode; use '
+                      'File > Save As to choose a new file')
+        elif not self.filename and not autosave:
+            reason = ('the model has no file yet; save it once from '
+                      'the editor (File > Save) so a target exists')
+        if reason:
+            LOG.warning('Silent save refused: %s', reason)
+            return False, reason
+        # Delegate to save_diagram with the silent flag set: its
+        # syntax-error confirmation dialog is skipped (a remote call
+        # cannot answer a dialog) — check_model has already run and
+        # its errors are visible in the editor's message window, so
+        # the save proceeds exactly as an autosave would.
+        self._silent_save = True
+        try:
+            try:
+                ok = self.save_diagram(save_as=save_as, autosave=autosave)
+            except Exception as exc:  # noqa: BLE001
+                return False, f'{type(exc).__name__}: {exc}'
+        finally:
+            self._silent_save = False
+        if ok is False:
+            return False, ('the editor refused the save — see its '
+                           'message window for what it reports')
+        return True, ''
+
     def save_diagram(self, save_as=False, autosave=False):
         ''' Save the diagram to a .pr file '''
         if getattr(self, 'is_read_only', False) and not save_as:
@@ -2436,7 +2475,7 @@ class SDL_View(QGraphicsView):
             LOG.info('No scene - nothing to save')
             return False
 
-        if not autosave:
+        if not autosave and not getattr(self, '_silent_save', False):
             self.messages_window.clear()
             # Check the model if anything changed (mostly to spot syntax errors
             # as they could jeopardize subsequent model parsing)

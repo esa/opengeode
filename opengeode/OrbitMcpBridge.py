@@ -40,8 +40,8 @@ import sys
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
-from . import ogParser, sdlSymbols, undoCommands
-from .SdlMcpServer import SdlModel, SINGLE_ELEMENTS, SYMBOL_KINDS, _kind_of
+from . import sdlSymbols, undoCommands
+from .SdlMcpServer import SdlModel, SYMBOL_KINDS, _kind_of
 
 # ---------------------------------------------------------------------------
 # The live model: the same tools, the editor's live scenes.
@@ -64,9 +64,32 @@ class LiveSdlModel(SdlModel):
         # SdlModel attributes the tool implementations use:
         self._symbol_ids = {}
         self._scene_names = {}
-        self.ast = getattr(view, 'ast', None)
         self.parse_errors = []
         self.parse_warnings = []
+
+    @property
+    def ast(self):
+        '''The model's AST, at call time. The editor keeps two: the
+        load-time AST on the sdlSymbols module (set when the model was
+        opened) and the checked AST on the scene (scene.ast, set by
+        check_model). The scene's is the freshest — it wins; the
+        module's carries the USE clauses the ASN.1 header of a
+        serialisation needs, so it serves until the first check.'''
+        ast_obj = getattr(self.view.top_scene(), 'ast', None)
+        if ast_obj is not None:
+            return ast_obj
+        module_ast = getattr(sdlSymbols, 'AST', None)
+        if module_ast is not None and getattr(module_ast, 'systems',
+                                              None):
+            return module_ast
+        from . import ogAST
+        return ogAST.Process()
+
+    @ast.setter
+    def ast(self, value):
+        '''A re-parse assigns the AST where the editor keeps it: on the
+        scene (scene.ast, exactly where its own check_model puts it).'''
+        self.view.top_scene().ast = value
         # The view is the source of truth: no mtime snapshot to keep.
         self._mtimes = {}
 
@@ -121,14 +144,16 @@ class LiveSdlModel(SdlModel):
     def save(self, force=False):
         '''Save through the editor's own action, so the monitor's
         timestamps and the window title update exactly as a manual
-        save does. Runs on the GUI thread (the bridge guarantees it).'''
+        save does. Runs on the GUI thread (the bridge guarantees it) —
+        so it MUST NOT open a dialog: a modal there would freeze the
+        editor until a human clicks it, and every later tool call with
+        it. save_diagram_silent is save_diagram without interaction;
+        what it would have asked is reported as the tool's error.'''
         del force    # the live scene IS the current model: no stale copy
-        # The GUI's own save: same code path as Ctrl+S (it translates
-        # coordinates to a non-negative origin itself), so the file
-        # monitor and the window title update exactly as a manual save.
-        success = self.view.save_diagram()
-        if success is False:
-            raise ValueError("the editor could not save the diagram")
+        success, reason = self.view.save_diagram_silent()
+        if success is not True:
+            raise ValueError("the editor could not save the diagram: "
+                             + (reason or "refused"))
         return {"saved": os.path.basename(self._main_file()),
                 "bytes": os.path.getsize(self._main_file())}
 
@@ -145,7 +170,8 @@ class LiveSdlModel(SdlModel):
                              "(the editor kept the current one)")
         self._symbol_ids = {}
         self._scene_names = {}
-        self.pr_files = self._live_files()
+        # pr_files is a property reading the view at call time — the
+        # reloaded state is picked up automatically.
         return {"reloaded": [os.path.basename(p) for p in self.pr_files]}
 
     def model_status(self):
@@ -229,22 +255,12 @@ class LiveSdlModel(SdlModel):
         return self._symbol_info(item, scene)
 
     def check_syntax(self, element, text, context=""):
-        '''check_syntax on the live model: same parser, the editor's
-        process context. The chdir dance is the headless one's — the
-        parser resolves the ASN.1 view relative to the CWD.'''
-        if element not in SINGLE_ELEMENTS:
-            raise ValueError(f"unknown element: {element}")
-        self._cwd = os.getcwd()
-        os.chdir(self.model_dir)
-        try:
-            _, syntax_errors, semantic_errors, warnings, _ = \
-                ogParser.parseSingleElement(elem=element, string=text,
-                                            context=self._context(context))
-        finally:
-            os.chdir(self._cwd)
-        return {"syntax_errors": syntax_errors,
-                "semantic_errors": [str(e) for e in semantic_errors],
-                "warnings": [str(w) for w in warnings]}
+        '''check_syntax on the live model: the headless implementation,
+        unchanged — its chdir targets model_dir (which here reads the
+        view's files), its context reads self.ast (here the scene's
+        AST), and it carries the bare-text completion an agent's
+        validate-first flow depends on.'''
+        return SdlModel.check_syntax(self, element, text, context)
 
     # The headless implementation is reused verbatim (scenes(),
     # symbols(), find(), add(), remove(), set_text(), move(),

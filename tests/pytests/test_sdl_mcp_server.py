@@ -518,6 +518,16 @@ class _V:
         return self._scene
     def is_model_clean(self):
         return self._scene.undo_stack.isClean()
+    def save_diagram_silent(self, save_as=False, autosave=False):
+        # The dialog-free save the live bridge uses (the real view's
+        # own: refuse when a dialog would be needed, save otherwise).
+        if not self.filename:
+            return False, "the model has no file yet; save it once from the editor (File > Save) so a target exists"
+        self._scene.translate_to_origin()
+        pr_raw = Pr.parse_scene(self._scene, full_model=False)
+        with open(self.filename, 'w', encoding='utf-8') as f:
+            f.write('\\n'.join(pr_raw))
+        return True, ''
     def save_diagram(self, save_as=False, autosave=False):
         self._scene.translate_to_origin()
         pr_raw = Pr.parse_scene(self._scene, full_model=False)
@@ -759,3 +769,205 @@ def test_multi_process_save_round_trip(tmp_path):
     conns = [c for s in m.symbols(m.scene_named('block'))
              for c in s.get('connections', [])]
     assert any(c['kind'] == 'channel' for c in conns)
+
+
+def test_live_bridge_never_blocks_on_a_dialog(tmp_path):
+    '''The failure the user hit: on a model with NO filename (an empty
+    block), the remote save used to open QFileDialog on the GUI thread
+    and freeze the editor until a human clicked. The live save must go
+    through save_diagram_silent: a dialog-needing situation is an
+    immediate error, and the bridge keeps answering after it.'''
+    import subprocess, time
+    workdir = tmp_path / 'empty'
+    workdir.mkdir()
+    shutil.copy(os.path.join(MODEL_DIR, 'dataview-uniq.asn'),
+                workdir)
+    (workdir / 'ping.pr').write_text(
+        "/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */\n"
+        "USE Datamodel;\n"
+        "SYSTEM ping;\n"
+        "    SIGNAL run;\n"
+        "    CHANNEL c FROM ENV TO ping WITH run; ENDCHANNEL;\n"
+        "    BLOCK ping;\n"
+        "        SIGNALROUTE r FROM ENV TO ping WITH run;\n"
+        "        CONNECT c and r;\n"
+        "    ENDBLOCK;\n"
+        "ENDSYSTEM;\n", encoding='utf-8')
+    stop = tmp_path / 'STOP2'
+    script = workdir / '_live_editor_nofile.py'
+    script.write_text('''
+import os, sys
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+sys.path.insert(0, {repo!r})
+from PySide6.QtWidgets import QApplication
+app = QApplication([])
+from opengeode import ogParser, ogAST
+from opengeode.opengeode import SDL_Scene
+from opengeode.OrbitMcpBridge import attach
+
+os.chdir({workdir!r})
+ast, warn, errs = ogParser.parse_pr(files=['ping.pr'])
+block = ogAST.Block()
+proc = ogAST.Process()
+proc.processName = 'Syntax_Error'
+block.processes = [proc]
+block.parent = ast.systems[0]
+
+class _V:
+    def __init__(self):
+        self.filename = None      # the empty-block case: NO file yet
+        self.ast = ast
+        self.readonly_pr = set()
+        self._scene = SDL_Scene(context='block')
+        self._scene.render_everything(block)
+    def top_scene(self):
+        return self._scene
+    def is_model_clean(self):
+        return self._scene.undo_stack.isClean()
+    def save_diagram_silent(self, save_as=False, autosave=False):
+        # The fix under test: no dialog, an immediate (False, reason)
+        return False, ("the model has no file yet; save it once from "
+                       "the editor (File > Save) so a target exists")
+    def load_file(self, files, is_reload=False):
+        return True
+
+class _M:
+    def __init__(self, view):
+        self.view = view
+
+bridge = attach(_M(_V()))
+assert bridge is not None, "bridge did not come up"
+print(bridge.socket_path, flush=True)
+from PySide6.QtCore import QTimer
+def stopper():
+    if os.path.exists({stop!r}):
+        return
+    QTimer.singleShot(50, stopper)
+stopper()
+import time as _t
+t0 = _t.time()
+while not os.path.exists({stop!r}) and _t.time() - t0 < 90:
+    app.processEvents()
+bridge.close()
+'''.format(repo=REPO, workdir=str(workdir), stop=str(stop)), encoding='utf-8')
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        cwd=str(workdir),
+        env={**os.environ, 'QT_QPA_PLATFORM': 'offscreen', 'PYTHONPATH': REPO})
+    try:
+        sock_path = None
+        for _ in range(60):
+            line = proc.stdout.readline()
+            if line.strip():
+                sock_path = line.strip()
+                break
+            if proc.poll() is not None:
+                break
+            time.sleep(0.25)
+        assert sock_path, f"bridge never came up: {proc.stderr.read()[:300]}"
+        env = {**os.environ, 'OPENGEODE_SDL_BRIDGE': sock_path,
+               'QT_QPA_PLATFORM': 'offscreen', 'PYTHONPATH': REPO}
+        server = subprocess.Popen(
+            [sys.executable, '-m', SERVER_MODULE, '*.pr'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+            cwd=str(workdir), env=env)
+        try:
+            caller = _Caller(server)
+            r = caller.request('initialize',
+                               {'protocolVersion': '2025-06-18',
+                                'capabilities': {},
+                                'clientInfo': {'name': 'pytest', 'version': '1'}})
+            assert r['result']['serverInfo'].get('live') is True
+            # 1. the empty block answers immediately
+            payload, is_error, _ = caller.call('list_symbols',
+                                               {'scene': 'block'})
+            assert not is_error
+            # 2. add a process in the block view
+            payload, is_error, _ = caller.call(
+                'add_symbol', {'kind': 'process', 'scene': 'block',
+                               'text': 'foo', 'x': 600, 'y': 300})
+            assert not is_error
+            assert payload['nested_scene'] == 'process foo'
+            # 3. THE REGRESSION: the save must FAIL FAST with a clear
+            #    reason (no dialog, no hang), …
+            payload, is_error, text = caller.call('save_model', {})
+            assert is_error, "the no-filename save should have refused"
+            assert 'no file yet' in text, text
+            # 4. …and the bridge must still answer afterwards (no
+            #    deadlock, no desync).
+            payload, is_error, _ = caller.call('list_symbols',
+                                               {'scene': 'block'})
+            assert not is_error
+            assert any(s['text'] == 'foo' for s in payload), payload
+        finally:
+            server.stdin.close()
+            server.wait(timeout=10)
+    finally:
+        stop.write_text('stop')
+        try:
+            proc.wait(timeout=10)
+        except Exception:
+            proc.kill()
+        if os.path.exists(sock_path or ''):
+            os.unlink(sock_path)
+
+
+def test_bridge_client_times_out_and_stays_in_sync():
+    '''The relay's bridge client: the ping timeout must not become the
+    session timeout, and a stale reply after a timeout must never be
+    misread as the next call's answer (the desync that made orbit's
+    later calls "hang").'''
+    import socket as socklib
+    from opengeode.SdlMcpServer import _BridgeClient, BRIDGE_TIMEOUT
+    # A fake bridge that answers the ping but never answers the call
+    srv = socklib.socket(socklib.AF_UNIX, socklib.SOCK_STREAM)
+    path = os.path.join(tempfile.mkdtemp(), 'fake.sock')
+    srv.bind(path)
+    srv.listen(1)
+    import threading
+    replies = []
+    def serve_one(conn):
+        buf = b''
+        while True:
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            buf += chunk
+            while b'\n' in buf:
+                line, buf = buf.split(b'\n', 1)
+                import json as _json
+                req = _json.loads(line)
+                if req['method'] == 'ping':
+                    replies.append(req['id'])
+                    conn.sendall((_json.dumps(
+                        {'jsonrpc': '2.0', 'id': req['id'], 'result': {}}
+                        ) + '\n').encode())
+                else:
+                    # never answer the tool call
+                    pass
+
+    def serve():
+        while True:
+            conn, _ = srv.accept()
+            threading.Thread(target=serve_one, args=(conn,),
+                             daemon=True).start()
+    threading.Thread(target=serve, daemon=True).start()
+    client = _BridgeClient(path, timeout=5.0)
+    client.call('ping')          # works (the fake answers pings)
+    assert client.timeout == 5.0
+    # a call that never answers must time out…
+    client.timeout = 0.5
+    client.sock.settimeout(0.5)
+    with pytest.raises(socklib.timeout):
+        client.call('tools/call', {'name': 'x'})
+    # …and the id check keeps the NEXT call honest (a late reply to the
+    # timed-out call would be discarded, not consumed as an answer).
+    # _connect_bridge must give the SESSION client the full timeout.
+    from opengeode.SdlMcpServer import _connect_bridge
+    client2 = _connect_bridge(path, ping_timeout=0.5)
+    assert client2 is not None
+    assert client2.timeout == BRIDGE_TIMEOUT
+    client2.close()
+    client.close()
+    srv.close()

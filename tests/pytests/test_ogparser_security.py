@@ -395,3 +395,51 @@ def test_normal_model_still_parses(workdir):
     ast, warn, err = parse(workdir)
     assert not err, f'valid model rejected: {[str(e)[:60] for e in err]}'
     assert len(ast.processes) == 1
+
+
+def test_editable_text_focus_out_without_focus_in(workdir):
+    '''Regression: EditableText.focusOutEvent raised AttributeError
+    ("oldSize" missing) because the pre-edit state was captured only in
+    focusInEvent — while Symbol.edit_text() (used by place_symbol, the
+    editor's own symbol-placement path) sets the editing flag directly
+    after setFocus(). When the item already had the focus Qt delivers
+    no second focusInEvent, so nothing was captured and the next
+    focus-out crashed. The capture now happens at every editing site
+    (EditableText._begin_editing), and the attributes are initialised
+    in __init__ so a stray focus-out degrades to "nothing changed".'''
+    import sys
+    os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QEvent, QPointF, Qt
+    app = QApplication.instance() or QApplication([])
+
+    from opengeode import TextInteraction
+    from opengeode.opengeode import SDL_Scene
+
+    # A scene with one symbol that owns an EditableText
+    scene = SDL_Scene(context='process')
+    from opengeode.sdlSymbols import Task
+    task = Task(parent=None)
+    scene.addItem(task)
+    task.text.setPlainText('x := 1')
+
+    # The exact crash path: the item ALREADY has the focus, so Qt will
+    # not deliver a second focusInEvent — place_symbol -> edit_text
+    # sets the editing flag without any capture happening.
+    # The crash scenario: editing turns on through a route that did
+    # NOT go through focusInEvent (headless there is no view to give
+    # the item the keyboard focus, which is exactly the shape of the
+    # bug: the flag was set while the capture was skipped).
+    task.edit_text()                    # place_symbol's path
+    assert task.text.editing is True
+
+    # focusOutEvent must not raise, whatever the route to editing was
+    from PySide6.QtGui import QFocusEvent
+    event = QFocusEvent(QEvent.Type.FocusOut, Qt.MouseFocusReason)
+    try:
+        task.text.focusOutEvent(event)
+        crashed = False
+    except AttributeError as err:
+        crashed = True
+        print('CRASHED:', err)
+    assert not crashed, 'focusOutEvent must survive without a prior focusInEvent'

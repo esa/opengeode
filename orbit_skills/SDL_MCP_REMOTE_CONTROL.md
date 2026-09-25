@@ -20,6 +20,18 @@ description: >
 
 ## 1. How the server works
 
+**Read the files, write through the tools.** The fastest way to
+understand the model is to **read the `.pr` files** (and the ASN.1
+dataview) — one read shows the whole model: every state, transition,
+type and signal with their exact text. Use the tools to enumerate
+scene/symbol **ids** when you need them for a write (`list_symbols`
+on the one scene you are about to change), not to discover the
+model's content symbol by symbol. All **writes** — adding, editing,
+moving, removing symbols, connections and declarations — go through
+the MCP tools, never through editing the files directly (see live
+mode below). The `sdl-model-construction` skill (loaded together with
+this one) is the reference for the SDL text those writes contain.
+
 **Live mode (the usual case).** When OpenGEODE's editor is running
 with the model open, the server relays every tool call to it over a
 local socket: the tools operate on the **model currently displayed in
@@ -209,11 +221,20 @@ Syntax-check one SDL element *without touching the model* — to
 validate a text before adding or editing a symbol. `element` is the
 parser's grammar name; the common ones: `task`, `output`,
 `procedure_call`, `decision`, `input_part`, `label`, `text_area`,
-`create_request`, `terminator_statement` (a nextstate/stop/join).
+`create_request`, `terminator_statement` (a nextstate/stop/join),
+`continuous_signal` (a provided clause).
 `context` (optional) names the process whose variables and types the
 element is checked against.
+
+**The text is the BARE content** — exactly what `add_symbol` will
+store, without the leading keyword: `"counter := counter + 1"` for a
+task, `"counter = 0"` for a continuous signal, `"Wait"` for a
+terminator_statement (NEXTSTATE). A full statement (`"task counter :=
+counter + 1;"`) also validates; the bare form is the convention, and
+it is what `add_symbol` expects.
 ```
 {"element": "task", "text": "counter := counter + 1"}
+{"element": "continuous_signal", "text": "counter = 0"}
 ```
 
 ### save_model
@@ -262,6 +283,14 @@ procedure_start, state_start, continuous_signal
   vertical: chained below a parent
 - `input`, `connect`, `continuous_signal`, `decision_answer` —
   horizontal: branched under a state/decision
+
+  **`state` appears twice in `list_symbols`** — the same name as a
+  floating box (`"has_parent": false`) and as each NEXTSTATE
+  terminator of a transition (`"has_parent": true`). Branches (inputs,
+  continuous signals, connects) go under the **floating box** only:
+  `find_symbol` with `kind: "state"` returns both, so pick the one
+  whose `has_parent` is `false`. A continuous signal's `text` is the
+  condition alone (`"counter = 0"`), not `provided counter = 0`.
 - `label`, `text`, `state`, `procedure`, `process`, `process_type`,
   `start`, `procedure_start`, `state_start` — floating — **and `state`
   is also attachable**: parented it is the NEXTSTATE terminator (see
@@ -269,13 +298,41 @@ procedure_start, state_start, continuous_signal
 
 ## 4. Operating procedure
 
-1. **Read before writing.** `list_symbols` (or `find_symbol`) on the
-   scene you are about to change. Ids come from these calls only.
-2. **Validate text first.** For a new statement, `check_syntax` with
+1. **Find and reveal the tools before calling them.** Orbit may not
+   declare these MCP tools in your tool list: with many tools
+   configured it defers their schemas (and sometimes their very
+   existence) to save context. A call to an undeclared tool is
+   IMPOSSIBLE — you cannot emit it. Bridge that first, in either of
+   the two layouts you may see:
+
+   - If your system prompt contains an `<available_mcp_tools>`
+     block: the tool ids are listed there (name + one-line
+     description). Call `mcp(name="mcp__opengeode-sdl__<tool>")`
+     once per tool you intend to use — that declares it, making it
+     callable — then invoke it directly.
+
+   - If there is no such block: call
+     `tool_search(query="SDL model edit symbol")` (a search over the
+     deferred tools) and take the exact id from its results, then
+     reveal it with `mcp(name=...)` as above. The ids all start with
+     `mcp__opengeode-sdl__`.
+
+   Do this up front for the operation you are about to perform —
+   typically `list_symbols`, `check_syntax`, `add_symbol`,
+   `check_model` and `save_model` — not per call. This skill's
+   section 6 documents every argument shape, so once a tool is
+   revealed you know exactly what to pass.
+
+2. **Read the model from the files first.** Read the `.pr` file(s) to
+   understand the model — states, transitions, types, signals — and
+   the ASN.1 dataview for the types. That is faster and richer than
+   tool-listing every scene. Then `list_symbols` **only** on the
+   scene you are about to change, to get the ids your writes need.
+3. **Validate text first.** For a new statement, `check_syntax` with
    the element name; fix errors before it enters the model.
-3. **Edit**: `add_symbol` / `set_symbol_text` / `move_symbol` /
+4. **Edit**: `add_symbol` / `set_symbol_text` / `move_symbol` /
    `remove_symbol`. One structural change at a time.
-4. **Check**: `check_model`. Fix reported errors (`set_symbol_text`,
+5. **Check**: `check_model`. Fix reported errors (`set_symbol_text`,
    `remove_symbol`) and check again.
    **Structural order matters**: declare signals
    (`add_signal_declaration`) before wiring connections
@@ -283,13 +340,13 @@ procedure_start, state_start, continuous_signal
    addressed; end every transition with an attached `state`
    (NEXTSTATE) or a stop/join — a transition that ends nowhere is a
    semantic error (`check_model` reports it).
-5. **Save**: `save_model`. Only then are the `.pr` files updated.
+6. **Save**: `save_model`. Only then are the `.pr` files updated.
    In standalone mode a refusal means the editor saved the file
    meanwhile: decide which version wins — `reload_model` (editor
    wins) or `force: true` (this server's model wins) — then save.
-6. **Re-read** after saving if further work needs fresh ids
+7. **Re-read** after saving if further work needs fresh ids
    (`save_model` re-renders; ids of surviving symbols stay valid).
-7. **The user edits too.** In live mode their editor actions (undo,
+8. **The user edits too.** In live mode their editor actions (undo,
    delete, reload) can invalidate ids — re-list before acting after
    they report doing something. In standalone mode, when they say
    they saved the model, `model_status` shows `stale`: `reload_model`
@@ -403,3 +460,276 @@ Then to attach an input to a state and add it to the flow:
   multi-process save regenerates the structure file.
 - If a tool reports the model as stale or a symbol as gone, re-read
   with `list_symbols` and continue from the fresh ids.
+
+## 7. SDL syntax quick card
+
+The complete language reference (grammar, semantics, ASN.1 integration,
+CIF annotations, multi-process communication, worked examples) is
+available as a skill you can load on demand:
+`skill(name="sdl-model-construction")`. Load it before composing
+anything unusual — composite states, procedures with fpar, timers,
+multi-process channels — or when `check_syntax` rejects text you
+believe is valid. For everything common, this card is enough:
+
+### SDL quick reference card
+
+### Keywords (Case-Insensitive)
+
+```
+SYSTEM ENDSYSTEM BLOCK ENDBLOCK PROCESS ENDPROCESS
+STATE ENDSTATE START INPUT OUTPUT NEXTSTATE
+TASK DECISION ENDDECISION ANSWER PROVIDED
+PROCEDURE ENDPROCEDURE CALL RETURN RETURNS
+FPAR IN OUT INOUT DCL TIMER
+FOR ENDFOR RANGE IF THEN ELSE FI
+JOIN STOP CREATE CONNECT VIA
+USE SIGNAL CHANNEL ENDCHANNEL SIGNALROUTE
+SYNTYPE ENDSYNTYPE NEWTYPE ENDNEWTYPE
+SYNONYM LITERALS STRUCT ARRAY CONSTANTS
+AND OR XOR NOT IMPLIES
+TRUE FALSE MOD REM
+EXTERNAL REFERENCED EXPORTED
+ALTERNATIVE ENDALTERNATIVE
+SUBSTRUCTURE ENDSUBSTRUCTURE AGGREGATION
+ANY ASTERISK DASH
+```
+
+### Operators (by precedence, low→high)
+
+```
+=>  OR ELSE  XOR  AND THEN  = /= > >= < <= IN
++ - //  * / MOD REM  NOT  unary-
+```
+
+### Common Code Patterns
+
+**Minimal process:**
+```sdl
+process P;
+    START; NEXTSTATE S;
+    state S; endstate;
+endprocess;
+```
+
+**State with input and nextstate:**
+```sdl
+state S;
+    input sig(param);
+        task var := param;
+        NEXTSTATE T;
+endstate;
+```
+
+**Stay in current state:**
+```sdl
+NEXTSTATE -;
+```
+
+**Timer set and wait:**
+```sdl
+call set_timer(1000, myTimer);
+-- in another state:
+input myTimer;
+    -- timer expired
+```
+
+**Decision with else:**
+```sdl
+decision x;
+    (>0):  ...
+    (0):   ...
+    else:  ...
+enddecision;
+```
+
+**FOR loop over array:**
+```sdl
+task for elem in myArray:
+    call writeln(elem);
+endfor;
+```
+
+**FOR loop with range:**
+```sdl
+task for i in range(0, 10):
+    call writeln(i);
+endfor;
+```
+
+**Procedure call:**
+```sdl
+call myProc(arg1, arg2);
+```
+
+**Function call (returns value):**
+```sdl
+task result := myFunc(arg1, arg2);
+```
+
+**Ternary:**
+```sdl
+task x := if cond then 1 else 0 fi;
+```
+
+**String concat:**
+```sdl
+task msg := 'hello' // ' world';
+```
+
+**Substring (inclusive):**
+```sdl
+task sub := myStr(1, 3);
+```
+
+**Output with destination:**
+```sdl
+output msg(val) TO dest;
+```
+
+**Label and Join:**
+```sdl
+myLabel:
+    task x := x + 1;
+    -- later:
+    JOIN myLabel;
+```
+
+**Continuous signal:**
+```sdl
+state S;
+    PROVIDED x > 42;
+        -- transition
+        NEXTSTATE S;
+endstate;
+```
+
+**Multiple states sharing transition:**
+```sdl
+state A, B, C;
+    input go;
+        NEXTSTATE D;
+endstate;
+```
+
+**Asterisk state with exception:**
+```sdl
+state * (SpecialState);
+    input heartbeat;
+        NEXTSTATE -;
+endstate;
+```
+
+---
+
+*This document is self-contained: everything needed to create, modify, and
+validate an SDL model for OpenGEODE is described above — the language syntax,
+the semantic rules, complete worked examples, and the validation procedure.
+No external reference is needed to apply it.*
+
+---
+
+### Semantic rules checklist
+
+This section catalogs the key semantic rules enforced by `ogParser.py`. Use it
+as a checklist when constructing models.
+
+### System Level
+
+- [ ] Signals are declared at **system level** only (not inside processes)
+- [ ] Every signal referenced in an INPUT or OUTPUT must be declared
+- [ ] Channels must have at least one route entry
+- [ ] Channels connect to signalroutes via CONNECT
+
+### Process Level
+
+- [ ] Every non-referenced process **must** have a START transition
+- [ ] All NEXTSTATE targets must have corresponding STATE definitions
+    (exception: `-` dash, `-*` history)
+- [ ] Process fpar parameters are accessible as variables
+- [ ] Variables must be declared with `DCL` before use
+- [ ] Timers must be declared with `timer` before use
+- [ ] Procedures must be declared before use (either graphically or in text area)
+
+### State Level
+
+- [ ] Asterisk `*` state excludes explicitly defined states
+- [ ] In composite states, inputs at level N have priority over level N-1
+- [ ] An input consumed in a substate **cannot** also be consumed at the parent
+    level (error: "Input X is already consumed in substate Y")
+- [ ] Continuous signals should be mutually exclusive (duplicates are errors)
+- [ ] Composite state exit points must have CONNECT at the parent level
+
+### Transition Level
+
+- [ ] Every transition ends with a terminator (NEXTSTATE, JOIN, STOP, or RETURN)
+- [ ] Tasks must have valid type assignments (left and right types must match)
+- [ ] IN fpar parameters cannot be assigned (read-only)
+- [ ] FOR loop variables cannot be assigned within the loop body
+- [ ] Variable-length OCTET STRINGs are immutable (no substring assignment)
+- [ ] Array indices must be integers
+- [ ] Procedure calls must match the declared parameter count and types
+- [ ] Procedures with return types must be called in a TASK, not with CALL
+
+### Decision Level
+
+- [ ] Decision question type must match answer types
+- [ ] Boolean decisions must have **exactly 2** answers (TRUE/FALSE)
+- [ ] Answer ranges must not overlap (error if they do)
+- [ ] All possible values must be covered (or use `else`)
+- [ ] ENUMERATED decisions should cover all enumerants (or use `else`)
+- [ ] `present(CHOICE)` decisions should cover all choice elements (or use `else`)
+- [ ] Unreachable answers produce warnings (outside type's range)
+- [ ] Missing branches produce errors
+
+### Expression Level
+
+- [ ] Type compatibility is enforced in all assignments
+- [ ] Range checking: if an expression result can exceed the target type's range,
+    an error is raised
+- [ ] The `IN` operator requires the right side to be a list/sequence type
+- [ ] Field access (`!` or `.`) requires the field to exist in the type
+- [ ] Enumeration values are matched case-insensitively (with hyphen/underscore
+    normalization)
+
+### Composite State Level
+
+- [ ] Every exit point in a nested state must have a CONNECT at the parent
+- [ ] Parallel state partitions cannot consume the same input signals
+- [ ] State instance names must match defined composite state names
+- [ ] Entry/exit procedures (named `entry`/`exit`) are called automatically
+- [ ] Named start transitions require VIA clause at the parent level
+
+---
+
+### Common errors
+
+| Error Message | Cause | Fix |
+|---------------|-------|-----|
+| Mandatory START transition is missing in process X | No START defined | Add `START; NEXTSTATE ...;` |
+| State definition missing: X | NEXTSTATE X but no `state X;` | Define the state or use `-` |
+| Input X is already consumed in substate Y | Same input in parent and child | Remove from parent or substate |
+| Continuous signal is defined more than once below state X | Duplicate PROVIDED | Remove duplicate |
+| Type mismatch (X vs Y) | Incompatible types in assignment | Check type compatibility |
+| IN parameter (read-only) | Assigning to IN fpar | Use IN/OUT or INOUT |
+| Assignment to loop parameter X is not allowed | Assigning to FOR loop var | Use a different variable |
+| Variable-length type is immutable | Substring assignment on variable-length string | Use concatenation instead |
+| Index is not an integer | Non-integer array index | Use `fix()` to convert |
+| Field X not found in expression Y | Invalid field access | Check type definition |
+| Value X not in this enumeration | Invalid enumerant | Check ENUMERATED definition |
+| Wrong number of parameters | Mismatched call | Match procedure signature |
+| Boolean decision X must have exactly 2 answers | 3+ answers on boolean decision | Use TRUE/FALSE or TRUE/else |
+| Decision X: Missing branches for answer(s) Y | Incomplete coverage | Add else or missing answers |
+| Decision X: answers Y and Z are overlapping | Overlapping ranges | Make answers mutually exclusive |
+| Types are incompatible in assignment: left (X, type=Y), right (Z, type=W) | Range overflow | Ensure expression result fits in target type |
+| State X is not a composite state and cannot be followed by a connect statement | CONNECT on non-composite state | Remove CONNECT or make state composite |
+| Exit point X not defined in state Y | CONNECT references undefined exit | Define exit point in nested state |
+| CONNECT: State name X not defined | CONNECT references undefined state | Define the state or fix the name |
+| Missing procedure definition: X | Exported+Referenced proc without body | Implement the procedure |
+| Nested state definition missing: X | State instance without composite def | Define the composite state |
+| History NEXTSTATE cannot have a via clause | NEXTSTATE -*- VIA entry | Remove VIA from history nextstate |
+| Use of forbidden keyword for a variable name: X | Variable named like SDL keyword | Rename the variable |
+| FOR variable X is already declared in the scope | Loop var shadows existing variable | Use a unique name |
+| Variable X is not iterable | FOR loop on non-sequence type | Use SEQUENCE OF or range() |
+| Composite state X has no unnamed entry point | NEXTSTATE X without via, but no unnamed START | Add unnamed START or use VIA |
+
+---

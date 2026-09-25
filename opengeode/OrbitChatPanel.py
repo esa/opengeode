@@ -45,13 +45,43 @@ SKILL_FILENAME = "SDL_SKILL_DOCUMENTATION.md"
 MCP_SKILL_NAME = "sdl-mcp-remote-control"
 MCP_SKILL_FILENAME = "SDL_MCP_REMOTE_CONTROL.md"
 
-#: Every skill OpenGEODE hands to orbit at connect time:
-#: (name, filename). The construction skill first (it is the language
-#: reference), then the remote-control interface.
-BUNDLED_SKILLS = (
-    (SKILL_NAME, SKILL_FILENAME),
-    (MCP_SKILL_NAME, MCP_SKILL_FILENAME),
-)
+#: The two editing modes the panel offers, each with the ONE skill
+#: that goes with it (the user's choice — a mode is not a guess):
+#:
+#: "file" — orbit edits the .pr file on disk. It gets the SDL
+#: construction skill (the complete language reference) and NO bridge
+#: environment: no MCP server is announced to orbit, so nothing
+#: forwards tool calls into the running editor. The editor's own
+#: external-modification monitor picks the saved file up.
+#:
+#: "mcp" — orbit drives the editor's model through the MCP server,
+#: live: it gets the remote-control skill (the tool interface) and the
+#: bridge socket in its environment, so the tool calls land in the
+#: diagram open in this editor immediately.
+MODE_FILE = "file"
+MODE_MCP = "mcp"
+
+#: The skills staged per mode: (name, filename).
+#:
+#: File mode stages the complete SDL construction reference — the
+#: agent edits the .pr files directly, so it needs the whole language.
+#:
+#: MCP mode is a MIX (the user's design): reads go through the FILES —
+#: reading the .pr (and .asn) directly is faster and richer than
+#: listing symbols one by one through the tools — while writes go
+#: through the MCP tools, whose edits land in the diagram open in this
+#: editor, live and undoable, and are validated by the editor's own
+#: parser. Only the remote-control interface is STAGED there (~7k
+#: tokens): the tool skill carries an SDL syntax quick card for the
+#: common cases, and points at the complete reference, which the
+#: panel writes into the model directory's .orbit/skills/ so orbit
+#: can serve it ON DEMAND with skill(name="sdl-model-construction").
+#: Staging both (~30k tokens) made reasoning models burn their
+#: context deliberating before the first tool call.
+SKILLS_PER_MODE = {
+    MODE_FILE: ((SKILL_NAME, SKILL_FILENAME),),
+    MODE_MCP: ((MCP_SKILL_NAME, MCP_SKILL_FILENAME),),
+}
 
 # The orbit_acp import is wrapped so OpenGEODE never fails to start when the
 # library (or orbit itself) is absent. Everything below guards on these.
@@ -172,19 +202,67 @@ def _skill_body(text=None) -> str:
     return text.strip()
 
 
-def _stage_skill(chat) -> bool:
-    """Hand every bundled skill to the conversation just opened, with
-    orbit-acp's use_skill(name, text): orbit stages the texts for the
-    next question — the conversation's first — so the SDL reference and
-    the remote-control interface ride along from the very first prompt.
+def _publish_reference_skill(model_dir: str) -> bool:
+    """Make the complete SDL reference loadable ON DEMAND in the model's
+    directory: orbit discovers loose `*.md` skill files under the
+    project root's `.orbit/skills/` (a root is marked by an orbit.json),
+    and the model loads one with skill(name=...).
 
-    Returns True when at least one skill was staged. Silently degrades
-    (returns False) when no skill body is available or when this orbit
-    does not offer the skill_load extension: the conversation still
-    works, just without the guidance pre-loaded.
+    In MCP mode only the compact tool skill is staged with the first
+    question; this is where the full language reference lives instead —
+    the model reads it when it needs it (composing composite states,
+    procedures, timers, multi-process channels), not before. A return of
+    False is not fatal: the reference just is not loadable on demand and
+    the tool skill's quick card has to suffice.
+    """
+    import os
+    if not model_dir:
+        return False
+    try:
+        root = os.path.join(model_dir, ".orbit", "skills")
+        os.makedirs(root, exist_ok=True)
+        # An orbit.json at the model dir marks it as the project root —
+        # without one, orbit does not look at .orbit/skills/ at all.
+        marker = os.path.join(model_dir, "orbit.json")
+        if not os.path.exists(marker):
+            with open(marker, "w", encoding="utf-8") as fp:
+                fp.write("{}\n")
+        target = os.path.join(root, SKILL_FILENAME)
+        body = _read_skill_text(
+                ":/orbit_skills/" + SKILL_FILENAME, SKILL_FILENAME)
+        if not body:
+            return False
+        # Write only when the content differs, so a user's own copy
+        # under another name is never clobbered — and no-op writes do
+        # not touch the file's mtime.
+        try:
+            with open(target, encoding="utf-8-sig") as fp:
+                if fp.read() == body:
+                    return True
+        except OSError:
+            pass
+        with open(target, "w", encoding="utf-8") as fp:
+            fp.write(body)
+        return True
+    except OSError:
+        return False
+
+
+def _stage_skill(chat, mode=MODE_FILE) -> bool:
+    """Hand the MODE's skill to the conversation just opened, with
+    orbit-acp's use_skill(name, text): orbit stages the text for the
+    next question — the conversation's first — so the guidance rides
+    along from the very first prompt.
+
+    One skill per mode, the user's choice: the file mode gets the SDL
+    construction reference, the mcp mode gets the remote-control
+    interface. Returns True when the skill was staged. Silently
+    degrades (returns False) when no skill body is available or when
+    this orbit does not offer the skill_load extension: the
+    conversation still works, just without the guidance pre-loaded.
     """
     staged_any = False
-    for name, filename in BUNDLED_SKILLS:
+    for name, filename in SKILLS_PER_MODE.get(mode, ()):
         body = _skill_body(_read_skill_text(
                 ":/orbit_skills/" + filename, filename))
         if not body:
@@ -205,32 +283,47 @@ def _stage_skill(chat) -> bool:
 # what kind of model it is editing and which files matter, so it can modify
 # the .pr (and the ASN.1 dataview) to create model artefacts.
 # ---------------------------------------------------------------------------
-def _sdl_briefing(pr_file: str, asn1_file: str) -> str:
+def _sdl_briefing(pr_file: str, asn1_file: str, mode=MODE_FILE) -> str:
     """Build the one-shot briefing that goes ahead of the first question.
 
     Tells the agent it is working inside the OpenGEODE SDL editor, points it
     at the current .pr model file (and the ASN.1 dataview when there is one),
     and explains the convention that editing the file on disk will be picked
     up by the editor's external-modification monitor and offered for reload.
+    The ending matches the editing mode: which skill was staged, and how the
+    model is to be modified (the MCP tools, or the file on disk).
     """
     parts = [
         "You are working inside OpenGEODE, a graphical editor for SDL "
         "(Specification and Description Language, ITU-T Z.100) state "
         "machines used by the TASTE toolchain.",
         "",
-        "The current SDL model is a .pr file. You may edit it on disk to "
-        "create or modify model artefacts (states, transitions, inputs, "
-        "outputs, tasks, procedures, etc.). OpenGEODE watches the file and "
-        "will offer to reload it from disk when you are done, so your "
-        "changes appear in the diagram.",
+        "The current SDL model is a .pr file.",
     ]
+    if mode == MODE_MCP:
+        parts.append(
+            "Do NOT edit it on disk to change the model: the editor "
+            "holds the model in memory, and its save would overwrite "
+            "file edits. Read the file to understand the model; make "
+            "changes through the MCP tools described below — they act "
+            "on the diagram open in this editor."
+        )
+    else:
+        parts.append(
+            "You may edit it on disk to create or modify model "
+            "artefacts (states, transitions, inputs, outputs, tasks, "
+            "procedures, etc.). OpenGEODE watches the file and will "
+            "offer to reload it from disk when you are done, so your "
+            "changes appear in the diagram."
+        )
     if pr_file:
         parts.append(f"\nThe current model file is: {pr_file}")
     if asn1_file:
         parts.append(
             f"The ASN.1 dataview file is: {asn1_file}\n"
-            "You may also edit the ASN.1 file to add or change the data "
-            "types used by the SDL model."
+            "You may edit the ASN.1 file to add or change the data types "
+            "used by the SDL model (the editor does not hold the types "
+            "in memory; it reloads the dataview with the model)."
         )
     else:
         parts.append(
@@ -242,12 +335,59 @@ def _sdl_briefing(pr_file: str, asn1_file: str) -> str:
         "\nWhen you need to run a command or edit a file, ask for "
         "permission: the person using the editor will approve it."
     )
-    parts.append(
-        "\nA reference skill for building SDL models — the complete "
-        "syntax and semantic rules for OpenGEODE — has been pre-loaded "
-        "into this conversation ahead of your first question. Follow it "
-        "when creating or modifying the model."
-    )
+    if mode == MODE_MCP:
+        parts.append(
+            "\nTwo skills have been pre-loaded into this conversation: "
+            "the MCP server's tool interface (sdl-mcp-remote-control) "
+            "and the complete SDL language reference "
+            "(sdl-model-construction)."
+        )
+        parts.append(
+            "\nHow to work in this editor — reads and writes use "
+            "different channels, on purpose:"
+        )
+        parts.append(
+            "\n- READ the model from the FILES: read the .pr file (and "
+            "the ASN.1 dataview) directly. One read shows the whole "
+            "model — every state, transition, type and signal with "
+            "their exact text — which is faster and more complete than "
+            "listing symbols one by one through the tools. Read the "
+            "files first to understand the model, and to find the "
+            "parent symbol ids you need (the MCP tools report them; "
+            "or list the one scene you will change)."
+        )
+        parts.append(
+            "\n- WRITE through the MCP tools: add_symbol, "
+            "set_symbol_text, remove_symbol, add_connection, "
+            "add_signal_declaration, then check_model and save_model. "
+            "Those edits land in the diagram open in this editor, "
+            "live and undoable, and they are validated by the "
+            "editor's own parser. Do not edit the .pr file directly "
+            "for changes — the editor's in-memory model would not "
+            "see them, and saving would overwrite your file edits."
+        )
+        parts.append(
+            "\n- MAKE THE TOOLS CALLABLE FIRST: orbit may not declare "
+            "the MCP tools in your tool list (their schemas, and "
+            "sometimes their existence, are deferred to save "
+            "context). A call to an undeclared tool cannot be "
+            "emitted. If your system prompt has an "
+            "<available_mcp_tools> block, call "
+            "mcp(name=\"mcp__opengeode-sdl__<tool>\") once per tool "
+            "you will use — that declares it — then call it "
+            "directly. If it does not, call "
+            "tool_search(query=\"SDL model edit\") first, take the "
+            "exact id from the results, then reveal with mcp(name=). "
+            "Do this up front, not per call. The skill documents "
+            "every argument shape for when the tools are declared."
+        )
+    else:
+        parts.append(
+            "\nA reference skill for building SDL models — the complete "
+            "syntax and semantic rules for OpenGEODE — has been "
+            "pre-loaded into this conversation ahead of your first "
+            "question. Follow it when creating or modifying the model."
+        )
     return "\n".join(parts)
 
 
@@ -291,14 +431,15 @@ class OrbitAgent(QObject):
     _env = None
 
     # -- setup ---------------------------------------------------------------
-    def start(self, cwd, briefing=""):
+    def start(self, cwd, briefing="", mode=MODE_FILE):
         """Open the conversation on a worker thread (starting orbit takes a
         moment). Emits ``ready`` when it is usable, or ``failed``.
 
-        The bundled SDL skill is staged onto the just-opened conversation
-        before ``ready`` is emitted, so it rides the first question: the
-        skill applies to the next prompt, and no prompt can be sent before
-        the panel enables its input on ``ready``.
+        The MODE's skill (the file mode's SDL reference, or the mcp
+        mode's remote-control interface) is staged onto the just-opened
+        conversation before ``ready`` is emitted, so it rides the first
+        question: the skill applies to the next prompt, and no prompt
+        can be sent before the panel enables its input on ``ready``.
         """
         def work():
             try:
@@ -314,11 +455,18 @@ class OrbitAgent(QObject):
             except Exception as exc:  # pragma: no cover - defensive
                 self.failed.emit(f"{type(exc).__name__}: {exc}")
                 return
-            # The connection is established: hand the SDL skill to orbit
-            # now so it is staged for the conversation's first question.
-            # A staging failure is not fatal — the chat still works.
-            staged = _stage_skill(self.chat)
+            # The connection is established: hand the mode's skill to
+            # orbit now so it is staged for the conversation's first
+            # question. A staging failure is not fatal — the chat still
+            # works.
+            staged = _stage_skill(self.chat, mode)
             self.skill_staged = staged
+            if mode == MODE_MCP:
+                # The full SDL reference stays available on demand
+                # (skill(name=...)) instead of riding the first prompt.
+                # `cwd` is the model directory this conversation was
+                # opened in (the panel's _model_dir()).
+                _publish_reference_skill(cwd)
             self.ready.emit()
         threading.Thread(target=work, daemon=True).start()
 
@@ -458,8 +606,30 @@ class OrbitChatPanel(QWidget):
         self.stop_btn.setEnabled(False)
         self.stop_btn.clicked.connect(self._stop)
 
+        # The editing mode, the user's choice: "MCP" drives the editor's
+        # model live through the MCP server (the remote-control skill);
+        # "File" has orbit edit the .pr on disk (the SDL reference
+        # skill). Switching restarts the conversation so orbit gets the
+        # right skill and the right environment from its first prompt.
+        self.mode_btn = QPushButton()
+        self.mode_btn.setToolTip(
+            "Editing mode. MCP: orbit drives the model in this editor "
+            "through the MCP server (live edits, undoable). File: orbit "
+            "edits the .pr file on disk; the editor offers to reload "
+            "it. Click to switch.")
+        self.mode_btn.clicked.connect(self._toggle_mode)
+        self._mode = MODE_MCP     # the default: the live bridge is the
+                                  # point of the panel in this editor
+        self._update_mode_button()
+
         lay = QVBoxLayout(self)
         lay.setContentsMargins(4, 4, 4, 4)
+        # The mode selector above the chat: it configures the whole
+        # conversation, so it sits at the top — not in the entry row.
+        top = QHBoxLayout()
+        top.addWidget(self.mode_btn)
+        top.addStretch(1)
+        lay.addLayout(top)
         lay.addWidget(self.view)
         bottom = QHBoxLayout()
         bottom.addWidget(self.entry, stretch=1)
@@ -580,7 +750,51 @@ class OrbitChatPanel(QWidget):
         return getattr(self.main_window, "current_asn1_file", None) or ""
 
     def _briefing(self) -> str:
-        return _sdl_briefing(self._pr_file(), self._asn1_file())
+        return _sdl_briefing(self._pr_file(), self._asn1_file(),
+                             self._mode)
+
+    # -- editing mode ---------------------------------------------------------
+    def _update_mode_button(self):
+        """The button shows the mode a click would switch TO, with the
+        current one in the tooltip: the label names the action."""
+        if self._mode == MODE_MCP:
+            self.mode_btn.setText("Mode: MCP ✓  (click for File)")
+        else:
+            self.mode_btn.setText("Mode: File ✓  (click for MCP)")
+
+    def _toggle_mode(self):
+        """Switch the editing mode and restart the conversation so the
+        new mode applies from orbit's very first prompt: the right
+        skill (the language reference, or the remote-control interface)
+        and the right environment (the bridge socket, or none — file
+        mode must not announce a live bridge orbit could route tool
+        calls into). No-op when orbit is not available (there is no
+        conversation to restart; the button still shows the choice)."""
+        self._mode = MODE_FILE if self._mode == MODE_MCP else MODE_MCP
+        self._update_mode_button()
+        if self._agent is None:
+            return
+        self._restart_conversation()
+
+    def _restart_conversation(self):
+        """Close the current conversation and open a new one for the
+        current mode. The stored orbit session is deleted too: the new
+        conversation must not inherit the other mode's staged skill."""
+        if self._agent is not None:
+            self._agent.stop(delete_session=True)
+            # A fresh agent: the old one's chat is closed and cannot be
+            # reused (its skill is already staged on that conversation).
+            self._rebuild_agent()
+        self._start_conversation()
+
+    def _rebuild_agent(self):
+        """A brand-new OrbitAgent wired the same way as at startup."""
+        self._agent = OrbitAgent(self)
+        self._agent.ready.connect(self._on_ready)
+        self._agent.event.connect(self._on_event)
+        self._agent.permission.connect(self._on_permission)
+        self._agent.turn_done.connect(self._on_turn_done)
+        self._agent.failed.connect(self._on_failed)
 
     def _ensure_bridge(self):
         """The live bridge, created once the editor has a model to serve.
@@ -590,6 +804,11 @@ class OrbitChatPanel(QWidget):
         scene immediately. A failed bridge is not fatal: the MCP server
         falls back to its own copy of the files on disk."""
         if self._bridge is not None:
+            # The bridge exists: the env hint still has to be (re)set
+            # on the CURRENT agent — a mode switch rebuilds the agent,
+            # and the new conversation's orbit inherits this env.
+            self._agent._env = {self._bridge.env_var:
+                                self._bridge.env_value}
             return self._bridge
         view = getattr(self.main_window, "view", None)
         if view is None:
@@ -614,25 +833,41 @@ class OrbitChatPanel(QWidget):
 
     def _start_conversation(self):
         """Open the conversation, with the model directory as cwd and a
-        briefing that tells orbit about the SDL model. The bundled SDL
-        skill is handed to orbit by the agent bridge once the connection
-        is established (see OrbitAgent.start). The live MCP bridge is
-        created first so its socket path rides the same environment."""
-        bridge = self._ensure_bridge()
+        briefing that tells orbit about the SDL model. The MODE's skill
+        is handed to orbit by the agent bridge once the connection is
+        established (see OrbitAgent.start). In mcp mode the live bridge
+        is created first so its socket path rides the same environment;
+        in file mode no bridge is announced, so nothing routes tool
+        calls into the running editor."""
+        bridge = self._ensure_bridge() if self._mode == MODE_MCP \
+            else None
+        if self._mode == MODE_FILE:
+            # File mode: make sure NO bridge socket is announced (a
+            # previous MCP-mode conversation may have set it on this
+            # agent, and orbit inherits the environment).
+            self._agent._env = None
         self._messages = [
             {"role": "system", "html": "<i>Starting orbit…</i>"}
         ]
         self._render_view()
         self.entry.setPlaceholderText("Ask orbit… (starting)")
-        self._agent.start(self._model_dir(), briefing=self._briefing())
-        if bridge is not None:
+        self._agent.start(self._model_dir(), briefing=self._briefing(),
+                          mode=self._mode)
+        if self._mode == MODE_MCP and bridge is not None:
             self._messages.append({
                 "role": "system",
-                "html": ("<i>Live editing bridge active — orbit's model "
-                         "edits apply to the diagram open in this editor "
-                         "immediately.</i>"),
+                "html": ("<i>MCP mode — live editing bridge active: "
+                         "orbit's model edits apply to the diagram open "
+                         "in this editor immediately.</i>"),
             })
-            self._render_view()
+        else:
+            self._messages.append({
+                "role": "system",
+                "html": ("<i>File mode — orbit edits the .pr model file "
+                         "on disk; the editor will offer to reload it "
+                         "when it changes.</i>"),
+            })
+        self._render_view()
 
     # -- agent signal slots (run on the GUI thread) -------------------------
     @Slot()
@@ -649,19 +884,32 @@ class OrbitChatPanel(QWidget):
             "role": "system",
             "html": line,
         })
-        # The note for the skills the panel handed to orbit when the
-        # connection was established: one clear, visible line.
+        # The note for the skill the panel handed to orbit when the
+        # connection was established: one clear, visible line, naming
+        # the skill that goes with the current editing mode.
         staged = getattr(self._agent, "skill_staged", False)
         if staged:
-            self._messages.append({
-                "role": "system",
-                "html": (
-                    "<i>✔ Skills loaded for this conversation: "
-                    "<b>sdl-model-construction</b> (the complete SDL "
-                    "reference) and <b>sdl-mcp-remote-control</b> "
-                    "(the MCP interface for editing the model) — orbit "
-                    "will follow them when working on the model.</i>"),
-            })
+            if self._mode == MODE_MCP:
+                self._messages.append({
+                    "role": "system",
+                    "html": (
+                        "<i>✔ Skills loaded: "
+                        "<b>sdl-mcp-remote-control</b> (the tool "
+                        "interface) and <b>sdl-model-construction</b> "
+                        "(the SDL reference). Read the model from the "
+                        ".pr files; write through the MCP tools — "
+                        "they act on the diagram open in this "
+                        "editor.</i>"),
+                })
+            else:
+                self._messages.append({
+                    "role": "system",
+                    "html": (
+                        "<i>✔ Skill loaded for this conversation: "
+                        "<b>sdl-model-construction</b> — the complete "
+                        "SDL reference. Edit the .pr file following "
+                        "its operating procedure.</i>"),
+                })
         self._render_view()
 
     @Slot(object)
