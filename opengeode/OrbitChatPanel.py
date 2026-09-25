@@ -19,6 +19,7 @@ Copyright (c) 2012-2026 Maxime Perrotin & European Space Agency
 from __future__ import annotations
 
 import os
+import sys
 import threading
 
 from PySide6.QtCore import QEvent, QObject, Qt, Signal, Slot
@@ -283,6 +284,12 @@ class OrbitAgent(QObject):
         # panel to nudge the editor to reload after orbit edited the model.
         self.on_turn_done = None
 
+    # The environment the conversation (and orbit's MCP servers, which
+    # inherit orbit's environment) runs with: the bridge socket path of
+    # the running editor, when the bridge is up. The MCP server uses it
+    # to run tool calls INSIDE this instance instead of a copy.
+    _env = None
+
     # -- setup ---------------------------------------------------------------
     def start(self, cwd, briefing=""):
         """Open the conversation on a worker thread (starting orbit takes a
@@ -299,6 +306,7 @@ class OrbitAgent(QObject):
                     cwd=cwd, briefing=briefing,
                     permissions=self._rule,
                     files=self._files,
+                    env=self._env,
                 )
             except OrbitError as exc:
                 self.failed.emit(str(exc))
@@ -420,6 +428,10 @@ class OrbitChatPanel(QWidget):
         self.main_window = main_window
         self._busy = False
         self._agent = None
+        self._bridge = None
+        # The live bridge: tool calls from orbit run against the model
+        # OPEN in this editor, not a copy on disk. Created lazily at the
+        # first conversation start (the view's scene is ready by then).
 
         # Conversation rendered as a list of message records. Each record is
         # a dict: {"role": ..., "html": ..., "streaming": bool}. The panel
@@ -570,17 +582,57 @@ class OrbitChatPanel(QWidget):
     def _briefing(self) -> str:
         return _sdl_briefing(self._pr_file(), self._asn1_file())
 
+    def _ensure_bridge(self):
+        """The live bridge, created once the editor has a model to serve.
+        Its socket path goes into the conversation's environment, which
+        orbit passes to the MCP server it starts: the server then
+        forwards every tool call here — orbit's edits land in the OPEN
+        scene immediately. A failed bridge is not fatal: the MCP server
+        falls back to its own copy of the files on disk."""
+        if self._bridge is not None:
+            return self._bridge
+        view = getattr(self.main_window, "view", None)
+        if view is None:
+            return None
+        try:
+            # The bridge needs no model to listen: the live model reads
+            # the view's state at call time, so it can be created as
+            # soon as the editor window exists — before any file is
+            # opened. The deterministic socket name (from this process's
+            # pid) is announced in the conversation environment, and the
+            # MCP server adopts the live mode when it connects.
+            from .OrbitMcpBridge import attach
+            self._bridge = attach(self.main_window)
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"Orbit live bridge unavailable: {exc}\n")
+            self._bridge = None
+            return None
+        if self._bridge is not None:
+            self._agent._env = {self._bridge.env_var:
+                                self._bridge.env_value}
+        return self._bridge
+
     def _start_conversation(self):
         """Open the conversation, with the model directory as cwd and a
         briefing that tells orbit about the SDL model. The bundled SDL
         skill is handed to orbit by the agent bridge once the connection
-        is established (see OrbitAgent.start)."""
+        is established (see OrbitAgent.start). The live MCP bridge is
+        created first so its socket path rides the same environment."""
+        bridge = self._ensure_bridge()
         self._messages = [
             {"role": "system", "html": "<i>Starting orbit…</i>"}
         ]
         self._render_view()
         self.entry.setPlaceholderText("Ask orbit… (starting)")
         self._agent.start(self._model_dir(), briefing=self._briefing())
+        if bridge is not None:
+            self._messages.append({
+                "role": "system",
+                "html": ("<i>Live editing bridge active — orbit's model "
+                         "edits apply to the diagram open in this editor "
+                         "immediately.</i>"),
+            })
+            self._render_view()
 
     # -- agent signal slots (run on the GUI thread) -------------------------
     @Slot()

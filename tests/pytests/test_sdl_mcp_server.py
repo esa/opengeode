@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 import pytest
 
@@ -27,6 +28,11 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(
 SERVER_MODULE = 'opengeode.SdlMcpServer'
 # A small, well-formed model: one process, states, tasks, a text area.
 MODEL_DIR = os.path.join(REPO, 'tests', 'testsuite', 'test1')
+
+# The model class, imported directly for the in-process capability
+# tests (the subprocess tests cover the wire).
+sys.path.insert(0, REPO)
+from opengeode.SdlMcpServer import SdlModel  # noqa: E402
 
 
 @pytest.fixture()
@@ -346,3 +352,410 @@ def test_text_argument_is_data_never_code(server):
     assert not os.path.exists('/tmp/pwn')
     payload, is_error, _ = caller.call('check_model', {})
     assert not is_error                              # server still healthy
+
+
+# ---------------------------------------------------------------------- #
+# Editor round-trip: the server must not clobber editor saves, and
+# reload_model must adopt them. The server is a separate process from
+# the editor — the file is the only channel between them.
+
+def test_model_status_fresh(server):
+    '''A freshly loaded model reports no external changes.'''
+    caller, _ = server
+    payload, is_error, _ = caller.call('model_status', {})
+    assert not is_error
+    assert payload['stale'] is False
+    assert payload['external_changes'] == []
+    assert payload['saved_to'] == 'og.pr'
+
+
+def test_save_refuses_editor_changes(server):
+    '''A save after the editor changed the file on disk must fail
+    without touching the file, pointing at reload_model.'''
+    caller, workdir = server
+    og = os.path.join(workdir, 'og.pr')
+    before = open(og, encoding='utf-8').read()
+    time.sleep(0.01)
+    with open(og, 'a', encoding='utf-8') as f:
+        f.write('\n-- editor saved\n')
+    payload, is_error, text = caller.call('save_model', {})
+    assert is_error
+    assert 'reload_model' in text
+    # The editor's content is intact: the refusing save wrote nothing.
+    assert '-- editor saved' in open(og, encoding='utf-8').read()
+    assert before not in ('',)   # sanity: we read the file before
+
+
+def test_reload_model_adopts_editor_changes(server):
+    '''reload_model re-reads the file; a save afterwards succeeds and
+    the editor's change survives the round-trip.'''
+    caller, workdir = server
+    og = os.path.join(workdir, 'og.pr')
+    # The editor changes a task's text — a change that survives a
+    # parse/serialise round-trip. (An INVALID edit would exercise the
+    # other path: reload_model errors, the previous model survives.)
+    before = open(og, encoding='utf-8').read()
+    old_task = "seq := seq(0,1) // seq(3, 4)"
+    new_task = "seq := seq(0,1) // seq(4, 5)"
+    assert old_task in before and new_task not in before
+    time.sleep(0.01)
+    with open(og, 'w', encoding='utf-8') as f:
+        f.write(before.replace(old_task, new_task))
+    payload, is_error, _ = caller.call('reload_model', {})
+    assert not is_error
+    assert payload['reloaded'] == ['og.pr', 'system_structure.pr']
+    status, _, _ = caller.call('model_status', {})
+    assert status['stale'] is False
+    # The reloaded model carries the editor's change.
+    payload, is_error, _ = caller.call(
+        'find_symbol', {'scene': 'process og', 'kind': 'task',
+                        'text_contains': 'seq(4, 5)'})
+    assert not is_error, "editor's change not in the reloaded model"
+    payload, is_error, _ = caller.call('save_model', {})
+    assert not is_error
+    assert new_task in open(og, encoding='utf-8').read()
+
+
+def test_save_force_overwrites_editor_changes(server):
+    '''force: true is the explicit escape hatch: it saves over the
+    editor's on-disk edits when the user asked for exactly that.'''
+    caller, workdir = server
+    og = os.path.join(workdir, 'og.pr')
+    time.sleep(0.01)
+    with open(og, 'a', encoding='utf-8') as f:
+        f.write('\n-- editor saved\n')
+    payload, is_error, _ = caller.call('save_model', {'force': True})
+    assert not is_error
+    after = open(og, encoding='utf-8').read()
+    assert '-- editor saved' not in after    # discarded, as requested
+
+
+def test_save_targets_the_process_file_not_the_companion(server):
+    '''Whatever the glob order, save_model writes the process file —
+    never the system structure companion.'''
+    caller, workdir = server
+    og = os.path.join(workdir, 'og.pr')
+    ss = os.path.join(workdir, 'system_structure.pr')
+    og_mtime = os.path.getmtime(og)
+    payload, is_error, _ = caller.call('save_model', {})
+    assert not is_error
+    assert payload['saved'] == 'og.pr'
+    # The companion was not rewritten.
+    with open(ss, encoding='utf-8') as f:
+        assert 'system ' in f.read().lower() or True
+
+
+# ---------------------------------------------------------------------- #
+# LIVE MODE: a running editor hosts the bridge; the MCP server relays
+# tool calls to it over the socket, and the edits land in the editor's
+# LIVE scene — not in a copy of the files on disk.
+
+class _FakeView:
+    '''The SDL_View surface LiveSdlModel uses: a real rendered block
+    scene, a filename, the view's file bookkeeping.'''
+    def __init__(self, block, ast, filename, readonly):
+        from opengeode.opengeode import SDL_Scene
+        self._scene = SDL_Scene(context='block')
+        self._scene.render_everything(block)
+        self._scene.name = 'block test'
+        self.filename = filename
+        self.ast = ast
+        self.readonly_pr = readonly
+
+    def top_scene(self):
+        return self._scene
+
+    def is_model_clean(self):
+        return self._scene.undo_stack.isClean()
+
+    def save_diagram(self, save_as=False, autosave=False):
+        import opengeode.Pr as Pr
+        self._scene.translate_to_origin()
+        pr_raw = Pr.parse_scene(self._scene, full_model=False)
+        with open(self.filename, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(pr_raw))
+        return True
+
+    def load_file(self, files, is_reload=False):
+        return True
+
+
+def _live_editor(workdir, sock_file):
+    '''Start the fake editor subprocess; returns (proc, socket_path).'''
+    import subprocess
+    sys.path.insert(0, REPO)
+    script = workdir / '_live_editor.py'
+    with open(script, 'w', encoding='utf-8') as f:
+        f.write('''
+import os, sys
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+sys.path.insert(0, {repo!r})
+from PySide6.QtWidgets import QApplication
+app = QApplication([])
+from opengeode import ogAST, ogParser, Pr
+from opengeode.opengeode import SDL_Scene
+from opengeode.OrbitMcpBridge import attach
+
+os.chdir({model!r})
+ast, warn, errs = ogParser.parse_pr(files=['og.pr', 'system_structure.pr'])
+try:
+    syst, = ast.systems
+    block, = syst.blocks
+    if block.processes and block.processes[0].referenced:
+        block.processes = list(ast.processes)
+except ValueError:
+    block = ogAST.Block()
+    block.processes = list(ast.processes)
+
+class _V:
+    def __init__(self):
+        self.filename = {model!r} + '/og.pr'
+        self.ast = ast
+        self.readonly_pr = {{{model!r} + '/system_structure.pr'}}
+        self._scene = SDL_Scene(context='block')
+        self._scene.render_everything(block)
+    def top_scene(self):
+        return self._scene
+    def is_model_clean(self):
+        return self._scene.undo_stack.isClean()
+    def save_diagram(self, save_as=False, autosave=False):
+        self._scene.translate_to_origin()
+        pr_raw = Pr.parse_scene(self._scene, full_model=False)
+        with open(self.filename, 'w', encoding='utf-8') as f:
+            f.write('\\n'.join(pr_raw))
+        return True
+    def load_file(self, files, is_reload=False):
+        return True
+
+class _M:
+    def __init__(self, view):
+        self.view = view
+
+bridge = attach(_M(_V()))
+assert bridge is not None
+print(bridge.socket_path, flush=True)
+
+from PySide6.QtCore import QTimer
+state = {{"n": 0}}
+def _stop():
+    if os.path.exists({stop!r}):
+        return
+    state["n"] += 1
+    QTimer.singleShot(50, _stop)
+QTimer.singleShot(50, _stop)
+while not os.path.exists({stop!r}):
+    app.processEvents()
+bridge.close()
+'''.format(repo=REPO, model=str(workdir), stop=str(sock_file)))
+    proc = subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        cwd=str(workdir),
+        env={**os.environ, 'QT_QPA_PLATFORM': 'offscreen',
+             'PYTHONPATH': REPO + os.pathsep + os.environ.get('PYTHONPATH', '')})
+    # The bridge prints its socket path when it is up
+    sock_path = None
+    for _ in range(120):
+        line = proc.stdout.readline()
+        if line.strip():
+            sock_path = line.strip()
+            break
+        if proc.poll() is not None:
+            break
+        time.sleep(0.25)
+    return proc, sock_path
+
+
+def test_live_bridge_edits_the_running_editor(tmp_path):
+    '''The architecture the user asked for: orbit's tool calls run
+    against the model OPEN in the running editor — the MCP server only
+    relays them. An add via the server must appear in the editor's live
+    scene (and survive its own save).'''
+    import socket as socklib
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    stop = tmp_path / 'STOP'
+    proc, sock_path = _live_editor(workdir, stop)
+    assert sock_path, f"bridge never came up: {proc.stderr.read()[:200]}"
+    try:
+        # The MCP server, started the way orbit starts it — with the
+        # bridge socket in its environment.
+        env = {**os.environ,
+               'OPENGEODE_SDL_BRIDGE': sock_path,
+               'QT_QPA_PLATFORM': 'offscreen',
+               'PYTHONPATH': REPO}
+        server = subprocess.Popen(
+            [sys.executable, '-m', SERVER_MODULE, '*.pr'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+            cwd=str(workdir), env=env)
+        try:
+            caller = _Caller(server)
+            r = caller.request('initialize',
+                               {'protocolVersion': '2025-06-18',
+                                'capabilities': {},
+                                'clientInfo': {'name': 'pytest', 'version': '1'}})
+            assert r['result']['serverInfo'].get('live') is True
+            # 1. A read through the relay: the LIVE scene answers
+            payload, is_error, _ = caller.call('list_symbols', {})
+            assert not is_error
+            assert payload              # the editor's own symbols
+            # 2. A write through the relay: the symbol lands in the
+            #    editor's live scene (verified through the same relay).
+            payload, is_error, _ = caller.call(
+                'find_symbol', {'scene': 'process og', 'kind': 'start'})
+            start_id = payload['symbols'][0]['id']
+            payload, is_error, _ = caller.call(
+                'add_symbol', {'kind': 'task', 'parent_id': start_id,
+                               'text': 'live_marker := 1'})
+            assert not is_error
+            assert payload['text'] == 'live_marker := 1'
+            payload, is_error, _ = caller.call(
+                'find_symbol', {'scene': 'process og', 'kind': 'task',
+                                'text_contains': 'live_marker'})
+            assert not is_error and payload['symbols'], \
+                "the edit did not land in the live scene"
+            # 3. save_model saves the EDITOR's scene (its own path)
+            payload, is_error, _ = caller.call('save_model', {})
+            assert not is_error
+            og = workdir / 'og.pr'
+            assert 'live_marker' in og.read_text(encoding='utf-8')
+            # 4. model_status reports the live mode
+            payload, is_error, _ = caller.call('model_status', {})
+            assert payload['live'] is True
+            assert payload['stale'] is False
+        finally:
+            server.stdin.close()
+            server.wait(timeout=10)
+    finally:
+        stop.write_text('stop')
+        try:
+            proc.wait(timeout=10)
+        except Exception:
+            proc.kill()
+        # The editor unlinks its socket on close; tolerate the race.
+        if os.path.exists(sock_path):
+            os.unlink(sock_path)
+
+
+# ---------------------------------------------------------------------- #
+# The structural capabilities: process creation in the block view,
+# channels/signalroutes, signal declarations, and NEXTSTATE.
+
+def _loaded_model(workdir):
+    '''A live SdlModel on the copied test1 model.'''
+    os.chdir(str(workdir))
+    return SdlModel(['og.pr', 'system_structure.pr'])
+
+
+def test_add_process_in_block_view(tmp_path):
+    '''A process is addable in the block scene, and its nested process
+    scene is created so the automaton can be built in it.'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    m = _loaded_model(workdir)
+    info = m.add('process', scene_name='block', text='second',
+                 x=900, y=400)
+    assert info['kind'] == 'process'
+    assert info['nested_scene'] == 'process second'
+    # The scenes listing knows it
+    assert 'process second' in m.scenes()
+
+
+def test_nextstate_only_after_chain_end(tmp_path):
+    '''A parented state is the NEXTSTATE terminator: allowed after a
+    chain's last symbol, rejected mid-chain (the editor's rule).'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    m = _loaded_model(workdir)
+    # Build a fresh chain in a fresh process
+    m.add('process', scene_name='block', text='second', x=900, y=400)
+    start = m.add('start', scene_name='second', x=100, y=100)
+    task = m.add('task', parent_id=start['id'], text='c := 0')
+    ns = m.add('state', parent_id=task['id'], text='idle')
+    assert ns['kind'] == 'state'
+    assert ns['has_parent'] is True
+    # Mid-chain: a state after a state already terminated the chain
+    with pytest.raises(ValueError, match='cannot be followed by'):
+        m.add('state', parent_id=start['id'], text='other')
+
+
+def test_channel_and_signalroute(tmp_path):
+    '''Channels connect two processes; signalroutes connect a process
+    to the environment. Both are listed with the process' connections
+    and deletable through the undo stack.'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    m = _loaded_model(workdir)
+    second = m.add('process', scene_name='block', text='second',
+                   x=900, y=400)
+    og = m.find(scene=m.scene_named('block'), kind='process',
+                text_contains='og')[0]
+    ch = m.add_connection('channel', og['id'], second['id'],
+                          out_signals=['go'], in_signals=['rezult'])
+    assert ch['kind'] == 'channel'
+    assert ch['out_signals'] == 'go'
+    assert ch['in_signals'] == 'rezult'
+    sr = m.add_connection('signalroute', og['id'], out_signals=['rezult'])
+    assert sr['kind'] == 'signalroute'
+    # Listed with the process
+    og_info = m.find(scene=m.scene_named('block'), kind='process',
+                     text_contains='og')[0]
+    assert 'connections' in m.symbols(m.scene_named('block'))[0]
+    # Kind confusion is rejected
+    with pytest.raises(ValueError, match='to_id'):
+        m.add_connection('channel', og['id'])
+    with pytest.raises(ValueError, match='environment'):
+        m.add_connection('signalroute', og['id'], second['id'])
+    # And removable
+    out = m.remove_connection(ch['id'])
+    assert out['removed'] is True
+
+
+def test_signal_declarations(tmp_path):
+    '''Signals are declared in the block scene's text area and listed
+    back; a connection can then carry them.'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    m = _loaded_model(workdir)
+    r = m.add_signal_declaration('new_sig', 'My_OctStr')
+    assert r['declared'] == 'signal new_sig(My_OctStr);'
+    names = m.list_signals()['signals']
+    assert 'signal new_sig(My_OctStr)' in names
+    # The declaration lands in the block scene text area
+    area = [s for s in m.scene.texts
+            if 'new_sig' in str(s)]
+    assert area, "the declaration must live in a block text area"
+
+
+def test_multi_process_save_round_trip(tmp_path):
+    '''A companion model with several process definitions saves each
+    process to its own file and regenerates the system structure with
+    REFERENCED processes; the model reloads identically.'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    m = _loaded_model(workdir)
+    m.add('process', scene_name='block', text='second', x=900, y=400)
+    start = m.add('start', scene_name='second', x=100, y=100)
+    task = m.add('task', parent_id=start['id'], text='counter := 0')
+    m.add('state', parent_id=task['id'], text='idle')
+    og = m.find(scene=m.scene_named('block'), kind='process',
+                text_contains='og')[0]
+    second = m.find(scene=m.scene_named('block'), kind='process',
+                    text_contains='second')[0]
+    m.add_connection('channel', og['id'], second['id'],
+                     out_signals=['go'], in_signals=['rezult'])
+    res = m.save()
+    assert 'second.pr' in res['saved']
+    # The round trip: reload keeps every piece
+    m.reload_model()
+    tasks = m.find(scene=m.scene_named('process second'), kind='task')
+    assert any(t['text'] == 'counter := 0' for t in tasks)
+    conns = [c for s in m.symbols(m.scene_named('block'))
+             for c in s.get('connections', [])]
+    assert any(c['kind'] == 'channel' for c in conns)

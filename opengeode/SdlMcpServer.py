@@ -27,6 +27,8 @@ Tools
 ``check_model``      full syntax + semantic check, errors back as text
 ``check_syntax``     syntax-check a single symbol
 ``save_model``       write the modified model back to the .pr file(s)
+``reload_model``     re-read the .pr files, adopting the editor's saves
+``model_status``     files loaded, external changes, last parse result
 
 Security
 --------
@@ -41,6 +43,7 @@ started in — it does not follow paths coming from tool arguments.
 
 import json
 import os
+import re
 import sys
 
 # The scene work needs a Qt application. Headless, offscreen, and done
@@ -56,6 +59,12 @@ from opengeode.opengeode import SDL_Scene, G_SYMBOLS  # noqa: E402
 
 # The MCP protocol revision this server speaks (orbit proposes the same).
 PROTOCOL_VERSION = "2025-06-18"
+
+# Appended to every tool description when the calls are forwarded to a
+# running editor, so the model knows it is editing the OPEN model.
+LIVE_SUFFIX = (" [This runs against the model currently open in the "
+               "OpenGEODE editor: changes appear there immediately and "
+               "are undoable there.]")
 
 # JSON-RPC error codes used below.
 INVALID_PARAMS = -32602
@@ -79,7 +88,9 @@ SYMBOL_KINDS = {
     "procedure_call":    (sdlSymbols.ProcedureCall, True),
     "create":            (sdlSymbols.Create, True),
     "text":              (sdlSymbols.TextSymbol, False),
-    "state":             (sdlSymbols.State, False),
+    # State is dual-role: floating it is a state box, parented it is
+    # the NEXTSTATE terminator of a transition (None = both allowed).
+    "state":             (sdlSymbols.State, None),
     "procedure":         (sdlSymbols.Procedure, False),
     "process":           (sdlSymbols.Process, False),
     "process_type":       (sdlSymbols.ProcessType, False),
@@ -147,8 +158,37 @@ class SdlModel:
             os.chdir(self._cwd)
         self._symbol_ids = {}   # int handle → (scene, symbol) for tools
         self._scene_names = {}  # id(scene) → reported scene name
+        # The files' state as this server last saw them, so a save can
+        # refuse to clobber changes made since (the editor reloads from
+        # disk; this server is not the same process as the editor).
+        self._mtimes = self._disk_mtimes()
 
     # -- loading and scenes -------------------------------------------------
+
+    def _disk_mtimes(self):
+        """The current mtimes of the model files on disk."""
+        out = {}
+        for path in self.pr_files:
+            try:
+                out[path] = os.path.getmtime(path)
+            except OSError:
+                out[path] = None
+        return out
+
+    def external_changes(self):
+        """Files changed on disk since this server last loaded or saved
+        them — the editor (another process) saved its own edits, and
+        this server's in-memory model is now stale. A save from here
+        would CLOBBER those edits; reload_model() picks them up instead."""
+        current = self._disk_mtimes()
+        return [path for path in self.pr_files
+                if (self._mtimes.get(path), current.get(path))
+                    != (None, None)
+                and self._mtimes.get(path) != current.get(path)]
+
+    def refresh_mtimes(self):
+        """Record the on-disk state after this server's own save."""
+        self._mtimes = self._disk_mtimes()
 
     def reload(self):
         """(Re)parse the .pr files and render the block scene. Must be
@@ -168,9 +208,12 @@ class SdlModel:
         except ValueError:
             block = ogAST.Block()
             block.processes = list(ast.processes)
-        self.block = block
+        # Atomic: render into temporaries and commit only on success, so
+        # a model that cannot be rendered (broken by an editor save, say)
+        # leaves the previous model intact and the server alive.
         scene = SDL_Scene(context="block")
         scene.render_everything(block)
+        self.block = block
         self.scene = scene
 
     def _scene_name_of(self, scene):
@@ -262,6 +305,15 @@ class SdlModel:
             "y": round(symb.scenePos().y(), 1),
             "has_parent": bool(symb.hasParent),
         }
+        # Connections (channels between processes, signalroutes to the
+        # environment) are items of the block scene, not children: they
+        # are reported as "connections" of the symbol they start from.
+        conns = [c for c in self._connections_of(scene)
+                 if getattr(c, "parent", None) is symb
+                 or getattr(c, "child", None) is symb]
+        if conns:
+            info["connections"] = [self._connection_info(c, scene)
+                                   for c in conns]
         parent = symb.parent if symb.hasParent else None
         if parent is not None:
             info["parent_id"] = str(id(parent))
@@ -272,6 +324,37 @@ class SdlModel:
             info["children"] = [self._symbol_info(c, scene, False)
                                 for c in symb.childSymbols()
                                 if _kind_of(c)]
+        return info
+
+    def _connections_of(self, scene):
+        """The Channels/Signalroutes of a scene: they are scene items,
+        not symbols, so visible_symb never yields them."""
+        from . import Connectors
+        return [item for item in scene.items()
+                if isinstance(item, Connectors.Signalroute)]
+
+    def _connection_info(self, conn, scene):
+        """A Channel/Signalroute as tool data: its endpoints, the signal
+        lists, and a handle the connection tools accept."""
+        parent = getattr(conn, "parent", None)
+        child = getattr(conn, "child", None)
+        is_channel = child is not None and child is not parent
+        info = {
+            "id": str(id(conn)),
+            "kind": "channel" if is_channel else "signalroute",
+            "text": f"{str(parent)} → "
+                    f"{str(child) if is_channel else 'env'}",
+            "scene": self._scene_name_of(scene),
+        }
+        if parent is not None:
+            info["from_id"] = str(id(parent))
+        if is_channel:
+            info["to_id"] = str(id(child))
+        if getattr(conn, "out_sig", ""):
+            info["out_signals"] = conn.out_sig
+        if getattr(conn, "in_sig", ""):
+            info["in_signals"] = conn.in_sig
+        self._register(scene, conn)
         return info
 
     def symbol_by_handle(self, handle):
@@ -326,13 +409,15 @@ class SdlModel:
             scene = parent_scene
         else:
             scene = self.scene_named(scene_name)
-        if needs_parent and parent is None:
+        if needs_parent is True and parent is None:
             raise ValueError(f"{kind} needs a parent symbol")
-        if not needs_parent and parent is not None:
+        if needs_parent is False and parent is not None:
             raise ValueError(f"{kind} is a floating symbol; "
                              "it cannot take a parent")
         # The class' own follower rules are the authority on placement:
-        # they mirror what the editor's toolbar allows.
+        # they mirror what the editor's toolbar allows. A NEXTSTATE
+        # (parented state) follows only a chain's LAST symbol — the rule
+        # rejects adding one mid-chain or after an existing terminator.
         if parent is not None:
             allowed = parent.allowed_followers
             if cls.__name__ not in allowed and cls not in allowed:
@@ -361,7 +446,12 @@ class SdlModel:
             for _ in range(2):
                 self.add("decision_answer", parent_id=str(id(item)),
                          text="answer")
-        elif cls in (sdlSymbols.State, sdlSymbols.Procedure):
+        elif cls is sdlSymbols.Procedure or cls is sdlSymbols.Process \
+                or (cls is sdlSymbols.State and parent is None):
+            # Containers get their sub-scene, the way place_symbol
+            # does (Procedure, State, Process). A PARENTED State is the
+            # NEXTSTATE terminator of a transition — no sub-scene, just
+            # the line and arrow.
             item.nested_scene = scene.create_subscene(
                     cls.__name__.lower(), scene)
             item.nested_scene.name = str(item)
@@ -402,6 +492,141 @@ class SdlModel:
         symb.update_connections()
         scene.scene_refresh()
         return {"kind": _kind_of(symb), "x": x, "y": y}
+
+    # -- signal declarations (block scene text areas) ------------------------
+
+    def add_signal_declaration(self, signal, param_type=None):
+        """Declare a signal in the block scene's signal-declaration text
+        area (or create it). The declaration is a full SDL statement:
+        'signal <name>(<param_type>);' — the block scene text area is
+        where the parser finds SIGNALs referenced by connections."""
+        scene = self.scene
+        # find the existing signal-declaration text area (contains
+        # 'signal' lines) or create one
+        text_area = None
+        for symb in scene.texts:
+            content = str(symb)
+            if content.strip().lower().startswith("signal"):
+                text_area = symb
+                break
+        if text_area is None:
+            item = sdlSymbols.TextSymbol()
+            scene.addItem(item)
+            item.insert_symbol(None, 400, 10)
+            G_SYMBOLS.add(item)
+            text_area = item
+        decl = (f"signal {signal}"
+                + (f"({param_type})" if param_type else "")
+                + ";")
+        content = str(text_area)
+        content = (content + "\n" + decl).strip()
+        text_area.text.setPlainText(content)
+        text_area.ast.inputString = content
+        text_area.text.try_resize()
+        scene.scene_refresh()
+        return {"declared": decl}
+
+    def list_signals(self):
+        """Every signal declared in the block scene's text areas."""
+        signals = []
+        for symb in self.scene.texts:
+            for line in str(symb).split("\n"):
+                line = line.strip()
+                if line.lower().startswith("signal ") and line.endswith(";"):
+                    signals.append(line[:-1])
+        return {"signals": signals}
+
+    # -- connections (channels, signalroutes) --------------------------------
+
+    def add_connection(self, kind, from_id, to_id=None, out_signals=(),
+                       in_signals=(), via=None):
+        """Create a Channel (process to process) or a Signalroute
+        (process to the environment) — the block-scene connectors that
+        carry a model's signals. ``from_id`` is the process the
+        connection starts from; ``to_id`` the process it ends at (a
+        Channel); without it the connection goes to the environment (a
+        Signalroute). ``out_signals`` are the signals from ``from_id``
+        to the other end, ``in_signals`` the ones coming back;
+        ``via`` is an optional list of [x, y] waypoints between them."""
+        from . import Connectors
+        scene, start = self.symbol_by_handle(from_id)
+        end = None
+        if to_id is not None:
+            end_scene, end = self.symbol_by_handle(to_id)
+            if end_scene is not scene:
+                raise ValueError("both ends of a connection must be in "
+                                 "the same scene")
+        if kind == "channel" and end is None:
+            raise ValueError("a channel needs to_id (process to process); "
+                             "use kind signalroute for the environment")
+        if kind == "signalroute" and end is not None:
+            raise ValueError("a signalroute goes to the environment; "
+                             "use kind channel between two processes")
+        if end is not None and end is start:
+            raise ValueError("a channel needs two different processes")
+        if end is not None:
+            conn = Connectors.Channel(parent=start, child=end)
+        else:
+            conn = Connectors.Signalroute(parent=start)
+        # Signal lists: the labels carry them (the GUI's convention)
+        if out_signals:
+            conn.out_sig = ", ".join(out_signals)
+        if in_signals:
+            conn.in_sig = ", ".join(in_signals)
+        self._decorate_connection(conn, out_signals, in_signals)
+        # Optional waypoints, in scene coordinates, between the ends
+        if via:
+            conn.middle_points = [QPointF(*map(float, pt)) for pt in via]
+        # The connector is parented to a scene symbol, so it is already
+        # in the scene — only add it when it is not.
+        if conn.scene() is not scene:
+            scene.addItem(conn)
+        scene.undo_stack.push(undoCommands.InsertConnection(conn, scene))
+        scene.scene_refresh()
+        return self._connection_info(conn, scene)
+
+    def set_connection_signals(self, conn_id, out_signals=None,
+                               in_signals=None):
+        """Change the signal lists of a connection. Each argument is a
+        list of signal names; None leaves that side untouched."""
+        scene, conn = self.connection_by_handle(conn_id)
+        if out_signals is not None:
+            conn.out_sig = ", ".join(out_signals)
+        if in_signals is not None:
+            conn.in_sig = ", ".join(in_signals)
+        self._decorate_connection(
+            conn,
+            conn.out_sig.split(", ") if conn.out_sig else (),
+            conn.in_sig.split(", ") if conn.in_sig else ())
+        conn.reshape()
+        scene.scene_refresh()
+        return self._connection_info(conn, scene)
+
+    def remove_connection(self, conn_id):
+        """Delete a channel/signalroute through the scene's undo stack."""
+        scene, conn = self.connection_by_handle(conn_id)
+        scene.undo_stack.push(undoCommands.DeleteConnection(conn, scene))
+        scene.scene_refresh()
+        return {"removed": True,
+                "kind": ("channel" if type(conn).__name__ == "Channel"
+                         else "signalroute")}
+
+    def _decorate_connection(self, conn, out_signals, in_signals):
+        """Set the labels the way the editor does: '[sig1, sig2]'."""
+        out_txt = f'[{", ".join(out_signals)}]' if out_signals else "[]"
+        in_txt = f'[{", ".join(in_signals)}]' if in_signals else "[]"
+        conn.label_out.setPlainText(out_txt)
+        conn.label_in.setPlainText(in_txt)
+
+    def connection_by_handle(self, handle):
+        """The (scene, connection) a handle refers to, searched among
+        the scenes' connectors."""
+        h = str(handle)
+        for name, scene in self.scenes().items():
+            for conn in self._connections_of(scene):
+                if str(id(conn)) == h:
+                    return scene, conn
+        raise ValueError("unknown or gone connection: " + h)
 
     # -- checks and saving --------------------------------------------------
 
@@ -459,7 +684,21 @@ class SdlModel:
 
     def _main_file(self):
         """The .pr file the block scene is saved to: the one whose name
-        matches the block (the GUI's convention), else the first file."""
+        matches the block (the GUI's convention); failing that, the
+        first file that is not the system structure companion
+        (system_structure.pr, the naming convention everywhere in the
+        testsuite and TASTE); failing that, the first file. Never
+        silently overwrite a companion with process content."""
+        block_name = str(getattr(self.block, "name", "") or "").strip().lower()
+        if block_name:
+            for path in self.pr_files:
+                stem = os.path.splitext(os.path.basename(path))[0].lower()
+                if stem == block_name:
+                    return path
+        for path in self.pr_files:
+            stem = os.path.splitext(os.path.basename(path))[0].lower()
+            if not stem.startswith("system_structure"):
+                return path
         return self.pr_files[0]
 
     def _full_model(self):
@@ -496,13 +735,34 @@ class SdlModel:
                     return proc
         return self.ast.processes[0] if self.ast.processes else None
 
-    def save(self):
+    def save(self, force=False):
         """Write the model back to the .pr file(s), mirroring the GUI's
         save_diagram: translate to a non-negative coordinate origin,
-        serialise, and write. The editor reloads the file on its own."""
+        serialise, and write. The editor reloads the file on its own.
+        Refuses (unless force) when the file changed on disk since it was
+        last loaded — the editor's own save must not be clobbered by a
+        stale in-memory model."""
+        changed = self.external_changes()
+        if changed and not force:
+            raise ValueError(
+                "the model file(s) changed on disk since this server "
+                "loaded them (probably saved by the editor): "
+                + ", ".join(os.path.basename(p) for p in changed)
+                + " — call reload_model first (or save_model with "
+                  "force: true) to keep the on-disk version")
         scene = self.scene
         # Coordinates must be non-negative for a clean reload
         scene.translate_to_origin()
+        # A companion model whose block scene holds MORE than one process
+        # definition cannot be saved the way the GUI does (the
+        # serialiser emits only the first process — the rest would be
+        # lost). In that case each process goes to its own .pr file and
+        # the system structure is regenerated into the companion with
+        # REFERENCED processes — the TASTE convention.
+        procs = [s for s in scene.processes
+                 if ":" not in str(s)]
+        if not self._full_model() and len(procs) > 1:
+            return self._save_multi_process(scene, procs)
         pr_raw = Pr.parse_scene(scene, full_model=self._full_model())
         pr_data = "\n".join(pr_raw)
         # The GUI writes the process file; the system structure, when
@@ -510,7 +770,116 @@ class SdlModel:
         target = self._main_file()
         with open(target, "w", encoding="utf-8") as f:
             f.write(pr_data)
+        self.refresh_mtimes()
         return {"saved": os.path.basename(target), "bytes": len(pr_data)}
+
+    def _save_multi_process(self, scene, procs):
+        """A companion model with several process definitions: write
+        each process to <name>.pr and regenerate the system structure
+        into the companion, with the processes REFERENCED (the TASTE
+        convention: structure in one file, definitions in theirs)."""
+        written = []
+        for proc in procs:
+            name = str(proc).strip().lower()
+            # The process' own file: the main file when the name
+            # matches, else <name>.pr next to it.
+            main = self._main_file()
+            main_stem = os.path.splitext(os.path.basename(main))[0].lower()
+            target = main if name == main_stem else os.path.join(
+                self.model_dir, name + ".pr")
+            pr_raw = list(Pr.generate(proc))
+            with open(target, "w", encoding="utf-8") as f:
+                f.write("\n".join(pr_raw))
+            written.append(os.path.basename(target))
+            if target not in self.pr_files:
+                self.pr_files.append(target)
+        # Regenerate the structure: the full-model serialisation with
+        # each process definition replaced by a REFERENCED declaration.
+        scene.ast = self.ast
+        full = Pr.parse_scene(scene, full_model=True)
+        out, skip = [], None
+        for line in full:
+            stripped = line.strip()
+            match = re.match(r"process (\S+);$", stripped)
+            if match and not skip:
+                out.append(line.replace(
+                    f"process {match.group(1)};",
+                    f"process {match.group(1)} REFERENCED;"))
+                skip = match.group(1)
+                continue
+            if skip and stripped == f"endprocess {skip};":
+                skip = None
+                continue
+            if not skip:
+                out.append(line)
+        structure = self._structure_file()
+        # Preserve the companion's header up to and INCLUDING its system
+        # declaration line (the ASN.1 reference and the system name);
+        # the generated structure's own system line is dropped.
+        header = ""
+        if os.path.isfile(structure):
+            with open(structure, encoding="utf-8") as f:
+                orig = f.read()
+            match = re.search(r"(?is)\A.*?^system\s+\S+\s*;",
+                              orig, re.MULTILINE)
+            if match:
+                header = match.group(0)
+        first_sys = next((i for i, l in enumerate(out)
+                          if re.match(r"\s*system\s+\S+\s*;", l)), None)
+        if header and first_sys is not None:
+            struct_data = header + "\n" + "\n".join(out[first_sys + 1:])
+        else:
+            struct_data = "\n".join(out)
+        with open(structure, "w", encoding="utf-8") as f:
+            f.write(struct_data)
+        written.append(os.path.basename(structure))
+        self.refresh_mtimes()
+        return {"saved": ", ".join(written),
+                "bytes": sum(os.path.getsize(os.path.join(self.model_dir,
+                                                          w))
+                             for w in written)}
+
+    def _structure_file(self):
+        """The file holding the system structure of a companion model:
+        the system_structure.pr convention; failing that, the file
+        whose stem differs from the main file's."""
+        for path in self.pr_files:
+            stem = os.path.splitext(os.path.basename(path))[0].lower()
+            if stem.startswith("system_structure"):
+                return path
+        main = self._main_file()
+        for path in self.pr_files:
+            if path != main:
+                return path
+        return main
+
+    def reload_model(self):
+        """Re-read the .pr files from disk, discarding this server's
+        in-memory model. Use it when the editor saved its own changes:
+        symbol ids from before the reload are invalid, so start again
+        with list_symbols."""
+        self._cwd = os.getcwd()
+        os.chdir(self.model_dir)
+        try:
+            self.reload()
+        finally:
+            os.chdir(self._cwd)
+        self._symbol_ids = {}
+        self._scene_names = {}
+        self.refresh_mtimes()
+        return {"reloaded": [os.path.basename(p) for p in self.pr_files]}
+
+    def model_status(self):
+        """A quick health read of the model: what is loaded, whether the
+        files changed on disk since (reload_model to pick them up), and
+        the last parse outcome."""
+        changed = self.external_changes()
+        return {"files": [os.path.basename(p) for p in self.pr_files],
+                "saved_to": os.path.basename(self._main_file()),
+                "external_changes": [os.path.basename(p) for p in changed],
+                "stale": bool(changed),
+                "parse_errors": [e.msg for e in self.parse_errors],
+                "parse_warnings": [w.msg for w in self.parse_warnings]}
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +902,9 @@ def _id_arg():
 
 
 def _build_tools(model):
+    """The tool catalogue. With a model, each tool carries its
+    implementation; with None (the live relay) the schemas are all
+    that is needed — every call is forwarded to the editor."""
     tools = []
 
     def tool(name, description, schema, func):
@@ -637,6 +1009,91 @@ def _build_tools(model):
           "required": ["id", "x", "y"], "additionalProperties": False},
          lambda args: model.move(args["id"], args["x"], args["y"]))
 
+    tool("add_signal_declaration",
+         "Declare a signal in the block scene (its signal-declaration "
+         "text area): 'signal <name>' or 'signal <name>(<param_type>)'. "
+         "Signals must be declared before channels/signalroutes can "
+         "carry them. The param_type is an ASN.1 type name from the "
+         "data view.",
+         {"type": "object", "properties": {
+             "signal": {"type": "string",
+                        "description": "Signal name, e.g. 'go'."},
+             "param_type": {"type": "string",
+                            "description": "Optional ASN.1 type of the "
+                                           "signal parameter, e.g. "
+                                           "'My_OctStr'."}},
+          "required": ["signal"], "additionalProperties": False},
+         lambda args: model.add_signal_declaration(
+             args["signal"], args.get("param_type")))
+
+    tool("list_signals",
+         "Every signal declared in the block scene's text areas, as "
+         "full declaration lines ('signal go(My_OctStr);').",
+         {"type": "object", "properties": {},
+          "additionalProperties": False},
+         lambda args: model.list_signals())
+
+    tool("add_connection",
+         "Connect two processes with a channel, or a process to the "
+         "environment with a signalroute — the block-scene connectors "
+         "that carry the model's signals. out_signals are the signals "
+         "sent by 'from' (declared in the block's signal-declaration "
+         "text area); in_signals the ones received back.",
+         {"type": "object", "properties": {
+             "kind": {"type": "string", "enum": ["channel", "signalroute"],
+                      "description": "channel: process to process; "
+                                     "signalroute: process to env."},
+             "from_id": _id_arg(),
+             "to_id": {"type": "string",
+                       "description": "The destination process id "
+                                      "(channel). Omit for a "
+                                      "signalroute (environment)."},
+             "out_signals": {"type": "array", "items": {"type": "string"},
+                             "description": "Signals from 'from' to the "
+                                            "other end, e.g. "
+                                            "['go', 'rezult']."},
+             "in_signals": {"type": "array", "items": {"type": "string"},
+                            "description": "Signals coming back to "
+                                           "'from'."},
+             "via": {"type": "array",
+                     "items": {"type": "array",
+                               "items": {"type": "number"},
+                               "minItems": 2, "maxItems": 2},
+                     "description": "Optional [[x, y], ...] waypoints "
+                                    "between the two ends, in block "
+                                    "scene coordinates."}},
+          "required": ["kind", "from_id"], "additionalProperties": False},
+         lambda args: model.add_connection(
+             args["kind"], args["from_id"],
+             to_id=args.get("to_id"),
+             out_signals=args.get("out_signals") or (),
+             in_signals=args.get("in_signals") or (),
+             via=args.get("via")))
+
+    tool("set_connection_signals",
+         "Change the signal lists carried by a channel or signalroute "
+         "(its labels). Each argument is a list of signal names; leave "
+         "one out to keep that side as it is.",
+         {"type": "object", "properties": {
+             "id": _id_arg(),
+             "out_signals": {"type": "array",
+                             "items": {"type": "string"}},
+             "in_signals": {"type": "array",
+                             "items": {"type": "string"}}},
+          "required": ["id"], "additionalProperties": False},
+         lambda args: model.set_connection_signals(
+             args["id"],
+             out_signals=args.get("out_signals"),
+             in_signals=args.get("in_signals")))
+
+    tool("remove_connection",
+         "Delete a channel or signalroute (the scene's undo stack, so "
+         "the editor can undo it).",
+         {"type": "object", "properties": {
+             "id": _id_arg()},
+          "required": ["id"], "additionalProperties": False},
+         lambda args: model.remove_connection(args["id"]))
+
     tool("check_model",
          "Check the whole model: every symbol's syntax, then the full "
          "semantic parse. Returns the errors and warnings as text lines "
@@ -665,9 +1122,34 @@ def _build_tools(model):
          "Write the model back to its .pr file. Do this after "
          "modifications, so the editor (and the code generators) see "
          "them. The companion files (system_structure.pr, ASN.1) are "
-         "never touched.",
+         "never touched. Refuses when the file changed on disk since "
+         "it was loaded (the editor saved its own edits): call "
+         "reload_model to adopt the on-disk version first, or pass "
+         "force: true to save anyway and discard those edits.",
+         {"type": "object", "properties": {
+             "force": {"type": "boolean",
+                       "description": "Save even when the file changed on "
+                                      "disk since it was loaded (discards "
+                                      "the editor's unsaved-to-this-server "
+                                      "edits). Default false."}},
+          "additionalProperties": False},
+         lambda args: model.save(force=bool(args.get("force"))))
+
+    tool("reload_model",
+         "Re-read the .pr files from disk, replacing the in-memory "
+         "model. Use it when the editor (another process) saved its own "
+         "changes: symbol ids from before the reload are invalid, so "
+         "start again with list_symbols.",
          {"type": "object", "properties": {}, "additionalProperties": False},
-         lambda args: model.save())
+         lambda args: model.reload_model())
+
+    tool("model_status",
+         "Quick health read: which files are loaded, whether they "
+         "changed on disk since they were loaded (the editor saved "
+         "them — reload_model picks that up), and the last parse "
+         "errors/warnings.",
+         {"type": "object", "properties": {}, "additionalProperties": False},
+         lambda args: model.model_status())
 
     return tools
 
@@ -677,12 +1159,30 @@ def _build_tools(model):
 # ---------------------------------------------------------------------------
 
 class Server:
-    def __init__(self, model):
+    def __init__(self, model, bridge=None):
         self.model = model
-        self.tools = {t["name"]: t for t in _build_tools(model)}
+        # The live bridge, when a running editor answered: tool calls
+        # are forwarded to it and land in the OPEN scene. Standalone
+        # (no bridge): the model is this server's own copy.
+        self.bridge = bridge
+        self.live = bridge is not None
+        catalogue = _build_tools(model)
+        if self.live:
+            # The implementations never run here; the catalogue is the
+            # schema surface the relay forwards to the editor.
+            catalogue = [{"name": t["name"],
+                          "description": t["description"] + LIVE_SUFFIX,
+                          "inputSchema": t["inputSchema"],
+                          "_func": None}
+                         for t in catalogue]
+        self.tools = {t["name"]: t for t in catalogue}
         self._server_info = {
             "name": "opengeode-sdl",
             "version": "1.0",
+            } if not self.live else {
+            "name": "opengeode-sdl",
+            "version": "1.0",
+            "live": True,
         }
 
     # -- reading and writing ------------------------------------------------
@@ -761,7 +1261,9 @@ class Server:
     def _tools_call(self, params):
         """Validate the call against the tool's schema and run it. A
         schema violation is reported as an MCP error result (isError),
-        the way a client expects, rather than a JSON-RPC error."""
+        the way a client expects, rather than a JSON-RPC error.
+        In live mode the call is forwarded to the running editor over
+        the bridge — the tool operates on the OPEN scene."""
         if not isinstance(params, dict):
             return self._error_result("tools/call params must be an object")
         name = params.get("name")
@@ -774,10 +1276,23 @@ class Server:
         error = _validate_schema(entry["inputSchema"], args)
         if error:
             return self._error_result(error)
-        try:
-            result = entry["_func"](args)
-        except ValueError as exc:
-            return self._error_result(str(exc))
+        if self.live:
+            # The tool's implementation runs in the editor, against the
+            # open scene: this server only forwards the (validated)
+            # call and relays the result back to orbit.
+            try:
+                result = self.bridge.call("tools/call",
+                                          {"name": name, "arguments": args})
+            except ValueError as exc:
+                return self._error_result(str(exc))
+            except Exception as exc:  # noqa: BLE001
+                return self._error_result(
+                    f"the editor bridge failed: {type(exc).__name__}: {exc}")
+        else:
+            try:
+                result = entry["_func"](args)
+            except ValueError as exc:
+                return self._error_result(str(exc))
         return {"content": [{"type": "text",
                              "text": json.dumps(result, ensure_ascii=False,
                                                 indent=2)}],
@@ -854,13 +1369,80 @@ def main():
         argv = sorted(glob.glob(os.path.join(os.getcwd(), argv[0])))
     if not argv:
         argv = sorted(glob.glob(os.path.join(os.getcwd(), "*.pr")))
-    try:
-        model = SdlModel(argv)
-    except ValueError as exc:
-        sys.stderr.write(f"opengeode-sdl: {exc}\n")
-        sys.exit(1)
-    server = Server(model)
+    # A running editor exports its bridge socket: when it is there and
+    # answers, every tool call is forwarded to the LIVE model — orbit's
+    # edits appear in the open scene immediately. Without it, the
+    # server controls its own copy of the files on disk (standalone).
+    bridge = _connect_bridge(os.environ.get(BRIDGE_ENV_VAR))
+    model = None
+    if bridge is None:
+        try:
+            model = SdlModel(argv)
+        except ValueError as exc:
+            sys.stderr.write(f"opengeode-sdl: {exc}\n")
+            sys.exit(1)
+    server = Server(model, bridge=bridge)
     server.serve_forever()
+
+
+#: The env var the editor sets to point at its live bridge socket.
+BRIDGE_ENV_VAR = "OPENGEODE_SDL_BRIDGE"
+
+#: How long to wait for the bridge to answer a request, seconds.
+BRIDGE_TIMEOUT = 20.0
+
+
+class _BridgeClient:
+    """The relay's end: a synchronous client to the editor's live
+    bridge. The wire is the same newline-delimited JSON-RPC the server
+    itself speaks — one request per line, one reply per line."""
+
+    def __init__(self, path, timeout=BRIDGE_TIMEOUT):
+        import socket
+        self.path = path
+        self.timeout = timeout
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(timeout)
+        self.sock.connect(path)
+        self._file = self.sock.makefile("rwb")
+
+    def call(self, method, params=None):
+        """One JSON-RPC request/reply. Returns the result, or raises
+        ValueError with the message the bridge sent."""
+        req = {"jsonrpc": "2.0", "id": next(self._ids), "method": method,
+               "params": params or {}}
+        self._file.write((json.dumps(req) + "\n").encode("utf-8"))
+        self._file.flush()
+        line = self._file.readline()
+        if not line:
+            raise ValueError("the editor closed the bridge connection")
+        reply = json.loads(line.decode("utf-8"))
+        if "error" in reply:
+            raise ValueError(reply["error"].get("message", "bridge error"))
+        return reply.get("result")
+
+    _ids = iter(range(1, 2 ** 30))
+
+    def close(self):
+        try:
+            self._file.close()
+            self.sock.close()
+        except Exception:
+            pass
+
+
+def _connect_bridge(path, timeout=2.0):
+    """Connect to the editor's live bridge when the path names a live
+    socket, and verify it answers. Returns the client, or None — a
+    missing or dead bridge must not break the standalone server."""
+    if not path:
+        return None
+    try:
+        client = _BridgeClient(path, timeout=timeout)
+        client.call("ping")
+        return client
+    except Exception:
+        return None
 
 
 if __name__ == "__main__":
