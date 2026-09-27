@@ -65,6 +65,9 @@ VAR_COUNTER = 0
 # The instance wrapper (instance=True) provides that implementation.
 GENERIC = False
 
+# TASTE mode flag (True when generating code for TASTE integration)
+TASTE = False
+
 # When inside a procedure that uses label dispatch (loop+match), this is set
 # so that join terminators generate __next = "label"; continue; instead of comments
 PROC_LABEL_NAMES = []  # list of label names in the current procedure dispatch
@@ -243,11 +246,11 @@ def is_local(var):
 def default_pid():
     '''Return the default PID reference for RI calls.
     For process types, uses SELF_PID (set by the instance wrapper).
-    Otherwise, uses asn1SccEnv (the environment PID).'''
+    Otherwise, uses asn1SccPID::asn1Sccenv (the environment PID).'''
     if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
         return 'SELF_PID'
     elif 'PID' in TYPES:
-        return f'{ASN1SCC}Env'
+        return f'{ASN1SCC}PID::{ASN1SCC}env'
     return None
 
 
@@ -794,6 +797,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # implementation — the Rust equivalent of Ada's generic packages.
     GENERIC = bool(generic)
 
+    global TASTE
+    TASTE = taste
+
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -1037,7 +1043,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     init_done,
                     '}',
                     '']
-        if not taste:
+        if not TASTE:
             start_transition.extend([
                 '// Auto-elaboration — call startup() before using the process'])
             # Note: startup() must be called by the harness before any PI calls
@@ -1143,6 +1149,40 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 f'    unsafe fn {entry["method"]}(&mut self, {params});')
         rust_body.append('}')
         rust_body.append('')
+
+    if TASTE and not generic and not instance:
+        c_ri_decls = []
+        for sig in process.output_signals:
+            signame = sig['name']
+            param_spec = ''
+            if 'type' in sig:
+                param_spec = f'param: *const {type_name(sig["type"])}'
+            if 'PID' in TYPES:
+                if param_spec:
+                    param_spec += f', dest_pid: {ASN1SCC}PID'
+                else:
+                    param_spec = f'dest_pid: {ASN1SCC}PID'
+            c_ri_decls.append(f'    fn {process.name.lower()}_RI_{signame}({param_spec});')
+        for proc in process.procedures:
+            if not proc.referenced:
+                pname = proc.inputString
+                params = []
+                for fpar in proc.fpar:
+                    ptype = type_name(fpar['type'])
+                    pdir = fpar.get('direction', 'in')
+                    if pdir in ('out', 'inout'):
+                        params.append(f'{fpar["name"]}: *mut {ptype}')
+                    else:
+                        params.append(f'{fpar["name"]}: *const {ptype}')
+                if 'PID' in TYPES:
+                    params.append(f'default_sender: {ASN1SCC}PID')
+                param_str = ', '.join(params)
+                c_ri_decls.append(f'    fn {process.name.lower()}_RI_{pname}({param_str});')
+        if c_ri_decls:
+            rust_body.append('extern "C" {')
+            rust_body.extend(c_ri_decls)
+            rust_body.append('}')
+            rust_body.append('')
 
     # ── Random generator declarations ──
     for each in process.random_generator:
@@ -1301,9 +1341,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         if (not generic and not ignore_export) or (ignore_export and instance):
             # Export as C function
             export_name = f'{process.name.lower()}_PI_{signame}'
-            sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
-            if param_decl:
-                sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
+            sig = f'pub unsafe extern "C" fn {export_name}({param_decl})'
             rust_body.append(f'#[no_mangle]')
             rust_body.append(sig + ' {')
         elif generic:
@@ -1689,13 +1727,18 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     rust_body.extend(start_transition)
 
     # ── RI stubs ──
-    if not taste and ri_stub_code:
+    if not TASTE and ri_stub_code:
         rust_body.append('// RI stubs - implement these in your code')
         rust_body.extend(ri_stub_code)
 
     # ── Cargo.toml ──
     # This Cargo.toml is written to <process>_cargo.toml.
     # The test Makefile should copy it to Cargo.toml (overwriting asn1scc's version).
+    bin_section = "" if TASTE else '''
+[[bin]]
+name = "test_rust"
+path = "main.rs"
+'''
     cargo_toml = f'''[package]
 name = "{process.name.lower()}"
 version = "0.1.0"
@@ -1707,11 +1750,8 @@ asn1rust = {{ path = "asn1rust" }}
 [lib]
 name = "{process.name.lower()}"
 path = "{process.name.lower()}.rs"
-
-[[bin]]
-name = "test_rust"
-path = "main.rs"
-
+crate-type = ["staticlib", "rlib"]
+{bin_section}
 [profile.release]
 opt-level = 3
 '''
@@ -1765,7 +1805,7 @@ opt-level = 3
         with open('dataview-uniq.rs', 'w') as f:
             f.write('\n'.join(new_lines))
 
-    if instance or not taste:
+    if instance or not TASTE:
         # Write the user-editable RI stub file (only once, never clobbering
         # user edits). For a standalone process it mirrors the inline stubs;
         # for a process type INSTANCE it is the single hook where the user
@@ -1818,6 +1858,8 @@ opt-level = 3
                         '\n'.join(format_rust_code(stub_lines)))
 
     with open(f'{process.name.lower()}_cargo.toml', 'w') as cargo:
+        cargo.write(cargo_toml)
+    with open('Cargo.toml', 'w') as cargo:
         cargo.write(cargo_toml)
 
     # ── Generate instance if needed ──
@@ -2039,26 +2081,26 @@ def _call_external_function(output, **kwargs):
             # declares it). When toDest is not specified, use default_pid()
             # (SELF_PID for process types, asn1SccEnv otherwise).
             if GENERIC:
-                # Process type: the RI is provided by the caller through the
-                # generic Ri parameter (trait method call).
-                prefix = 'ri.'
+                func_name = f'ri.ri{SEPARATOR}{name}'
+            elif TASTE:
+                func_name = f'{PROCESS.name.lower()}_RI_{name}'
             else:
-                prefix = ''
+                func_name = f'ri{SEPARATOR}{name}'
             if dest_pid is not None:
                 # dest_pid was resolved above; if it's 'env', use the default PID
                 if dest_pid == f'{ASN1SCC}env':
                     dest_pid = default_pid()
                 if list_of_params:
                     params = ', '.join(list_of_params)
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params}, {dest_pid});')
+                    call_code.append(f'{func_name}({params}, {dest_pid});')
                 else:
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({dest_pid});')
+                    call_code.append(f'{func_name}({dest_pid});')
             else:
                 if list_of_params:
                     params = ', '.join(list_of_params)
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params});')
+                    call_code.append(f'{func_name}({params});')
                 else:
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}();')
+                    call_code.append(f'{func_name}();')
         else:
             ident = proc.inputString
             p = [p for p in PROCEDURES
