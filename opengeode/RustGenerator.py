@@ -247,11 +247,10 @@ def default_pid():
     '''Return the default PID reference for RI calls.
     For process types, uses SELF_PID (set by the instance wrapper).
     Otherwise, uses asn1SccPID::asn1Sccenv (the environment PID).'''
-    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+    if PROCESS and getattr(PROCESS, 'process_type', False):
         return 'SELF_PID'
-    elif 'PID' in TYPES:
-        return f'{ASN1SCC}PID::{ASN1SCC}env'
-    return None
+    return f'{ASN1SCC}PID::{ASN1SCC}env'
+
 
 
 def ri_trait_name():
@@ -1051,7 +1050,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # ── Main module header ──
     rust_body = [
         '// This file was generated automatically by OpenGEODE: DO NOT MODIFY IT!',
-        '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,',
+        '#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, unused_parens, unused_imports,',
         '         unused_variables, unused_mut, unused_assignments, dead_code)]',
         '',
     ]
@@ -1830,7 +1829,7 @@ opt-level = 3
                     '// Implement here the required interfaces (RI) of the',
                     '// process type. This file is generated only once and is',
                     '// never overwritten by the code generator.',
-                    '#![allow(non_snake_case, unused_variables, '
+                    '#![allow(non_snake_case, non_camel_case_types, unused_variables, '
                     'unused_mut, dead_code)]',
                     f'use super::{ptype_module}::dataview_uniqDef::*;',
                     f'use super::{ptype_module}::dataview_uniq::*;',
@@ -1851,7 +1850,7 @@ opt-level = 3
             elif ri_stub_code:
                 stub_lines = [
                     f'// RI stubs for {process.name} - implement these functions',
-                    '#![allow(non_snake_case)]'] + ri_stub_code
+                    '#![allow(non_snake_case, non_camel_case_types)]'] + ri_stub_code
             if stub_lines:
                 with open(ri_stub_file, 'w') as ri_stub:
                     ri_stub.write(
@@ -2235,13 +2234,8 @@ def _create_request(create, **kwargs):
     code.extend(traceability(create))
     if create.comment:
         code.extend(traceability(create.comment))
-    # In process types, 'self' is SELF_PID; otherwise it's the context variable
-    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
-        self_ref = 'SELF_PID'
-    elif 'PID' in TYPES:
-        self_ref = default_pid()
-    else:
-        self_ref = 'self'
+    # In process types, 'self' is SELF_PID; otherwise it's default_pid()
+    self_ref = default_pid()
     code.append(f'{LPREFIX}.offspring = create_{create.instance_to_create.title()}({self_ref});')
     return code, code_local
 
@@ -2851,10 +2845,7 @@ def _primary_variable(prim, **kwargs):
         name = name.split('.')[0]
     # 'self' in a process type resolves to SELF_PID (the PID of this instance); in a process to default_pid()
     if name.lower() == 'self':
-        if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
-            return [], 'SELF_PID', []
-        elif 'PID' in TYPES:
-            return [], default_pid(), []
+        return [], default_pid(), []
     var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
@@ -3843,7 +3834,10 @@ def _string_literal(primary, **kwargs):
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
-    return [], str(primary.constant_c_name), []
+    name = str(primary.constant_c_name)
+    if name.lower() == 'self':
+        return [], default_pid(), []
+    return [], name, []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)
