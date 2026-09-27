@@ -2849,9 +2849,12 @@ def _primary_variable(prim, **kwargs):
     name = prim.value[0]
     if '.' in name:
         name = name.split('.')[0]
-    # 'self' in a process type resolves to SELF_PID (the PID of this instance)
-    if name.lower() == 'self' and PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
-        return [], 'SELF_PID', []
+    # 'self' in a process type resolves to SELF_PID (the PID of this instance); in a process to default_pid()
+    if name.lower() == 'self':
+        if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+            return [], 'SELF_PID', []
+        elif 'PID' in TYPES:
+            return [], default_pid(), []
     var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
