@@ -622,14 +622,13 @@ def array_content(prim, values, asnty):
                         else:
                             zero_val = f'{elem_tname} {{ arr: [0; {inner_max}] }}'
                     else:
-                        zero_val = 'Default::default()'
+                        zero_val = const_zero_value(elem_type)
                 elif elem_bty.kind == 'SequenceType':
                     elem_ref = getattr(elem_type, 'ReferencedTypeName', None)
                     if elem_ref:
-                        elem_tname = f'{ASN1SCC}{elem_ref.replace("-", "_")}'
-                        zero_val = f'{elem_tname} {{ ..unsafe {{ std::mem::zeroed() }} }}'
+                        zero_val = const_zero_value(elem_type)
                     else:
-                        zero_val = 'Default::default()'
+                        zero_val = const_zero_value(elem_type)
         elif prim.value:
             first_elem_bty = find_basic_type(prim.value[0].exprType)
             if first_elem_bty and first_elem_bty.kind == 'BooleanType':
@@ -667,6 +666,118 @@ def array_content(prim, values, asnty):
     else:
         # Fallback: use the values string directly
         return values
+
+
+def const_zero_value(a_type, depth=0):
+    '''Build a const-evaluable zero value for a_type, usable in a Rust
+    static initializer (rustc < 1.75 forbids calling std::mem::zeroed()
+    and Default::default() there - E0015).
+
+    Emits plain literals only: 0, 0.0f64, false, (), enum variants and
+    struct/array literals, recursively. Falls back to
+    unsafe { std::mem::zeroed() } for types whose shape is not known
+    (rare, exotic kinds).
+    '''
+    if depth > 10:
+        # Protect against cyclic type definitions
+        return 'unsafe { std::mem::zeroed() }'
+    bty = find_basic_type(a_type)
+    kind = bty.kind
+    if kind in ('BooleanType',):
+        return 'false'
+    if kind == 'RealType':
+        return '0.0f64'
+    if kind.startswith('Integer') or kind == 'NullType':
+        return '0'
+    if kind in ('EnumeratedType', 'ChoiceEnumeratedType',
+                'StateEnumeratedType'):
+        # First enumerant (matches the Default impl emitted by asn1scc).
+        # The type name can sit on the reference node (a_type) rather
+        # than on the resolved enum itself (find_basic_type unnames it)
+        tname = getattr(a_type, 'ReferencedTypeName', None) or \
+            getattr(bty, 'ReferencedTypeName', None)
+        enum_id = None
+        if bty.EnumValues:
+            first = list(bty.EnumValues.keys())[0]
+            enum_id = getattr(bty.EnumValues[first], 'EnumID', None)
+        if tname and enum_id:
+            return f'{ASN1SCC}{tname.replace("-", "_")}::{ASN1SCC}{enum_id}'
+        return 'unsafe { std::mem::zeroed() }'
+    if kind == 'ReferenceType':
+        tname = bty.ReferencedTypeName
+        if tname in TYPES:
+            return const_zero_value(TYPES[tname].type, depth + 1)
+        return 'unsafe { std::mem::zeroed() }'
+    if kind in ('OctetStringType', 'BitStringType', 'IA5StringType',
+                'StringType'):
+        # Reuse the size/n_count conventions of array literals
+        rkind, max_size, has_ncount, rust_tname = \
+            _resolve_type_info(a_type, None)
+        if not rust_tname or not max_size:
+            return 'unsafe { std::mem::zeroed() }'
+        if has_ncount:
+            return f'{rust_tname} {{ n_count: 0, arr: [0; {max_size}] }}'
+        return f'{rust_tname} {{ arr: [0; {max_size}] }}'
+    if kind == 'SequenceOfType':
+        # struct { n_count: u64, arr: [T; N] } (n_count absent if fixed)
+        elem_zero = const_zero_value(bty.type, depth + 1)
+        if 'unsafe' in elem_zero:
+            # The element zero is not const-evaluable: a repeated fn
+            # call would not be either ([call; N] nor [call, call..])
+            return 'unsafe { std::mem::zeroed() }'
+        tname = getattr(a_type, 'ReferencedTypeName', None) or \
+            getattr(bty, 'ReferencedTypeName', None)
+        rust_tname = f'{ASN1SCC}{tname.replace("-", "_")}' if tname else None
+        max_size = None
+        try:
+            max_size = int(bty.Max)
+        except (ValueError, TypeError):
+            pass
+        if not max_size:
+            return 'unsafe { std::mem::zeroed() }'
+        arr = f'[{elem_zero}; {max_size}]'
+        try:
+            has_ncount = int(bty.Min) != max_size
+        except (ValueError, TypeError):
+            has_ncount = True
+        if rust_tname:
+            if has_ncount:
+                return f'{rust_tname} {{ n_count: 0, arr: {arr} }}'
+            return f'{rust_tname} {{ arr: {arr} }}'
+        # anonymous seqof: [T; N] literal
+        return arr
+    if kind == 'SequenceType':
+        tname = getattr(a_type, 'ReferencedTypeName', None) or \
+            getattr(bty, 'ReferencedTypeName', None)
+        if not tname or tname not in TYPES:
+            return 'unsafe { std::mem::zeroed() }'
+        rust_tname = f'{ASN1SCC}{tname.replace("-", "_")}'
+        parts = []
+        children = bty.Children or {}
+        optional = [fname for fname, spec in children.items()
+                    if getattr(spec, 'Optional', 'False') == 'True']
+        for fname, spec in children.items():
+            fzero = const_zero_value(spec.type, depth + 1)
+            parts.append(f'{fname.replace("-", "_")}: {fzero}')
+        if optional:
+            exist_parts = [f'{fn.replace("-", "_")}: false' for fn in optional]
+            parts.append(f'exist: {rust_tname}_exist {{ '
+                         f'{", ".join(exist_parts)} }}')
+        return f'{rust_tname} {{ {", ".join(parts)} }}'
+    if kind == 'ChoiceType':
+        # First variant with a zero payload
+        tname = getattr(a_type, 'ReferencedTypeName', None) or \
+            getattr(bty, 'ReferencedTypeName', None)
+        children = bty.Children or {}
+        if not tname or not children:
+            return 'unsafe { std::mem::zeroed() }'
+        rust_tname = f'{ASN1SCC}{tname.replace("-", "_")}'
+        first = list(children.keys())[0]
+        spec = children[first]
+        payload_zero = const_zero_value(spec.type, depth + 1)
+        variant = first.replace('-', '_')
+        return f'{rust_tname}::{variant}({payload_zero})'
+    return 'unsafe { std::mem::zeroed() }'
 
 
 def append_size(append):
@@ -964,7 +1075,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 f'{ASN1SCC}PID::{ASN1SCC}env;')
 
         if not process.no_context:
-            # Default context initialization
+            # Default context initialization. The static initializer must
+            # contain only const-evaluable code: zeroed()/default() are
+            # not const fn on rustc < 1.75 (E0015 in statics), so fields
+            # without a user-specified initial value get a literal zero
+            # built recursively from the type shape (const_zero_value).
             ctxt_parts = []
             for var_name, (var_type, def_value) in process.variables.items():
                 if var_name in process.aliases.keys():
@@ -987,82 +1102,95 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     # temporary variable to store a computed result
                     assert not dst and not dlocal, \
                             'DCL: Expecting a ground expression'
+                    if '::default()' in dstr or 'zeroed()' in dstr:
+                        # Replace the non-const call with a const literal
+                        dstr = const_zero_value(var_type)
                     ctxt_parts.append(f'{var_name}: {dstr}')
 
-            if ctxt_parts:
-                # Check if the context struct contains Choice/enum types
-                # (std::mem::zeroed() can't be used for types with enums in static contexts)
-                has_choice = False
-                for var_name, (var_type, _) in process.variables.items():
-                    varbty = find_basic_type(var_type)
-                    if varbty.kind in ('ChoiceEnumeratedType', 'EnumeratedType'):
-                        has_choice = True
-                        break
-                context_decl.append(f'// Default context with initial values')
-                if has_choice:
-                    # Can't use zeroed() for structs with enums; initialize remaining
-                    # fields explicitly
-                    remaining = []
-                    if not any(p.startswith('state:') for p in ctxt_parts):
-                        # Initialize state to the first state enum variant
-                        if process.mapping:
-                            first_state = list(process.mapping.keys())[0]
-                            state_name = first_state.lower().replace('-', '_')
-                            remaining.append(f'state: {ASN1SCC}{process.name.capitalize()}_States::{ASN1SCC}{state_name}')
-                        else:
-                            remaining.append(f'state: unsafe {{ std::mem::zeroed() }}')
-                    if not any(p.startswith('init_done:') for p in ctxt_parts):
-                        remaining.append('init_done: false')
-                    for var_name, (var_type, def_value) in process.variables.items():
-                        if var_name in process.aliases.keys():
-                            continue
-                        if not def_value and not any(p.startswith(f'{var_name}:') for p in ctxt_parts):
-                            varbty = find_basic_type(var_type)
-                            typename = type_name(var_type)
-                            if varbty.kind in ('ChoiceEnumeratedType', 'EnumeratedType'):
-                                # Can't zero enum, but we must provide something
-                                # Use the enum's Default (not const) via a hack:
-                                # write the actual first variant
-                                remaining.append(f'{var_name}: unsafe {{ std::mem::zeroed() }}')
-                            else:
-                                remaining.append(f'{var_name}: unsafe {{ std::mem::zeroed() }}')
-                    all_parts = ctxt_parts + remaining
-                    context_decl.append(
-                        f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
-                        f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
-                        f'{", ".join(all_parts)} }};')
-                else:
-                    context_decl.append(
-                        f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
-                        f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
-                        f'{", ".join(ctxt_parts)}, ..unsafe {{ std::mem::zeroed() }} }};')
-            else:
-                context_decl.append(
-                    f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
-                    f'unsafe {{ std::mem::zeroed() }};')
+            # Build the const-evaluable zero for the States enum: the
+            # first declared state (any variant is a valid pre-init
+            # value; the old code used zeroed(), i.e. discriminant 0)
+            state_names = [s for s in process.mapping
+                           if not s.endswith('START')] or \
+                sorted(process.full_statelist)
+            state_zero = None
+            if state_names:
+                first_state = state_names[0]
+                state_zero = (
+                    f'{ASN1SCC}{process.name.capitalize()}_States::'
+                    f'{ASN1SCC}{first_state.lower().replace("-", "_")}')
 
-            # Use DEFAULT_CONTEXT as initial value for ctxt (avoids zeroed() issues with Choice enums)
-            if ctxt_parts:
-                context_decl.append(
-                    f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
-                    f'unsafe {{ DEFAULT_CONTEXT }};')
-            else:
-                context_decl.append(
-                    f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
-                    f'unsafe {{ std::mem::zeroed() }};')
+            if process.full_statelist and state_zero:
+                if not any(p.startswith('state:') for p in ctxt_parts):
+                    ctxt_parts.insert(0, f'state: {state_zero}')
+            if process.has_instances and state_zero:
+                # state-instance field (parallel-state instances)
+                if not any(p.startswith('state_instance:') for p in ctxt_parts):
+                    ctxt_parts.insert(0, f'state_instance: {state_zero}')
+            if not any(p.startswith('init_done:') for p in ctxt_parts):
+                ctxt_parts.insert(0, 'init_done: false')
+            # Variables with no initial value: const-safe literal zero.
+            # Skip the ones not present in the context struct (mirrors
+            # Helper.generate_asn1_datamodel, which cannot reference them)
+            for var_name, (var_type, def_value) in process.variables.items():
+                if var_name in process.aliases.keys():
+                    continue
+                if getattr(var_type, 'ReferencedTypeName', None) is None:
+                    continue
+                if not any(p.startswith(f'{var_name}:') for p in ctxt_parts):
+                    ctxt_parts.append(f'{var_name}: {const_zero_value(var_type)}')
+            # Aggregate substates have a {substate}_state field each
+            if state_zero:
+                for substates in process.aggregates.values():
+                    for each in substates:
+                        fname = f'{each.statename.lower()}{SEPARATOR}state'
+                        if not any(p.startswith(f'{fname}:') for p in ctxt_parts):
+                            ctxt_parts.append(f'{fname}: {state_zero}')
+
+            context_decl.append('// Default context with initial values')
+            context_decl.append(
+                f'static mut DEFAULT_CONTEXT: {ASN1SCC}{process.name.capitalize()}_Context = '
+                f'{ASN1SCC}{process.name.capitalize()}_Context {{ '
+                f'{", ".join(ctxt_parts)} }};')
+
+            # ctxt mirrors DEFAULT_CONTEXT; the unsafe block is required
+            # because statics are not Copy-in-place in stable Rust
+            context_decl.append(
+                f'static mut {LPREFIX}: {ASN1SCC}{process.name.capitalize()}_Context = '
+                f'unsafe {{ DEFAULT_CONTEXT }};')
 
         # Monitors
         for mon_name, (mon_type, _) in process.monitors.items():
+            # Static initializer: use a const literal, not Default::default()
+            # (a non-const fn call in a static = E0015 on rustc < 1.75)
             context_decl.append(
-                f'static mut {mon_name.upper()}: {type_name(mon_type)} = Default::default();')
+                f'static mut {mon_name.upper()}: {type_name(mon_type)} = '
+                f'{const_zero_value(mon_type)};')
 
         # Choice selections
         context_decl.extend(choice_selections)
 
     if stop_condition:
+        # Static initializer must be const-evaluable (E0015 otherwise):
+        # mirror the process context, all fields zero, using literals
+        stop_ctxt_parts = []
+        state_names = [s for s in process.mapping
+                       if not s.endswith('START')] or \
+            sorted(process.full_statelist)
+        if state_names:
+            first_state = state_names[0]
+            stop_ctxt_parts.append(
+                f'state: {ASN1SCC}{stop_condition}_States::'
+                f'{ASN1SCC}{first_state.lower().replace("-", "_")}')
+        stop_ctxt_parts.append('init_done: false')
+        for var_name, (var_type, def_value) in process.variables.items():
+            if var_name in process.aliases.keys():
+                continue
+            stop_ctxt_parts.append(f'{var_name}: {const_zero_value(var_type)}')
         context_decl.append(
             f'static mut {LPREFIX.upper()}: {ASN1SCC}{stop_condition}_Context = '
-            f'{ASN1SCC}{stop_condition}_Context {{ ..Default::default() }};')
+            f'{ASN1SCC}{stop_condition}_Context {{ '
+            f'{", ".join(stop_ctxt_parts)} }};')
 
     # ── Aggregate START procedures ──
     aggreg_start_proc = []
@@ -3973,13 +4101,10 @@ def _null(primary, **kwargs):
 
 @expression.register(ogAST.PrimEmptyString)
 def _empty_string(primary, **kwargs):
-    basic = find_basic_type(primary.exprType)
-    if basic.kind == 'SequenceType' and len(basic.Children.keys()) > 0:
-        # SEQUENCE with all optional fields absent
-        rust_string = f'{type_name(primary.exprType)}::default()'
-    else:
-        rust_string = f'{type_name(primary.exprType)}::default()'
-    return [], rust_string, []
+    # "{}" — empty SEQUENCE OF, or a SEQUENCE with no fields given.
+    # Emit a const-evaluable literal (a ::default() call in a static
+    # initializer is E0015 on rustc < 1.75).
+    return [], const_zero_value(primary.exprType), []
 
 
 @expression.register(ogAST.PrimStringLiteral)
@@ -4100,10 +4225,25 @@ def _sequence(seq, **kwargs):
             exist_parts = [f'{ofn}: false' for ofn in optional_fields]
             fields.append(f'exist: {type_name_str}_exist {{ {", ".join(exist_parts)} }}')
 
-    # If any fields are missing (optional or not), use ..unsafe { std::mem::zeroed() }
-    # (cannot use ..Default::default() in static contexts)
+    # If any fields are missing (optional or not), fill them with
+    # const-evaluable literal zeros. A fn call (zeroed/default) in a
+    # static initializer is E0015 on rustc < 1.75. The exist struct is
+    # already part of fields above.
     if missing_non_optional or missing_optional:
-        rust_string = f'{type_name_str} {{ {", ".join(fields)}, ..unsafe {{ std::mem::zeroed() }} }}'
+        missing_zero = const_zero_value(seq.exprType)
+        if 'unsafe { std::mem::zeroed() }' in missing_zero:
+            # Shape unknown: keep the fn call as a last resort (non-static
+            # contexts still accept it)
+            rust_string = f'{type_name_str} {{ {", ".join(fields)}, ..unsafe {{ std::mem::zeroed() }} }}'
+        else:
+            missing_fields = []
+            for name, spec in type_children.items():
+                norm = name.lower().replace('-', '_')
+                if norm not in present_fields:
+                    missing_fields.append(f'{name.replace("-", "_")}: '
+                                           f'{const_zero_value(spec.type)}')
+            rust_string = (f'{type_name_str} {{ {", ".join(fields)}, '
+                           f'{", ".join(missing_fields)} }}')
     else:
         rust_string = f'{type_name_str} {{ {", ".join(fields)} }}'
     return stmts, str(rust_string), local_decl
