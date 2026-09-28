@@ -182,7 +182,17 @@ class EditableText(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.NoTextInteraction)
         self.completer_has_focus = False
         self.editing = False
+        # The pre-edit state focusOutEvent compares against (to decide
+        # whether anything changed and build the Undo command). It is
+        # captured by _begin_editing() at every site that turns
+        # editing on, and initialised here — after try_resize, so the
+        # size is the settled one — so that a focus-out arriving
+        # without a matching focus-in (focus was already on the item,
+        # or the editing flag was set directly) degrades to "nothing
+        # changed" instead of raising AttributeError.
+        self.oldText = str(self)
         self.try_resize()
+        self.oldSize = self.parent.boundingRect()
         self.highlighter = Highlighter(
                 self.document(), parent.blackbold, parent.redbold)
         self.completion_prefix = ''
@@ -447,7 +457,7 @@ class EditableText(QGraphicsTextItem):
                                                  | Qt.LinksAccessibleByMouse
                                                  | Qt.LinksAccessibleByKeyboard)
                     self.setFocus()
-                    self.editing = True
+                    self._begin_editing()
             return
         super().mouseReleaseEvent(event)
 
@@ -529,6 +539,22 @@ class EditableText(QGraphicsTextItem):
             self.setTextInteractionFlags(Qt.NoTextInteraction)
             self._updating_flags = False
 
+    def _begin_editing(self):
+        """Capture the pre-edit state (text and size) and mark the text
+        as being edited.
+
+        Every site that turns ``editing`` on must go through here: the
+        state is what ``focusOutEvent`` compares against to decide
+        whether anything changed, and the undo commands (ResizeSymbol,
+        ReplaceText) need it as their "before" value. Capture is
+        idempotent while editing continues — it must happen exactly
+        once per editing session, at its start, or a resumed session
+        would undo back to the middle of it."""
+        if not self.editing:
+            self.oldText = str(self)
+            self.oldSize = self.parent.boundingRect()
+            self.editing = True
+
     # pylint: disable=C0103
     def focusInEvent(self, event):
         ''' When user starts editing text, save previous state for Undo '''
@@ -559,10 +585,7 @@ class EditableText(QGraphicsTextItem):
         self.scene().clearSelection()
         # Set width to auto-expand, and disables alignment, while editing:
         self.setTextWidth(-1)
-        if not self.editing:
-            self.oldText = str(self)
-            self.oldSize = self.parent.boundingRect()
-            self.editing = True
+        self._begin_editing()
 
     def __str__(self):
         ''' Print the text inside the symbol '''

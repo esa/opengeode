@@ -373,7 +373,12 @@ class Symbol(QObject, QGraphicsPathItem):
                                              | Qt.LinksAccessibleByMouse
                                              | Qt.LinksAccessibleByKeyboard)
             self.text.setFocus()
-            self.text.editing = True
+            # Through the shared capture helper: it records the
+            # pre-edit state focusOutEvent compares against. When the
+            # item already had the focus Qt delivers no focusInEvent,
+            # so capturing here is the only chance — without it a
+            # later focus-out raised AttributeError (oldSize missing).
+            self.text._begin_editing()
         except AttributeError:
             return
 

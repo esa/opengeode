@@ -12,6 +12,7 @@ OUTPUT_DIR = "html_output"
 
 FILES_TO_PROCESS = [
     'Detailed_SDL_tutorial.md', 
+    'Technical_topic_OpenGEODE_an_SDL_editor_for_TASTE.md',
     'Technical_topic_OpenGEODE_SDL_Operators_How_to_work_with_data.md'
 ]
 # -------------------------------------------------

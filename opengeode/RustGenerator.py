@@ -65,6 +65,9 @@ VAR_COUNTER = 0
 # The instance wrapper (instance=True) provides that implementation.
 GENERIC = False
 
+# TASTE mode flag (True when generating code for TASTE integration)
+TASTE = False
+
 # When inside a procedure that uses label dispatch (loop+match), this is set
 # so that join terminators generate __next = "label"; continue; instead of comments
 PROC_LABEL_NAMES = []  # list of label names in the current procedure dispatch
@@ -138,6 +141,56 @@ def external_ri_list(process, has_cs=False) -> List:
         # The stop terminator of a process type deletes its own instance
         add('delete_instance', [('pid', f'{ASN1SCC}PID')])
     return result
+
+
+def taste_instance_ri_wiring(inst_ri_list, ptype_node=None, has_cs=False):
+    '''Classify the RI trait methods of a TASTE process type instance.
+
+    In TASTE, the middleware glue (kazoo's invoke_ri-body template) provides
+    C functions that implement the message-passing required interfaces of
+    the instance:
+        {instance}_RI_{signal}_To_PID(dest_pid, in_p1, ...)   message outputs
+        {instance}_RI_get_sender(sender_pid, unused)         sender of last PI
+        {instance}_check_queue(res)                          queue status
+    Those are wired here so that the instance wrapper calls the glue
+    directly, like the Ada backend does through kazoo's ri_adb template
+    (the "with procedure" generic actuals of the instance package).
+
+    The remaining entries (other external procedures, timers,
+    delete_instance, get_last_error) have no unconditional glue: they stay
+    user hooks, forwarded to the {instance}_ri.rs stub file.
+
+    Returns a dict: method name -> glue function name, or None for the
+    entries that must be forwarded to the user-editable stubs.
+    '''
+    wiring = {}
+    inst_name = PROCESS_NAME.lower()
+    output_names = set()
+    if ptype_node is not None:
+        output_names = {sig['name'].lower()
+                        for sig in ptype_node.output_signals}
+    for entry in inst_ri_list:
+        method = entry['method']
+        if method.startswith(f'ri{SEPARATOR}'):
+            name = method[len(f'ri{SEPARATOR}'):]
+            if name == 'get_sender':
+                # Implicit service provided by the glue unconditionally
+                wiring[method] = f'{inst_name}_RI_get_sender'
+            elif name.lower() in output_names and 'PID' in TYPES:
+                # Message output: one glue function per output signal.
+                # The _To_PID variant exists only when the dataview
+                # defines a PID type — without it there is no routing
+                # and the entry stays a user hook.
+                wiring[method] = f'{inst_name}_RI_{name}_To_PID'
+            else:
+                # Timer or other external procedure: no glue with this
+                # name — leave it as a user hook
+                wiring[method] = None
+        elif method == 'check_queue':
+            wiring[method] = f'{inst_name}_check_queue'
+        else:
+            wiring[method] = None
+    return wiring
 
 
 @singledispatch
@@ -241,14 +294,27 @@ def is_local(var):
 
 
 def default_pid():
-    '''Return the default PID reference for RI calls.
+    '''Return the default PID reference playing the role of "self".
     For process types, uses SELF_PID (set by the instance wrapper).
-    Otherwise, uses asn1SccEnv (the environment PID).'''
-    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
+    Otherwise, uses asn1SccPID::asn1Sccenv (the environment PID).'''
+    if PROCESS and getattr(PROCESS, 'process_type', False):
         return 'SELF_PID'
-    elif 'PID' in TYPES:
-        return f'{ASN1SCC}Env'
-    return None
+    return f'{ASN1SCC}PID::{ASN1SCC}env'
+
+
+def default_dest_pid():
+    '''Return the default DESTINATION PID of a message or a timer.
+
+    When a model sends a message without an explicit TO, the message goes
+    to the environment, i.e. it is multicast to every connected peer.
+    This mirrors the Ada backend (Dest_PID : asn1sccPID := asn1sccEnv) and
+    the C backend (default_pid): the middleware routing tables deliver a
+    message only when its destination is the environment or the exact
+    callee — any other value (in particular the sender's own SELF_PID)
+    is silently dropped. Using SELF_PID here (as done previously) meant
+    that the outputs of a process type were never delivered.
+    '''
+    return f'{ASN1SCC}PID::{ASN1SCC}env'
 
 
 def ri_trait_name():
@@ -794,6 +860,9 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # implementation — the Rust equivalent of Ada's generic packages.
     GENERIC = bool(generic)
 
+    global TASTE
+    TASTE = taste
+
     global TYPES
     TYPES = process.dataview
     del OUT_SIGNALS[:]
@@ -1037,7 +1106,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     init_done,
                     '}',
                     '']
-        if not taste:
+        if not TASTE:
             start_transition.extend([
                 '// Auto-elaboration — call startup() before using the process'])
             # Note: startup() must be called by the harness before any PI calls
@@ -1045,7 +1114,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # ── Main module header ──
     rust_body = [
         '// This file was generated automatically by OpenGEODE: DO NOT MODIFY IT!',
-        '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,',
+        '#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, unused_parens, unused_imports,',
         '         unused_variables, unused_mut, unused_assignments, dead_code)]',
         '',
     ]
@@ -1143,6 +1212,46 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 f'    unsafe fn {entry["method"]}(&mut self, {params});')
         rust_body.append('}')
         rust_body.append('')
+
+    if TASTE and not generic and not instance:
+        c_ri_decls = []
+        for sig in process.output_signals:
+            signame = sig['name']
+            # The TASTE glue (invoke_ri.c) provides {fn}_RI_{sig}_To_PID
+            # with the destination PID as FIRST parameter (like the Ada
+            # ri_adb binding). Without a PID type in the dataview the glue
+            # exposes the plain {fn}_RI_{sig} function.
+            if 'PID' in TYPES:
+                param_spec = f'dest_pid: {ASN1SCC}PID'
+                if 'type' in sig:
+                    param_spec += f', param: *const {type_name(sig["type"])}'
+                c_ri_decls.append(
+                    f'    fn {process.name.lower()}_RI_{signame}_To_PID({param_spec});')
+            else:
+                param_spec = ''
+                if 'type' in sig:
+                    param_spec = f'param: *const {type_name(sig["type"])}'
+                c_ri_decls.append(f'    fn {process.name.lower()}_RI_{signame}({param_spec});')
+        for proc in process.procedures:
+            if not proc.referenced:
+                pname = proc.inputString
+                params = []
+                for fpar in proc.fpar:
+                    ptype = type_name(fpar['type'])
+                    pdir = fpar.get('direction', 'in')
+                    if pdir in ('out', 'inout'):
+                        params.append(f'{fpar["name"]}: *mut {ptype}')
+                    else:
+                        params.append(f'{fpar["name"]}: *const {ptype}')
+                if 'PID' in TYPES:
+                    params.append(f'default_sender: {ASN1SCC}PID')
+                param_str = ', '.join(params)
+                c_ri_decls.append(f'    fn {process.name.lower()}_RI_{pname}({param_str});')
+        if c_ri_decls:
+            rust_body.append('extern "C" {')
+            rust_body.extend(c_ri_decls)
+            rust_body.append('}')
+            rust_body.append('')
 
     # ── Random generator declarations ──
     for each in process.random_generator:
@@ -1299,11 +1408,15 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.append(f'// Provided interface "{signame}"')
 
         if (not generic and not ignore_export) or (ignore_export and instance):
-            # Export as C function
-            export_name = f'{process.name.lower()}_PI_{signame}'
-            sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
-            if param_decl:
-                sig = f'pub unsafe extern "C" fn {signame}({param_decl})'
+            # Export as C function. In TASTE the middleware glue calls
+            # {process}_PI_{signal} (kazoo's vm_if wrapper); standalone
+            # models export the plain SDL interface name, which the test
+            # harnesses and user code call directly.
+            if TASTE:
+                export_name = f'{process.name.lower()}_PI_{signame}'
+            else:
+                export_name = pi_name
+            sig = f'pub unsafe extern "C" fn {export_name}({param_decl})'
             rust_body.append(f'#[no_mangle]')
             rust_body.append(sig + ' {')
         elif generic:
@@ -1508,15 +1621,56 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         rust_body.extend(startup_lines)
 
     # ── Instance RI implementation ──
-    # The instance implements the process type's RI trait by forwarding each
-    # method to the user-editable stubs in {instance}_ri.rs (the analog of
-    # the Ada {instance}_RI package, e.g. og_RI.ads/adb). The trait methods
-    # are derived from the process TYPE node so that every method declared
-    # in the trait is implemented, whatever this instance's wiring.
+    # The instance implements the process type's RI trait. In TASTE the
+    # middleware glue provides C functions for the message outputs and
+    # the implicit services (get_sender, check_queue): those are called
+    # directly through the extern "C" block below (this mirrors the Ada
+    # backend, where kazoo's ri_adb template binds the instance's RI
+    # package to the same C glue). The remaining entries (timers, other
+    # external procedures, delete_instance, get_last_error) have no
+    # unconditional glue: they are forwarded to the user-editable stubs
+    # in {instance}_ri.rs (the analog of the Ada {instance}_RI package,
+    # e.g. og_RI.ads/adb). The trait methods are derived from the process
+    # TYPE node so that every method declared in the trait is implemented,
+    # whatever this instance's wiring.
     if instance and process.instance_of_name:
         ptype_module = process.instance_of_name.lower()
         ptype_node = getattr(process, 'instance_of_ref', None) or process
         inst_ri_list = external_ri_list(ptype_node, has_cs)
+        wiring = taste_instance_ri_wiring(
+            inst_ri_list, ptype_node, has_cs) if TASTE else {}
+        glue_extern = []
+        # Message outputs: one glue function per output signal. The
+        # signature of the glue function is derived from the signal
+        # itself (dest_pid first, then a const pointer per parameter).
+        inst_name = process.name.lower()
+        for sig in ptype_node.output_signals:
+            if TASTE and 'PID' in TYPES:
+                sig_name = sig['name']
+                glue = f'{inst_name}_RI_{sig_name}_To_PID'
+                args = [f'dest_pid: {ASN1SCC}PID']
+                if 'type' in sig:
+                    typename = type_name(sig['type'])
+                    param_name = sig.get('param_name') or f'{sig_name}_param'
+                    args.append(f'{param_name}: *const {typename}')
+                glue_extern.append(
+                    f'    fn {glue}({", ".join(args)});')
+        for entry in inst_ri_list:
+            glue = wiring.get(entry['method'])
+            if glue and entry['method'] == f'ri{SEPARATOR}get_sender':
+                glue_extern.append(
+                    f'    fn {glue}(sender_pid: *mut {ASN1SCC}PID, '
+                    f'unused: {ASN1SCC}PID);')
+            elif glue and entry['method'] == 'check_queue':
+                glue_extern.append(
+                    f'    fn {glue}(res: *mut bool);')
+        if glue_extern:
+            rust_body.append('// Middleware glue (C) implementing the '
+                             'required interfaces of this instance')
+            rust_body.append('extern "C" {')
+            rust_body.extend(glue_extern)
+            rust_body.append('}')
+            rust_body.append('')
         rust_body.append(
             f'// RI implementation for instance {process.name} — '
             f'edit {process.name.lower()}_ri.rs')
@@ -1531,12 +1685,34 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             stub_name = entry['method'].replace(f'ri{SEPARATOR}', '')
             stub_mod = f'{process.name.lower()}_ri'
             forward_args = ', '.join(n for n, _ in entry['params'])
+            glue = wiring.get(entry['method'])
             body_lines = [
                 f'    #[allow(unused_variables)]',
-                f'    unsafe fn {entry["method"]}(&mut self, {params}) {{',
-                f'        {stub_mod}::{stub_name}({forward_args});',
-                '}',
-                '']
+                f'    unsafe fn {entry["method"]}(&mut self, {params}) {{']
+            if glue and entry['method'].startswith(f'ri{SEPARATOR}') \
+                    and entry['method'] != f'ri{SEPARATOR}get_sender':
+                # Message output: call the middleware glue. The glue takes
+                # the destination PID first, then a const pointer per
+                # message parameter (matching the C glue signature), while
+                # the trait method receives (params..., dest_pid).
+                glue_args = ['dest_pid']
+                for pname, ptype in entry['params']:
+                    if ptype == f'{ASN1SCC}PID':
+                        continue
+                    # ptype is '&mut T': pass a const pointer to the glue
+                    glue_args.append(f'{pname} as *const _')
+                body_lines.append(
+                    f'        {glue}({", ".join(glue_args)});')
+            elif glue and entry['method'] == f'ri{SEPARATOR}get_sender':
+                body_lines.append(
+                    f'        {glue}(sender as *mut _, dest_pid);')
+            elif glue and entry['method'] == 'check_queue':
+                body_lines.append(f'        {glue}(res as *mut bool);')
+            else:
+                body_lines.append(
+                    f'        {stub_mod}::{stub_name}({forward_args});')
+            body_lines.append('}')
+            body_lines.append('')
             rust_body.extend(body_lines)
         rust_body.append('}')
         rust_body.append('')
@@ -1689,13 +1865,18 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     rust_body.extend(start_transition)
 
     # ── RI stubs ──
-    if not taste and ri_stub_code:
+    if not TASTE and ri_stub_code:
         rust_body.append('// RI stubs - implement these in your code')
         rust_body.extend(ri_stub_code)
 
     # ── Cargo.toml ──
     # This Cargo.toml is written to <process>_cargo.toml.
     # The test Makefile should copy it to Cargo.toml (overwriting asn1scc's version).
+    bin_section = "" if TASTE else '''
+[[bin]]
+name = "test_rust"
+path = "main.rs"
+'''
     cargo_toml = f'''[package]
 name = "{process.name.lower()}"
 version = "0.1.0"
@@ -1707,11 +1888,8 @@ asn1rust = {{ path = "asn1rust" }}
 [lib]
 name = "{process.name.lower()}"
 path = "{process.name.lower()}.rs"
-
-[[bin]]
-name = "test_rust"
-path = "main.rs"
-
+crate-type = ["staticlib", "rlib"]
+{bin_section}
 [profile.release]
 opt-level = 3
 '''
@@ -1765,15 +1943,16 @@ opt-level = 3
         with open('dataview-uniq.rs', 'w') as f:
             f.write('\n'.join(new_lines))
 
-    if instance or not taste:
+    if instance or not TASTE:
         # Write the user-editable RI stub file (only once, never clobbering
         # user edits). For a standalone process it mirrors the inline stubs;
-        # for a process type INSTANCE it is the single hook where the user
-        # implements the required interfaces — the instance wrapper's trait
-        # impl (above) forwards every RI to it, mirroring Ada's
-        # {instance}_RI.ads/adb stub package. In taste mode the wrapper still
-        # needs the file because it declares `mod {instance}_ri;` and the
-        # middleware provides the implementation there.
+        # for a process type INSTANCE it holds the required interfaces that
+        # have no middleware glue (timers, other external procedures,
+        # delete_instance, get_last_error) — the instance wrapper's trait
+        # impl (above) forwards those to it, mirroring Ada's
+        # {instance}_RI.ads/adb stub package. The message outputs and the
+        # implicit services (get_sender, check_queue) are wired to the
+        # middleware glue directly and are NOT part of the stub file.
         ri_stub_file = f'{process.name.lower()}_ri.rs'
         if not os.path.exists(ri_stub_file):
             stub_lines = []
@@ -1788,9 +1967,11 @@ opt-level = 3
                     f'// RI stubs for instance {process.name} of process '
                     f'type {process.instance_of_name}',
                     '// Implement here the required interfaces (RI) of the',
-                    '// process type. This file is generated only once and is',
+                    '// process type that are not handled by the middleware',
+                    '// (message outputs are sent by the TASTE glue).',
+                    '// This file is generated only once and is',
                     '// never overwritten by the code generator.',
-                    '#![allow(non_snake_case, unused_variables, '
+                    '#![allow(non_snake_case, non_camel_case_types, unused_variables, '
                     'unused_mut, dead_code)]',
                     f'use super::{ptype_module}::dataview_uniqDef::*;',
                     f'use super::{ptype_module}::dataview_uniq::*;',
@@ -1800,7 +1981,14 @@ opt-level = 3
                     else '',
                     '',
                 ]
-                for entry in external_ri_list(ptype_node, has_cs):
+                hook_list = external_ri_list(ptype_node, has_cs)
+                if TASTE:
+                    # Only the entries without glue belong in the stub file
+                    wiring = taste_instance_ri_wiring(
+                        hook_list, ptype_node, has_cs)
+                    hook_list = [e for e in hook_list
+                                 if not wiring.get(e['method'])]
+                for entry in hook_list:
                     params = ', '.join(f'{n}: {t}'
                                       for n, t in entry['params'])
                     stub_name = entry['method'].replace(f'ri{SEPARATOR}', '')
@@ -1811,13 +1999,15 @@ opt-level = 3
             elif ri_stub_code:
                 stub_lines = [
                     f'// RI stubs for {process.name} - implement these functions',
-                    '#![allow(non_snake_case)]'] + ri_stub_code
+                    '#![allow(non_snake_case, non_camel_case_types)]'] + ri_stub_code
             if stub_lines:
                 with open(ri_stub_file, 'w') as ri_stub:
                     ri_stub.write(
                         '\n'.join(format_rust_code(stub_lines)))
 
     with open(f'{process.name.lower()}_cargo.toml', 'w') as cargo:
+        cargo.write(cargo_toml)
+    with open('Cargo.toml', 'w') as cargo:
         cargo.write(cargo_toml)
 
     # ── Generate instance if needed ──
@@ -1919,8 +2109,8 @@ def _call_external_function(output, **kwargs):
             call_local.extend(p_local)
             if 'PID' in TYPES:
                 call_code.append(
-                    f'ri.reset_{p_id}({default_pid()});' if GENERIC
-                    else f'reset_{p_id}({default_pid()});')
+                    f'ri.reset_{p_id}({default_dest_pid()});' if GENERIC
+                    else f'reset_{p_id}({default_dest_pid()});')
             else:
                 call_code.append(
                     f'ri.reset_{p_id}();' if GENERIC
@@ -1946,8 +2136,8 @@ def _call_external_function(output, **kwargs):
             call_code.append(f'{tmp_id} = {t_val} as {ASN1SCC}T_UInt32;')
             if 'PID' in TYPES:
                 call_code.append(
-                    f'ri.set_{p_id}(&mut {tmp_id}, {default_pid()});' if GENERIC
-                    else f'set_{p_id}(&mut {tmp_id}, {default_pid()});')
+                    f'ri.set_{p_id}(&mut {tmp_id}, {default_dest_pid()});' if GENERIC
+                    else f'set_{p_id}(&mut {tmp_id}, {default_dest_pid()});')
             else:
                 call_code.append(
                     f'ri.set_{p_id}(&mut {tmp_id});' if GENERIC
@@ -2036,29 +2226,43 @@ def _call_external_function(output, **kwargs):
             name = out["outputName"]
             # In Rust, there are no default parameter values, so we must
             # always pass dest_pid when PID is in TYPES (the stub always
-            # declares it). When toDest is not specified, use default_pid()
-            # (SELF_PID for process types, asn1SccEnv otherwise).
+            # declares it). When toDest is not specified, use
+            # default_dest_pid() — the environment (multicast), like the
+            # Ada and C backends.
             if GENERIC:
-                # Process type: the RI is provided by the caller through the
-                # generic Ri parameter (trait method call).
-                prefix = 'ri.'
+                func_name = f'ri.ri{SEPARATOR}{name}'
+            elif TASTE:
+                if 'PID' in TYPES:
+                    func_name = f'{PROCESS.name.lower()}_RI_{name}_To_PID'
+                else:
+                    func_name = f'{PROCESS.name.lower()}_RI_{name}'
             else:
-                prefix = ''
+                func_name = f'ri{SEPARATOR}{name}'
             if dest_pid is not None:
-                # dest_pid was resolved above; if it's 'env', use the default PID
+                # dest_pid was resolved above; if it's 'env', use the
+                # default destination PID (environment, multicast)
                 if dest_pid == f'{ASN1SCC}env':
-                    dest_pid = default_pid()
-                if list_of_params:
-                    params = ', '.join(list_of_params)
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params}, {dest_pid});')
+                    dest_pid = default_dest_pid()
+                if TASTE and 'PID' in TYPES and not GENERIC:
+                    # _To_PID glue takes the destination PID first
+                    if list_of_params:
+                        params = ', '.join(list_of_params)
+                        call_code.append(
+                            f'{func_name}({dest_pid}, {params});')
+                    else:
+                        call_code.append(f'{func_name}({dest_pid});')
                 else:
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({dest_pid});')
+                    if list_of_params:
+                        params = ', '.join(list_of_params)
+                        call_code.append(f'{func_name}({params}, {dest_pid});')
+                    else:
+                        call_code.append(f'{func_name}({dest_pid});')
             else:
                 if list_of_params:
                     params = ', '.join(list_of_params)
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}({params});')
+                    call_code.append(f'{func_name}({params});')
                 else:
-                    call_code.append(f'{prefix}ri{SEPARATOR}{name}();')
+                    call_code.append(f'{func_name}();')
         else:
             ident = proc.inputString
             p = [p for p in PROCEDURES
@@ -2193,13 +2397,8 @@ def _create_request(create, **kwargs):
     code.extend(traceability(create))
     if create.comment:
         code.extend(traceability(create.comment))
-    # In process types, 'self' is SELF_PID; otherwise it's the context variable
-    if PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
-        self_ref = 'SELF_PID'
-    elif 'PID' in TYPES:
-        self_ref = default_pid()
-    else:
-        self_ref = 'self'
+    # In process types, 'self' is SELF_PID; otherwise it's default_pid()
+    self_ref = default_pid()
     code.append(f'{LPREFIX}.offspring = create_{create.instance_to_create.title()}({self_ref});')
     return code, code_local
 
@@ -2807,9 +3006,9 @@ def _primary_variable(prim, **kwargs):
     name = prim.value[0]
     if '.' in name:
         name = name.split('.')[0]
-    # 'self' in a process type resolves to SELF_PID (the PID of this instance)
-    if name.lower() == 'self' and PROCESS and getattr(PROCESS, 'process_type', False) and 'PID' in TYPES:
-        return [], 'SELF_PID', []
+    # 'self' in a process type resolves to SELF_PID (the PID of this instance); in a process to default_pid()
+    if name.lower() == 'self':
+        return [], default_pid(), []
     var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
@@ -3798,7 +3997,10 @@ def _string_literal(primary, **kwargs):
 
 @expression.register(ogAST.PrimConstant)
 def _constant(primary, **kwargs):
-    return [], str(primary.constant_c_name), []
+    name = str(primary.constant_c_name)
+    if name.lower() == 'self':
+        return [], default_pid(), []
+    return [], name, []
 
 
 @expression.register(ogAST.PrimMantissaBaseExp)

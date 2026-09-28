@@ -19,7 +19,19 @@ import importlib.util
 import json
 import logging
 import os
-import distutils.spawn as spawn
+# Python 3.12 removed distutils from the standard library, and
+# distutils.spawn.find_executable is an alias of shutil.which. Keep the
+# import optional so a pip-installed OpenGEODE still runs without
+# setuptools' distutils shim on modern Python.
+try:
+    import distutils.spawn as spawn
+except ImportError:                       # Python >= 3.12 without setuptools
+    class _SpawnShim:
+        """Minimal stand-in for distutils.spawn: only what we use."""
+        @staticmethod
+        def find_executable(name):
+            return shutil.which(name)
+    spawn = _SpawnShim()
 import shutil
 import stat
 import sys

@@ -48,3 +48,27 @@ test-debug/Makefile.orchestrator
 test-debug/dataview_c.gpr
 test-debug/orchestrator.gpr
 
+# Rust code generation (opengeode --toRust + asn1scc -Rust) build
+# artifacts. The generated sources carry the process name
+# (og.rs, og_ri.rs, og_datamodel*.rs, *_cargo.toml, dataview*.rs,
+# asn1rust/) and only the hand-written test harnesses (main.rs,
+# patch_ri.py) are tracked; cargo's build tree, the compiled
+# executables and the asn1scc debug caches are all derived data.
+**/Cargo.toml
+**/Cargo.lock
+*/target/
+**/*_cargo.toml
+*/*.rs
+!*/main.rs
+*/asn1rust/
+**/asn1rust/
+*/obj/
+*/src/
+*/debug/
+*/test_ada
+*/check
+**/Makefile.og
+# sha256-named ASN.1 cache entries written by asn1scc's python backend
+debug/[0-9a-f]*
+
+

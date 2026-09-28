@@ -6,8 +6,8 @@ project = 'Opengeode'
 copyright = '2012-2026, Maxime Perrotin / European Space Agency'
 author = 'Maxime Perrotin'
 
-release = '4.10.0'
-version = '4.10'
+release = '4.11.1'
+version = '4.11'
 
 # -- General configuration
 
