@@ -1901,7 +1901,10 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     if not instance and not NO_CONTEXT:
         branches = ', '.join(all_labels + ['Continuous_Signals', 'Branch_End'])
         rust_body.append(f'#[derive(Clone, Copy, PartialEq, Debug)]')
-        rust_body.append(f'enum Branches {{ {branches} }}')
+        # pub(crate): the enum is used in the signature of pub(crate) functions
+        # (execute_transition, ...) — a private type there is an error (E0446)
+        # on rustc < 1.74, and only a lint on newer compilers.
+        rust_body.append(f'pub(crate) enum Branches {{ {branches} }}')
         rust_body.append('')
 
         if simu:
