@@ -126,6 +126,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.11.2 (09/2026)**
+- Rust backend: the generated statics (`DEFAULT_CONTEXT` and its `ctxt` mirror, monitors, stop-condition contexts) no longer contain function calls in their initializers. `std::mem::zeroed()` and `Default::default()` are not `const fn` on rustc < 1.75, so compiling the generated code on Debian 12 (rustc 1.63) failed with error E0015 "cannot call non-const fn in statics". Fields without a user-specified initial value are now filled with const-evaluable literal zeros built recursively from the ASN.1 type shape (scalars, enum first variant, `SEQUENCE OF` arrays, `SEQUENCE`/`CHOICE` literals, string structs with their asn1scc `n_count` convention)
+- All 124 tests of `make test-rust` pass
+
 **4.11.1 (09/2026)**
 - Rust backend fixes for SDL instances and TASTE integration:
     - in TASTE, the required interfaces of a process type instance are now wired to the middleware glue (`{instance}_RI_{signal}_To_PID`, `get_sender`, `check_queue`) directly from the generated instance wrapper, mirroring the Ada backend: the messages sent by an instance (e.g. `output done(...)`) are actually delivered to their peer, instead of ending up in an empty stub
