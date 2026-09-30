@@ -2841,15 +2841,13 @@ signalroutes, connections), and the rules that govern which process
 can send or receive which signal.
 
 OpenGEODE's `--check` parses multi-process models and reports any
-syntax or semantic errors found (0 warnings and 0 errors when the
-model is correct). However, `--check` then also checks that exactly
-one process is present and reports `Found N process(es) instead of
-one` with exit code 1 when there are more. This is not a syntax or
-semantic error in the model — it is a limitation of OpenGEODE's
-code-generation pipeline, which handles one process at a time. The
-error line `Found N process(es) instead of one` can be safely ignored
-for multi-process models as long as the parser reports `0 warnings
-and 0 errors` in the summary line.
+syntax or semantic errors found (`0 warnings and 0 errors` when the
+model is correct). The number of processes is not itself an error:
+`--check` accepts a model with several processes and returns exit code
+0 when the model is clean. (Only a model with **no** process is
+refused.) Code generation likewise runs once per process, so
+`--toAda`/`--toC`/`--toRust` produce each process' code from a single
+multi-process `.pr` file.
 
 ### 30.1 The System Hierarchy
 
@@ -3478,7 +3476,7 @@ signalroute r1
 |-------|-------|-----|
 | `"X" is not defined or not visible` | Signal `X` used in `output` but not routed from this process, or not declared at system level | Add the signal to a signalroute with `from ThisProcess to ... with X`, and declare it at system level |
 | `Missing declaration for signal(s) X` | Signal `X` appears in a channel or signalroute route but is not declared | Add `signal X;` at system level (or in a text area) |
-| `Found N process(es) instead of one` | More than one process in the model | Not a syntax/semantic error. `--check` reports it and returns exit 1, but the model is valid if the summary says `0 warnings and 0 errors`. Only `--toAda`/`--toC` fail. Safe to ignore for multi-process models. |
+| `No process found in the input file(s)` | The model declares no process at all | Add a `process X;` (or `process X referenced;`) inside a block — a model with several processes is fine |
 | `Process X is defined but not declared in a system` | Process body exists but no system/block with a matching process declaration | Add a system/block with `process X;` or `process X referenced;` |
 | `FPAR cannot be declared at system level` | `fpar` appears in a system-level text area | Move `fpar` into the process's text area or into the `referenced` process declaration |
 | `Timers shall be declared only in a process` | Timer declared in system-level text area | Move timer declaration into the process text area |
@@ -3609,13 +3607,12 @@ flowchart LR
 |---------|------------|-------|-----------|-------------------|
 | **Single process, inline** | Simple models, most test cases | One `.pr` | ✅ | ✅ |
 | **Single process, TASTE split** | TASTE function, system structure separate from body | `system_structure.pr` + `function.pr` | ✅ (pass both) | ✅ (pass both) |
-| **Multi-process, inline** | Multi-process system, prototyping, validation | One `.pr` | ✅ | ❌ (N processes) |
-| **Multi-process, TASTE split** | Each process in its own TASTE function | One `system_structure.pr` + one `.pr` per process | ✅ (pass all) | ❌ per file |
+| **Multi-process, inline** | Multi-process system, prototyping, validation | One `.pr` | ✅ | ✅ (one run per process) |
+| **Multi-process, TASTE split** | Each process in its own TASTE function | One `system_structure.pr` + one `.pr` per process | ✅ (pass all) | ✅ |
 
 **Key takeaway**: Use `opengeode --check` to validate multi-process models
-— look for the summary line `found 0 warnings and 0 errors`. Ignore the
-`Found N process(es) instead of one` error (exit code 1); it is a
-code-generation constraint, not a model error. Do not expect `--toAda` or
-`--toC` to generate code for multi-process models — OpenGEODE generates
-code for one process at a time. In TASTE, the build system handles
-multi-process code generation by invoking OpenGEODE once per process.
+— look for the summary line `found 0 warnings and 0 errors`. The number of
+processes is not an error: a clean model returns exit code 0 whatever its
+process count. `--toAda`/`--toC`/`--toRust` generate each process' code in
+turn, so a single multi-process `.pr` file produces every process' output.
+In TASTE, the build system still invokes OpenGEODE once per function.

@@ -563,6 +563,21 @@ def valid_output(scope):
         yield special_op
 
 
+def _count_declared_processes(root):
+    ''' How many PROCESS definitions a BLOCK parse-tree node declares.
+
+    The AST's ``block.processes`` list is filled one process at a time
+    WHILE the block is parsed, so its length is not the block's true
+    process count during parsing. Reading it there gave the wrong
+    answer: a two-process block looked like a single-process block once
+    its first process had been appended, and the signal direction
+    inference in get_interfaces then misclassified every later
+    process' inputs as outputs. The parse tree knows the real count
+    before any of the children is visited. '''
+    return sum(1 for child in root.getChildren()
+               if child.type == lexer.PROCESS)
+
+
 def get_interfaces(ast, process_name):
     '''
         Search for the list of input and output signals (async PI/RI)
@@ -605,7 +620,13 @@ def get_interfaces(ast, process_name):
             src = route['source'].lower()
             dst = route['dest'].lower()
             p_name = process_name.lower()
-            single_proc = (len(getattr(process_parent, 'processes', [])) == 1)
+            # The block's true process count comes from its parse tree
+            # (see _count_declared_processes): block.processes is only
+            # partially filled while the block is being parsed, so its
+            # length is not reliable here. Fall back to it only when the
+            # count was not recorded (e.g. a block built by hand).
+            single_proc = (getattr(process_parent, 'process_count',
+                           len(getattr(process_parent, 'processes', []))) == 1)
             
             if src == p_name or (src != 'env' and single_proc):
                 direction = 'out'
@@ -5089,6 +5110,12 @@ def block_definition(root, parent):
     errors, warnings = [], []
     block = ogAST.Block()
     block.parent = parent
+    # The true number of processes declared here, from the parse tree
+    # (block.processes grows one entry at a time as children are
+    # visited, so it cannot be counted while parsing). get_interfaces
+    # relies on it to infer signal directions when the routes do not
+    # name the process explicitly — see _count_declared_processes.
+    block.process_count = _count_declared_processes(root)
     parent.blocks.append(block)
     block.signalroutes = list(getattr(parent, 'channels', []))
     for child in root.getChildren():
