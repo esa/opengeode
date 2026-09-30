@@ -305,6 +305,15 @@ class OrbitMcpBridge(QObject):
                                 f"{self.server.errorString()}")
         self.socket_path = self.server.fullServerName()
         self._conns = []
+        # Partial-line buffers, one per connection (keyed by id(conn)).
+        # A request may be larger than one socket read, so a readyRead
+        # can deliver a FRAGMENT of a JSON-RPC line: the bytes go here
+        # and only whole lines (terminated by '\n') are dispatched. The
+        # old code parsed readAll() as if every read were a whole line,
+        # so a large request (a symbol with a big text/state body) was
+        # split, its fragments failed to parse, and the request was
+        # lost — orbit then saw the bridge as dead.
+        self._buffers = {}
         self.server.newConnection.connect(self._on_new_connection)
         # The environment the chat panel passes to the conversation:
         # orbit forwards it to the MCP server, which finds the bridge.
@@ -338,16 +347,26 @@ class OrbitMcpBridge(QObject):
     def _on_gone(self, conn):
         if conn in self._conns:
             self._conns.remove(conn)
+        self._buffers.pop(id(conn), None)
 
     def _on_ready_read(self, conn):
-        '''Read one newline-delimited JSON-RPC request, run the tool,
-        reply. Runs on the GUI thread — the tool operates on the live
-        scene with no risk of tearing it mid-render.'''
+        '''Accumulate whatever arrived for this connection and dispatch
+        every COMPLETE newline-delimited JSON-RPC request. A readyRead
+        can deliver a fragment of a line (a large request is split over
+        several reads), so the tail after the last newline is kept for
+        the next readyRead — it is NOT parsed on its own. Runs on the
+        GUI thread — the tool operates on the live scene with no risk of
+        tearing it mid-render.'''
         if conn.state() != QLocalSocket.LocalSocketState.ConnectedState:
             return
-        data = bytes(conn.readAll())
-        for line in [ln for ln in data.decode('utf-8', 'replace').split('\n')
-                     if ln.strip()]:
+        data = self._buffers.get(id(conn), b'') + bytes(conn.readAll())
+        # Split off complete lines; keep the unterminated tail buffered.
+        *lines, tail = data.split(b'\n')
+        self._buffers[id(conn)] = tail
+        for raw in lines:
+            if not raw.strip():
+                continue
+            line = raw.decode('utf-8', 'replace')
             request_id = None
             try:
                 req = json.loads(line)

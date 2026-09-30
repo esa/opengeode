@@ -21,6 +21,9 @@ Features
 
 - Graphical editor of SDL processes and procedures.
 - Support for state composition and state aggregation (parallel/nested states)
+- Supports models holding several processes connected by channels and
+  signalroutes, in a single `.pr` file: they are edited, checked, exported
+  and code-generated (one backend run per process)
 - Works on pure PR+CIF files (textual SDL notation)
 - Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada and C code, and Rust code (prototype - use `--toRust`)
@@ -37,7 +40,6 @@ Features
 Main limitations
 -----------
 
-- Supports only one process at a time (use [TASTE](https://taste.tools) to connect processes to form a complete system)
 - Minimal support of legacy SDL datatypes (newtypes/synonyms..): use ASN.1 instead
 
 Installation
@@ -125,6 +127,13 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.11.3 (09/2026)**
+- Removed the one-process limitation: a model holding several processes in a single `.pr` file (connected by channels and signalroutes) is now fully supported by the command line:
+    - `--check` reports the parse result regardless of the number of processes (it only fails when the model has no process or real errors)
+    - `--toAda`, `--toC` and `--toRust` run the backend once per process, generating each process' code (as the GUI already did)
+    - `--png`/`--pdf`/`--svg` render the whole block scene (all processes and their connections) and emit one statechart per process
+- Fixed signal direction inference in multi-process blocks: `get_interfaces` read the block's process count while the block was still being parsed, so all but the first process could have their inputs misclassified as outputs (reported as "Input signal or timer not declared" for a signal that IS declared)
 
 **4.11.2 (09/2026)**
 - Rust backend: the generated statics (`DEFAULT_CONTEXT` and its `ctxt` mirror, monitors, stop-condition contexts) no longer contain function calls in their initializers. `std::mem::zeroed()` and `Default::default()` are not `const fn` on rustc < 1.75, so compiling the generated code on Debian 12 (rustc 1.63) failed with error E0015 "cannot call non-const fn in statics". Fields without a user-specified initial value are now filled with const-evaluable literal zeros built recursively from the ASN.1 type shape (scalars, enum first variant, `SEQUENCE OF` arrays, `SEQUENCE`/`CHOICE` literals, string structs with their asn1scc `n_count` convention)

@@ -1240,15 +1240,22 @@ class SDL_Scene(QGraphicsScene):
                 self.refresh()
         self.selectionChanged.emit()
 
-    def sdl_to_statechart(self, basic=True, view=None, ast=None):
+    def sdl_to_statechart(self, basic=True, view=None, ast=None, process=None):
         ''' Create a graphviz representation of the SDL model
-            Optionally take a QGraphicsView to use as parent for modals '''
+            Optionally take a QGraphicsView to use as parent for modals.
+            With several processes (and no explicit ``process`` argument),
+            there is no single automaton to draw: the caller must say
+            which one it wants. ``process`` is the process AST to draw;
+            without it the sole process/process type of the model is
+            used, as before. '''
         if ast is None:
             pr_raw = Pr.parse_scene(self)
             pr_data = str('\n'.join(pr_raw))
             ast, _, err = ogParser.parse_pr(string=pr_data)
             self.semantic_errors = True if err else False
-        if len(ast.processes) == 1:
+        if process is not None:
+            process_ast = process
+        elif len(ast.processes) == 1:
             process_ast, = ast.processes
         elif len(ast.process_types) == 1:
             process_ast, = ast.process_types
@@ -1256,16 +1263,26 @@ class SDL_Scene(QGraphicsScene):
             LOG.debug('No statechart to render (no process or process type)')
             return None
         try:
-            process_ast.input_signals = \
-                    sdlSymbols.CONTEXT.processes[0].input_signals
-        except IndexError:
-            try:
-                process_ast.input_signals = \
-                    view.context_history[0].processes[0].input_signals
-            except (AttributeError, IndexError):
-                # No process context, eg. when called from cmd line
-                # in that case ast was provided in the parameters
-                LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
+            # Prefer the context's own entry for THIS process: with
+            # several processes, processes[0] is not necessarily the one
+            # being drawn.
+            contexts = [sdlSymbols.CONTEXT,
+                        view.context_history[0] if view is not None
+                        and getattr(view, 'context_history', None) else None]
+            for ctx in contexts:
+                if ctx is None or not getattr(ctx, 'processes', None):
+                    continue
+                match = next((p for p in ctx.processes
+                              if p.processName == process_ast.processName),
+                             ctx.processes[0] if len(ctx.processes) == 1
+                             else None)
+                if match is not None:
+                    process_ast.input_signals = match.input_signals
+                    break
+        except (AttributeError, IndexError):
+            # No process context, eg. when called from cmd line
+            # in that case ast was provided in the parameters
+            LOG.debug("Statechart rendering: no process context")
 
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
@@ -2530,14 +2547,16 @@ class SDL_View(QGraphicsView):
 
         if (not autosave
                and scene.ast is not None
-               and len(scene.ast.processes) == 1
+               and scene.ast.processes
                and (self.options.toAda or self.options.toC or self.options.toRust)):
             # When --edit is combined with --toAda, --toC, or --toRust, generate the
             # code at the same time as the model, to save build time in TASTE
-            process, = scene.ast.processes
             try:
                 cwd = os.getcwd()
-                generate(process, self.options)
+                # Generate for every process of the model (a single .pr
+                # file may hold several, with channels between them).
+                for process in scene.ast.processes:
+                    generate(process, self.options)
             except Exception as e:
                 # Code generation failed (can be due to errors in the model)
                 # pr saving must continue anyway
@@ -4780,17 +4799,21 @@ def export(ast, options):
     if not export_fmt:
         return
 
-    process, = ast.processes
+    processes = list(ast.processes)
+    # The block to render: the whole system when the model declares one
+    # (so every process and the channels/signalroutes between them are
+    # drawn), or a synthetic block holding all processes when there is
+    # no System/Block hierarchy.
     try:
         syst, = ast.systems
         block, = syst.blocks
-        if block.processes[0].referenced:
-            LOG.debug('Process is referenced, fixing')
-            block.processes = [process]
+        if block.processes and block.processes[0].referenced:
+            LOG.debug('Processes are referenced, fixing')
+            block.processes = processes
     except ValueError:
         # No System/Block hierarchy, creating single block
         block = ogAST.Block()
-        block.processes = [process]
+        block.processes = processes
 
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
@@ -4803,27 +4826,35 @@ def export(ast, options):
         if any(each.visible_symb):
             scenes.append(each)
 
+    # The label identifying the diagram: the process name for a single
+    # process (as before), else the block/system name — one block
+    # diagram holds them all.
+    label = (processes[0].processName if len(processes) == 1
+             else (block.name or 'system'))
     for idx, diagram in enumerate(scenes):
         for doc_fmt in export_fmt:
             name = '{}-{}-{}-{}'.format(str(idx),
-                                        process.processName,
+                                        label,
                                         diagram.context,
                                         diagram.name or 'main')
             LOG.info('Saving {}.{}'.format(name, doc_fmt))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
-        if diagram.context == 'block':
-            # Also save the statechart view of the current scene
-            sc_scene = SDL_Scene(context='statechart')
-            try:
-                graph = diagram.sdl_to_statechart(ast=ast)
-                Statechart.render_statechart(sc_scene, graph)
-                for doc_fmt in export_fmt:
-                    name = 'sc-' + process.processName
-                    LOG.info('Saving {}.{}'.format(name, doc_fmt))
-                    sc_scene.export_img(name, doc_format=doc_fmt)
-            except (AttributeError, IOError, TypeError) as err:
-                LOG.error(traceback.format_exc())
-                LOG.debug(str(err))
+    # The statechart is per process: draw one for each (the block-scene
+    # statechart of a multi-process model has no meaning).
+    for process in processes:
+        sc_scene = SDL_Scene(context='statechart')
+        try:
+            graph = scene.sdl_to_statechart(ast=ast, process=process)
+            if graph is None:
+                continue
+            Statechart.render_statechart(sc_scene, graph)
+            for doc_fmt in export_fmt:
+                name = 'sc-' + process.processName
+                LOG.info('Saving {}.{}'.format(name, doc_fmt))
+                sc_scene.export_img(name, doc_format=doc_fmt)
+        except (AttributeError, IOError, TypeError) as err:
+            LOG.error(traceback.format_exc())
+            LOG.debug(str(err))
 
 
 def cli(options):
@@ -4838,8 +4869,8 @@ def cli(options):
     if options.dumpAST:
         ogASTDumper.dump('ast.dump', ast)
 
-    if len(ast.processes) != 1:
-        LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
+    if not ast.processes:
+        LOG.error('No process found in the input file(s)')
         return 1
 
     if options.png or options.pdf or options.svg:
@@ -4848,7 +4879,13 @@ def cli(options):
     if any((options.toAda, options.simu,
         options.stg, options.toC, options.toRust)):
         if not errors:
-            errors = generate(ast.processes[0], options)
+            # Generate the code for EVERY process of the model, not only
+            # the first: a single .pr file may hold a whole system with
+            # several processes (and channels between them).
+            for process in ast.processes:
+                rc = generate(process, options)
+                if rc:
+                    errors = rc
         else:
             LOG.error('Too many errors, cannot generate code')
 
