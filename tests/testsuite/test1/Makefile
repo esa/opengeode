@@ -42,7 +42,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) og.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
 	sed -i '/^pub const /d' dataview-uniq.rs && \
 	sed -i 's/n_count: 20 as i32, arr: \[0x68, 0x65, 0x6C, 0x6C, 0x6F/n_count: 5 as i32, arr: [0x68, 0x65, 0x6C, 0x6C, 0x6F/' dataview-uniqDef.rs && \
 	for f in *_datamodel.rs; do \

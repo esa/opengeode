@@ -39,7 +39,7 @@ test-export:
 
 test-rust:
 	$(OPENGEODE) trafficlight.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) trafficlight.pr system_structure.pr --toAda

@@ -42,7 +42,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) function2.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 
 coverage:

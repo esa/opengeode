@@ -367,10 +367,13 @@ def set_global_DV(asn1_filenames):
     if '--toC' in sys.argv:
         rename_policy = ASN1.SystematicRenameAllEnumerants
     elif '--toRust' in sys.argv:
-        # Rust backend: Rust enums are scoped like Ada, so NoRename works.
-        # However, Rust naming conventions prefer snake_case which may conflict.
-        # Start with NoRename (same as Ada) and adjust if needed.
-        rename_policy = ASN1.NoRename
+        # Rust backend: the dataview compiled by asn1scc -Rust is generated
+        # with "-renamePolicy 3" (see the TASTE Makefiles and the opengeode
+        # test suite), so enumerant identifiers are prefixed with the type
+        # name (e.g. ASW_PACKET_TYPE_telemetry, PID_env).  We must parse the
+        # datamodel with the very same policy, otherwise the names we emit
+        # (derived from EnumID) would not match the generated Rust.
+        rename_policy = ASN1.SystematicRenameAllEnumerants
     else:
         rename_policy = ASN1.NoRename
     try:
