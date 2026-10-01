@@ -38,7 +38,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) testsc.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) testsc.pr --toAda

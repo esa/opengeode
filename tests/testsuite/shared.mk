@@ -39,14 +39,14 @@ test-promela: FORCE
 
 %.rs: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 # Fallback test-rust rule: generates Rust code, compiles it.
 # Individual test Makefiles should override this with the correct .pr files.
 # The RUST_PROCESS variable should be set to the process name (lowercase).
 test-rust: FORCE
 	$(OPENGEODE) *.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
 	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \

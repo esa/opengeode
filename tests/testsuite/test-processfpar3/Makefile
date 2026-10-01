@@ -30,7 +30,7 @@ test-c: function_in_sdl.c dataview-uniq.o
 
 test-rust:
 	$(OPENGEODE) function_in_sdl.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 test-if:
 	sdl2if function_in_sdl.pr system_structure.pr

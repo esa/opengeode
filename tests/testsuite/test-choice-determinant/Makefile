@@ -48,6 +48,6 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) toto.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 .PHONY: all edit test-parse test-ada test-rust coverage
