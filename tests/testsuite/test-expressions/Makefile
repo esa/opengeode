@@ -33,7 +33,7 @@ test-ada: clean
 
 expressions.adb: expressions.pr expressions_ri.adb
 	$(OPENGEODE) expressions.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 
 test_ada.adb: test_ada.ada
 	cp test_ada.ada test_ada.adb

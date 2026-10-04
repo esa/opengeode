@@ -34,7 +34,7 @@ test-promela: FORCE
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn && \
 	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.rs: %.pr FORCE

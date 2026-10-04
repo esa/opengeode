@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: dataview-uniq.o | test_ada.o
 	cp myfunction_ri.ada myfunction_ri.adb
 	$(OPENGEODE) myfunction.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make myfunction -gnat2022
 	$(GNATBIND) -n myfunction.ali
 	$(GNATLINK) -o test_ada test_ada.o myfunction.ali

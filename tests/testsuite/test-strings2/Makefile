@@ -12,7 +12,7 @@ test-parse:
 
 test-ada: dataview-uniq.o | test_ada.o
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -gnat2022 -O$(O) -c *.adb
 	$(GNATBIND) -n og.ali
 	$(GNATLINK) -o test_ada test_ada.o og.ali

@@ -35,7 +35,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) controller.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn 
 
 test-c:
 	$(OPENGEODE) controller.pr system_structure.pr --toC

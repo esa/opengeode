@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada:
 	cp og_ri.ada og_ri.adb
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp ris.ada ris.ads && cp check.ada check.adb && cp ris_adb.ada ris.adb
 	gnat make -g -O0 check
 	./check | diff expected -
