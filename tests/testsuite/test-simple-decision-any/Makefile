@@ -16,7 +16,7 @@ test-ada:
 	echo '   Counts : Count_Array := (others => 0);' >> shared_counts.ads
 	echo 'end Shared_Counts;' >> shared_counts.ads
 	$(OPENGEODE) --toAda --dumpAST $(ROOT_MODEL)
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp -f complexsdl_ri.ada complexsdl_ri.adb
 	cp -f shared_counts.ada shared_counts.ads
 	$(GNATMAKE) -O$(O) -o test_ada test_ada.ada

@@ -29,7 +29,7 @@ test-ada:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 	#$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	#$(CC) -c -g test_ada.c
-	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	#$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
 	#$(CC) -c external_proc.c
 	#$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	#$(GNATBIND) -n orchestrator.ali
@@ -56,7 +56,7 @@ test-if:
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator

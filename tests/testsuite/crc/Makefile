@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada:
 	#make -f Makefile.og
 	$(OPENGEODE) ${ROOT_MODEL} --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make insdl
 
 test-c:

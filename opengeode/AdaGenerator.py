@@ -2198,6 +2198,44 @@ def _prim_call(prim, **kwargs):
     return stmts, str(ada_string), local_decl
 
 
+def _bit_index_of(prim, ro):
+    ''' Return (bit_expr, stmts, local_decl) where bit_expr is an Ada
+        expression for the 0-based ASN.1 bit index of a PrimIndex applied to
+        a BIT STRING. SDL indexes BIT STRINGs from 0. '''
+    if prim.use_num_value != -1 and not prim.requires_num:
+        return str(prim.use_num_value), [], []
+    index = prim.value[1]['index'][0]
+    idx_stmts, idx_string, idx_var = expression(index, readonly=ro)
+    if prim.requires_num:
+        bit = f"{idx_string}'Enum_Rep"
+    else:
+        bit = f"Integer ({idx_string})"
+    return bit, idx_stmts, idx_var
+
+
+def _bit_byte_mask(bit_expr):
+    ''' Map a 0-based ASN.1 bit index to (byte_index, mask) Ada expressions,
+        matching asn1scc's C-aligned byte storage (-adaBitStringAlignment):
+        bit k is stored in byte k/8 + 1 (1-based) with mask 0x80 >> (k mod 8),
+        i.e. counting from the most significant bit of the byte. '''
+    if str.isnumeric(bit_expr):
+        k = int(bit_expr)
+        return str(k // 8 + 1), f"16#{0x80 >> (k % 8):02X}#"
+    byte = f"({bit_expr}) / 8 + 1"
+    mask = f"Shift_Right (16#80#, Natural (({bit_expr}) mod 8))"
+    return byte, mask
+
+
+def _pack_bits_to_bytes(bit_array):
+    ''' Pack a list of '0'/'1' characters (MSB-first, as produced by the
+        parser for a BIT STRING literal) into whole bytes, the way asn1scc
+        stores a BIT STRING in its C-aligned OctetBuffer representation. '''
+    bits = ''.join(bit_array)
+    nbytes = (len(bits) + 7) // 8
+    return [str(int(bits[i * 8:(i + 1) * 8].ljust(8, '0'), 2))
+            for i in range(nbytes)]
+
+
 @expression.register(ogAST.PrimIndex)
 def _prim_index(prim, **kwargs):
     stmts, ada_string, local_decl = [], '', []
@@ -2217,14 +2255,30 @@ def _prim_index(prim, **kwargs):
     stmts.extend(receiver_stms)
     local_decl.extend(receiver_decl)
 
+    # .Data is the payload field of the record; a substring result is already
+    # an array so it must not be suffixed with .Data
+    is_payload = not isinstance(receiver, ogAST.PrimSubstring)
+    if is_payload:
+        ada_string += '.Data'
+
+    if kind == "BitStringType":
+        # C-aligned byte representation (asn1scc -adaBitStringAlignment): a
+        # bit is not an array element, it is a bit inside a whole byte, so
+        # reading requires a mask and writing a read-modify-write.
+        bit_expr, bit_stmts, bit_local = _bit_index_of(prim, ro)
+        stmts.extend(bit_stmts)
+        local_decl.extend(bit_local)
+        byte_idx, mask = _bit_byte_mask(bit_expr)
+        lvalue = f"{ada_string}({byte_idx})"
+        # remember the mask for _assign_expression's read-modify-write
+        prim._bit_mask = mask
+        if ro:
+            return stmts, f"(({lvalue} and {mask}) /= 0)", local_decl
+        return stmts, lvalue, local_decl
+
     if prim.use_num_value != -1 and not prim.requires_num:
         idx = 1 + prim.use_num_value
-        if not isinstance(receiver, ogAST.PrimSubstring):
-            ada_string += '.Data'
         ada_string = f"{ada_string}({idx})"
-        if kind == "BitStringType" and ro:
-            # convert BIT type to Boolean
-            ada_string = f"({ada_string} = 1)"
         return stmts, ada_string, local_decl
 
     index = prim.value[1]['index'][0]
@@ -2236,12 +2290,7 @@ def _prim_index(prim, **kwargs):
             idx_string = f"1 + {idx_string}'Enum_Rep"
         else:
             idx_string = f'1 + Integer ({idx_string})'
-    if not isinstance(receiver, ogAST.PrimSubstring):
-        ada_string += '.Data'
     ada_string += f'({idx_string})'
-    if kind == "BitStringType" and ro:
-        # convert BIT type to Boolean
-        ada_string = f"({ada_string} = 1)"
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
 
@@ -2531,15 +2580,26 @@ def _assign_expression(expr, **kwargs):
         # to 1 or 0 as expected by the BIT type from asn1scc
         leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
         rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
-        if leftIsBitString and rightIsBoolean:
-            # If right is actually a boolean literal (true or false) set 1 or 0 directly
-            if right_str.strip().lower() == "true":
-                res = "1"
-            elif  right_str.strip().lower() == "false":
-                res = "0"
+        if leftIsBitString:
+            # C-aligned byte representation: a bit lives inside a whole byte,
+            # so setting it is a read-modify-write with the bit mask.
+            mask = getattr(expr.left, '_bit_mask', None)
+            if mask is None:
+                bit_expr, _, _ = _bit_index_of(expr.left, 0)
+                _, mask = _bit_byte_mask(bit_expr)
+            if rightIsBoolean:
+                if right_str.strip().lower() == "true":
+                    cond = "True"
+                elif right_str.strip().lower() == "false":
+                    cond = "False"
+                else:
+                    cond = right_str
             else:
-                res = f"(if {right_str} then 1 else 0)"
-            strings.append(f"{left_str} := {res};")
+                # right is a BIT value (0 or 1): non-zero means set
+                cond = f"({right_str}) /= 0"
+            strings.append(
+                f"{left_str} := (if {cond} then {left_str} or {mask} "
+                f"else {left_str} and not {mask});")
         else:
             strings.append(f"{left_str} := {right_str};")
     else:
@@ -2885,7 +2945,9 @@ def _string_literal(primary, **kwargs):
     # then convert the string to an array of unsigned_8 integers
     # as expected by the Ada type corresponding to Octet String
     if isinstance(primary, ogAST.PrimBitStringLiteral):
-        unsigned_8 = primary.bit_array
+        # C-aligned byte representation: pack the bits MSB-first into whole
+        # bytes, exactly like asn1scc's OctetBuffer for a BIT STRING.
+        unsigned_8 = _pack_bits_to_bytes(primary.bit_array)
     elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
@@ -3933,7 +3995,12 @@ def string_payload(prim, ada_string):
     payload = ''
     if prim_basic.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
         if int(prim_basic.Min) != int(prim_basic.Max):
-            payload = f'.Data(1..{ada_string}.Length)'
+            if prim_basic.kind == 'BitStringType':
+                # Data is an array of whole bytes: the value occupies
+                # ceil(Length/8) bytes (Length is in bits)
+                payload = f'.Data(1..(Integer({ada_string}.Length) + 7) / 8)'
+            else:
+                payload = f'.Data(1..{ada_string}.Length)'
         else:
             payload = '.Data'
     return payload
@@ -3961,7 +4028,10 @@ def array_content(prim, values, asnty):
         rlen = f", Length => {length}"
     else:
         rlen = ""
-    if isinstance(prim, ogAST.PrimStringLiteral):
+    if isinstance(prim, ogAST.PrimBitStringLiteral):
+        # byte array: the filler element is a whole byte
+        df = '0'
+    elif isinstance(prim, ogAST.PrimStringLiteral):
         df = '0'
     else:
         # Find a default value for the "others" field in case of SEQOF

@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	#make -f Makefile.og
 	$(OPENGEODE) *.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make test_ada.ada && ./test_ada | diff expected -
 
 test-c: 

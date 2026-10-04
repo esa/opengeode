@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) *.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp ris.ada ris.ads && cp ris_adb.ada ris.adb
 	gnat make test_ada.ada
 	./test_ada | diff expected -
@@ -35,7 +35,7 @@ test-ada:
 test-simu:
 	$(MAKE) clean
 	$(OPENGEODE) *.pr --taste --simu --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp ris.ada ris.ads && cp ris_adb.ada ris.adb
 	cp foo_ri.ada foo_ri.ads
 	gnat make -g test_simu.ada

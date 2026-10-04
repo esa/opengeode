@@ -2596,7 +2596,7 @@ class SDL_View(QGraphicsView):
         template_makefile = f'''all:
 \tmkdir -p code
 \tcd code && opengeode --toAda ../*.pr
-\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada -adaBitStringAlignment {firstAsn1File} {otherAsn}
 \tcd code && gnat make {prj_name}
 c:
 \tmkdir -p code_c
