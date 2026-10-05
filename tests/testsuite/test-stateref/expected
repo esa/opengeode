@@ -1,0 +1,4 @@
+S1: state=S1 is TRUE
+S1: result= 1
+S2: state=S1 is FALSE
+S2: result= 20

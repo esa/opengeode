@@ -61,7 +61,7 @@ scope (Rust does not implement it; C partially).
 | `no_context` processes | ✅ | ✅ | ✅ |
 | `CREATE` | ✅ | ❌ | ✅ |
 | `STOP` terminator | ✅ `Delete_Instance` | ❌ no-op | ✅ `delete_instance` |
-| `state` reference expression | ✅ | ❌ raises | ✅ |
+| `state` reference expression | ✅ | ✅ | ✅ |
 | `parent` / `sender` / `entity` PID reads | ✅ `Self` synonym | ⚠️ parser-injected | ❌ (only `self`) |
 | `MantissaBaseExp` | ⚠️ stub | ❌ raises | ⚠️ stub |
 | All 41 expression handlers registered | ✅ | ✅ | ✅ |
@@ -83,11 +83,20 @@ These are verified by generating minimal models, not only by reading.
 2. **`STOP` is a no-op.** The stop terminator is a `pass  # TODO`
    (`CGenerator.py:1387-1389`) and emits a bare `return;`. Ada emits
    `Delete_Instance (Self)`, Rust `delete_instance(self)`.
-3. **`state` reference unsupported.** `_primary_state_reference`
-   (`CGenerator.py:1890-1897`) raises `TypeError('To Be Implemented')`. Ada
-   returns `LPREFIX.state`, Rust `ctxt.state`.
-4. **`MantissaBaseExp` unsupported.** Raises at `CGenerator.py:2803`. Ada/Rust
+3. **`MantissaBaseExp` unsupported.** Raises at `CGenerator.py:2803`. Ada/Rust
    emit an empty stub.
+
+> **`state` reference — FIXED.** `_primary_state_reference`
+> (`CGenerator.py`) now returns `ctxt.state` instead of raising
+> `TypeError('To Be Implemented')`, and `_enumerated_value` renders a state
+> name comparand (`Wait` in `state = Wait`) via `generate_state_name()`.
+> Verified end-to-end: a `decision (state = S1)` model generates, compiles and
+> runs identically in Ada/C/Rust. Fixing the test also uncovered the same
+> latent bug in the **Rust** backend (state comparand emitted
+> `asn1SccComplexsdl_States::s1` instead of `::Complexsdl_States_s1`),
+> corrected in `RustGenerator._enumerated_value` by reusing its existing
+> `generate_state_name()` helper. Covered by the new
+> `tests/testsuite/test-stateref`.
 
 ---
 
@@ -205,18 +214,19 @@ between the two generators would not be caught there.
 
 ## Test Coverage Status
 
-- **126 test directories** total. **45** have a shared `expected` (a runtime
-  result).
-- Coverage by backend, over those 45 runtime tests:
-  - **Ada: 45, C: 45, Rust: 45** build and run.
-  - **Rust pass: 42/45** (the 3 residuals above).
+- **125 test directories** run by the harness. **46** have a shared
+  `expected` (a runtime comparison); the rest only compile-check.
+- Suites after the `test-stateref` addition:
+  - **C: 125 tests, 0 errors.**
+  - **Rust: 125 tests, 3 errors** — exactly the 3 known residuals above.
+  - **Ada: 46 runtime tests build and run** (Ada is the reference backend and
+    never had a per-directory Rust-style gate).
 - `test-branchcoverage`, `test-branchcoverage2`, `test-nestedpriority` are
   `--check` parse-error tests (their `expected` is compiler diagnostics); they
   intentionally get no runtime harness.
-- The other ~78 directories only compile-check.
-- **Zero tests currently exercise `CREATE`, `STOP`, or `state` references** in
-  any backend — the three C gaps above are therefore untested even where other
-  backends support them.
+- `state` references are now covered by `test-stateref` (Ada/C/Rust).
+- **Still zero tests exercise `CREATE` or `STOP`** in any backend — those C
+  gaps remain untested even where Ada/Rust support them.
 
 ### Rust runtime harness pattern (for adding coverage)
 
@@ -250,10 +260,11 @@ by a per-directory `patch_ri.py`, mirroring the C driver.
 
 1. **C `CREATE`** — add the missing handler.
 2. **C `STOP`** — implement `Delete_Instance`-equivalent instead of `return;`.
-3. **C `state` reference** — implement instead of raising.
-4. **C `MantissaBaseExp`** — implement or document as unsupported for all.
-5. **Timer value read** — decide implement-in-Ada/Rust vs document as C-only.
-6. **Targeted tests for `CREATE` / `STOP` / `state`** — currently none.
+3. **C `MantissaBaseExp`** — implement or document as unsupported for all.
+4. **Timer value read** — decide implement-in-Ada/Rust vs document as C-only.
+5. **Targeted tests for `CREATE` / `STOP`** — currently none.
+
+*(C `state` reference is done; see the fixed items below.)*
 
 *(The Ada `Asn1InT` spelling is not on this list — it is a deliberate marker;
 see the note under “Confirmed Gaps — Ada Backend”.)*
@@ -321,10 +332,9 @@ notable ones:
 |---|------|---------|------|----------|
 | A1 | `CREATE` unsupported | C | Missing feature | High |
 | A2 | `STOP` is a no-op | C | Missing feature | High |
-| A3 | `state` reference raises | C | Missing feature | High |
-| A4 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| A5 | Timer value read missing | Ada / Rust | Missing feature | Medium |
-| A6 | No tests for `CREATE`/`STOP`/`state` | all | Test gap | Medium |
+| A3 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
+| A4 | Timer value read missing | Ada / Rust | Missing feature | Medium |
+| A5 | No tests for `CREATE`/`STOP` | all | Test gap | Medium |
 | B | 3 Rust runtime residuals | Rust | Fixture/runtime | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
