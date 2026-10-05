@@ -93,6 +93,31 @@ def is_numeric(string) -> bool:
     return True
 
 
+def dataview_rust_names(process=None) -> Tuple[str, str]:
+    '''Return (file_stem, module_name) for the ASN.1 dataview Rust modules.
+
+    asn1scc names the generated Rust files after the *input ASN.1 file stem*,
+    not after the ASN.1 module name:
+      - ``datamodel.asn``   -> ``datamodel.rs`` / ``datamodelDef.rs``, whose
+        internal import is ``use crate::datamodelDef::*;`` (module ``datamodel``).
+      - ``dataview-uniq.asn`` -> ``dataview-uniq.rs`` / ``dataview-uniqDef.rs``,
+        module ``dataview_uniq`` (a dash becomes an underscore in the Rust
+        module identifier, while the file name keeps the dash).
+    The C and Ada backends derive the same name from the ASN.1 file; Rust must
+    too, otherwise a dataview not named ``dataview-uniq.asn`` (e.g. the test
+    suite's ``datamodel.asn`` / ``dv.asn`` / ``dataview.asn``) fails to build.
+    '''
+    p = process if process is not None else PROCESS
+    stem = 'dataview-uniq'
+    try:
+        files = list(getattr(getattr(p, 'DV', None), 'asn1Files', None) or [])
+        if files:
+            stem = os.path.splitext(os.path.basename(files[0]))[0]
+    except TypeError:
+        pass
+    return stem, stem.replace('-', '_')
+
+
 def external_ri_list(process, has_cs=False) -> List:
     '''Helper: create the list of required interfaces of a process type.
 
@@ -362,8 +387,13 @@ def is_fpar(name):
 
 
 def deref_fpar(var_str, name):
-    '''Add * dereference prefix if the variable is an fpar parameter'''
-    if is_fpar(name):
+    '''Add * dereference prefix if the variable is an fpar parameter.
+
+    Idempotent: a value already produced by _primary_variable for an fpar is
+    `(*x)`, which must not be dereferenced a second time.
+    '''
+    s = var_str.lstrip()
+    if is_fpar(name) and not (s.startswith('*') or s.startswith('(*')):
         return f'*{var_str}'
     return var_str
 
@@ -560,6 +590,33 @@ def _resolve_type_info(asnty, prim_expr_type):
     return kind, max_size, has_n_count, type_name_str
 
 
+def rust_escape_string(text: str) -> str:
+    '''Escape a raw text for inclusion inside a Rust double-quoted string.'''
+    return (text.replace('\\', '\\\\')
+                .replace('"', '\\"')
+                .replace('\n', '\\n')
+                .replace('\r', '\\r')
+                .replace('\t', '\\t'))
+
+
+def rust_string_from_literal(text: str) -> str:
+    '''Turn the inner text of an SDL/ASN.1 string literal into a Rust literal
+    body. The parser may keep source escapes (\\" \\' \\\\) or leave quotes bare,
+    so first interpret the escapes, then re-escape for Rust.
+    '''
+    out = []
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c == '\\' and i + 1 < len(text) and text[i + 1] in ('"', "'", '\\'):
+            out.append(text[i + 1])
+            i += 2
+            continue
+        out.append(c)
+        i += 1
+    return rust_escape_string(''.join(out))
+
+
 def array_content(prim, values, asnty):
     '''Format an array literal for Rust SEQUENCE OF construction.
 
@@ -619,10 +676,15 @@ def array_content(prim, values, asnty):
                             inner_max = 20
                         if elem_bty.kind in ('IA5StringType', 'StringType'):
                             inner_max += 1  # null terminator
-                        # Check if inner type has n_count
+                        # A fixed-size string (Min == Max) has no n_count; only
+                        # a variable-size one does. Compare Min against the real
+                        # Max (not Max+1, which would always differ for strings).
                         try:
                             inner_min = int(elem_bty.Min)
-                            inner_has_n_count = inner_min != inner_max
+                            inner_real_max = int(elem_bty.Max)
+                            inner_has_n_count = (
+                                False if elem_bty.kind in ('IA5StringType', 'StringType')
+                                else inner_min != inner_real_max)
                         except (ValueError, TypeError):
                             inner_has_n_count = True
                         if inner_has_n_count:
@@ -637,6 +699,12 @@ def array_content(prim, values, asnty):
                         zero_val = const_zero_value(elem_type)
                     else:
                         zero_val = const_zero_value(elem_type)
+                elif elem_bty.kind in ('EnumeratedType', 'StateEnumeratedType',
+                                       'ChoiceEnumeratedType', 'ReferenceType',
+                                       'NullType', 'RealType'):
+                    # Use the type-correct zero (e.g. an enum variant or `()`),
+                    # never the integer literal 0, which does not type-check.
+                    zero_val = const_zero_value(elem_type)
         elif prim.value:
             first_elem_bty = find_basic_type(prim.value[0].exprType)
             if first_elem_bty and first_elem_bty.kind == 'BooleanType':
@@ -907,7 +975,10 @@ def generate_code_for_continuous_signals(process, generic):
         if GENERIC:
             queue_call = 'ri.check_queue(&mut message_pending);'
         else:
-            queue_call = 'check_queue(&mut message_pending);'
+            # The queue-check service is exported from this same module as
+            # <process>_check_queue (C linkage), so the internal call must use
+            # that name — a bare `check_queue` is undefined.
+            queue_call = f'{process.name.lower()}_check_queue(&mut message_pending);'
         cs_template.extend([
             f'if {LPREFIX}.init_done {{',
             queue_call,
@@ -946,6 +1017,11 @@ def generate_code_for_continuous_signals(process, generic):
                 if statename not in done:
                     done.append(statename)
                 substate = each.statename.lower()
+                # Before chaining another block with `else if`, close the
+                # previous one (otherwise N blocks emit N `{` but only one `}`,
+                # leaving the function brace unclosed).
+                if sep != 'if ':
+                    cs_template.append('}')
                 cs_template.extend([
                     f'{sep}{LPREFIX}.{substate}_0_state == '
                     f'{generate_state_name(each.statename)} {{',
@@ -977,6 +1053,9 @@ def generate_code_for_continuous_signals(process, generic):
                     )
                     break
 
+        # Close the previous block before chaining another with `else if`.
+        if sep != 'if ':
+            cs_template.append('}')
         cs_template.extend([
             f'{sep}{LPREFIX}.state == {generate_state_name(statename)}'
             f'{state_inst} {{',
@@ -1121,7 +1200,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             bkind = bconst.kind
             if bkind in ('IntegerType', 'RealType', 'NullType',
                          'BooleanType', 'Integer32Type', 'IntegerU8Type'):
-                val = const.value
+                val = '()' if bkind == 'NullType' else const.value
                 if isinstance(val, ogAST.PrimSelector):
                     _, val, _ = expression(const.value, readonly=1)
             else:
@@ -1129,9 +1208,11 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 if bkind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
                     val = array_content(const.value, val, bconst)
                 elif bkind == 'IA5StringType':
-                    val = ia5string_raw(const.value)
+                    # IA5 strings are fixed `arr: [u8; Max+1]` structs: build a
+                    # proper struct literal, not a raw byte slice.
+                    val = array_content(const.value, val, const.type)
                 elif bkind == 'NullType':
-                    val = '0'
+                    val = '()'
                 elif bkind not in ("EnumeratedType", "SequenceType"):
                     raise TypeError(f'Constant "{const.varName}" not ground')
 
@@ -1297,7 +1378,7 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         init_done = f'{LPREFIX}.init_done = true;' if not getattr(process, 'no_context', False) else ''
         rand_reset = []
         for rand_g in process.random_generator:
-            rand_reset.append(f'gen_{rand_g}.reset();')
+            rand_reset.append('unsafe { __OG_RNG_STATE = 0; }')
 
         if NO_CONTEXT:
             start_transition = [f'pub(crate) unsafe fn startup{ri_generic_sig()} {{}}', '']
@@ -1333,22 +1414,33 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     ]
 
     # Use statements for ASN.1 modules
-    # asn1scc generates dataview-uniq.rs and dataview-uniqDef.rs
-    # These files internally use 'use crate::dataview_uniqDef::*;' so we must
-    # declare the module with the exact name asn1scc expects.
+    # asn1scc generates <stem>.rs and <stem>Def.rs from the input ASN.1 file
+    # (e.g. dataview-uniq.rs for dataview-uniq.asn, datamodel.rs for
+    # datamodel.asn). These files internally use 'use crate::<stem>Def::*;'
+    # so we must declare the module with the exact name asn1scc expects.
     # When this is an instance wrapper, skip declaring dataview modules —
     # they are already declared in the process type module.
+    dv_stem, dv_mod = dataview_rust_names(process)
     if not instance:
         try:
             for dv in process.asn1Modules:
-                # Dataview type definitions and functions
-                # Module name must be 'dataview_uniqDef' (matching asn1scc's internal use)
-                rust_body.append(f'#[path = "dataview-uniqDef.rs"]')
-                rust_body.append(f'pub mod dataview_uniqDef;')
-                rust_body.append(f'use dataview_uniqDef::*;')
-                rust_body.append(f'#[path = "dataview-uniq.rs"]')
-                rust_body.append(f'pub mod dataview_uniq;')
-                rust_body.append(f'use dataview_uniq::*;')
+                # Dataview type definitions and functions.
+                # File name keeps the dash (dataview-uniqDef.rs); the Rust
+                # module identifier uses an underscore (dataview_uniqDef).
+                rust_body.append(f'#[path = "{dv_stem}Def.rs"]')
+                rust_body.append(f'pub mod {dv_mod}Def;')
+                rust_body.append(f'#[path = "{dv_stem}.rs"]')
+                rust_body.append(f'pub mod {dv_mod};')
+                # The asn1scc-generated <proc>_datamodel.rs imports the dataview
+                # under the legacy fixed name 'dataview_uniq' (see the generator
+                # post-processing and the test Makefile sed, which cannot know
+                # the dataview file stem). Re-export the real module under that
+                # name so any dataview file stem works.
+                if dv_mod != 'dataview_uniq':
+                    rust_body.append(f'pub use {dv_mod}Def as dataview_uniqDef;')
+                    rust_body.append(f'pub use {dv_mod} as dataview_uniq;')
+                rust_body.append(f'use {dv_mod}Def::*;')
+                rust_body.append(f'use {dv_mod}::*;')
                 break  # Only need one dataview module
             rust_body.append('use asn1rust::*;')
         except TypeError:
@@ -1356,8 +1448,8 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     else:
         # Instance wrapper: use types from the process type module
         ptype_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
-        rust_body.append(f'use {ptype_module}::dataview_uniqDef::*;')
-        rust_body.append(f'use {ptype_module}::dataview_uniq::*;')
+        rust_body.append(f'use {ptype_module}::{dv_mod}Def::*;')
+        rust_body.append(f'use {ptype_module}::{dv_mod}::*;')
         # The datamodelDef module is declared by the process type module
         # (only when the type has a context). Re-export it here so that
         # code using the wrapper can reach the context types.
@@ -1467,9 +1559,25 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             rust_body.append('')
 
     # ── Random generator declarations ──
+    # The 'any' decision picks one of N answers at random. Implement this with
+    # a small self-contained xorshift PRNG (no external `rand` crate, which the
+    # generated Cargo.toml does not declare), seeded once from the clock.
+    if process.random_generator:
+        rust_body.extend([
+            'static mut __OG_RNG_STATE: u64 = 0;',
+            'unsafe fn __og_rng_next() -> u64 {',
+            '    if __OG_RNG_STATE == 0 {',
+            '        __OG_RNG_STATE = 0x9E3779B97F4A7C15;',
+            '    }',
+            '    let mut x = __OG_RNG_STATE;',
+            '    x ^= x << 13; x ^= x >> 7; x ^= x << 17;',
+            '    __OG_RNG_STATE = x;',
+            '    x',
+            '}',
+        ])
     for each in process.random_generator:
         rust_body.extend([
-            f'fn gen_{each}_init() -> u32 {{ rand::random::<u32>() % {each} + 1 }}'])
+            f'fn gen_{each}_init() -> u32 {{ unsafe {{ (__og_rng_next() % {each}) as u32 + 1 }} }}'])
 
     # ── CREATE symbol support ──
     if not instance and process.dependencies['create']:
@@ -1542,8 +1650,14 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                         pi_args.append(f'{fpar.get("name")}')
                     pi_param_str = ', '.join(pi_params)
                     pi_arg_str = ', '.join(pi_args)
+                    # Exported procedures are wrapped with the <process>_PI_
+                    # prefix (C linkage), exactly like the referenced/not_local
+                    # case above. Without the prefix an exported procedure
+                    # named e.g. "check_queue" would clash with the runtime's
+                    # <process>_check_queue service.
                     rust_body.append(
-                        f'#[no_mangle] pub unsafe extern "C" fn {spelling}({pi_param_str}) {{ '
+                        f'#[no_mangle] pub unsafe extern "C" fn '
+                        f'{process.name.lower()}_PI_{spelling}({pi_param_str}) {{ '
                         f'{proc.inputString}({pi_arg_str}); }}')
 
     rust_body.extend(process_level_decl)
@@ -1808,12 +1922,21 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
             cs_template = generate_code_for_continuous_signals(process, generic)
             rust_body.extend(cs_template)
         if not MONITORS and not generic:
-            rust_body.extend([
-                f'#[no_mangle]',
-                f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
-                f'    // Provided by runtime',
-                f'}}',
-                ''])
+            # If the model itself exports a procedure that maps to the
+            # <process>_check_queue service (as test-save does), that user
+            # implementation must be used instead of the runtime stub — emitting
+            # both would define the symbol twice (E0428).
+            has_user_check_queue = any(
+                p.exported and p.inputString.lower() in
+                (f'{process.name.lower()}_check_queue', 'check_queue')
+                for p in process.procedures)
+            if not has_user_check_queue:
+                rust_body.extend([
+                    f'#[no_mangle]',
+                    f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
+                    f'    // Provided by runtime',
+                    f'}}',
+                    ''])
 
     # ── Instance startup ──
     if instance:
@@ -2114,36 +2237,43 @@ opt-level = 3
     with open(process.name.lower() + os.extsep + 'rs', 'w') as rust_file:
         rust_file.write('\n'.join(format_rust_code(rust_body)))
 
-    # Post-process: add 'use crate::dataview_uniq::*;' to the asn1scc-generated
+    # Post-process: add 'use crate::<dv>::*;' to the asn1scc-generated
     # datamodel file so it can access dataview functions (IsConstraintValid, init, etc.)
     dmn = process.name.lower()
     dmn_rs = f'{dmn}_datamodel.rs'
     if os.path.exists(dmn_rs):
         with open(dmn_rs, 'r') as f:
             content = f.read()
-        if 'use crate::dataview_uniq::' not in content:
+        if 'use crate::dataview_uniq::' not in content and \
+                f'use crate::{dv_mod}::' not in content:
             # Insert after the last 'use' line
             lines = content.split('\n')
             insert_idx = 0
             for i, line in enumerate(lines):
                 if line.startswith('use '):
                     insert_idx = i + 1
-            lines.insert(insert_idx, 'use crate::dataview_uniq::*;')
+            # Both the dataview *functions* module and the *type definitions*
+            # module are needed: the generated init/IsConstraintValid code may
+            # reference a dataview type (e.g. an enumerated type) whose Rust
+            # definition lives in <dv>Def.
+            lines.insert(insert_idx, f'use crate::{dv_mod}::*;')
+            lines.insert(insert_idx + 1, f'use crate::{dv_mod}Def::*;')
             with open(dmn_rs, 'w') as f:
                 f.write('\n'.join(lines))
 
-    # Post-process: remove duplicate constant definitions from dataview-uniq.rs
-    # (they're already in dataview-uniqDef.rs, causing ambiguity when both are glob-imported)
-    if os.path.exists('dataview-uniq.rs'):
-        with open('dataview-uniq.rs', 'r') as f:
+    # Post-process: remove duplicate constant definitions from <dv>.rs
+    # (they're already in <dv>Def.rs, causing ambiguity when both are glob-imported)
+    dv_rs = f'{dv_stem}.rs'
+    if os.path.exists(dv_rs):
+        with open(dv_rs, 'r') as f:
             dv_content = f.read()
-        # Comment out 'pub const' lines that duplicate dataview-uniqDef.rs constants
+        # Comment out 'pub const' lines that duplicate <dv>Def.rs constants
         lines = dv_content.split('\n')
         new_lines = []
         skip_const_block = False
         for line in lines:
             if line.startswith('pub const '):
-                # Skip duplicate constant definitions (they're in dataview-uniqDef.rs)
+                # Skip duplicate constant definitions (they're in <dv>Def.rs)
                 # These are single-line definitions ending with ;
                 if line.rstrip().endswith(';'):
                     continue
@@ -2156,7 +2286,7 @@ opt-level = 3
                     continue
                 continue
             new_lines.append(line)
-        with open('dataview-uniq.rs', 'w') as f:
+        with open(dv_rs, 'w') as f:
             f.write('\n'.join(new_lines))
 
     if instance or not TASTE:
@@ -2189,8 +2319,8 @@ opt-level = 3
                     '// never overwritten by the code generator.',
                     '#![allow(non_snake_case, non_camel_case_types, unused_variables, '
                     'unused_mut, dead_code)]',
-                    f'use super::{ptype_module}::dataview_uniqDef::*;',
-                    f'use super::{ptype_module}::dataview_uniq::*;',
+                    f'use super::{ptype_module}::{dv_mod}Def::*;',
+                    f'use super::{ptype_module}::{dv_mod}::*;',
                     f'use super::{ptype_module}::{ptype_module}_datamodelDef::*;'
                     if not getattr(process, 'instance_of_ref', None) or
                     not getattr(process.instance_of_ref, 'no_context', False)
@@ -2248,12 +2378,18 @@ def write_statement(param, newline):
         local.extend(lcl2)
     elif type_kind == 'IA5StringType':
         code, string, local = expression(param, readonly=1)
-        code.append(f'print!("{{}}", String::from_utf8_lossy(&{string}));')
+        # asn1scc generates IA5String as a fixed `arr: [u8; Max+1]` array with a
+        # null terminator (no n_count). Print the content up to the first NUL.
+        code.append(
+            f'{{ let _s = &{string};'
+            f' let _n = _s.arr.iter().position(|&b| b == 0).unwrap_or(_s.arr.len());'
+            f' print!("{{}}", String::from_utf8_lossy(&_s.arr[.._n])); }}')
     elif type_kind.endswith('StringType'):
+        _k, _ms, has_n_count, _tn = _resolve_type_info(param.exprType, param.exprType)
         if isinstance(param, ogAST.PrimOctetStringLiteral):
-            code.append(f'print!("{param.printable_string}");')
+            code.append(f'print!("{rust_escape_string(param.printable_string or "")}");')
         elif isinstance(param, ogAST.PrimStringLiteral):
-            code.append(f'print!("{param.value[1:-1]}");')
+            code.append(f'print!("{rust_string_from_literal(param.value[1:-1])}");')
         elif isinstance(param, ogAST.PrimConditional) and \
                 isinstance(param.value.get('then'), ogAST.PrimStringLiteral) and \
                 isinstance(param.value.get('else'), ogAST.PrimStringLiteral):
@@ -2263,14 +2399,21 @@ def write_statement(param, newline):
             c_stmts, c_str, c_local = expression(param.value['if'], readonly=1)
             code.extend(c_stmts)
             local.extend(c_local)
-            then_txt = param.value['then'].value[1:-1]
-            else_txt = param.value['else'].value[1:-1]
+            then_txt = rust_string_from_literal(param.value['then'].value[1:-1])
+            else_txt = rust_string_from_literal(param.value['else'].value[1:-1])
             code.append(f'print!("{{}}", if {c_str} {{ "{then_txt}" }} else {{ "{else_txt}" }});')
         else:
             # For OctetString/BitString variables, print as string content
             code, string, local = expression(param, readonly=1)
-            # Print the string content up to n_count
-            code.append(f'{{ let _s = {string}; let n = _s.n_count as usize; print!("{{}}", String::from_utf8_lossy(&_s.arr[..n])); }}')
+            if has_n_count:
+                # Variable-size: print up to n_count
+                code.append(f'{{ let _s = {string}; let n = _s.n_count as usize; print!("{{}}", String::from_utf8_lossy(&_s.arr[..n])); }}')
+            else:
+                # Fixed-size: no n_count; trim at the first NUL (if any)
+                code.append(
+                    f'{{ let _s = {string};'
+                    f' let _n = _s.arr.iter().position(|&b| b == 0).unwrap_or(_s.arr.len());'
+                    f' print!("{{}}", String::from_utf8_lossy(&_s.arr[.._n])); }}')
     elif type_kind in ('IntegerType', 'Integer32Type', 'IntegerU8Type'):
         code, string, local = expression(param, readonly=1)
         # Ada's 'Image adds a leading space for non-negative integers
@@ -2284,6 +2427,58 @@ def write_statement(param, newline):
     elif type_kind == 'BooleanType':
         code, string, local = expression(param, readonly=1)
         code.append(f'print!("{{}}", if {string} {{ "TRUE" }} else {{ "FALSE" }});')
+    elif type_kind in ('EnumeratedType', 'StateEnumeratedType',
+                       'ChoiceEnumeratedType'):
+        # Print the enumerant NAME (uppercased), matching the C/Ada backends.
+        # A synthetic CHOICE-selection enum prints "<CHILD>_PRESENT".
+        code, string, local = expression(param, readonly=1)
+        enum_type = type_name(param.exprType)
+        is_selection = enum_type.endswith('_Selection')
+        ref = getattr(param.exprType, 'ReferencedTypeName', '') or ''
+        basic = find_basic_type(param.exprType)
+        variants = list((getattr(basic, 'EnumValues', None) or {}).items())
+        if not variants and 'selection' in ref.replace('_', '-').lower():
+            # Selection synonym: the parser has no EnumValues; reconstruct the
+            # variants from the underlying CHOICE alternatives.
+            choice = ref
+            for suf in ('-Selection', '_Selection', '-selection', '_selection'):
+                if choice.endswith(suf):
+                    choice = choice[:-len(suf)]
+                    break
+            base = enum_type[len(ASN1SCC):]
+            children = {}
+            for tn, tdef in (TYPES or {}).items():
+                if tn.replace('_', '-').lower() == choice.replace('_', '-').lower():
+                    children = getattr(find_basic_type(tdef.type), 'Children', {}) or {}
+                    break
+            arms = []
+            for cname in children:
+                member = cname.replace('-', '_')
+                vname = f'{base}_{member}_present'
+                arms.append(f'{enum_type}::{vname} => '
+                            f'print!("{member.upper()}_PRESENT")')
+            code.append('match ' + string + ' { ' + ', '.join(arms) +
+                        f', _ => {{}} }}' if arms else f'let _ = {string};')
+        else:
+            arms = []
+            base = enum_type[len(ASN1SCC):] if enum_type.startswith(ASN1SCC) else enum_type
+            for name, enumid in variants:
+                printed = f'{name.upper()}_PRESENT' if is_selection else name.upper()
+                if is_selection:
+                    # Selection variants are "<Base>_<child>_present"; derive the
+                    # child from the enumerant name and rebuild the exact spelling.
+                    member = name
+                    for suf in ('_present', '_PRESENT'):
+                        if member.endswith(suf):
+                            member = member[:-len(suf)]
+                            break
+                    member = member.rsplit('_', 1)[-1]
+                    vname = f'{base}_{member}_present'
+                else:
+                    vname = getattr(enumid, 'EnumID', None) or name
+                arms.append(f'{enum_type}::{vname} => print!("{printed}")')
+            code.append('match ' + string + ' { ' + ', '.join(arms) +
+                        f', _ => {{}} }}' if arms else f'let _ = {string};')
     else:
         code, string, local = expression(param, readonly=1)
         code.append(f'print!("{{:?}}", {string});')
@@ -2601,13 +2796,33 @@ def _task_forloop(task, **kwargs):
             basic_type = find_basic_type(loop['list'].exprType)
             stmt.extend(list_stmt)
             local_decl.extend(list_local)
-            if isinstance(loop['list'], ogAST.PrimSubstring) or \
-                    basic_type.Min == basic_type.Max:
-                range_str = f'0..{list_str}.len()'
+            # list_str may be a block expression (e.g. a substring/slice),
+            # which must be parenthesized before a field access or method call.
+            iter_str = list_str
+            if iter_str.strip().startswith('{'):
+                iter_str = f'({iter_str})'
+            # asn1scc wraps SEQUENCE OF / string types in a struct with an
+            # `arr` field (and an `n_count` field when the size is variable).
+            if isinstance(loop['list'], ogAST.PrimSubstring):
+                # A slice returns a temporary struct: variable-size types carry
+                # n_count, fixed-size ones only have the `arr` array.
+                _k, _ms, _hn, _tn = _resolve_type_info(
+                    loop['list'].exprType, loop['list'].exprType)
+                if _hn:
+                    range_str = f'0..{iter_str}.n_count as usize'
+                else:
+                    sub = loop['list'].value[1]['substring']
+                    _s1, r1_str, _l1 = expression(sub[0])
+                    _s2, r2_str, _l2 = expression(sub[1])
+                    range_str = f'0..(({r2_str}) - ({r1_str}) + 1) as usize'
+            elif basic_type.Min == basic_type.Max:
+                range_str = f'0..{iter_str}.arr.len()'
             else:
-                range_str = f'0..{list_str}.n_count as usize'
+                range_str = f'0..{iter_str}.n_count as usize'
             stmt.append(f'for {loop["var"]}_idx in {range_str} {{')
-            stmt.append(f'let {loop["var"]} = {list_str}.arr[{loop["var"]}_idx];')
+            # Bind the element as mutable: the loop body may pass a field of it
+            # by mutable reference (procedure fpars are `&mut T`).
+            stmt.append(f'let mut {loop["var"]} = {iter_str}.arr[{loop["var"]}_idx];')
 
         try:
             code_trans, local_trans = generate(loop['transition'])
@@ -2759,7 +2974,12 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
 
                     if actual_type != 'bool':
                         if question_basic.startswith('Integer'):
-                            exp += f'{sub_sep}({q_str}) {rust_op} ({ans_str} as {actual_type})'
+                            # Cast BOTH sides to the question's type: the parsed
+                            # question (e.g. num(enum) -> i64) and the answer
+                            # literal may otherwise have different widths
+                            # (Rust has no implicit integer promotion).
+                            exp += (f'{sub_sep}({q_str} as {actual_type}) {rust_op} '
+                                    f'({ans_str} as {actual_type})')
                         else:
                             exp += f'{sub_sep}({q_str}) {rust_op} {ans_str}'
                     elif ans_str == 'true' and previous_ans != 'false':
@@ -3269,6 +3489,15 @@ def _primary_variable(prim, **kwargs):
         sep = LPREFIX + '.'
         # Use the canonical (lowercase) name from VARIABLES to match asn1scc struct fields
         used_name = var
+    # Formal parameters are declared `&mut T`; a value reference must be
+    # dereferenced. Parenthesize so that a following field/index access binds
+    # correctly: `(*p).field`, not `*p.field`.
+    if is_fpar(name):
+        # Use the declared spelling (SDL is case-insensitive): FPAR_VARS keeps
+        # the declared name, which may differ in case from this reference.
+        declared = next((f for f in FPAR_VARS
+                         if f.lower() == name.lower()), used_name)
+        return [], f'(*{declared})', []
     rust_string = f'{sep}{used_name}'
     return [], str(rust_string), []
 
@@ -3337,7 +3566,11 @@ def _prim_call(prim, **kwargs):
             rust_string = str(min_length)
         else:
             if isinstance(exp, ogAST.PrimSubstring):
-                rust_string = f'{p_str}.len()'
+                # A slice returns a temporary struct: variable-size types carry
+                # n_count, fixed-size ones only have the `arr` array.
+                _k, _ms, _hn, _tn = _resolve_type_info(exp.exprType, exp.exprType)
+                rust_string = f'({p_str}.n_count as usize)' if _hn \
+                    else f'({p_str}.arr.len())'
             else:
                 rust_string = f'{p_str}.n_count'
 
@@ -3413,21 +3646,85 @@ def _prim_call(prim, **kwargs):
         rec_stmt, rec_str, rec_decl = expression(receiver, readonly=1)
         stmts.extend(rec_stmt)
         local_decl.extend(rec_decl)
+        # Use asn1scc's Rust field spelling ('-' -> '_', case preserved).
+        _rbty = find_basic_type(receiver.exprType)
+        if _rbty is not None and getattr(_rbty, 'Children', None):
+            try:
+                field = child_spelling(field, _rbty).replace('-', '_')
+            except TypeError:
+                field = field.replace('-', '_')
+        else:
+            field = field.replace('-', '_')
         rust_string = f'{rec_str}.exist.{field}'
 
     elif ident in ('to_selector', 'to_enum'):
         variable, target_type = params
-        var_typename = type_name(variable.exprType, False)
         var_stmts, var_str, var_decl = expression(variable, readonly=1)
         stmts.extend(var_stmts)
         local_decl.extend(var_decl)
-        dest_sort = target_type.value[0].replace('-', '_')
-        sort_name = f'{ASN1SCC}{PROCESS_NAME}_{dest_sort}_selection'
+        dest = target_type.value[0].replace('-', '_')
+        src_basic = find_basic_type(variable.exprType)
+        owner = (PROCESS_NAME or '').title().replace('-', '_')
+
+        def _strip_selection(name):
+            for suf in ('-Selection', '_Selection', '-selection', '_selection'):
+                if name.endswith(suf):
+                    return name[:-len(suf)]
+            return name
+
+        def _sel_enum(choice_name):
+            base = choice_name.replace('-', '_').title().replace('-', '_')
+            if base.lower().startswith(owner.lower() + '_'):
+                base = base[len(owner) + 1:]
+            return f'{ASN1SCC}{owner}_{base}_Selection', f'{owner}_{base}_Selection'
+
+        def _choice_children(choice_name):
+            for tn, tdef in (TYPES or {}).items():
+                if tn.replace('_', '-').lower() == choice_name.replace('_', '-').lower():
+                    bt = find_basic_type(tdef.type)
+                    return getattr(bt, 'Children', {}) or {}
+            return {}
+
+        def _member(enum_id):
+            m = enum_id
+            for suf in ('_present', '_PRESENT'):
+                if m.endswith(suf):
+                    m = m[:-len(suf)]
+                    break
+            return m.rsplit('_', 1)[-1]
+
         if ident == 'to_selector':
-            rust_string = f'{var_str} as {sort_name}'
+            # ENUMERATED -> synthetic CHOICE-selection enum. Rust cannot
+            # `as`-cast between enums: map each source enumerant to the
+            # selection variant with the same child name.
+            tgt_enum, prefix = _sel_enum(dest)
+            src_enum = type_name(variable.exprType)
+            arms = []
+            for key, val in (getattr(src_basic, 'EnumValues', None) or {}).items():
+                eid = getattr(val, 'EnumID', '') or ''
+                member = _member(eid) or key.replace('-', '_')
+                arms.append(f'{src_enum}::{eid or member} => '
+                            f'{tgt_enum}::{prefix}_{member}_present')
+            rust_string = (f'match {var_str} {{ ' + ', '.join(arms) +
+                           f', _ => {tgt_enum}::default() }}') if arms \
+                else f'{tgt_enum}::default()'
         else:
-            sort_name_val = f'{ASN1SCC}{dest_sort}'
-            rust_string = f'{var_str} as {sort_name_val}'
+            # synthetic CHOICE-selection enum -> ENUMERATED. The selection
+            # synonym variable's referenced name is "<Choice>-Selection"; the
+            # parser does not populate its variants, so reconstruct the source
+            # enum name and its variants from the underlying CHOICE children.
+            ref = getattr(variable.exprType, 'ReferencedTypeName', '') or ''
+            choice = _strip_selection(ref)
+            src_enum, prefix = _sel_enum(choice)
+            tgt_enum = f'{ASN1SCC}{dest}'
+            arms = []
+            for cname in _choice_children(choice):
+                member = cname.replace('-', '_')
+                arms.append(f'{src_enum}::{prefix}_{member}_present => '
+                            f'{tgt_enum}::{dest}_{member}')
+            rust_string = (f'match {var_str} {{ ' + ', '.join(arms) +
+                           f', _ => {tgt_enum}::default() }}') if arms \
+                else f'{tgt_enum}::default()'
 
     elif ident == 'val':
         # val(x, T): convert an enumerated value x to the enumerated type T.
@@ -3483,7 +3780,12 @@ def _prim_call(prim, **kwargs):
         p_stmts, p_str, p_local = expression(exp, readonly=1)
         stmts.extend(p_stmts)
         local_decl.extend(p_local)
-        # In Rust, enum discriminant via `as i64`
+        # In Rust, enum discriminant via `as i64`.
+        # A bare fpar parameter is `&mut T`; dereference it before the cast,
+        # but not when it is already a field access (e.g. `each.son`, where the
+        # borrowed base is not itself the fpar).
+        if isinstance(exp, ogAST.PrimVariable) and is_fpar(p_str.split('.')[0]):
+            p_str = deref_fpar(p_str, p_str.split('.')[0])
         rust_string = f'({p_str} as i64)'
 
     elif ident == 'floor':
@@ -3550,15 +3852,27 @@ def _prim_call(prim, **kwargs):
                 # External procedures take &mut params
                 list_of_params.append(f'&mut {p_str}')
             else:
-                list_of_params.append(p_str)
+                # Inner procedures declare their fpars as `&mut T`; pass a
+                # mutable reference. A bare fpar parameter is itself `&mut T`,
+                # so reborrow it (`&mut *x`) instead of `&mut &mut T`.
+                if isinstance(param, ogAST.PrimVariable) and is_fpar(p_str):
+                    arg_str = f'*{p_str}' if not p_str.startswith('*') else p_str
+                else:
+                    arg_str = p_str
+                list_of_params.append(f'&mut {arg_str}')
             stmts.extend(p_stmts)
             local_decl.extend(p_local)
         if p.external:
-            # External procedures: call the extern function directly
-            rust_string = f'{ident}({", ".join(list_of_params)})'
+            # External procedures: call the extern function directly, using the
+            # resolved spelling (not the lowercased call-site identifier).
+            rust_string = f'{p.inputString}{ri_call_args(list_of_params)}'
         else:
+            # Use the resolved procedure spelling: the declaration preserves
+            # case (procedure_header uses proc.inputString), and Rust is
+            # case-sensitive, so a lowercased call-site identifier would not
+            # match (e.g. p_0_determine_addressing_mode vs p_0_Determine_...).
             prefix = f'p{SEPARATOR}' if not p.exported else ''
-            rust_string = f'{prefix}{ident}{ri_call_args(list_of_params)}'
+            rust_string = f'{prefix}{p.inputString}{ri_call_args(list_of_params)}'
 
     return stmts, str(rust_string), local_decl
 
@@ -3572,6 +3886,10 @@ def _prim_index(prim, **kwargs):
     r_stmts, rust_string, r_decl = expression(receiver, readonly=ro)
     stmts.extend(r_stmts)
     local_decl.extend(r_decl)
+    # A receiver that is a block expression (e.g. a slice temporary) must be
+    # parenthesized before a field/index access: `({ ... }).arr[i]`.
+    if rust_string.strip().startswith('{'):
+        rust_string = f'({rust_string})'
 
     if kind == 'BitStringType':
         # C-aligned byte representation (asn1scc -Rust emits arr: [u8; N]):
@@ -3588,13 +3906,11 @@ def _prim_index(prim, **kwargs):
         if isinstance(bit, int) or str(bit).isnumeric():
             b = int(bit)
             mask = f'0x{0x80 >> (b % 8):02X}u8'
-            if not isinstance(receiver, ogAST.PrimSubstring):
-                rust_string += '.arr'
+            rust_string += '.arr'
             lval = f'{rust_string}[{b // 8}]'
         else:
             mask = f'(0x80u8 >> ({bit} % 8) as u32)'
-            if not isinstance(receiver, ogAST.PrimSubstring):
-                rust_string += '.arr'
+            rust_string += '.arr'
             lval = f'{rust_string}[({bit}) / 8]'
         prim._rust_mask = mask
         if ro:
@@ -3603,8 +3919,9 @@ def _prim_index(prim, **kwargs):
 
     if prim.use_num_value != -1 and not prim.requires_num:
         idx = prim.use_num_value  # 0-based in SDL, 0-based in Rust (no conversion!)
-        if not isinstance(receiver, ogAST.PrimSubstring):
-            rust_string += '.arr'
+        # SEQUENCE OF / string values (including a slice temporary) are structs
+        # with an `arr` field; index into it.
+        rust_string += '.arr'
         rust_string = f'{rust_string}[{idx}]'
         return stmts, rust_string, local_decl
 
@@ -3614,8 +3931,7 @@ def _prim_index(prim, **kwargs):
         idx_string = int(idx_string)  # already 0-based
     else:
         idx_string = f'{idx_string} as usize'
-    if not isinstance(receiver, ogAST.PrimSubstring):
-        rust_string += '.arr'
+    rust_string += '.arr'
     rust_string += f'[{idx_string}]'
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
@@ -3666,8 +3982,10 @@ def _prim_substring(prim, **kwargs):
             except (ValueError, TypeError):
                 has_n_count = True
         base = r_string
-        if not isinstance(receiver, ogAST.PrimSubstring):
-            base += '.arr'
+        # The receiver is always a struct with an `arr` field (a variable of a
+        # SEQUENCE OF / OCTET / BIT STRING type, or a nested slice temporary —
+        # which expression() already parenthesized if it is a block).
+        base += '.arr'
         ncount = ' tmp.n_count = n as i32;' if has_n_count else ''
         rust_string = (
             f'{{ let mut tmp = {name_of_type}::default();'
@@ -3697,10 +4015,9 @@ def _prim_substring(prim, **kwargs):
             # For OctetStringType/BitStringType, always has n_count (variable-size)
 
         # Generate a block expression that creates a new struct from the slice
-        base = r_string
-        if not isinstance(receiver, ogAST.PrimSubstring):
-            base += '.arr'
-        slice_expr = f'{base}[{r1_string}..{r2_string} + 1]'
+        base = r_string + '.arr'
+        slice_expr = (f'{base}[({r1_string}) as usize'
+                      f'..({r2_string}) as usize + 1]')
         count_expr = f'({r2_string} - {r1_string} + 1)'
 
         if has_n_count:
@@ -3716,10 +4033,9 @@ def _prim_substring(prim, **kwargs):
                            f' tmp }}')
     elif bty and bty.kind in ('IA5StringType', 'StringType'):
         name_of_type = type_name(prim.exprType)
-        base = r_string
-        if not isinstance(receiver, ogAST.PrimSubstring):
-            base += '.arr'
-        slice_expr = f'{base}[{r1_string}..{r2_string} + 1]'
+        base = r_string + '.arr'
+        slice_expr = (f'{base}[({r1_string}) as usize'
+                      f'..({r2_string}) as usize + 1]')
         count_expr = f'({r2_string} - {r1_string} + 1)'
         rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
                        f' let n = {count_expr} as usize;'
@@ -3773,12 +4089,14 @@ def _prim_selector(prim, **kwargs):
         else:
             rust_string = f'{rust_string}.{field_name}'
     else:
-        # SEQUENCE field access
+        # SEQUENCE field access. asn1scc spells the Rust field as the ASN.1
+        # child name with '-' replaced by '_' (case preserved), e.g. b-C -> b_C.
         child = child_spelling(field_name, receiver_bty)
+        field = child.replace('-', '_')
         if receiver_bty.Children[child].Optional == 'True' \
                 and not kwargs.get("readonly", 0):
-            stmts.append(f'{rust_string}.exist.{field_name} = true;')
-        rust_string += f'.{field_name}'
+            stmts.append(f'{rust_string}.exist.{field} = true;')
+        rust_string += f'.{field}'
     return stmts, str(rust_string), local_decl
 
 
@@ -3894,8 +4212,20 @@ def _equality(expr, **kwargs):
         if isinstance(expr.right, (ogAST.PrimBitStringLiteral,
                                    ogAST.PrimOctetStringLiteral)):
             right_str = str(expr.right.numeric_value)
+        # Comparing an enumerated value with an integer: asn1scc encodes
+        # enumerants as one integer width but the generator may derive another
+        # (e.g. i64 vs u64). Cast BOTH sides to the same i64.
+        if lbty.kind in ('EnumeratedType', 'ChoiceEnumeratedType') and \
+                rbty.kind.startswith('Integer') and \
+                not isinstance(expr.right, ogAST.PrimBoolean):
+            right_str = f'({right_str} as i64)'
+            left_str = f'({left_str} as i64)'
+        elif rbty.kind in ('EnumeratedType', 'ChoiceEnumeratedType') and \
+                lbty.kind.startswith('Integer'):
+            left_str = f'({left_str} as i64)'
+            right_str = f'({right_str} as i64)'
         # Cast in case a side is using a 32bits int (eg. when using Length(..))
-        if lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
+        elif lbty.kind == 'IntegerType' and rbty.kind != lbty.kind:
             right_str = f'({right_str} as {type_name(lbty)})'
         elif rbty.kind == 'IntegerType' and lbty.kind != rbty.kind:
             left_str = f'({left_str} as {type_name(rbty)})'
@@ -3973,10 +4303,19 @@ def _assign_expression(expr, **kwargs):
         right_str = str(expr.right.numeric_value)
         strings.append(f'{left_str} = {right_str};')
     elif basic_left.kind.startswith('Integer'):
-        # Cast if needed
-        basic_right = find_basic_type(expr.right.exprType)
-        cast_left = type_name(basic_left)
-        cast_right = type_name(basic_right)
+        # Cast if needed.
+        # Prefer the *declared* type name when it is a ReferenceType: asn1scc
+        # generates subtypes as aliases (asn1SccT2 = asn1SccT1 = i64), so using
+        # a width derived from the range would emit a signed/unsigned cast that
+        # changes the value (e.g. `i64 as u64`) even though both sides are the
+        # same underlying integer.
+        def _declared(t):
+            if getattr(t, 'kind', None) == 'ReferenceType':
+                return type_name(t)
+            b = find_basic_type(t)
+            return type_name(b) if b is not None else type_name(t)
+        cast_left = _declared(expr.left.exprType)
+        cast_right = _declared(expr.right.exprType)
         if cast_left != cast_right:
             res = f'{right_str} as {cast_left}'
         else:
@@ -4027,6 +4366,18 @@ def _bitwise_operators(expr, **kwargs):
     right_stmts, right_str, right_local = expression(expr.right, readonly=1)
 
     basic_type = find_basic_type(expr.exprType)
+
+    # When the operation is on integers, an OCTET/BIT STRING literal operand
+    # (e.g. 'FFFF'H) must be used as its numeric value — expression() renders it
+    # as a byte list, which is not a valid integer operand. Mirror the
+    # substitution done by _basic_operators / _equality.
+    if basic_type is not None and basic_type.kind.startswith('Integer'):
+        if isinstance(expr.left, (ogAST.PrimOctetStringLiteral,
+                                  ogAST.PrimBitStringLiteral)):
+            left_str = str(expr.left.numeric_value)
+        if isinstance(expr.right, (ogAST.PrimOctetStringLiteral,
+                                   ogAST.PrimBitStringLiteral)):
+            right_str = str(expr.right.numeric_value)
 
     if basic_type.kind == 'BooleanType':
         if isinstance(expr, ogAST.ExprOr):
@@ -4206,9 +4557,25 @@ def _append(expr, **kwargs):
 
     # For string types (IA5String, OctetString), handle differently
     if bty and bty.kind in ('IA5StringType', 'StringType'):
-        # String concatenation: copy bytes
+        # String concatenation: copy bytes. Literal operands are rendered by
+        # _string_literal as a bare byte list, so wrap them in a proper struct
+        # literal first (a bare list is not a value with an `.arr` field).
+        l_expr = left_str
+        r_expr = right_str
+        if isinstance(expr.left, ogAST.PrimStringLiteral):
+            try:
+                et = expr.expected_type
+            except (NotImplementedError, AttributeError):
+                et = expr.left.exprType
+            l_expr = array_content(expr.left, left_str, et)
+        if isinstance(expr.right, ogAST.PrimStringLiteral):
+            try:
+                et = expr.expected_type
+            except (NotImplementedError, AttributeError):
+                et = expr.right.exprType
+            r_expr = array_content(expr.right, right_str, et)
         rust_string = (f'{{ let mut tmp = {name_of_type}::default();'
-                       f' let l = {left_str}; let r = {right_str};'
+                       f' let l = {l_expr}; let r = {r_expr};'
                        f' let mut n = 0usize;'
                        f' for &b in &l.arr {{ if b == 0 {{ break; }} tmp.arr[n] = b; n += 1; }}'
                        f' for &b in &r.arr {{ if b == 0 {{ break; }} tmp.arr[n] = b; n += 1; }}'
@@ -4255,13 +4622,18 @@ def _append(expr, **kwargs):
 
     # If either side is a complex expression (ExprAppend, PrimSubstring, etc.),
     # bind it to a temp variable to keep the code readable and correct.
+    # These bindings MUST be emitted as statements (stmts) — after the operand's
+    # own statements — not in local_decl, because a side-effecting operand (e.g.
+    # a conditional) assigns its result temp in those statements. Emitting the
+    # binding in local_decl would capture the operand BEFORE it is computed,
+    # producing wrong results for `a // (if c then x else y fi) // b`.
     if isinstance(expr.left, (ogAST.ExprAppend, ogAST.PrimSubstring)) or not isinstance(expr.left, (ogAST.PrimVariable, ogAST.PrimConstant)):
         tmp_l = f'tmp_app{expr.tmpVar}_l'
-        local_decl.append(f'let {tmp_l} = {left_var};')
+        stmts.append(f'let {tmp_l} = {left_var};')
         left_var = tmp_l
     if isinstance(expr.right, (ogAST.ExprAppend, ogAST.PrimSubstring)) or not isinstance(expr.right, (ogAST.PrimVariable, ogAST.PrimConstant, ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
         tmp_r = f'tmp_app{expr.tmpVar}_r'
-        local_decl.append(f'let {tmp_r} = {right_var};')
+        stmts.append(f'let {tmp_r} = {right_var};')
         right_var = tmp_r
 
     if has_n_count:
@@ -4308,13 +4680,26 @@ def _expr_in(expr, **kwargs):
         # x in seqof -> iterate
         tmp = f'tmp{expr.tmpVar}'
         local_decl.append(f'let mut {tmp}: bool = false;')
+        # Bind the container to a temp so a block expression (e.g. a slice) is
+        # evaluated once and can be indexed repeatedly.
+        container = f'tmp_in{expr.tmpVar}'
+        stmts.append(f'let {container} = {left_str};')
         # Check if the left side is a fixed-size SEQUENCE OF (no n_count field)
         left_bty = find_basic_type(expr.left.exprType)
-        if left_bty and hasattr(left_bty, 'Min') and hasattr(left_bty, 'Max') and left_bty.Min == left_bty.Max:
-            stmts.append(f'for i in 0..{left_str}.arr.len() {{')
+        # A slice's temporary carries n_count only for variable-size types.
+        _k, _ms, _hn, _tn = _resolve_type_info(expr.left.exprType, expr.left.exprType)
+        if left_bty and left_bty.Min == left_bty.Max and not isinstance(expr.left, ogAST.PrimSubstring):
+            stmts.append(f'for i in 0..{container}.arr.len() {{')
+        elif isinstance(expr.left, ogAST.PrimSubstring) and not _hn:
+            # Fixed-size slice: the temporary's `arr` keeps the source max size
+            # and the tail is zero, so bound the loop by the slice length.
+            sub = expr.left.value[1]['substring']
+            _s1, r1_str, _l1 = expression(sub[0])
+            _s2, r2_str, _l2 = expression(sub[1])
+            stmts.append(f'for i in 0..(({r2_str}) - ({r1_str}) + 1) as usize {{')
         else:
-            stmts.append(f'for i in 0..{left_str}.n_count as usize {{')
-        stmts.append(f'    if {left_str}.arr[i] == {right_str} {{')
+            stmts.append(f'for i in 0..{container}.n_count as usize {{')
+        stmts.append(f'    if {container}.arr[i] == {right_str} {{')
         stmts.append(f'        {tmp} = true;')
         stmts.append(f'        break;')
         stmts.append(f'    }}')
@@ -4355,13 +4740,23 @@ def _enumerated_value(primary, **kwargs):
     member = each.replace('-', '_')
     refname = getattr(primary.exprType, 'ReferencedTypeName', None) or \
         getattr(basic, 'ReferencedTypeName', None) or ''
-    if refname.endswith('-Selection'):
-        # Synthetic CHOICE selection enum.  asn1scc names the type after the
-        # referenced name (already process-qualified) and its enumerants
-        # "<TypeNoAsn1SccPrefix>_<child>_present".
-        base = refname.title().replace('-', '_')
-        enum_type = f'{ASN1SCC}{base}'
-        enum_id = f'{base}_{member}_present'
+    if 'selection' in refname.replace('_', '-').lower():
+        # Synthetic CHOICE selection enum. refname may be the unqualified
+        # "<Choice>-Selection" (from a DCL) or the already process-qualified
+        # "<Owner>_<Choice>_Selection" (from a decision answer). Normalise to
+        #   asn1Scc<Owner>_<Choice>_Selection
+        # with enumerants <Owner>_<Choice>_Selection_<child>_present.
+        choice = refname
+        for suffix in ('-Selection', '_Selection', '-selection', '_selection'):
+            if choice.endswith(suffix):
+                choice = choice[:-len(suffix)]
+                break
+        owner = (PROCESS_NAME or '').title().replace('-', '_')
+        base = choice.replace('-', '_').title().replace('-', '_')
+        if base.lower().startswith(owner.lower() + '_'):
+            base = base[len(owner) + 1:]
+        enum_type = f'{ASN1SCC}{owner}_{base}_Selection'
+        enum_id = selection_present_variant(enum_type, member)
     else:
         # The enum type name is the EnumID minus its trailing member: either
         # "<member>" or "<member>_present"/"<member>_PRESENT". This is
@@ -4416,7 +4811,8 @@ def _boolean(primary, **kwargs):
 
 @expression.register(ogAST.PrimNull)
 def _null(primary, **kwargs):
-    return [], '0', []
+    # asn1scc maps the ASN.1 NULL type to the Rust unit type `()`.
+    return [], '()', []
 
 
 @expression.register(ogAST.PrimEmptyString)
@@ -4457,14 +4853,27 @@ def _constant(primary, **kwargs):
     name = str(primary.constant_c_name)
     if name.lower() == 'self':
         return [], default_pid(), []
-    # asn1scc emits the value constants in both dataview-uniqDef.rs and
-    # dataview-uniq.rs; since both are glob-imported, an unqualified name is
-    # ambiguous (E0659). Qualify it with the module that defines the types.
-    # In an instance wrapper that module belongs to the process type crate.
+    # SDL synonyms declared in the process (process.DV.SDL_Constants) are
+    # emitted as local uppercase constants (see the context declarations), so
+    # they must NOT be qualified with the dataview module — the dataview does
+    # not define them (E0425). Match case-insensitively like the rest of SDL.
+    if PROCESS is not None:
+        try:
+            sdl_consts = PROCESS.DV.SDL_Constants
+        except (AttributeError, TypeError):
+            sdl_consts = {}
+        for const in sdl_consts.values():
+            if getattr(const, 'varName', '').lower() == name.lower():
+                return [], const.varName.upper(), []
+    # asn1scc emits the value constants in both <dv>Def.rs and <dv>.rs; since
+    # both are glob-imported, an unqualified name is ambiguous (E0659). Qualify
+    # it with the module that defines the types.  In an instance wrapper that
+    # module belongs to the process type crate.
+    _stem, _mod = dataview_rust_names()
     if getattr(PROCESS, 'instance_of_name', None):
-        mod = f'{PROCESS.instance_of_name.lower()}::dataview_uniqDef'
+        mod = f'{PROCESS.instance_of_name.lower()}::{_mod}Def'
     else:
-        mod = 'dataview_uniqDef'
+        mod = f'{_mod}Def'
     return [], f'{mod}::{name}', []
 
 
@@ -4490,6 +4899,16 @@ def _conditional(cond, **kwargs):
 
     stmts.extend(if_stmts)
     local_decl.extend(if_local)
+
+    # A string literal branch is rendered by _string_literal as a bare byte
+    # list; wrap it in a proper struct literal so it is a well-typed value
+    # (both in the `if cond {{ .. }}` string form and in the temp assignment).
+    if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
+        et = getattr(cond.value['then'], 'expected_type', None) or cond.exprType
+        then_str = array_content(cond.value['then'], then_str, et)
+    if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
+        et = getattr(cond.value['else'], 'expected_type', None) or cond.exprType
+        else_str = array_content(cond.value['else'], else_str, et)
 
     # Rust ternary: if cond { then } else { else }
     if actual_type == 'String' or basic_cond.kind == 'IA5StringType':
@@ -4519,9 +4938,11 @@ def _sequence(seq, **kwargs):
     fields = []
     for elem, value in seq.value.items():
         delem = elem.replace('_', '-')
+        elem_key = elem.replace('-', '_')  # fallback if no match
         for each in type_children:
             if each.lower() == delem.lower():
                 elem_spec = type_children[each]
+                elem_key = each.replace('-', '_')
                 break
         elem_bty = find_basic_type(elem_spec.type)
         value_stmts, value_str, local_var = expression(value, readonly=1)
@@ -4540,12 +4961,17 @@ def _sequence(seq, **kwargs):
             if value_str and ' { ' in value_str and value_str.startswith(ASN1SCC):
                 value_str = f'({value_str})'
 
-        fields.append(f'{elem}: {value_str}')
+        # Emit the field with asn1scc's Rust spelling ('-' -> '_', case from
+        # the ASN.1 child), not the raw SDL token which may differ in case.
+        fields.append(f'{elem_key}: {value_str}')
         stmts.extend(value_stmts)
         local_decl.extend(local_var)
 
-    # Handle optional fields
-    optional_fields = {field.lower().replace('-', '_'): (field, val)
+    # Handle optional fields. Keys are the case-insensitive lookup spelling;
+    # the value keeps the original ASN.1 child name so the emitted Rust field
+    # spelling ('-' -> '_', case preserved) matches asn1scc's *_exist struct.
+    optional_fields = {field.lower().replace('-', '_'):
+                       (field.replace('-', '_'), val)
                        for field, val in type_children.items()
                        if val.Optional == 'True'}
     # Check if all fields (including optional) are present; if not, use ..Default::default()
@@ -4559,13 +4985,14 @@ def _sequence(seq, **kwargs):
         if fd_name in present_fields:
             # Build exist struct with all fields listed (avoid ::default() in statics)
             exist_parts = []
-            for ofn in optional_fields:
-                exist_parts.append(f'{ofn}: {"true" if ofn == fd_name else "false"}')
+            for ofn, (ofn_orig, _) in optional_fields.items():
+                exist_parts.append(f'{ofn_orig}: {"true" if ofn == fd_name else "false"}')
             fields.append(f'exist: {type_name_str}_exist {{ {", ".join(exist_parts)} }}')
             break
     else:
         if optional_fields:
-            exist_parts = [f'{ofn}: false' for ofn in optional_fields]
+            exist_parts = [f'{ofn_orig}: false'
+                           for ofn_orig, _ in optional_fields.values()]
             fields.append(f'exist: {type_name_str}_exist {{ {", ".join(exist_parts)} }}')
 
     # If any fields are missing (optional or not), fill them with
