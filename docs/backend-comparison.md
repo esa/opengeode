@@ -48,7 +48,7 @@ scope (Rust does not implement it; C partially).
 | PI generation (incl. fpar params) | ✅ | ✅ | ✅ |
 | RI stub generation | ✅ | ✅ | ✅ |
 | Timer set / reset / timeout | ✅ | ✅ | ✅ |
-| Timer **value read** | ❌ | ✅ | ❌ |
+| Timer-name case resolution | ✅ (case-insensitive language) | ✅ `find_var_in_timers` | ✅ `canonical_timer_name` |
 | Continuous signals | ✅ | ✅ | ✅ |
 | State aggregations / composite states | ✅ | ✅ | ✅ |
 | State entry / exit procedures | ✅ | ✅ | ✅ |
@@ -102,9 +102,23 @@ These are verified by generating minimal models, not only by reading.
 
 ## Confirmed Gaps — Ada Backend
 
-1. **Timer value read missing.** Ada has no `find_var_in_timers` equivalent
-   (only C does, `CGenerator.py:1509`, `:4330`), so reading a timer's current
-   value is not supported.
+**None.** The two notes below are recorded *not* as gaps, but to pre-empt
+re-discovery of earlier misclassifications.
+
+> **Not a gap — "timer value read" does not exist.** A timer name is accepted
+> only as the `TIMER`-typed argument of `set_timer(value, name)` and
+> `reset_timer(name)`. Using a timer in any expression is rejected by the parser
+> in all three backends (`TimerType` is not a value type): `x := myTimer`,
+> `decision myTimer`, `num(myTimer)`, `writeln(myTimer)`, `exist(myTimer)` all
+> fail type-checking, and the grammar's `active(timer)` rule is commented out
+> (`sdl92.g:1286`, inside the `/* */` at 1258–1293). C's `find_var_in_timers`
+> (`CGenerator.py:1509`, `:4337`) and Rust's `canonical_timer_name`
+> (`RustGenerator.py:389`) do the *same* thing — resolve the declared spelling
+> of a timer name so the emitted `SET_<timer>` / `RESET_<timer>` matches the
+> case-sensitive target language. Ada needs no such helper because Ada is
+> case-insensitive. So there is no "timer value read" capability for C to have
+> and Ada/Rust to lack. (An earlier revision of this document wrongly listed it
+> as an Ada/Rust gap, from grepping `find_var_in_timers` alone.)
 
 > **Not a defect — deliberate trace marker.** `type_name` returns `'Asn1InT'`
 > for `ChoiceEnumeratedType` (`AdaGenerator.py:4157`). Ada is case-insensitive,
@@ -139,17 +153,16 @@ These do **not** reflect a generator defect; each was verified:
 
 1. **No `parent` / `sender` / `entity` PID reads.** Rust implements only `self`
    and offspring *writes*; it has no read expressions for the other PID roles.
-2. **Timer value read missing** (same as Ada).
-3. **`MantissaBaseExp` stub** (same as Ada).
-4. **Process type generic parameter wiring** — Ada emits a full generic spec
+2. **`MantissaBaseExp` stub** (same as Ada).
+3. **Process type generic parameter wiring** — Ada emits a full generic spec
    (`self`, `Delete_Instance`, `Check_Queue`, every RI, context params as formal
    generic parameters) plus a full instance instantiation. Rust's process
    type/instance separation imports the type module and calls its functions
    directly; all instances of a type share the same RI stubs. See
    `is_generic`/`ri_generic_sig` in `RustGenerator.py`.
-5. **TASTE context-parameter wiring** — Rust detects `has_context_params` but
+4. **TASTE context-parameter wiring** — Rust detects `has_context_params` but
    does not generate the parameter plumbing Ada does.
-6. **Simulation mode not supported** (by design).
+5. **Simulation mode not supported** (by design).
 
 ---
 
@@ -261,10 +274,12 @@ by a per-directory `patch_ri.py`, mirroring the C driver.
 1. **C `CREATE`** — add the missing handler.
 2. **C `STOP`** — implement `Delete_Instance`-equivalent instead of `return;`.
 3. **C `MantissaBaseExp`** — implement or document as unsupported for all.
-4. **Timer value read** — decide implement-in-Ada/Rust vs document as C-only.
-5. **Targeted tests for `CREATE` / `STOP`** — currently none.
+4. **Targeted tests for `CREATE` / `STOP`** — currently none.
 
 *(C `state` reference is done; see the fixed items below.)*
+
+*(“Timer value read” was removed from this list — it is not a feature of any
+backend; see the note under “Confirmed Gaps — Ada Backend”.)*
 
 *(The Ada `Asn1InT` spelling is not on this list — it is a deliberate marker;
 see the note under “Confirmed Gaps — Ada Backend”.)*
@@ -333,8 +348,7 @@ notable ones:
 | A1 | `CREATE` unsupported | C | Missing feature | High |
 | A2 | `STOP` is a no-op | C | Missing feature | High |
 | A3 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| A4 | Timer value read missing | Ada / Rust | Missing feature | Medium |
-| A5 | No tests for `CREATE`/`STOP` | all | Test gap | Medium |
+| A4 | No tests for `CREATE`/`STOP` | all | Test gap | Medium |
 | B | 3 Rust runtime residuals | Rust | Fixture/runtime | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
