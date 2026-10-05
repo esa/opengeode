@@ -93,12 +93,18 @@ These are verified by generating minimal models, not only by reading.
 
 ## Confirmed Gaps — Ada Backend
 
-1. **`ChoiceEnumeratedType` typo.** `type_name` returns the string `'Asn1InT'`
-   (`AdaGenerator.py:4157`), which should be `'Asn1Int'`. The misspelling
-   appears nowhere else in the tree.
-2. **Timer value read missing.** Ada has no `find_var_in_timers` equivalent
+1. **Timer value read missing.** Ada has no `find_var_in_timers` equivalent
    (only C does, `CGenerator.py:1509`, `:4330`), so reading a timer's current
    value is not supported.
+
+> **Not a defect — deliberate trace marker.** `type_name` returns `'Asn1InT'`
+> for `ChoiceEnumeratedType` (`AdaGenerator.py:4157`). Ada is case-insensitive,
+> so this resolves to `adaasn1rtl.Asn1Int`, and the distinctive spelling is
+> **intentionally kept** as a marker pointing back to this generator site. It
+> was verified that the returned name is only ever interpolated into emitted
+> code — never compared, used as a key, or case-mapped — so the spelling has no
+> semantic effect. Do **not** "fix" it. (`StgBackend.py:1762`, the legacy
+> backend, uses `Asn1Int`.)
 
 ---
 
@@ -246,9 +252,11 @@ by a per-directory `patch_ri.py`, mirroring the C driver.
 2. **C `STOP`** — implement `Delete_Instance`-equivalent instead of `return;`.
 3. **C `state` reference** — implement instead of raising.
 4. **C `MantissaBaseExp`** — implement or document as unsupported for all.
-5. **Ada `Asn1InT` typo** — one-line fix.
-6. **Timer value read** — decide implement-in-Ada/Rust vs document as C-only.
-7. **Targeted tests for `CREATE` / `STOP` / `state`** — currently none.
+5. **Timer value read** — decide implement-in-Ada/Rust vs document as C-only.
+6. **Targeted tests for `CREATE` / `STOP` / `state`** — currently none.
+
+*(The Ada `Asn1InT` spelling is not on this list — it is a deliberate marker;
+see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ### B. Rust test-suite residual
 
@@ -315,9 +323,8 @@ notable ones:
 | A2 | `STOP` is a no-op | C | Missing feature | High |
 | A3 | `state` reference raises | C | Missing feature | High |
 | A4 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| A5 | `ChoiceEnumeratedType` → `'Asn1InT'` | Ada | Typo | Low |
-| A6 | Timer value read missing | Ada / Rust | Missing feature | Medium |
-| A7 | No tests for `CREATE`/`STOP`/`state` | all | Test gap | Medium |
+| A5 | Timer value read missing | Ada / Rust | Missing feature | Medium |
+| A6 | No tests for `CREATE`/`STOP`/`state` | all | Test gap | Medium |
 | B | 3 Rust runtime residuals | Rust | Fixture/runtime | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
