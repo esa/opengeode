@@ -3657,10 +3657,17 @@ def _prim_call(prim, **kwargs):
         else:
             if isinstance(exp, ogAST.PrimSubstring):
                 # A slice returns a temporary struct: variable-size types carry
-                # n_count, fixed-size ones only have the `arr` array.
+                # n_count, fixed-size ones only have the `arr` array — whose
+                # length is the *source* max size, not the slice length, so use
+                # the slice bounds (j - i + 1).
                 _k, _ms, _hn, _tn = _resolve_type_info(exp.exprType, exp.exprType)
-                rust_string = f'({p_str}.n_count as usize)' if _hn \
-                    else f'({p_str}.arr.len())'
+                if _hn:
+                    rust_string = f'({p_str}.n_count as usize)'
+                else:
+                    sub = exp.value[1]['substring']
+                    _s1, _r1, _l1 = expression(sub[0], readonly=1)
+                    _s2, _r2, _l2 = expression(sub[1], readonly=1)
+                    rust_string = f'((({_r2}) - ({_r1}) + 1) as usize)'
             else:
                 rust_string = f'{p_str}.n_count'
 
@@ -4681,14 +4688,19 @@ def _append(expr, **kwargs):
     except (NotImplementedError, AttributeError):
         name_of_type = type_name(expr.left.exprType)
 
-    # Determine if the type has n_count (variable-size) or not (fixed-size)
-    bty = find_basic_type(expr.left.exprType)
+    # Determine if the type has n_count (variable-size) or not (fixed-size).
+    # Prefer the *expected* (result) type: a literal operand such as {x} has a
+    # computed Min==Max type, which must not dictate the result's size class.
+    exp_ref = getattr(getattr(expr, 'expected_type', None), 'ReferencedTypeName', None)
+    src_ref = exp_ref or (expr.left.exprType.ReferencedTypeName
+                          if hasattr(expr.left.exprType, 'ReferencedTypeName') else None)
+    bty = find_basic_type(expr.expected_type) if exp_ref else find_basic_type(expr.left.exprType)
     # Resolve through ReferenceType
     while bty and bty.kind == 'ReferenceType' and bty.ReferencedTypeName in TYPES:
         bty = find_basic_type(TYPES[bty.ReferencedTypeName].type)
     has_n_count = True
     # Check the actual type definition, not the expression's computed range
-    ref_name = expr.left.exprType.ReferencedTypeName if hasattr(expr.left.exprType, 'ReferencedTypeName') else None
+    ref_name = src_ref
     if ref_name and ref_name in TYPES:
         actual_bty = find_basic_type(TYPES[ref_name].type)
         while actual_bty and actual_bty.kind == 'ReferenceType' and actual_bty.ReferencedTypeName in TYPES:
