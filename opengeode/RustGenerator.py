@@ -3511,11 +3511,23 @@ def procedure_header(proc):
 def _primary_variable(prim, **kwargs):
     '''Single variable reference'''
     name = prim.value[0]
+    # A dotted name is a field/alternative access (e.g. a renames alias that
+    # Helper.code_generation_preprocessing substituted, "cH.a"). Resolve the
+    # base and append the member accesses rather than dropping them.
+    member_access = ''
     if '.' in name:
-        name = name.split('.')[0]
+        base_name, member_access = name.split('.', 1)
+        name = base_name
     # 'self' in a process type resolves to SELF_PID (the PID of this instance); in a process to default_pid()
     if name.lower() == 'self':
         return [], default_pid(), []
+    # A renames alias (e.g. `field renames seq.a`) is not a real variable: it
+    # stands for the target expression. Ada emits a renames clause; Rust must
+    # inline the target (e.g. ctxt.seq.a).
+    for alias_name, (alias_sort, alias_expr) in ALIASES.items():
+        if alias_name.lower() == name.lower():
+            a_stmts, a_str, a_decl = expression(alias_expr, **kwargs)
+            return a_stmts, a_str, a_decl
     var = find_var(name)
     if (not var) or is_local(var):
         sep = ''
@@ -3537,6 +3549,38 @@ def _primary_variable(prim, **kwargs):
                          if f.lower() == name.lower()), used_name)
         return [], f'(*{declared})', []
     rust_string = f'{sep}{used_name}'
+    # A dotted name is a member access on the base (e.g. a renames alias whose
+    # target is a CHOICE alternative or a SEQUENCE field). Apply each member
+    # with the same rules as PrimSelector so CHOICE payloads are extracted.
+    if member_access:
+        cur_var = find_var(name) or name
+        cur_bty, _ = VARIABLES.get(cur_var, VARIABLES.get(cur_var.lower(), (None, None)))
+        cur_is_fpar = is_fpar(name)
+        base_str = f'(*{used_name})' if cur_is_fpar else rust_string
+        for member in member_access.split('.'):
+            bty = find_basic_type(cur_bty) if cur_bty is not None else None
+            if bty is not None and bty.kind == 'ChoiceType':
+                child = None
+                for cname, descr in bty.Children.items():
+                    if cname.replace('-', '_').lower() == member.replace('-', '_').lower():
+                        child = descr
+                        break
+                if child is not None:
+                    variant = choice_payload_variant(child) or member.replace('-', '_')
+                    tname = type_name(cur_bty)
+                    base_str = (f'{{ match &{base_str} {{ '
+                                f'{tname}::{variant}(v) => v.clone(), '
+                                f'_ => Default::default() }} }}')
+                    cur_bty = getattr(child, 'type', None)
+                    continue
+            # SEQUENCE field (or fallback)
+            if bty is not None and getattr(bty, 'Children', None):
+                try:
+                    member = child_spelling(member, bty).replace('-', '_')
+                except TypeError:
+                    member = member.replace('-', '_')
+            base_str = f'{base_str}.{member.replace("-", "_")}'
+        return [], base_str, []
     return [], str(rust_string), []
 
 
@@ -4308,6 +4352,44 @@ def _assign_expression(expr, **kwargs):
 
     basic_left = find_basic_type(expr.left.exprType)
 
+    # A CHOICE alternative written through a dotted lvalue (e.g. a renames alias
+    # `content renames ch.a`) is not addressable in Rust: a CHOICE is a tagged
+    # enum. Rebuild the enum with the selected variant carrying the new payload.
+    choice_lhs = None
+    if isinstance(expr.left, ogAST.PrimVariable) and '.' in expr.left.value[0]:
+        base_name, member = expr.left.value[0].split('.', 1)
+        base_var = find_var(base_name)
+        base_type = None
+        if base_var in VARIABLES:
+            base_type = VARIABLES[base_var][0]
+        base_bty = find_basic_type(base_type) if base_type is not None else None
+        if base_bty is not None and base_bty.kind == 'ChoiceType':
+            child = None
+            for cname, descr in base_bty.Children.items():
+                if cname.replace('-', '_').lower() == member.replace('-', '_').lower():
+                    child = descr
+                    break
+            if child is not None:
+                variant = choice_payload_variant(child) or member.replace('-', '_')
+                enum_t = type_name(base_type)
+                base_ref = f'{LPREFIX}.{base_var}' if base_var else base_name
+                # Copy the other alternatives out of the current value.
+                arms = []
+                for cname, descr in base_bty.Children.items():
+                    v = choice_payload_variant(descr) or cname.replace('-', '_')
+                    if v == variant:
+                        arms.append(f'{enum_t}::{v}(v0) => {enum_t}::{v}({right_str})')
+                    else:
+                        arms.append(f'{enum_t}::{v}(v0) => {enum_t}::{v}(v0)')
+                choice_lhs = (f'{base_ref} = match {base_ref} {{ '
+                              + ', '.join(arms)
+                              + f', _ => {enum_t}::default() }};')
+    if choice_lhs is not None:
+        code.extend(left_stmts)
+        code.extend(right_stmts)
+        code.append(choice_lhs)
+        return code, '', local_decl
+
     # Dereference fpar parameters on the left side (they are &mut references)
     if isinstance(expr.left, ogAST.PrimVariable):
         left_name = expr.left.value[0].split('.')[0]
@@ -4957,6 +5039,7 @@ def _conditional(cond, **kwargs):
     # The literal takes the type of the *other* branch (or the conditional's
     # expected/declared type), not the literal's own inferred CharString.
     _branches = (cond.value['then'], cond.value['else'])
+    _raw = (then_str, else_str)
     for _i, _lit in enumerate(_branches):
         if not isinstance(_lit, ogAST.PrimStringLiteral):
             continue
@@ -4971,7 +5054,9 @@ def _conditional(cond, **kwargs):
         _b = find_basic_type(et)
         if _b is None or not _b.kind.endswith('StringType'):
             et = getattr(cond, 'expected_type', None) or _other.exprType
-        _wrapped = array_content(_lit, _lit.value, et)
+        # Use the already-rendered byte list from expression(), not the raw
+        # quoted literal text.
+        _wrapped = array_content(_lit, _raw[_i], et)
         if _i == 0:
             then_str = _wrapped
         else:
