@@ -4932,9 +4932,12 @@ def _enumerated_value(primary, **kwargs):
                 enum_type = f'{ASN1SCC}{refname.replace("-", "_")}'
             else:
                 enum_type = type_name(basic, use_prefix=True)
-    # For state enums, need the full path
+    # For state enums, the parser's EnumID is only the bare state name (e.g.
+    # "s1"), whereas asn1scc -renamePolicy 3 names the variant
+    # "<Process>_States_<state>" (e.g. "Complexsdl_States_s1").  Use the
+    # dedicated helper, which resolves the fully-qualified EnumID.
     if basic.kind == 'StateEnumeratedType':
-        enum_type = f'{ASN1SCC}{PROCESS_NAME.capitalize()}_States'
+        return [], generate_state_name(member), []
     rust_string = enum_variant(enum_type, enum_id)
     return [], str(rust_string), []
 

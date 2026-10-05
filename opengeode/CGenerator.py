@@ -1889,12 +1889,13 @@ def _prim_selector(prim, **kwargs):
 
 @expression.register(ogAST.PrimStateReference)
 def _primary_state_reference(prim, **kwargs):
-    ''' Reference to the current state '''
+    ''' Reference to the current state.
 
-    error = 'To Be Implemented'
-    LOG.error(error)
-    raise TypeError(error)
-    return [], '', []
+    The current state is stored in the context field ``state`` (see
+    ``generate_state_name`` and the ``ctxt.state = ...`` assignments emitted by
+    the terminator handler), so this simply resolves to ``ctxt.state``.
+    '''
+    return [], f'{LPREFIX}.state', []
 
 
 @expression.register(ogAST.ExprPlus)
@@ -2699,6 +2700,12 @@ def _enumerated_value(primary, **kwargs):
     for enumerant in basic_type.EnumValues.keys():
         if enumerant.lower() == enumerant_raw:
             enumID = basic_type.EnumValues[enumerant].EnumID
+
+    # A state name used as an expression (e.g. ``state = Wait``) has kind
+    # StateEnumeratedType: it has no CName and is stored using the same
+    # naming convention as state assignments (generate_state_name).
+    if basic_type.kind == 'StateEnumeratedType':
+        return [], generate_state_name(enumID), []
 
     if enumID.endswith("_PRESENT"): # choice
         return [], enumID, []
