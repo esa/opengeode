@@ -7,5 +7,6 @@ use orchestrator::dataview_uniqDef::*;
 fn main() {
     unsafe {
         orchestrator_startup();
+        println!("End of test");
     }
 }
