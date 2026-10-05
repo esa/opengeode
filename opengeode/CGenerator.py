@@ -1827,15 +1827,17 @@ def _prim_index(prim, **kwargs):
     idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0], readonly=ro)
     string += '.arr'
 
-    if expr_bs.kind == 'BitStringType' and ro:
-        phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
-        # .arr is an array so we have to read the bit in the right byte
-        # depending on the size of the array
-        string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
-    elif expr_bs.kind == 'BitStringType' and not ro:
-        # It is for a write to a bit index: here we only compute the
-        # place in the byte array.
-        string += f'[{idx_string} / 8]'
+    if expr_bs.kind == 'BitStringType':
+        # A BIT STRING is stored as an array of whole bytes, most-significant
+        # bit first, exactly as asn1scc does it (and as the C encoder expects):
+        # ASN.1 bit k is bit (7 - k % 8) of byte k / 8. SDL indexes bits from
+        # the left (bit 0 is the first character of a '...'B literal).
+        if ro:
+            string = f'({string}[{idx_string} / 8] >> (7 - {idx_string} % 8)) & 1'
+        else:
+            # For a write we only compute the byte; _assign_expression sets
+            # the bit with a read-modify-write.
+            string += f'[{idx_string} / 8]'
     else:
         string += f'[{idx_string}]'
 
@@ -2177,8 +2179,10 @@ def _assign_expression(expr, **kwargs):
         leftIsBitString = leftbs.kind == 'BitStringType'
         if leftIsBitString:
             _, bit_idx, _ = expression(expr.left.value[1]['index'][0])
-            bit = f'({leftbs.Max} - 1 - {bit_idx})'
-            res = f"({right_string} ? {left_string} | (1u << {bit} % 8) : {left_string} & ~(1u << {bit} % 8))"
+            # ASN.1 bit k is bit (7 - k % 8) of byte k / 8 (MSB-first, as C
+            # stores and the encoder reads it)
+            mask = f'(1u << (7 - {bit_idx} % 8))'
+            res = f"({right_string} ? {left_string} | {mask} : {left_string} & ~{mask})"
             strings.append(f"{left_string} = {res};")
         else:
             strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // index assignment")
@@ -2768,13 +2772,17 @@ def _string_literal(primary, **kwargs):
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     if isinstance(primary, ogAST.PrimBitStringLiteral):
-        # here we have a bit string literal and inside primary.bitarray
-        # we have something like ['0', '1']
-        # In C the representation is packed in a byte (for bitstings <= 8 bits)
-        # so we must set it using proper bitwise logic
-        bits = ''.join(primary.bit_array)
-        c_value = f"0b{bits}"
-        return [], c_value, []
+        # A BIT STRING is stored as whole bytes, most-significant bit first:
+        # ASN.1 bit k is bit (7 - k % 8) of byte k / 8 (as asn1scc stores it
+        # and the C encoder reads it). Pack the literal accordingly so that a
+        # '...'B value has the same bytes as the equivalent asn1scc value.
+        bits = primary.bit_array
+        nbytes = (len(bits) + 7) // 8
+        packed = []
+        for b in range(nbytes):
+            chunk = ''.join(bits[b * 8:(b + 1) * 8]).ljust(8, '0')
+            packed.append(str(int(chunk, 2)))
+        return [], ', '.join(packed), []
     elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
