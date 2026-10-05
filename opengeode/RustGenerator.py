@@ -386,6 +386,21 @@ def is_fpar(name):
     return name in FPAR_VARS or any(name.lower() == f.lower() for f in FPAR_VARS)
 
 
+def canonical_timer_name(name):
+    '''Return the declared spelling of a timer, matching case-insensitively.
+
+    SDL is case-insensitive, but Rust is not: the set_/reset_ stubs are
+    generated from process.timers (declared spelling), so a call site written
+    in lowercase must be canonicalized (e.g. `mytimer` -> `myTimer`).
+    '''
+    timers = getattr(PROCESS, 'timers', None) or []
+    for t in timers:
+        tname = t if isinstance(t, str) else t.get('name', '')
+        if tname.lower() == name.lower():
+            return tname
+    return name
+
+
 def deref_fpar(var_str, name):
     '''Add * dereference prefix if the variable is an fpar parameter.
 
@@ -2376,6 +2391,23 @@ def write_statement(param, newline):
         code.extend(st2)
         local.extend(lcl1)
         local.extend(lcl2)
+    elif isinstance(param, ogAST.PrimConditional) and \
+            type_kind.endswith('StringType'):
+        # A conditional whose branches may have different string types (e.g.
+        # IA5String vs OCTET STRING) cannot be one Rust value. Print each branch
+        # according to its own type, selected by the condition — matching C.
+        c_stmts, c_str, c_local = expression(param.value['if'], readonly=1)
+        code.extend(c_stmts)
+        local.extend(c_local)
+        then_code, _, then_local = write_statement(param.value['then'], newline=False)
+        else_code, _, else_local = write_statement(param.value['else'], newline=False)
+        local.extend(then_local)
+        local.extend(else_local)
+        code.append(f'if {c_str} {{')
+        code.extend(then_code)
+        code.append('} else {')
+        code.extend(else_code)
+        code.append('}')
     elif type_kind == 'IA5StringType':
         code, string, local = expression(param, readonly=1)
         # asn1scc generates IA5String as a fixed `arr: [u8; Max+1]` array with a
@@ -2528,6 +2560,7 @@ def _call_external_function(output, **kwargs):
         elif signal_name.lower() == 'reset_timer':
             param, = out['params']
             p_code, p_id, p_local = expression(param, readonly=1)
+            p_id = canonical_timer_name(p_id)
             call_code.extend(p_code)
             call_local.extend(p_local)
             if 'PID' in TYPES:
@@ -2550,6 +2583,7 @@ def _call_external_function(output, **kwargs):
             timer_value, timer_id = out['params']
             t_code, t_val, t_local = expression(timer_value)
             p_code, p_id, p_local = expression(timer_id)
+            p_id = canonical_timer_name(p_id)
             call_code.extend(t_code)
             call_code.extend(p_code)
             call_local.extend(t_local)
@@ -2759,7 +2793,11 @@ def _task_informal_text(task, **kwargs):
         code.extend(traceability(task))
     elif task.comment:
         code.extend(traceability(task.comment))
-    code.extend(['// ' + text for text in task.elems])
+    # Each element may contain embedded newlines: comment EVERY line, otherwise
+    # the continuation lines are emitted as bare (invalid) Rust code.
+    for text in task.elems:
+        for line in str(text).split('\n'):
+            code.append('// ' + line)
     return code, []
 
 
@@ -3848,6 +3886,14 @@ def _prim_call(prim, **kwargs):
         for idx, param in enumerate(params):
             param_type = p.fpar[idx]['type']
             p_stmts, p_str, p_local = expression(param, readonly=1)
+            # An OCTET/BIT STRING literal passed to an integer fpar must be
+            # passed as its numeric value (expression() renders it as a byte
+            # list, which would be a syntax/type error and split into args).
+            _pbty = find_basic_type(param_type)
+            if _pbty is not None and _pbty.kind.startswith('Integer') and \
+                    isinstance(param, (ogAST.PrimOctetStringLiteral,
+                                       ogAST.PrimBitStringLiteral)):
+                p_str = str(param.numeric_value)
             if p.external:
                 # External procedures take &mut params
                 list_of_params.append(f'&mut {p_str}')
@@ -4469,7 +4515,12 @@ def _not_expression(expr, **kwargs):
         if elem_bty.kind == 'BooleanType':
             # Generate as a block expression to avoid for...else syntax issues
             tmp = f'tmp{expr.tmpVar}'
-            local_decl.append(f'let mut {tmp} = {expr_str};')
+            # A literal operand is inferred with its own (fixed) type; re-type it
+            # to the enclosing expression's type so the result matches.
+            src = expr_str
+            if isinstance(expr.expr, (ogAST.PrimSequenceOf, ogAST.PrimStringLiteral)):
+                src = array_content(expr.expr, expr_str, expr.exprType)
+            local_decl.append(f'let mut {tmp} = {src};')
             # No statement code — the loop is embedded in the expression
             rust_string = f'{{ for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] = !{tmp}.arr[i]; }} {tmp} }}'
         else:
@@ -4903,12 +4954,28 @@ def _conditional(cond, **kwargs):
     # A string literal branch is rendered by _string_literal as a bare byte
     # list; wrap it in a proper struct literal so it is a well-typed value
     # (both in the `if cond {{ .. }}` string form and in the temp assignment).
-    if isinstance(cond.value['then'], ogAST.PrimStringLiteral):
-        et = getattr(cond.value['then'], 'expected_type', None) or cond.exprType
-        then_str = array_content(cond.value['then'], then_str, et)
-    if isinstance(cond.value['else'], ogAST.PrimStringLiteral):
-        et = getattr(cond.value['else'], 'expected_type', None) or cond.exprType
-        else_str = array_content(cond.value['else'], else_str, et)
+    # The literal takes the type of the *other* branch (or the conditional's
+    # expected/declared type), not the literal's own inferred CharString.
+    _branches = (cond.value['then'], cond.value['else'])
+    for _i, _lit in enumerate(_branches):
+        if not isinstance(_lit, ogAST.PrimStringLiteral):
+            continue
+        _other = _branches[1 - _i]
+        # Prefer the other branch's declared reference type: it names the exact
+        # asn1scc struct (e.g. asn1SccTextstring), whereas the conditional's own
+        # expected_type may resolve to a generic CharString.
+        et = _other.exprType
+        if not getattr(et, 'ReferencedTypeName', None) and \
+                not (find_basic_type(et) or {}).kind.endswith('StringType'):
+            et = getattr(cond, 'expected_type', None) or cond.exprType
+        _b = find_basic_type(et)
+        if _b is None or not _b.kind.endswith('StringType'):
+            et = getattr(cond, 'expected_type', None) or _other.exprType
+        _wrapped = array_content(_lit, _lit.value, et)
+        if _i == 0:
+            then_str = _wrapped
+        else:
+            else_str = _wrapped
 
     # Rust ternary: if cond { then } else { else }
     if actual_type == 'String' or basic_cond.kind == 'IA5StringType':
