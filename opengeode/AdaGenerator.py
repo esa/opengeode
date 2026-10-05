@@ -2315,6 +2315,34 @@ def _prim_substring(prim, **kwargs):
     r2_stmts, r2_string, r2_local = expression(prim.value[1]['substring'][1],
                                                readonly=ro)
 
+    receiver_bty = find_basic_type(receiver.exprType)
+    if receiver_bty.kind == 'BitStringType' and ro:
+        # C-aligned byte representation: Data is an array of whole bytes, so a
+        # slice b(i,j) cannot be a byte-subrange. Extract bits i..j into a
+        # temporary value, placing them at the front (bit 0) of the result.
+        global VAR_COUNTER
+        VAR_COUNTER = VAR_COUNTER + 1
+        tmp = f'sub_{VAR_COUNTER}'
+        kvar = f'k_{VAR_COUNTER}'
+        actual_type = type_name(prim.exprType)
+        i_expr = r1_string if str.isnumeric(r1_string) else f'Integer ({r1_string})'
+        j_expr = r2_string if str.isnumeric(r2_string) else f'Integer ({r2_string})'
+        mask_of = (lambda e: f'Shift_Right (16#80#, Natural (({e}) mod 8))')
+        local_decl.append(f'{tmp} : {actual_type} := (Data => (others => 0));')
+        stmts.extend(r1_stmts)
+        stmts.extend(r2_stmts)
+        stmts.extend(r1_local)
+        stmts.extend(r2_local)
+        stmts.append(f'for {kvar} in 0 .. ({j_expr}) - ({i_expr}) loop')
+        src_bit = f'({i_expr}) + {kvar}'
+        stmts.append(f'   if ({ada_string}.Data(({src_bit}) / 8 + 1)'
+                     f' and {mask_of(src_bit)}) /= 0 then')
+        stmts.append(f'      {tmp}.Data({kvar} / 8 + 1) :='
+                     f' {tmp}.Data({kvar} / 8 + 1) or {mask_of(kvar)};')
+        stmts.append('   end if;')
+        stmts.append('end loop;')
+        return stmts, tmp, local_decl
+
     # Adding 1 because SDL starts indexes at 0, ASN1 Ada types at 1
     if str.isnumeric(r1_string):
         r1_string = str(int(r1_string) + 1)
@@ -2510,7 +2538,20 @@ def _assign_expression(expr, **kwargs):
         rlen = f"{right_str}'Length"
 
         if isinstance(expr.right, ogAST.PrimSubstring):
-            if not isinstance(expr.left, ogAST.PrimSubstring):
+            basic_right = find_basic_type(expr.right.exprType)
+            if basic_right.kind == 'BitStringType':
+                # right is a bit-string slice: _prim_substring produced a whole
+                # record temporary, so assign it (not a byte subrange).
+                strings.append(f"{left_str} := {right_str};")
+                if basic_left.Min != basic_left.Max:
+                    rint1 = expr.right.value[1]['substring'][0]
+                    rint2 = expr.right.value[1]['substring'][1]
+                    _, s1, _ = expression(rint1, readonly=1)
+                    _, s2, _ = expression(rint2, readonly=1)
+                    rlen = f"{s2} - {s1} + 1"
+                else:
+                    rlen = None
+            elif not isinstance(expr.left, ogAST.PrimSubstring):
                 # only if left is not a substring, otherwise syntax
                 # would be wrong due to result of _prim_substring
                 strings.append(f"{left_str}.Data(1..{right_str}'Length) := {right_str};")

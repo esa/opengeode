@@ -45,6 +45,14 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) *.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
+	  fi; \
+	done && \
+	cp testbs_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 
 .PHONY: all edit test-parse test-ada test-rust coverage

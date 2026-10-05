@@ -3273,6 +3273,21 @@ def _prim_substring(prim, **kwargs):
         stmts.append(f'    {tmp_var}[{loop_idx}] = {receiver_string}[{loop_idx} + {min_range}];')
         stmts.append('}')
         stmts.append(f'if ({loop_idx} < {receiver_bty.Max}) {tmp_var}[{loop_idx}] = \'\\0\';')
+    elif receiver_bty.kind == 'BitStringType':
+        # Bits are packed in whole bytes, most-significant bit first (ASN.1 bit
+        # k is bit (7 - k % 8) of byte k / 8). A slice b(i, j) selects bits
+        # i..j and places them at the front (bit 0) of the result, the rest
+        # being zero, matching the element-wise behaviour of SEQ OF/OCTET STRING.
+        local_decl.append(f'{actual_type} {tmp_var};')
+        if receiver_bty.Min != receiver_bty.Max:
+            stmts.append(f'{tmp_var}.nCount = {max_range} - {min_range} + 1;')
+        nbytes = (int(receiver_bty.Max) + 7) // 8
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} < {nbytes}; {loop_idx}++) {tmp_var}.arr[{loop_idx}] = 0;')
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} <= {max_range} - {min_range} && {loop_idx} + {min_range} < {receiver_bty.Max}; {loop_idx}++)')
+        stmts.append('{')
+        stmts.append(f'    if (({receiver_string}.arr[({loop_idx} + {min_range}) / 8] >> (7 - ({loop_idx} + {min_range}) % 8)) & 1)')
+        stmts.append(f'        {tmp_var}.arr[{loop_idx} / 8] |= (1u << (7 - {loop_idx} % 8));')
+        stmts.append('}')
     else:
         local_decl.append(f'{actual_type} {tmp_var};')
         if receiver_bty.Min != receiver_bty.Max:
