@@ -46,6 +46,17 @@ OUT_SIGNALS = []
 PROCEDURES = []
 STATES = []
 
+# Set while generating a process: the process AST node, and whether it is a
+# process TYPE (as opposed to a standalone process).
+PROCESS = None
+IS_PROCESS_TYPE = False
+# Set to True when a STOP terminator is generated for the current process,
+# so that the matching <proc>_delete_instance declaration is emitted.
+NEEDS_DELETE_INSTANCE = False
+# Statements that set the context fields to their DCL initial values, filled
+# by processing_process_variables() and replayed by a STOP terminator reset.
+DCL_INIT_STATEMENTS = []
+
 SEPARATOR = '_0_'
 LPREFIX = 'ctxt'
 
@@ -144,8 +155,15 @@ def _process(process, instance=False, **kwargs):
     global IS_INSTANCE
     global PROCESS_NAME
     PROCESS_NAME = process_name
-    global PROCESS
+    global PROCESS, IS_PROCESS_TYPE, NEEDS_DELETE_INSTANCE
     PROCESS = process
+    IS_PROCESS_TYPE = getattr(process, 'process_type', False)
+    # A STOP terminator needs the environment-provided delete function; detect
+    # it now so the matching declaration is emitted (the terminator code
+    # itself is generated later, during transition code generation).
+    NEEDS_DELETE_INSTANCE = any(
+        getattr(term, 'kind', None) == 'stop'
+        for term in getattr(process, 'terminators', []))
 
     TYPES = process.dataview
     
@@ -171,11 +189,35 @@ def _process(process, instance=False, **kwargs):
         # Allocate the context
         wrapper_c.append(f'static {ASN1SCC}{type_name_str.capitalize()}_Context ctxt = {{0}};\n')
 
+        type_node = process.instance_of_ref
+        type_has_stop = any(getattr(t, 'kind', None) == 'stop'
+                            for t in getattr(type_node, 'terminators', []))
+
         # Startup wrapper
         wrapper_c.append(f'void CInit{process_instance.processName}(void) {{')
+        # The process TYPE declares "self" as a mutable static (its PID is only
+        # known here). Set it to this instance's PID before startup. This is
+        # the C counterpart of the Ada "self" generic formal and of the Rust
+        # SELF_PID static set by the instance wrapper.
+        if 'PID' in TYPES:
+            wrapper_c.append(
+                f'    self = {pid_enumerant(process_instance.processName)};')
         wrapper_c.append(f'    CInit{type_name_str}(&ctxt);')
         wrapper_c.append('}\n')
         wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
+
+        # Deletion forwarder: the process type calls <type>_RI_Delete_Instance
+        # (the deletion target is instance-specific); bind it to the concrete
+        # environment glue <instance>_delete_instance, like the other RIs.
+        if type_has_stop and 'PID' in TYPES:
+            wrapper_c.append(
+                f'void {type_name_str}_RI_Delete_Instance({ASN1SCC}PID id) {{')
+            wrapper_c.append(
+                f'    {process_instance.processName.lower()}_delete_instance(id);')
+            wrapper_c.append('}\n')
+            wrapper_h.append(
+                f'extern void {process_instance.processName.lower()}'
+                f'_delete_instance({ASN1SCC}PID id);\n')
 
         # PI wrappers
         generated_pis = set()
@@ -357,6 +399,7 @@ def _process(process, instance=False, **kwargs):
     continuous_signals_header_file_code, transition_code = processing_transitions_and_floating_labels(process)
     includes_code = generating_includes(process)
     generate_current_state_to_str_code = generating_current_state_to_str(process)
+    instance_glue_declarations = generating_instance_glue_declarations(process)
 
     generated_c_source_code = []
     generated_c_source_code.extend(includes_code)
@@ -364,6 +407,7 @@ def _process(process, instance=False, **kwargs):
     generated_c_source_code.extend(sdl_constants_code)
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
+    generated_c_source_code.extend(instance_glue_declarations)
     # run_transition_declaration_code is moved to header
     generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
@@ -1270,6 +1314,27 @@ def _task_informal_text(task, **kwargs):
     return code, []
 
 
+@generate.register(ogAST.Create)
+def _create_request(create, **kwargs):
+    ''' "Dynamic" creation of an external process instance.
+
+    Mirrors the Ada backend (``ctxt.Offspring := Create_X (Self);``) and the
+    Rust backend (``ctxt.offspring = create_X(default_pid());``): the returned
+    PID is stored in the context "offspring" variable. The function is
+    provided by the environment (TASTE glue) under the link name
+    ``<instance>_create_instance`` (see
+    ``generating_instance_glue_declarations``).
+    '''
+    code, local_decl = [], []
+    code.extend(traceability(create))
+    if create.comment:
+        code.extend(traceability(create.comment))
+    code.append(
+        f'{LPREFIX}.offspring = '
+        f'{create.instance_to_create.lower()}_create_instance(self);')
+    return code, local_decl
+
+
 @generate.register(ogAST.Transition)
 def _transition(tr, **kwargs):
     ''' generate the code for a transition '''
@@ -1385,8 +1450,36 @@ def _transition(tr, **kwargs):
                 else:
                     stmts.append(f'return {tr.terminator.inputString.lower()};')
             elif tr.terminator.kind == 'stop':
-                pass
-                # TODO
+                if 'PID' in TYPES:
+                    # An instance deletes itself, resets its context to the
+                    # default value and clears init_done, so it stops consuming
+                    # any further message. Mirrors the Ada backend
+                    # (Delete_Instance (Self); ctxt := Default_Context;
+                    # ctxt.Init_Done := False) and the Rust backend
+                    # (delete_instance(self); ctxt = Default::default(); ...).
+                    global NEEDS_DELETE_INSTANCE
+                    NEEDS_DELETE_INSTANCE = True
+                    # The deletion function is provided by the environment:
+                    #  - standalone process: <proc>_delete_instance (TASTE
+                    #    glue for the function itself);
+                    #  - process TYPE: it is instance-specific, so the type
+                    #    calls the per-type RI forwarder <type>_RI_Delete_Instance
+                    #    which the instance wrapper binds to the concrete
+                    #    <instance>_delete_instance glue (same scheme as the
+                    #    other RIs, e.g. <type>_RI_rezult).
+                    if IS_PROCESS_TYPE:
+                        stmts.append(f'{PROCESS_NAME}_RI_Delete_Instance(self);')
+                    else:
+                        stmts.append(f'{PROCESS_NAME.lower()}_delete_instance(self);')
+                    # Reset to the ASN.1 default context, then re-apply the
+                    # DCL initial values (as the Ada Default_Context does;
+                    # "sender" and "offspring" are DCLs defaulted to env).
+                    ctx_type = (f'{ASN1SCC}'
+                                f'{PROCESS.processName.capitalize()}_Context')
+                    stmts.append(f'{LPREFIX} = ({ctx_type}) {ctx_type}_constant;')
+                    stmts.extend(DCL_INIT_STATEMENTS)
+                    stmts.append(f'{LPREFIX}.init_done = false;')
+                stmts.append('return continuous_signals; // Leaving state forever')
             elif tr.terminator.kind == 'return':
                 return_string = ''
 
@@ -3350,10 +3443,16 @@ def generate_sdl_constants(process):
                 raise TypeError(f'Constant "{sdl_constant.varName}" value is not a ground expression')
 
         data_type = sdl_constant.type.ReferencedTypeName.replace('-', '_')
-        # Don't generate the "self" constant if the process is a process type
-        # as it is provided as a generic parameter during instantiation
+        # For a process TYPE with a PID type, "self" is not a compile-time
+        # constant: it is the PID of the running instance, which only the
+        # instance wrapper knows. Mirror the Rust backend's SELF_PID: emit a
+        # mutable file-scope static (per instance, since the type .c is
+        # #included into each instance wrapper) that the wrapper sets at
+        # startup.
         if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
-            pass
+            sdl_constants_code.append(
+                f'static {ASN1SCC}{data_type} self = {ASN1SCC}PID_env; '
+                f'/* set to this instance PID by the wrapper */')
         else:
             sdl_constants_code.append(f"[[maybe_unused]]")
             sdl_constants_code.append(f"static const {ASN1SCC}{data_type} {sdl_constant.varName} = {val};")
@@ -3388,6 +3487,70 @@ def generating_context(process):
         context_code.append(f'static {ASN1SCC}{process.processName.capitalize()}_Context ctxt = {{0}};\n')
 
     return context_code
+
+
+def pid_enumerant(name):
+    '''Return the C enumerant for a PID with the given (case-insensitive) name.
+
+    The PID type is provided by TASTE; its enumerants are renamed by asn1scc
+    with the "asn1Scc" prefix (e.g. ``PID_og`` -> ``asn1SccPID_og``). Falls
+    back to the environment PID when the name is not among the PID values
+    (mirrors ``default_pid``).
+    '''
+    try:
+        pid_basic = TYPES['PID'].type
+        enum_name = getattr(pid_basic, 'CName', 'PID')
+        for each in pid_basic.EnumValues.keys():
+            if each.lower() == name.lower():
+                enum_id = pid_basic.EnumValues[each].EnumID
+                break
+        else:
+            return default_pid()
+    except (AttributeError, KeyError):
+        return f'{ASN1SCC}PID_env'
+    if enum_id.startswith(enum_name):
+        return f'{ASN1SCC}{enum_id}'
+    return f'{ASN1SCC}{enum_name}_{enum_id}'
+
+
+def generating_instance_glue_declarations(process):
+    '''Declare the environment-provided functions used by CREATE and STOP.
+
+    In TASTE, the middleware glue provides (see kazoo's vm_if-header template):
+        asn1SccPID <instance>_create_instance(void);
+        void       <instance>_delete_instance(asn1SccPID id);
+    The Ada backend imports the same two under link names
+    "<instance>_create_instance" and "<instance>_delete_instance", so C must
+    use those exact symbols too. Declaring them here keeps the generated file
+    self-contained (TASTE's own header is not otherwise included).
+
+    For a process TYPE, the delete target is instance-specific, so the type
+    only declares its own RI forwarder <type>_RI_Delete_Instance, which the
+    instance wrapper binds to the concrete <instance>_delete_instance (the
+    same scheme as the other RIs, e.g. <type>_RI_rezult).
+
+    NOTE: this runs only for the process TYPE itself and for standalone
+    processes — the instance wrapper file is generated in an earlier,
+    self-contained branch that returns before reaching here.
+    '''
+    declarations = []
+
+    for created in sorted(process.dependencies.get('create', set())):
+        declarations.append(
+            f'asn1SccPID {created.lower()}_create_instance({ASN1SCC}PID from);')
+
+    if NEEDS_DELETE_INSTANCE:
+        if IS_PROCESS_TYPE:
+            declarations.append(
+                f'void {PROCESS_NAME}_RI_Delete_Instance({ASN1SCC}PID id);')
+        else:
+            declarations.append(
+                f'void {PROCESS_NAME.lower()}_delete_instance({ASN1SCC}PID id);')
+
+    if declarations:
+        declarations = ['//// Instance creation/deletion'] + declarations + ['\n']
+    return declarations
+
 
 def generating_aggregate_start_funtions(process):
    aggreg_start_proc = ['//// State Aggregations Start functions']
@@ -3484,6 +3647,9 @@ def generating_nested_states(process):
 
 
 def processing_process_variables(process, no_renames, startup_function_code):
+    global DCL_INIT_STATEMENTS
+    del DCL_INIT_STATEMENTS[:]
+    init_start = len(startup_function_code)
     for var_name, (var_type, init) in process.variables.items():
         LOG.debug(var_name)
 
@@ -3528,6 +3694,11 @@ def processing_process_variables(process, no_renames, startup_function_code):
 
             assert not init_stmt, 'Initialization of ' + var_name + ' requires to add statement'
             assert not init_decl, 'Initialization of ' + var_name + ' requires to add declarations'
+
+    # Keep a copy of the DCL initialisation statements: a STOP terminator
+    # resets the context to its default value, which must include these
+    # initial values (as does the Ada "Default_Context").
+    DCL_INIT_STATEMENTS.extend(startup_function_code[init_start:])
     
 
 def processing_inner_procedures(process):
@@ -3642,6 +3813,17 @@ def processing_input_signals(process):
 
         input_signals_code.append(pi_header)
         input_signals_code.append('{')
+        if not getattr(process, 'no_context', False):
+            # Ignore incoming messages before startup has completed, and after
+            # a STOP terminator has cleared init_done (the instance deleted
+            # itself and must stay silent). Mirrors the Ada backend
+            # (Execute_Transition: "if not ctxt.Init_Done and Branch /=
+            # Startup_Transition then return;") and the Rust backend
+            # (execute_transition: "if !ctxt.init_done && branch !=
+            # Branches::Startup_Transition { return; }"). This guard must stay
+            # out of runTransition(), which is also called by the aggregation
+            # start functions during startup (with init_done still False).
+            input_signals_code.append(f'if (!{LPREFIX}.init_done) return;')
         
         has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
         

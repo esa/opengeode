@@ -1,0 +1,53 @@
+--  Regression test for CREATE and STOP (instance deletion) in the C backend.
+--  The process creates the "Child" instance on the first "go", then reaches
+--  STOP: the instance deletes itself (environment glue), the context is reset
+--  and init_done is cleared, so the later "ping" must be ignored.
+--  Ada, C and Rust must produce identical output.
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+use Datamodel;
+
+system CD;
+
+   signal go;
+   signal ping;
+
+   channel c
+      from env to CD with go;
+      from env to CD with ping;
+   endchannel;
+
+   block CD;
+
+      signalroute r
+      from env to CD with go;
+      from env to CD with ping;
+      connect c and r;
+
+   /* CIF PROCESS (250, 150), (150, 75) */
+   process Parent;
+      /* CIF TEXT (1202, 0), (267, 140) */
+      dcl x T_Int32;
+      /* CIF ENDTEXT */
+      /* CIF START (320, 21), (70, 35) */
+      START;
+         /* CIF NEXTSTATE (320, 71), (70, 35) */
+         NEXTSTATE wait;
+      /* CIF state (450, 21), (70, 35) */
+      state wait;
+         /* CIF input (434, 76), (101, 35) */
+         input go;
+            /* CIF CREATE (434, 131), (101, 35) */
+            create Child;
+            /* CIF PROCEDURECALL (434, 186), (101, 35) */
+            call writeln("created: offspring=", num(offspring));
+            /* CIF STOP (434, 241), (101, 35) */
+            stop;
+         /* CIF input (434, 296), (101, 35) */
+         input ping;
+            /* CIF PROCEDURECALL (434, 351), (101, 35) */
+            call writeln("ping");
+      endstate;
+   endprocess Parent;
+
+   endblock;
+endsystem;

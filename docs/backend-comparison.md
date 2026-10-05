@@ -59,13 +59,13 @@ scope (Rust does not implement it; C partially).
 | Monitors | ✅ | ✅ | ✅ |
 | Stop conditions | ✅ | ✅ | ✅ |
 | `no_context` processes | ✅ | ✅ | ✅ |
-| `CREATE` | ✅ | ❌ | ✅ |
-| `STOP` terminator | ✅ `Delete_Instance` | ❌ no-op | ✅ `delete_instance` |
+| `CREATE` | ✅ | ✅ | ✅ |
+| `STOP` terminator | ✅ `Delete_Instance` | ✅ `<proc>_delete_instance` | ✅ `delete_instance` |
 | `state` reference expression | ✅ | ✅ | ✅ |
 | `parent` / `sender` / `entity` PID reads | ✅ `Self` synonym | ⚠️ parser-injected | ❌ (only `self`) |
 | `MantissaBaseExp` | ⚠️ stub | ❌ raises | ⚠️ stub |
 | All 41 expression handlers registered | ✅ | ✅ | ✅ |
-| All statement handlers registered | ✅ | ⚠️ no `Create` | ✅ |
+| All statement handlers registered | ✅ | ✅ | ✅ |
 | Choice / enum / bitwise / append / slice codegen | ✅ | ✅ | ✅ |
 
 Legend: ✅ implemented · ⚠️ partial/limited · ❌ missing.
@@ -76,15 +76,33 @@ Legend: ✅ implemented · ⚠️ partial/limited · ❌ missing.
 
 These are verified by generating minimal models, not only by reading.
 
-1. **`CREATE` unsupported.** `CGenerator.py` has no
-   `@generate.register(ogAST.Create)`, so the default dispatch raises
-   `TypeError` (`CGenerator.py:108-113`). Ada (`AdaGenerator.py:1850`) and Rust
-   (`RustGenerator.py:2631`) implement it.
-2. **`STOP` is a no-op.** The stop terminator is a `pass  # TODO`
-   (`CGenerator.py:1387-1389`) and emits a bare `return;`. Ada emits
-   `Delete_Instance (Self)`, Rust `delete_instance(self)`.
-3. **`MantissaBaseExp` unsupported.** Raises at `CGenerator.py:2803`. Ada/Rust
+1. **`MantissaBaseExp` unsupported.** Raises at `CGenerator.py:2803`. Ada/Rust
    emit an empty stub.
+
+> **`CREATE` — FIXED.** `_create_request` (`CGenerator.py`, registered for
+> `ogAST.Create`) now emits
+> `ctxt.offspring = <instance>_create_instance(self);`, mirroring Ada
+> (`ctxt.Offspring := Create_X (Self);`) and Rust. The environment-provided
+> link name is declared in the generated file
+> (`generating_instance_glue_declarations`).
+
+> **`STOP` — FIXED.** The stop terminator now emits
+> `<proc>_delete_instance(self);` (standalone) or
+> `<type>_RI_Delete_Instance(self);` (process TYPE, bound by the instance
+> wrapper to `<instance>_delete_instance`), then resets the context to its
+> default value (re-applying the DCL initial values) and clears `init_done`.
+> To make `init_done` actually stop the process, the PI entry points now carry
+> the same guard as Ada/Rust
+> (`if (!ctxt.init_done) return;`) — this mirrors Ada's `Execute_Transition`
+> and Rust's `execute_transition`.
+>
+> For a process TYPE with a PID type, `self` is no longer omitted: it is
+> emitted as a mutable static (per instance, since the type `.c` is `#include`d
+> into each instance wrapper) that the wrapper sets to the instance PID at
+> startup — the C counterpart of Ada's `self` generic formal and Rust's
+> `SELF_PID`.
+>
+> Covered by the new `tests/testsuite/test-create-delete` (runtime test in C).
 
 > **`state` reference — FIXED.** `_primary_state_reference`
 > (`CGenerator.py`) now returns `ctxt.state` instead of raising
@@ -238,8 +256,9 @@ between the two generators would not be caught there.
   `--check` parse-error tests (their `expected` is compiler diagnostics); they
   intentionally get no runtime harness.
 - `state` references are now covered by `test-stateref` (Ada/C/Rust).
-- **Still zero tests exercise `CREATE` or `STOP`** in any backend — those C
-  gaps remain untested even where Ada/Rust support them.
+- `CREATE` and `STOP` are now covered by `test-create-delete` (runtime test in
+  C, using local environment glue; Ada/Rust are generation-checked).
+  **The earlier C gaps (`CREATE` unsupported, `STOP` a no-op) are fixed.**
 
 ### Rust runtime harness pattern (for adding coverage)
 
@@ -269,12 +288,12 @@ by a per-directory `patch_ri.py`, mirroring the C driver.
 
 ## Remaining Work — Complete Status
 
-### A. Finish the backend-alignment plan (not started)
+### A. Finish the backend-alignment plan
 
-1. **C `CREATE`** — add the missing handler.
-2. **C `STOP`** — implement `Delete_Instance`-equivalent instead of `return;`.
+1. **C `CREATE`** — done (see the section on Confirmed Gaps — C Backend).
+2. **C `STOP`** — done (ditto).
 3. **C `MantissaBaseExp`** — implement or document as unsupported for all.
-4. **Targeted tests for `CREATE` / `STOP`** — currently none.
+4. **Targeted tests for `CREATE` / `STOP`** — done: `test-create-delete`.
 
 *(C `state` reference is done; see the fixed items below.)*
 
@@ -345,10 +364,7 @@ notable ones:
 
 | # | Item | Backend | Kind | Severity |
 |---|------|---------|------|----------|
-| A1 | `CREATE` unsupported | C | Missing feature | High |
-| A2 | `STOP` is a no-op | C | Missing feature | High |
-| A3 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| A4 | No tests for `CREATE`/`STOP` | all | Test gap | Medium |
+| A1 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
 | B | 3 Rust runtime residuals | Rust | Fixture/runtime | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
