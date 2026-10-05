@@ -2448,9 +2448,11 @@ def write_statement(param, newline):
                     f' print!("{{}}", String::from_utf8_lossy(&_s.arr[.._n])); }}')
     elif type_kind in ('IntegerType', 'Integer32Type', 'IntegerU8Type'):
         code, string, local = expression(param, readonly=1)
-        # Ada's 'Image adds a leading space for non-negative integers
-        # Match that behavior for compatibility
-        code.append(f'print!(" {{}}", {string});')
+        # Ada's 'Image adds a leading space for non-negative integers and none
+        # for negative ones. Match that exactly.
+        code.append(
+            f'{{ let _v = {string};'
+            f' if _v < 0 {{ print!("{{}}", _v); }} else {{ print!(" {{}}", _v); }} }}')
     elif type_kind == 'RealType':
         code, string, local = expression(param, readonly=1)
         # Ada's Float'Image: leading space for non-negative, scientific notation
@@ -3634,7 +3636,13 @@ def _prim_call(prim, **kwargs):
             result_type = type_name(params[0].exprType)
         except (NotImplementedError, AttributeError):
             result_type = 'i64'
-        rust_string = f'(({operands[0]} as i64).pow({operands[1]} as u32) as {result_type})'
+        _op_bty = find_basic_type(params[0].exprType)
+        if _op_bty is not None and _op_bty.kind == 'RealType':
+            # Real exponentiation: cast the exponent to i32 for powi (SDL power
+            # takes an integer exponent), keep the base as f64.
+            rust_string = f'(({operands[0]}) as f64).powi(({operands[1]}) as i32)'
+        else:
+            rust_string = f'(({operands[0]} as i64).pow({operands[1]} as u32) as {result_type})'
 
     elif ident == 'length':
         exp = params[0]
@@ -3761,8 +3769,16 @@ def _prim_call(prim, **kwargs):
             return f'{ASN1SCC}{owner}_{base}_Selection', f'{owner}_{base}_Selection'
 
         def _choice_children(choice_name):
+            # The referenced name may be process-qualified (e.g.
+            # "Toto-Mychoice-Selection" -> "Toto-Mychoice"); try both the name
+            # as given and the name with the process prefix stripped.
+            candidates = [choice_name]
+            owner_p = (PROCESS_NAME or '')
+            if choice_name.lower().startswith(owner_p.lower() + '-'):
+                candidates.append(choice_name[len(owner_p) + 1:])
             for tn, tdef in (TYPES or {}).items():
-                if tn.replace('_', '-').lower() == choice_name.replace('_', '-').lower():
+                if tn.replace('_', '-').lower() in \
+                        (c.replace('_', '-').lower() for c in candidates):
                     bt = find_basic_type(tdef.type)
                     return getattr(bt, 'Children', {}) or {}
             return {}
