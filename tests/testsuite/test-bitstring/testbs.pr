@@ -3,9 +3,11 @@
 process Testbs;
     /* CIF Keep Specific Geode Partition 'default' */
     /* CIF TEXT (933, 100), (182, 140) */
-    dcl mybs BS := '1101'B;
+    dcl mybs BS := '101010101010'B;
     
-    dcl mybs2 BS := {bit0, bit3};
+    dcl mybs2 BS := {bit0, bit11};
+    
+    dcl slice BS := '000000000000'B;
     
     dcl abit T_Boolean;
     /* CIF ENDTEXT */
@@ -28,24 +30,29 @@ endfor;
     /* CIF START (650, 32), (70, 35) */
     START;
         /* CIF PROCEDURECALL (560, 88), (249, 35) */
-        call write("initial value (should be 1101): ");
+        call write("lit should be 101010101010: ");
         /* CIF PROCEDURECALL (631, 143), (106, 35) */
         call PrintBS(mybs);
         /* CIF PROCEDURECALL (580, 193), (208, 35) */
         call writeln(" - size: ", length(mybs));
         /* CIF PROCEDURECALL (554, 248), (260, 35) */
-        call write("This should be 1001 then 0101: ");
+        call write("named then set: ");
         /* CIF PROCEDURECALL (629, 298), (111, 35) */
         call Printbs(mybs2);
         /* CIF PROCEDURECALL (644, 353), (80, 35) */
         call write("  ");
         /* CIF task (630, 408), (109, 35) */
-        task mybs2 := {bit3};
+        task mybs2 := {bit3, bit11};
         /* CIF task (625, 463), (119, 35) */
+        task mybs2(8) := true;
         task mybs2(1) := true;
+        /* CIF task (700, 500), (150, 35) */
+        task slice := mybs(2, 5);
         /* CIF PROCEDURECALL (629, 513), (111, 35) */
         call Printbs(mybs2);
         /* CIF PROCEDURECALL (638, 568), (92, 35) */
+        call write("  slice should be 1010: ");
+        call Printbs(slice);
         call writeln("  ");
         /* CIF NEXTSTATE (650, 618), (70, 35) */
         NEXTSTATE Wait;

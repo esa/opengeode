@@ -1,7 +1,7 @@
 BS-DATAVIEW DEFINITIONS ::=
 BEGIN
 
-   BS ::= BIT STRING {bit0(0), bit3(3)} (SIZE (4))
+   BS ::= BIT STRING {bit0(0), bit3(3), bit8(8), bit11(11)} (SIZE (12))
 
 END
 

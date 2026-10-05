@@ -520,6 +520,10 @@ def _resolve_type_info(asnty, prim_expr_type):
             has_n_count = min_v != max_v
         except (ValueError, TypeError):
             has_n_count = True
+        if kind == 'BitStringType':
+            # asn1scc stores a BIT STRING as an array of whole bytes; the
+            # array length is ceil(Max / 8), not the bit count.
+            max_size = (max_size + 7) // 8
     elif kind == 'SequenceOfType':
         try:
             min_v = int(bty.Min) if bty and hasattr(bty, 'Min') else 0
@@ -2250,6 +2254,18 @@ def write_statement(param, newline):
             code.append(f'print!("{param.printable_string}");')
         elif isinstance(param, ogAST.PrimStringLiteral):
             code.append(f'print!("{param.value[1:-1]}");')
+        elif isinstance(param, ogAST.PrimConditional) and \
+                isinstance(param.value.get('then'), ogAST.PrimStringLiteral) and \
+                isinstance(param.value.get('else'), ogAST.PrimStringLiteral):
+            # A conditional whose branches are string literals: print the text
+            # directly (the generic branch below would treat the value as a
+            # struct with n_count/arr, which a literal is not).
+            c_stmts, c_str, c_local = expression(param.value['if'], readonly=1)
+            code.extend(c_stmts)
+            local.extend(c_local)
+            then_txt = param.value['then'].value[1:-1]
+            else_txt = param.value['else'].value[1:-1]
+            code.append(f'print!("{{}}", if {c_str} {{ "{then_txt}" }} else {{ "{else_txt}" }});')
         else:
             # For OctetString/BitString variables, print as string content
             code, string, local = expression(param, readonly=1)
@@ -3557,13 +3573,39 @@ def _prim_index(prim, **kwargs):
     stmts.extend(r_stmts)
     local_decl.extend(r_decl)
 
+    if kind == 'BitStringType':
+        # C-aligned byte representation (asn1scc -Rust emits arr: [u8; N]):
+        # ASN.1 bit k is bit (7 - k % 8) of byte k / 8. Read is a masked test;
+        # write is a read-modify-write (the lvalue is the whole byte).
+        if prim.use_num_value != -1 and not prim.requires_num:
+            bit = str(prim.use_num_value)
+        else:
+            index = prim.value[1]['index'][0]
+            idx_stmts, idx_string, idx_var = expression(index, readonly=ro)
+            stmts.extend(idx_stmts)
+            local_decl.extend(idx_var)
+            bit = idx_string if str.isnumeric(idx_string) else f'({idx_string} as usize)'
+        if isinstance(bit, int) or str(bit).isnumeric():
+            b = int(bit)
+            mask = f'0x{0x80 >> (b % 8):02X}u8'
+            if not isinstance(receiver, ogAST.PrimSubstring):
+                rust_string += '.arr'
+            lval = f'{rust_string}[{b // 8}]'
+        else:
+            mask = f'(0x80u8 >> ({bit} % 8) as u32)'
+            if not isinstance(receiver, ogAST.PrimSubstring):
+                rust_string += '.arr'
+            lval = f'{rust_string}[({bit}) / 8]'
+        prim._rust_mask = mask
+        if ro:
+            return stmts, f'(({lval} & {mask}) != 0)', local_decl
+        return stmts, lval, local_decl
+
     if prim.use_num_value != -1 and not prim.requires_num:
         idx = prim.use_num_value  # 0-based in SDL, 0-based in Rust (no conversion!)
         if not isinstance(receiver, ogAST.PrimSubstring):
             rust_string += '.arr'
         rust_string = f'{rust_string}[{idx}]'
-        if kind == 'BitStringType' and ro:
-            rust_string = f'({rust_string} != 0)'
         return stmts, rust_string, local_decl
 
     index = prim.value[1]['index'][0]
@@ -3571,15 +3613,10 @@ def _prim_index(prim, **kwargs):
     if str.isnumeric(idx_string):
         idx_string = int(idx_string)  # already 0-based
     else:
-        if prim.requires_num:
-            idx_string = f'{idx_string} as usize'
-        else:
-            idx_string = f'{idx_string} as usize'
+        idx_string = f'{idx_string} as usize'
     if not isinstance(receiver, ogAST.PrimSubstring):
         rust_string += '.arr'
     rust_string += f'[{idx_string}]'
-    if kind == 'BitStringType' and ro:
-        rust_string = f'({rust_string} != 0)'
     stmts.extend(idx_stmts)
     local_decl.extend(idx_var)
     return stmts, str(rust_string), local_decl
@@ -3608,7 +3645,41 @@ def _prim_substring(prim, **kwargs):
 
     # For SEQUENCE OF / OctetString / IA5String types, produce a struct
     # with n_count and arr fields, so concatenation works
-    if bty and bty.kind in ('SequenceOfType', 'OctetStringType', 'BitStringType'):
+    if bty and bty.kind == 'BitStringType':
+        # A BIT STRING is stored as whole bytes, most-significant bit first
+        # (ASN.1 bit k is bit (7 - k % 8) of byte k / 8). A slice b(i, j)
+        # selects bits i..j and places them at the front (bit 0) of the
+        # result, the rest being zero.
+        name_of_type = type_name(prim.exprType)
+        ref_name = prim.exprType.ReferencedTypeName if hasattr(prim.exprType, 'ReferencedTypeName') else None
+        actual_bty = bty
+        if ref_name and ref_name in TYPES:
+            actual_bty = find_basic_type(TYPES[ref_name].type)
+            while actual_bty and actual_bty.kind == 'ReferenceType' and actual_bty.ReferencedTypeName in TYPES:
+                actual_bty = find_basic_type(TYPES[actual_bty.ReferencedTypeName].type)
+        has_n_count = False
+        nbytes = 1
+        if actual_bty:
+            try:
+                has_n_count = int(actual_bty.Min) != int(actual_bty.Max)
+                nbytes = max(1, (int(actual_bty.Max) + 7) // 8)
+            except (ValueError, TypeError):
+                has_n_count = True
+        base = r_string
+        if not isinstance(receiver, ogAST.PrimSubstring):
+            base += '.arr'
+        ncount = ' tmp.n_count = n as i32;' if has_n_count else ''
+        rust_string = (
+            f'{{ let mut tmp = {name_of_type}::default();'
+            f' let start: usize = ({r1_string}) as usize;'
+            f' let n: usize = ({r2_string}) as usize - start + 1;'
+            f' for b in 0..{nbytes} {{ tmp.arr[b] = 0; }}'
+            f' for i in 0..n {{'
+            f' if (({base}[(start + i) / 8] & (0x80u8 >> ((start + i) % 8) as u32)) != 0)'
+            f' {{ tmp.arr[i / 8] |= 0x80u8 >> (i % 8) as u32; }} }}'
+            f'{ncount}'
+            f' tmp }}')
+    elif bty and bty.kind in ('SequenceOfType', 'OctetStringType'):
         name_of_type = type_name(prim.exprType)
         # Determine has_n_count by looking at the actual type definition,
         # not the substring's computed range (which always has Min==Max).
@@ -3914,14 +3985,25 @@ def _assign_expression(expr, **kwargs):
     elif isinstance(expr.left, ogAST.PrimIndex):
         leftIsBitString = find_basic_type(expr.left.value[0].exprType).kind == 'BitStringType'
         rightIsBoolean = find_basic_type(expr.right.exprType).kind == 'BooleanType'
-        if leftIsBitString and rightIsBoolean:
-            if right_str.strip().lower() == 'true':
-                res = '1'
-            elif right_str.strip().lower() == 'false':
-                res = '0'
+        if leftIsBitString:
+            # C-aligned byte representation: a bit lives inside a whole byte,
+            # so setting it is a read-modify-write with the bit mask.
+            mask = getattr(expr.left, '_rust_mask', None)
+            if mask is None:
+                b = expr.left.use_num_value if getattr(expr.left, 'use_num_value', -1) != -1 else 0
+                mask = f'0x{0x80 >> (int(b) % 8):02X}u8'
+            if rightIsBoolean:
+                if right_str.strip().lower() == 'true':
+                    cond = 'true'
+                elif right_str.strip().lower() == 'false':
+                    cond = 'false'
+                else:
+                    cond = right_str
             else:
-                res = f'(if {right_str} {{ 1 }} else {{ 0 }})'
-            strings.append(f'{left_str} = {res};')
+                cond = f'({right_str}) != 0'
+            strings.append(
+                f'{left_str} = if {cond} {{ {left_str} | {mask} }} '
+                f'else {{ {left_str} & !{mask} }};')
         else:
             strings.append(f'{left_str} = {right_str};')
     else:
@@ -3955,6 +4037,20 @@ def _bitwise_operators(expr, **kwargs):
             rust_string = f'({left_str} ^ {right_str})'
         elif isinstance(expr, ogAST.ExprImplies):
             rust_string = f'(!{left_str} || {right_str})'
+    elif basic_type.kind in ('OctetStringType', 'BitStringType'):
+        # OCTET STRING and BIT STRING are arrays of whole bytes: operate on
+        # each byte. The types are Copy, so a local copy works.
+        tmp = f'tmp{expr.tmpVar}'
+        local_decl.append(f'let mut {tmp} = {left_str};')
+        if isinstance(expr, ogAST.ExprAnd):
+            loop_body = f'{tmp}.arr[i] &= {right_str}.arr[i];'
+        elif isinstance(expr, ogAST.ExprOr):
+            loop_body = f'{tmp}.arr[i] |= {right_str}.arr[i];'
+        elif isinstance(expr, ogAST.ExprXor):
+            loop_body = f'{tmp}.arr[i] ^= {right_str}.arr[i];'
+        elif isinstance(expr, ogAST.ExprImplies):
+            loop_body = f'{tmp}.arr[i] = !{tmp}.arr[i] | ({tmp}.arr[i] & {right_str}.arr[i]);'
+        rust_string = f'{{ for i in 0..{tmp}.arr.len() {{ {loop_body} }} {tmp} }}'
     elif basic_type.kind == 'SequenceOfType':
         # Element-wise boolean operations on SEQUENCE OF Boolean
         elem_bty = find_basic_type(basic_type.type)
@@ -4011,6 +4107,11 @@ def _not_expression(expr, **kwargs):
         expr_str = deref_fpar(expr_str, var_name)
     if bty_outer.kind == 'BooleanType':
         rust_string = f'(!{expr_str})'
+    elif bty_outer.kind in ('OctetStringType', 'BitStringType'):
+        # Byte-array NOT: invert each byte (the types are Copy)
+        tmp = f'tmp{expr.tmpVar}'
+        local_decl.append(f'let mut {tmp} = {expr_str};')
+        rust_string = f'{{ for i in 0..{tmp}.arr.len() {{ {tmp}.arr[i] = !{tmp}.arr[i]; }} {tmp} }}'
     elif bty_outer.kind == 'SequenceOfType':
         # Element-wise NOT on SEQUENCE OF Boolean
         elem_bty = find_basic_type(bty_outer.type)
@@ -4326,11 +4427,23 @@ def _empty_string(primary, **kwargs):
     return [], const_zero_value(primary.exprType), []
 
 
+def _pack_bits_to_bytes(bit_array):
+    ''' Pack '0'/'1' characters (MSB-first, as SDL writes a BIT STRING
+        literal) into whole bytes, the way asn1scc stores a BIT STRING in its
+        Rust representation: arr[i] holds bits 8i..8i+7, most significant bit
+        first. ASN.1 bit k is bit (7 - k % 8) of byte k / 8. '''
+    bits = ''.join(bit_array)
+    nbytes = (len(bits) + 7) // 8
+    return [str(int(bits[i * 8:(i + 1) * 8].ljust(8, '0'), 2))
+            for i in range(nbytes)]
+
+
 @expression.register(ogAST.PrimStringLiteral)
 def _string_literal(primary, **kwargs):
     basic_type = find_basic_type(primary.exprType)
     if isinstance(primary, ogAST.PrimBitStringLiteral):
-        unsigned_8 = [str(x) for x in primary.bit_array]
+        # C-aligned byte representation: pack the bits MSB-first into bytes
+        unsigned_8 = _pack_bits_to_bytes(primary.bit_array)
     elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         unsigned_8 = [str(x) for x in primary.hexstring]
     else:
