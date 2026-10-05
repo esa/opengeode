@@ -6,6 +6,7 @@ use myfunction::dataview_uniqDef::*;
 
 fn main() {
     unsafe {
+        println!("[C Code] Running test");
         myfunction_startup();
         let mut test: asn1SccT_Int32 = 5;
         start_something(&mut test);

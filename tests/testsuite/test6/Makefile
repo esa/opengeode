@@ -50,6 +50,7 @@ test-rust:
 	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
 	  fi; \
 	done && \
+	python3 patch_ri.py myfunction.rs && \
 	cp myfunction_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
 	./target/debug/test_rust | diff expected -
