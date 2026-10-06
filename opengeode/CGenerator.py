@@ -194,7 +194,7 @@ def _process(process, instance=False, **kwargs):
                             for t in getattr(type_node, 'terminators', []))
 
         # Startup wrapper
-        wrapper_c.append(f'void CInit{process_instance.processName}(void) {{')
+        wrapper_c.append(f'void CInit{process_instance.processName.lower()}(void) {{')
         # The process TYPE declares "self" as a mutable static (its PID is only
         # known here). Set it to this instance's PID before startup. This is
         # the C counterpart of the Ada "self" generic formal and of the Rust
@@ -202,16 +202,16 @@ def _process(process, instance=False, **kwargs):
         if 'PID' in TYPES:
             wrapper_c.append(
                 f'    self = {pid_enumerant(process_instance.processName)};')
-        wrapper_c.append(f'    CInit{type_name_str}(&ctxt);')
+        wrapper_c.append(f'    CInit{type_name_str.lower()}(&ctxt);')
         wrapper_c.append('}\n')
-        wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
+        wrapper_h.append(f'void CInit{process_instance.processName.lower()}(void);\n')
 
         # Deletion forwarder: the process type calls <type>_RI_Delete_Instance
         # (the deletion target is instance-specific); bind it to the concrete
         # environment glue <instance>_delete_instance, like the other RIs.
         if type_has_stop and 'PID' in TYPES:
             wrapper_c.append(
-                f'void {type_name_str}_RI_Delete_Instance({ASN1SCC}PID id) {{')
+                f'void {type_name_str.lower()}_RI_Delete_Instance({ASN1SCC}PID id) {{')
             wrapper_c.append(
                 f'    {process_instance.processName.lower()}_delete_instance(id);')
             wrapper_c.append('}\n')
@@ -228,11 +228,11 @@ def _process(process, instance=False, **kwargs):
             
             if 'type' in pi:
                 pi_type = type_name(pi['type'])
-                sig = f'void {process_instance.processName}_PI_{pi["name"]}({pi_type} *param)'
-                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt, param)'
+                sig = f'void {process_instance.processName.lower()}_PI_{pi["name"]}({pi_type} *param)'
+                call = f'{type_name_str.lower()}_PI_{pi["name"]}(&ctxt, param)'
             else:
-                sig = f'void {process_instance.processName}_PI_{pi["name"]}()'
-                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt)'
+                sig = f'void {process_instance.processName.lower()}_PI_{pi["name"]}()'
+                call = f'{type_name_str.lower()}_PI_{pi["name"]}(&ctxt)'
             wrapper_c.append(f'{sig} {{')
             wrapper_c.append(f'    {call};')
             wrapper_c.append('}\n')
@@ -241,16 +241,16 @@ def _process(process, instance=False, **kwargs):
         # Timer wrappers
         for timer in process.timers:
             # set
-            sig_set = f'void {process_instance.processName}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
-            call_set = f'{type_name_str}_PI_set_{timer}(&ctxt, val)'
+            sig_set = f'void {process_instance.processName.lower()}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_set = f'{type_name_str.lower()}_PI_set_{timer}(&ctxt, val)'
             wrapper_c.append(f'{sig_set} {{')
             wrapper_c.append(f'    {call_set};')
             wrapper_c.append('}\n')
             wrapper_h.append(f'{sig_set};\n')
 
             # reset
-            sig_reset = f'void {process_instance.processName}_PI_reset_{timer}()'
-            call_reset = f'{type_name_str}_PI_reset_{timer}(&ctxt)'
+            sig_reset = f'void {process_instance.processName.lower()}_PI_reset_{timer}()'
+            call_reset = f'{type_name_str.lower()}_PI_reset_{timer}(&ctxt)'
             wrapper_c.append(f'{sig_reset} {{')
             wrapper_c.append(f'    {call_reset};')
             wrapper_c.append('}\n')
@@ -262,23 +262,23 @@ def _process(process, instance=False, **kwargs):
                 ri_type = type_name(ri['type'])
                 if pid_type_in_view():
                     # the PID type is provided by TASTE, does not exist otherwise
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param, dest_pid)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(param, dest_pid)'
                 else:
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}({ri_type} *param)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}({ri_type} *param)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(param)'
             else:
                 if pid_type_in_view():
                     # the PID type is provided by TASTE, does not exist otherwise
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(dest_pid)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(dest_pid)'
                 else:
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}()'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}()'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}()'
             
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
@@ -297,9 +297,9 @@ def _process(process, instance=False, **kwargs):
                     args.append(f'const {ASN1SCC}PID dest_pid')
                     call_args.append('dest_pid')
                 
-                sig_type = f'void {type_name_str}_RI_{proc.inputString}({", ".join(args)})'
-                sig_inst = f'void {process_instance.processName}_RI_{proc.inputString}({", ".join(args)})'
-                call_inst = f'{process_instance.processName}_RI_{proc.inputString}({", ".join(call_args)})'
+                sig_type = f'void {type_name_str.lower()}_RI_{proc.inputString}({", ".join(args)})'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_{proc.inputString}({", ".join(args)})'
+                call_inst = f'{process_instance.processName.lower()}_RI_{proc.inputString}({", ".join(call_args)})'
 
                 wrapper_c.append(f'{sig_type} {{')
                 wrapper_c.append(f'    {call_inst};')
@@ -310,13 +310,13 @@ def _process(process, instance=False, **kwargs):
             # set
             if pid_type_in_view():
                 # the PID type is provided by TASTE, does not exist otherwise
-                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
-                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
-                call_inst = f'{process_instance.processName}_RI_set_{timer}(val, dest_pid)'
+                sig_type = f'void {type_name_str.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName.lower()}_RI_set_{timer}(val, dest_pid)'
             else:
-                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-                call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
+                sig_type = f'void {type_name_str.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                call_inst = f'{process_instance.processName.lower()}_RI_set_{timer}(val)'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
@@ -325,13 +325,13 @@ def _process(process, instance=False, **kwargs):
             # reset
             if pid_type_in_view():
                 # the PID type is provided by TASTE, does not exist otherwise
-                sig_type = f'void {type_name_str}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
-                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
-                call_inst = f'{process_instance.processName}_RI_reset_{timer}(dest_pid)'
+                sig_type = f'void {type_name_str.lower()}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName.lower()}_RI_reset_{timer}(dest_pid)'
             else:
-                sig_type = f'void {type_name_str}_RI_reset_{timer}()'
-                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
-                call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
+                sig_type = f'void {type_name_str.lower()}_RI_reset_{timer}()'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_reset_{timer}()'
+                call_inst = f'{process_instance.processName.lower()}_RI_reset_{timer}()'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
@@ -1474,7 +1474,8 @@ def _transition(tr, **kwargs):
                     #    <instance>_delete_instance glue (same scheme as the
                     #    other RIs, e.g. <type>_RI_rezult).
                     if IS_PROCESS_TYPE:
-                        stmts.append(f'{PROCESS_NAME}_RI_Delete_Instance(self);')
+                        stmts.append(
+                            f'{PROCESS_NAME.lower()}_RI_Delete_Instance(self);')
                     else:
                         stmts.append(f'{PROCESS_NAME.lower()}_delete_instance(self);')
                     # Reset to the ASN.1 default context, then re-apply the
@@ -3548,7 +3549,7 @@ def generating_instance_glue_declarations(process):
     if NEEDS_DELETE_INSTANCE:
         if IS_PROCESS_TYPE:
             declarations.append(
-                f'void {PROCESS_NAME}_RI_Delete_Instance({ASN1SCC}PID id);')
+                f'void {PROCESS_NAME.lower()}_RI_Delete_Instance({ASN1SCC}PID id);')
         else:
             declarations.append(
                 f'void {PROCESS_NAME.lower()}_delete_instance({ASN1SCC}PID id);')

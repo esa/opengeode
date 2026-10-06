@@ -9,15 +9,15 @@
 #include <stdio.h>
 #include "child.h"
 
-extern void CInitChild(void);
-extern void Child_PI_DoIt(void);
+extern void CInitchild(void);
+extern void child_PI_DoIt(void);
 
 int main(void)
 {
-    CInitChild();
+    CInitchild();
 
     /* Exported procedure DoIt, then its automatic transition */
-    Child_PI_DoIt();
+    child_PI_DoIt();
 
     return 0;
 }
