@@ -19,7 +19,6 @@ int main()
     int i;
     printf("[C Code] Running test\n");
     adainit();
-    orchestrator_startup();
 //    toto = fixed_value(); 
     printf("%s\n", orchestrator_state());
     orchestrator_PI_other();
