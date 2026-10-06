@@ -1576,13 +1576,26 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # ── Random generator declarations ──
     # The 'any' decision picks one of N answers at random. Implement this with
     # a small self-contained xorshift PRNG (no external `rand` crate, which the
-    # generated Cargo.toml does not declare), seeded once from the clock.
+    # generated Cargo.toml does not declare), seeded from the system clock so
+    # that it really is random. The state is reset to 0 at each startup, which
+    # forces a fresh seed on the first draw.
     if process.random_generator:
         rust_body.extend([
             'static mut __OG_RNG_STATE: u64 = 0;',
+            'unsafe fn __og_rng_seed() {',
+            '    // Seed from the system clock. Use unwrap_or_default (not a',
+            '    // .map(...).unwrap_or(...) closure): the closure form makes the',
+            '    // linker report duplicate #[no_mangle] symbols when this file is',
+            '    // built both as a library and as a module of the test binary.',
+            '    let nanos = std::time::SystemTime::now()',
+            '        .duration_since(std::time::UNIX_EPOCH)',
+            '        .unwrap_or_default()',
+            '        .as_nanos() as u64;',
+            '    __OG_RNG_STATE = if nanos == 0 { 0x9E3779B97F4A7C15 } else { nanos };',
+            '}',
             'unsafe fn __og_rng_next() -> u64 {',
             '    if __OG_RNG_STATE == 0 {',
-            '        __OG_RNG_STATE = 0x9E3779B97F4A7C15;',
+            '        __og_rng_seed();',
             '    }',
             '    let mut x = __OG_RNG_STATE;',
             '    x ^= x << 13; x ^= x >> 7; x ^= x << 17;',
