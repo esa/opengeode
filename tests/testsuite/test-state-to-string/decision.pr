@@ -1,0 +1,62 @@
+--  Regression test: <process>_state() must return the current state as a
+--  string (the accessor used by the MSC tracer, e.g. TASTE's
+--  "INNER_SDL_STATE" print).
+--
+--  Before the fix the C backend returned the literal
+--  "Not_supported_in_C__Use_the_Ada_backend" and the Ada backend returned a
+--  NULL pointer (the generated <proc>_RI.To_C_Pointer stub body was
+--  Null_Ptr), so a caller doing printf("%s", <proc>_state()) segfaulted in
+--  Ada.  Both backends must now yield the same string: the ASN.1 state
+--  enumeration literal in upper case (Ada's <States>'Image).
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+use Datamodel;
+
+system Complexsdl;
+
+   signal tick;
+
+   channel c
+      from env to Complexsdl with tick;
+   endchannel;
+
+   block Complexsdl;
+
+      signalroute r
+      from env to Complexsdl with tick;
+      connect c and r;
+
+   /* CIF PROCESS (250, 150), (150, 75) */
+   process Complexsdl;
+      /* CIF START (100, 50), (70, 35) */
+      START;
+         /* CIF NEXTSTATE (100, 100), (70, 35) */
+         NEXTSTATE first;
+
+      /* CIF state (100, 100), (70, 35) */
+      state first;
+         /* CIF input (100, 150), (70, 35) */
+         input tick;
+            /* CIF NEXTSTATE (100, 200), (70, 35) */
+            NEXTSTATE Second;
+         endstate;
+
+      /* CIF state (100, 200), (70, 35) */
+      state Second;
+         /* CIF input (100, 250), (70, 35) */
+         input tick;
+            /* CIF NEXTSTATE (100, 300), (70, 35) */
+            NEXTSTATE third_State;
+         endstate;
+
+      /* CIF state (100, 300), (70, 35) */
+      state third_State;
+         /* CIF input (100, 350), (70, 35) */
+         input tick;
+            /* CIF NEXTSTATE (100, 400), (70, 35) */
+            NEXTSTATE first;
+         endstate;
+   endprocess;
+
+   endblock;
+
+endsystem;

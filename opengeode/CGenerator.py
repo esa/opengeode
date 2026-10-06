@@ -210,6 +210,18 @@ def _process(process, instance=False, **kwargs):
         wrapper_c.append('}\n')
         wrapper_h.append(f'void CInit{process_instance.processName.lower()}(void);\n')
 
+        # State-as-string accessor for this instance, mirroring the Ada backend
+        # (instance wrapper declares Get_State with Link_Name <instance>_state).
+        # The state enum belongs to the process TYPE; the strings match Ada's
+        # <States>'Image.
+        type_states = getattr(process.instance_of_ref, 'full_statelist', None)
+        if type_states and not getattr(process.instance_of_ref, 'no_context', False):
+            wrapper_c.extend(_state_to_str_switch(
+                f'{process_instance.processName.lower()}_state', 'ctxt',
+                type_states, f'{ASN1SCC}{type_name_str.capitalize()}'))
+            wrapper_h.append(
+                f'char* {process_instance.processName.lower()}_state(void);\n')
+
         # Deletion forwarder: the process type calls <type>_RI_Delete_Instance
         # (the deletion target is instance-specific); bind it to the concrete
         # environment glue <instance>_delete_instance, like the other RIs.
@@ -430,6 +442,14 @@ def _process(process, instance=False, **kwargs):
     with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
 
+    # Public prototype for <proc>_state() when it is generated (mirrors the Ada
+    # backend, which declares Get_State in the package spec). Only for a
+    # standalone process - a process type has no global context to inspect.
+    state_header_file_code = []
+    if generate_current_state_to_str_code and not IS_INSTANCE:
+        state_header_file_code.append(
+            f'char* {process_name.lower()}_state(void);\n')
+
     generated_h_source_code = []
     generated_h_source_code.extend(beginning_of_include_guard_header_file_code)
     
@@ -449,6 +469,7 @@ def _process(process, instance=False, **kwargs):
         generated_h_source_code.extend(continuous_signals_header_file_code)
     generated_h_source_code.extend(external_procedures_header_file_code)
     generated_h_source_code.extend(timers_header_file_code)
+    generated_h_source_code.extend(state_header_file_code)
     generated_h_source_code.extend(ending_of_include_guard_header_file_code)
 
     with open(process_name.lower() + '.h', 'wb') as h_file:
@@ -4120,15 +4141,54 @@ def processing_timers(process, output_signals_code):
     return timers_header_file_code
 
 
-def generating_current_state_to_str(process):
-    # Generate code returning the current state as a string (used by tracer)
+def _state_to_str_switch(func_name, ctx_expr, states, enum_prefix):
+    ''' Build a C function returning the current state as a string.
 
-    process_name = process.processName
-    return ['//// Current State To String',
-            f'char* {process_name.lower()}_state(void)',
-             '{',
-             '  return "Not_supported_in_C__Use_the_Ada_backend";',
-             '}']
+    func_name  : name of the generated function
+    ctx_expr   : C expression denoting the context (e.g. "ctxt")
+    states     : iterable of state names (as used by the datamodel)
+    enum_prefix: prefix of the ASN.1 state enum, e.g. "asn1SccOrchestrator"
+
+    Mirrors the Ada backend, where Get_State returns <States>'Image(State),
+    i.e. the enumeration literal in upper case. C has no 'Image, so switch on
+    the state and return a stable string literal. String literals (no malloc)
+    keep the caller from having to free the result and make <proc>_state()
+    behave identically in C and Ada.
+    '''
+    code = [f'char* {func_name}(void)', '{']
+    if states:
+        code.append(f'  switch ({ctx_expr}.state)')
+        code.append('  {')
+        # sorted() so the generated switch is deterministic run to run
+        for each_state in sorted(states):
+            code.append(f'    case {enum_prefix}_States_{each_state.lower()}:')
+            code.append(f'      return "{ASN1SCC.upper()}{each_state.upper()}";')
+        code.append('  }')
+        code.append('  return "Unknown_State";')
+    else:
+        code.append('  return "No_State";')
+    code.append('}')
+    return code
+
+
+def generating_current_state_to_str(process):
+    # Generate code returning the current state as a string (used by tracer).
+    #
+    # Like Ada, never emitted for a process TYPE: that module has no global
+    # context (it is a function parameter), so it cannot inspect any state.
+    # The instance wrapper gets its own <instance>_state (see _process).
+    if IS_INSTANCE or IS_PROCESS_TYPE or not process.full_statelist:
+        return []
+    code = ['//// Current State To String']
+    if getattr(process, 'no_context', False):
+        # No context/state variable to inspect: keep a valid, stable string.
+        code.extend(_state_to_str_switch(
+            f'{process.processName.lower()}_state', LPREFIX, None, ASN1SCC))
+    else:
+        code.extend(_state_to_str_switch(
+            f'{process.processName.lower()}_state', LPREFIX,
+            process.full_statelist, f'{ASN1SCC}{process.processName.capitalize()}'))
+    return code
 
 
 def generating_includes(process):
