@@ -1,0 +1,25 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM EXP;
+
+	SIGNAL go;
+
+	exported procedure DoIt; referenced;
+
+	CHANNEL c
+		FROM ENV TO EXP WITH go;
+	ENDCHANNEL;
+
+	BLOCK EXP;
+
+		SIGNALROUTE r
+			FROM ENV TO EXP WITH go;
+
+		CONNECT c and r;
+
+		/* CIF PROCESS (54, 46), (150, 75) */
+		PROCESS Child(1,5):child_type;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
