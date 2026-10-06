@@ -64,7 +64,7 @@ test-rust:
 	done && \
 	cp orchestrator_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
-	./target/debug/test_rust | diff expected -
+	./target/debug/test_rust | sed -E 's/Random value \w+/Random value X/' | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 

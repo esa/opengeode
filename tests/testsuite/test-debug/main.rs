@@ -6,6 +6,7 @@ use orchestrator::dataview_uniqDef::*;
 
 fn main() {
     unsafe {
+        println!("[C Code] Running test");
         orchestrator_startup();
     }
 }
