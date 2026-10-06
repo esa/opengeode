@@ -31,7 +31,13 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	./test_ada
 
 test-c:
-	$(OPENGEODE) --toC orchestrator.pr system_structure.pr 2>&1 | sort | diff expected_c - || exit 0
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) -g -o test_c test_c.c orchestrator.c orchestrator_datamodel.c \
+	    dataview-uniq.c asn1crt.c
+	# A DECISION ANY picks a branch at random, so normalise the selected
+	# branch before comparing with the reference output.
+	./test_c | sed -E 's/Random value \w+/Random value X/' | diff expected_c -
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
