@@ -18,6 +18,9 @@ logs/
 */*.gcno
 */*.c
 !*/test_c.c
+# Hand-written test helpers (e.g. environment glue a runtime test must
+# provide) are tracked alongside the driver.
+!*/glue.c
 */*.h
 */*.cfg
 */*.idx

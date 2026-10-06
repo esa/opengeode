@@ -1,0 +1,26 @@
+/* CIF Keep Specific Geode ASNFilename 'dataview-uniq.asn' */
+USE Datamodel;
+SYSTEM MC;
+
+	SIGNAL go;
+	SIGNAL rezult;
+
+	CHANNEL c
+		FROM ENV TO MC WITH go;
+		FROM MC TO ENV WITH rezult;
+	ENDCHANNEL;
+
+	BLOCK MC;
+
+		SIGNALROUTE r
+			FROM ENV TO MC WITH go;
+			FROM MC TO ENV WITH rezult;
+
+		CONNECT c and r;
+
+		/* CIF PROCESS (54, 46), (150, 75) */
+		PROCESS Child(1,5):MixedType;
+
+	ENDBLOCK;
+
+ENDSYSTEM;
