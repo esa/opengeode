@@ -5111,11 +5111,17 @@ def _conditional(cond, **kwargs):
         rust_string = f'(if {if_str} {{ {then_str} }} else {{ {else_str} }})'
     else:
         local_decl.append(f'let mut tmp{cond.value["tmpVar"]}: {actual_type} = Default::default();')
-        stmts.extend(then_stmts)
-        stmts.extend(else_stmts)
+        # The two branches must be evaluated lazily: a branch's operands may be
+        # invalid for the running state (e.g. an append whose length exceeds the
+        # target's fixed capacity overflows its array and panics), so only the
+        # taken branch may run. Emitting both branches' statements before the
+        # `if` (as was done before) evaluated the untaken branch unconditionally;
+        # Ada keeps each branch inside its own if/else arm.
         stmts.append(f'if {if_str} {{')
+        stmts.extend(then_stmts)
         stmts.append(f'    tmp{cond.value["tmpVar"]} = {then_str};')
         stmts.append(f'}} else {{')
+        stmts.extend(else_stmts)
         stmts.append(f'    tmp{cond.value["tmpVar"]} = {else_str};')
         stmts.append(f'}}')
         rust_string = f'tmp{cond.value["tmpVar"]}'

@@ -171,19 +171,26 @@ As of this branch, **all 45 Rust runtime tests compile with zero errors** (they
 previously produced ~15 non-compiling `.rs` files). See "Recent Rust fixes"
 below for the list.
 
-### Runtime residuals (2 of 45 tests)
+### Runtime residuals (1 of 45 tests)
 
 These do **not** reflect a generator defect; each was verified:
 
 | Test | Cause | Classification |
 |------|-------|----------------|
 | `test-simu` | Its `test-ada` rule is entirely commented out; `expected` is stale. | Stale fixture |
-| `test-uart` | Trailing line derives from the Ada runtime's continuous-signal loop; the C reference also lacks it (pre-existing Ada-vs-C/Rust runtime divergence). | Runtime-loop divergence |
 
-(`test-debug` used to be a third residual; it now passes in Ada, C **and** Rust.
+(`test-debug` used to be a second residual; it now passes in Ada, C **and** Rust.
 The C backend does support `DECISION ANY`; the Rust harness printed no banner and
 its `expected` was stale. Both fixed, and the randomly chosen `ANY` branch is
 normalised before diffing in the C and Rust test targets.)
+
+(`test-uart` used to be a third residual and was mis-classified here as a
+"runtime-loop divergence". The real cause was a Rust **generator** bug: the
+conditional-expression codegen hoisted *both* branches' statements before the
+`if`, so the untaken branch ran too — in this model an append
+(`'Received: ' // msg`) overflowed a fixed 10-byte array and panicked. Fixed by
+emitting each branch's statements lazily inside its own arm; the residual
+"Checking queue" line was simply never reached because of the panic.)
 
 ### Feature-level
 
@@ -269,8 +276,8 @@ between the two generators would not be caught there.
   - **C: 128 tests, 0 errors.**
   - **Ada: 128 tests, 0 errors** (one pre-existing expected failure,
     `test-nestedpriority`).
-  - **Rust: 128 tests, 2 errors** — exactly the 2 known residuals above
-    (`test-simu`, `test-uart`).
+  - **Rust: 128 tests, 1 error** — exactly the 1 known residual above
+    (`test-simu`).
 - `test-branchcoverage`, `test-branchcoverage2`, `test-nestedpriority` are
   `--check` parse-error tests (their `expected` is compiler diagnostics); they
   intentionally get no runtime harness.
@@ -324,8 +331,8 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ### B. Rust test-suite residual
 
-- Decide the 2 known-failing tests: add to `RUST_EXPECTED_FAILURES` (and/or
-  refresh `test-simu`'s stale `expected` since its `test-ada` is commented out).
+- Decide the 1 known-failing test: add `test-simu` to `RUST_EXPECTED_FAILURES`
+  (and/or refresh its stale `expected`, since its `test-ada` is commented out).
 - `test-debug` now has a meaningful Rust expectation: both the C and Rust test
   targets normalise the non-deterministic `DECISION ANY` branch (`Random value X`)
   before diffing, and both backends now seed their RNG from the clock.
@@ -371,6 +378,12 @@ notable ones:
   constants, `NULL → ()`, field spelling `b-C → b_C`, bitwise on integer
   literals, enum-vs-int comparison, `power()` for reals, signed-integer
   `Image` spacing.
+- **Conditional expression branches are lazy.** `_conditional` emitted both
+  branches' statements *before* the `if`, so the untaken branch was evaluated
+  anyway; a branch operand invalid for the running state (e.g. an append
+  overflowing a fixed-size target) then panicked. Each branch's statements now
+  go inside its own `if`/`else` arm, matching Ada's lazy `if/then/else`. This is
+  what fixed `test-uart`.
 - **CHOICE**: correct process-qualified selection-enum naming and match-based
   `to_selector`/`to_enum` (replacing an invalid enum→enum `as` cast); enum
   printing; choice-alternative writes rebuild the tagged enum; renames aliases
@@ -392,7 +405,7 @@ notable ones:
 | # | Item | Backend | Kind | Severity |
 |---|------|---------|------|----------|
 | A1 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| B | 2 Rust runtime residuals | Rust | Fixture/runtime | Low |
+| B | 1 Rust runtime residual | Rust | Fixture | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
 | C3 | `mod`/`rem` negative operands | Rust | Semantic bug | Medium |
