@@ -311,6 +311,11 @@ together with join/labels:
 
 |ClipCapIt-210118-111213.PNG|
 
+The generated code seeds its random number generator from the system clock at
+startup, so the chosen branch genuinely varies from one run to the next. Note
+that this makes such a process non-deterministic, which also shows up as a
+warning when the model is analysed.
+
 It is also possible to group answers in convenient ways to limit the
 number of branches:
 

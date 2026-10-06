@@ -4,7 +4,7 @@
 > OpenGEODE ↔ asn1scc BIT STRING work finished, this is now a three-backend
 > status document, not just Ada vs Rust.
 >
-> Status date: 2026-10-05 · branch `feature_bitstring_align_ada_with_c`.
+> Status date: 2026-10-06 · branch `feature_bitstring_align_ada_with_c`.
 
 ## Overview
 
@@ -67,8 +67,22 @@ scope (Rust does not implement it; C partially).
 | All 41 expression handlers registered | ✅ | ✅ | ✅ |
 | All statement handlers registered | ✅ | ✅ | ✅ |
 | Choice / enum / bitwise / append / slice codegen | ✅ | ✅ | ✅ |
+| `DECISION ANY` (random branch) | ✅ `Discrete_Random` | ✅ `rand()` | ✅ xorshift PRNG |
 
 Legend: ✅ implemented · ⚠️ partial/limited · ❌ missing.
+
+**`DECISION ANY` randomness.** All three backends now seed their RNG from the
+system clock so that a run really picks a branch at random (previously C used an
+unseeded `rand()` — glibc behaves as `srand(1)` — and Rust filled its xorshift
+state with a fixed constant, so both were effectively deterministic). C seeds
+`srand()` once in `CInit` from `clock_gettime(CLOCK_REALTIME)` nanoseconds
+(falling back to `time(NULL)`), mixing the value first because glibc's `rand()`
+returns correlated first outputs for nearby seeds; Rust seeds from
+`SystemTime` nanoseconds. Ada already reset `Discrete_Random` per startup. The
+nanosecond clock matters: `time(NULL)` alone has one-second granularity, so
+back-to-back runs would otherwise repeat. Because the branch is random by
+design, the C and Rust test targets normalise it
+(`sed -E 's/Random value \w+/Random value X/'`) before diffing.
 
 ---
 
@@ -249,13 +263,14 @@ between the two generators would not be caught there.
 
 ## Test Coverage Status
 
-- **125 test directories** run by the harness. **46** have a shared
+- **128 test directories** run by the harness. **50** have a shared
   `expected` (a runtime comparison); the rest only compile-check.
-- Suites after the `test-stateref` addition:
-  - **C: 125 tests, 0 errors.**
-  - **Rust: 125 tests, 3 errors** — exactly the 3 known residuals above.
-  - **Ada: 46 runtime tests build and run** (Ada is the reference backend and
-    never had a per-directory Rust-style gate).
+- Suites (current, branch `feature_bitstring_align_ada_with_c`):
+  - **C: 128 tests, 0 errors.**
+  - **Ada: 128 tests, 0 errors** (one pre-existing expected failure,
+    `test-nestedpriority`).
+  - **Rust: 128 tests, 2 errors** — exactly the 2 known residuals above
+    (`test-simu`, `test-uart`).
 - `test-branchcoverage`, `test-branchcoverage2`, `test-nestedpriority` are
   `--check` parse-error tests (their `expected` is compiler diagnostics); they
   intentionally get no runtime harness.
@@ -309,7 +324,7 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ### B. Rust test-suite residual
 
-- Decide the 3 known-failing tests: add to `RUST_EXPECTED_FAILURES` (and/or
+- Decide the 2 known-failing tests: add to `RUST_EXPECTED_FAILURES` (and/or
   refresh `test-simu`'s stale `expected` since its `test-ada` is commented out).
 - `test-debug` now has a meaningful Rust expectation: both the C and Rust test
   targets normalise the non-deterministic `DECISION ANY` branch (`Random value X`)
@@ -324,7 +339,8 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ### D. Coverage / fixtures
 
-- Only 45/126 dirs have runtime expectations; ~78 are compile-only.
+- Only 45/128 dirs build+run in Rust (the ones with a `test-rust` cargo rule);
+  the rest are compile-only.
 - `test-bitstring` should optionally cross-check against asn1scc's C encode.
 
 ### E. BIT STRING residuals
@@ -361,7 +377,13 @@ notable ones:
   resolved to their target expression.
 - **Misc**: `for`-each over a block expression parenthesised; timer-name
   canonicalisation; multi-line informal text commented per line; self-contained
-  xorshift PRNG (removes the undeclared `rand` crate).
+  xorshift PRNG (removes the undeclared `rand` crate), now seeded from
+  `SystemTime` nanoseconds so `DECISION ANY` is genuinely random.
+  (Implementation note: the seed uses
+  `duration_since(..).unwrap_or_default().as_nanos()` — **not** the
+  `.map(|d| ..).unwrap_or(..)` closure form, which made the linker report
+  duplicate `#[no_mangle]` symbols because the generated file is built both as
+  the lib target and as a module of the test binary.)
 
 ---
 
@@ -370,11 +392,11 @@ notable ones:
 | # | Item | Backend | Kind | Severity |
 |---|------|---------|------|----------|
 | A1 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| B | 3 Rust runtime residuals | Rust | Fixture/runtime | Low |
+| B | 2 Rust runtime residuals | Rust | Fixture/runtime | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
 | C3 | `mod`/`rem` negative operands | Rust | Semantic bug | Medium |
 | C4 | Decision answer-stmt ordering | Rust | Semantic diff | Medium |
 | C5 | Process-type generic wiring | Rust | Missing feature | High |
-| D | ~78 dirs compile-only | all | Test gap | Low |
+| D | ~83 dirs compile-only | all | Test gap | Low |
 | E | Keep/delete scratch prototypes | — | Housekeeping | Low |
