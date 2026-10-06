@@ -157,15 +157,19 @@ As of this branch, **all 45 Rust runtime tests compile with zero errors** (they
 previously produced ~15 non-compiling `.rs` files). See "Recent Rust fixes"
 below for the list.
 
-### Runtime residuals (3 of 45 tests)
+### Runtime residuals (2 of 45 tests)
 
 These do **not** reflect a generator defect; each was verified:
 
 | Test | Cause | Classification |
 |------|-------|----------------|
-| `test-debug` | Model uses a non-deterministic `ANY` decision (the **C backend refuses to generate it**); its `expected` file is the Ada path. | Harness/expected fidelity |
 | `test-simu` | Its `test-ada` rule is entirely commented out; `expected` is stale. | Stale fixture |
 | `test-uart` | Trailing line derives from the Ada runtime's continuous-signal loop; the C reference also lacks it (pre-existing Ada-vs-C/Rust runtime divergence). | Runtime-loop divergence |
+
+(`test-debug` used to be a third residual; it now passes in Ada, C **and** Rust.
+The C backend does support `DECISION ANY`; the Rust harness printed no banner and
+its `expected` was stale. Both fixed, and the randomly chosen `ANY` branch is
+normalised before diffing in the C and Rust test targets.)
 
 ### Feature-level
 
@@ -307,8 +311,9 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 - Decide the 3 known-failing tests: add to `RUST_EXPECTED_FAILURES` (and/or
   refresh `test-simu`'s stale `expected` since its `test-ada` is commented out).
-- Optionally make `test-debug` deterministic (drop/skip its `ANY`) so it has a
-  meaningful Rust expectation.
+- `test-debug` now has a meaningful Rust expectation: both the C and Rust test
+  targets normalise the non-deterministic `DECISION ANY` branch (`Random value X`)
+  before diffing, and both backends now seed their RNG from the clock.
 
 ### C. Rust feature-level gaps
 

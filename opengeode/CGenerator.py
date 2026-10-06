@@ -76,6 +76,9 @@ STRING_INCLUDE = False
 # True if stdlib.h has to be included
 STDLIB_INCLUDE = False
 
+# True if time.h has to be included (for seeding the RNG of DECISION ANY)
+TIME_INCLUDE = False
+
 
 def default_pid():
     ''' Default value for the Dest_PID parameter of RIs
@@ -150,6 +153,7 @@ def _process(process, instance=False, **kwargs):
     global MATH_INCLUDE
     global STRING_INCLUDE
     global STDLIB_INCLUDE
+    global TIME_INCLUDE
     global LPREFIX
     global TIMER_VARIABLES
     global IS_INSTANCE
@@ -353,6 +357,10 @@ def _process(process, instance=False, **kwargs):
     del PROCEDURES[:]
     PROCEDURES.extend(process.procedures)
 
+    # A DECISION ANY inside an inner procedure also needs the RNG to be seeded.
+    for each in PROCEDURES:
+        process.random_generator.update(each.random_generator)
+
     del TIMER_VARIABLES[:]
     TIMER_VARIABLES.extend(process.timers)
 
@@ -360,6 +368,7 @@ def _process(process, instance=False, **kwargs):
     MATH_INCLUDE = False
     STRING_INCLUDE = False
     STDLIB_INCLUDE = False
+    TIME_INCLUDE = False
 
     # Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
@@ -3601,6 +3610,37 @@ def generating_startup_function(process, no_renames):
 
     processing_process_variables(process, no_renames, startup_function_code)
 
+    # Seed the C RNG so that DECISION ANY really picks a branch at random.
+    # Done once at startup, before the startup transition is executed.
+    # time(NULL) alone has a one-second granularity, which is too coarse for
+    # short-running programs; use the nanosecond clock when it is available
+    # (POSIX) and fall back to time() otherwise. The value is mixed before
+    # srand() because glibc's rand() produces correlated first values for
+    # nearby seeds.
+    if process.random_generator:
+        global TIME_INCLUDE
+        TIME_INCLUDE = True
+        startup_function_code.extend([
+            '{',
+            'unsigned long long og_seed;',
+            '#if defined(CLOCK_REALTIME)',
+            'struct timespec og_ts;',
+            'if (clock_gettime(CLOCK_REALTIME, &og_ts) == 0) {',
+            'og_seed = (unsigned long long) og_ts.tv_sec * 1000000000ULL',
+            '        + (unsigned long long) og_ts.tv_nsec;',
+            '} else {',
+            'og_seed = (unsigned long long) time(NULL);',
+            '}',
+            '#else',
+            'og_seed = (unsigned long long) time(NULL);',
+            '#endif',
+            'og_seed ^= og_seed >> 33;',
+            'og_seed *= 0xFF51AFD7ED558CCDULL;',
+            'og_seed ^= og_seed >> 33;',
+            'srand((unsigned) og_seed);',
+            '}',
+        ])
+
     if process.transitions and not getattr(process, 'no_context', False):
         startup_function_code.append('\n')
         ctxt_param = 'ctxt, ' if IS_INSTANCE else ''
@@ -4105,6 +4145,9 @@ def generating_includes(process):
 
     if STDLIB_INCLUDE == True:
         includes_code.append(u'#include <stdlib.h>')
+
+    if TIME_INCLUDE == True:
+        includes_code.append(u'#include <time.h>')
 
     for each in process.DV.asn1Files:
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'
