@@ -62,7 +62,7 @@ scope (Rust does not implement it; C partially).
 | `CREATE` | ✅ | ✅ | ✅ |
 | `STOP` terminator | ✅ `Delete_Instance` | ✅ `<proc>_delete_instance` | ✅ `delete_instance` |
 | `state` reference expression | ✅ | ✅ | ✅ |
-| `<proc>_state()` (state as string, for tracer) | ✅ `New_String` | ✅ `switch` on state | ❌ returns NULL |
+| `<proc>_state()` (state as string, for tracer) | ✅ `New_String` | ✅ `switch` on state | ✅ `match` on state |
 | `parent` / `sender` / `entity` PID reads | ✅ `Self` synonym | ⚠️ parser-injected | ❌ (only `self`) |
 | `MantissaBaseExp` | ⚠️ stub | ❌ raises | ⚠️ stub |
 | All 41 expression handlers registered | ✅ | ✅ | ✅ |
@@ -131,9 +131,10 @@ These are verified by generating minimal models, not only by reading.
 > `generate_state_name()` helper. Covered by the new
 > `tests/testsuite/test-stateref`.
 
-> **`<proc>_state()` — FIXED in Ada and C.** The state-as-string accessor used by
-> the MSC tracer (TASTE's `printf("INNER_SDL_STATE: <proc>,%s\n", <proc>_state())`)
-> did not behave the same in the two backends:
+> **`<proc>_state()` — FIXED in Ada, C and Rust.** The state-as-string accessor
+> used by the MSC tracer (TASTE's
+> `printf("INNER_SDL_STATE: <proc>,%s\n", <proc>_state())`) did not return the
+> current state in any of the three backends:
 > * **C** returned the literal `"Not_supported_in_C__Use_the_Ada_backend"`.
 >   `generating_current_state_to_str` (`CGenerator.py`) now emits a `switch` on
 >   the state and returns a stable string literal per state — exactly Ada's
@@ -151,9 +152,15 @@ These are verified by generating minimal models, not only by reading.
 >   removed: it is the **platform hook** TASTE overwrites (its kazoo skeleton
 >   uses `New_String` on native Linux and `Null_Ptr` on embedded targets) and is
 >   only emitted for standalone OpenGEODE (`not taste`).
+> * **Rust** returned `std::ptr::null()` ("simplified"). It now returns a
+>   `'static` NUL-terminated byte literal from a `match` on the state, same
+>   strings as Ada/C. A process **type** emits a crate-visible `state_str()`
+>   (not `#[no_mangle]`, since the type module is compiled into every instance
+>   crate and an exported symbol would collide); the standalone process and the
+>   instance wrapper export `<proc>_state()` / `<instance>_state()`.
 >
-> Covered by the new `tests/testsuite/test-state-to-string` (Ada + C assert the
-> string, Rust only builds since its `_state()` still returns NULL).
+> Covered by the new `tests/testsuite/test-state-to-string`; all three drivers
+> print the state after each tick and diff the same `expected`.
 
 ---
 
@@ -230,11 +237,7 @@ emitting each branch's statements lazily inside its own arm; the residual
    `is_generic`/`ri_generic_sig` in `RustGenerator.py`.
 4. **TASTE context-parameter wiring** — Rust detects `has_context_params` but
    does not generate the parameter plumbing Ada does.
-5. **`<proc>_state()` returns NULL.** `RustGenerator.py:1616-1624` emits
-   `std::ptr::null()` ("Return state as C string - simplified"). Ada and C both
-   return the real state string now; a Rust caller that dereferences it would
-   crash. Not exercised by any driver today.
-6. **Simulation mode not supported** (by design).
+5. **Simulation mode not supported** (by design).
 
 ---
 
@@ -440,6 +443,5 @@ notable ones:
 | C3 | `mod`/`rem` negative operands | Rust | Semantic bug | Medium |
 | C4 | Decision answer-stmt ordering | Rust | Semantic diff | Medium |
 | C5 | Process-type generic wiring | Rust | Missing feature | High |
-| C6 | `<proc>_state()` returns NULL | Rust | Missing feature | Low |
 | D | ~83 dirs compile-only | all | Test gap | Low |
 | E | Keep/delete scratch prototypes | — | Housekeeping | Low |

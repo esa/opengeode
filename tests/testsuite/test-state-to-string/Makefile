@@ -21,9 +21,7 @@ test-c:
 	$(CC) -O$(O) -o test_c test_c.c complexsdl.c complexsdl_datamodel.c \
 	    dataview-uniq.c asn1crt.c && ./test_c | diff expected -
 
-# The Rust backend does not implement <proc>_state() yet (it returns NULL),
-# so this test only builds and runs the model; the state-string assertion is
-# covered by test-ada and test-c above.
+# Rust <proc>_state() returns the same NUL-terminated string as Ada and C.
 test-rust:
 	$(OPENGEODE) decision.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
@@ -34,7 +32,7 @@ test-rust:
 	done && \
 	cp complexsdl_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
-	./target/debug/test_rust
+	./target/debug/test_rust | diff expected -
 
 coverage:
 	coverage run -p $(OPENGEODE) $(ROOT_MODEL) --toAda

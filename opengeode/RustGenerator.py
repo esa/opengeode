@@ -1614,14 +1614,42 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 f'extern "C" {{ fn {each.lower()}_create_instance(from: {ASN1SCC}PID) -> {ASN1SCC}PID; }}'])
 
     # ── Get_State function ──
-    if not generic and not instance and not stop_condition and not NO_CONTEXT:
-        rust_body.extend([
-            f'#[no_mangle]',
-            f'pub unsafe extern "C" fn {process.name.lower()}_state() -> *const u8 {{',
-            f'    // Return state as C string - simplified',
-            f'    std::ptr::null()',
-            f'}}',
-            ''])
+    # Return the current state as a NUL-terminated C string, matching Ada's
+    # <States>'Image (upper-cased enumeration literal, e.g. ASN1SCCWAIT). The
+    # string is a 'static byte literal, so the caller must not free it.
+    #
+    # For a process TYPE, emit a crate-visible helper (NOT #[no_mangle]: the
+    # type module is compiled into every instance crate, so an exported symbol
+    # would collide). The instance wrapper exports <instance>_state() and
+    # forwards to it, mirroring the Ada instance wrapper's Get_State.
+    if not instance and not stop_condition:
+        if NO_CONTEXT or not process.full_statelist:
+            # No state variable to inspect (no_context, or a model with only a
+            # start transition - the datamodel then declares no state field).
+            if not generic:
+                rust_body.extend([
+                    f'#[no_mangle]',
+                    f'pub unsafe extern "C" fn {process.name.lower()}_state() -> *const u8 {{',
+                    f'    b"No_State\\0".as_ptr()',
+                    f'}}',
+                    ''])
+        else:
+            if generic:
+                rust_body.append(f'pub(crate) unsafe fn state_str() -> *const u8 {{')
+            else:
+                rust_body.append('#[no_mangle]')
+                rust_body.append(
+                    f'pub unsafe extern "C" fn {process.name.lower()}_state() -> *const u8 {{')
+            rust_body.append(f'    match {LPREFIX}.state {{')
+            for each_state in sorted(process.full_statelist):
+                rust_body.append(
+                    f'        {generate_state_name(each_state)} => '
+                    f'b"{ASN1SCC.upper()}{each_state.upper()}\\0".as_ptr(),')
+            rust_body.extend([
+                '        _ => b"Unknown_State\\0".as_ptr(),',
+                '    }',
+                '}',
+                ''])
 
     # ── Startup declaration ──
     if not generic:
@@ -1983,6 +2011,23 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         startup_lines.append('}')
         startup_lines.append('')
         rust_body.extend(startup_lines)
+
+        # State-as-string accessor for this instance, mirroring the Ada
+        # instance wrapper (Get_State with Link_Name <instance>_state). It
+        # forwards to the type module's crate-visible state_str(), which reads
+        # that module's context - and each instance crate has its own copy of
+        # the type module, hence its own context. Only emitted when the TYPE
+        # actually declares state_str() (same conditions as above).
+        type_node = getattr(process, 'instance_of_ref', None)
+        if not stop_condition and type_node is not None \
+                and not getattr(type_node, 'no_context', False) \
+                and getattr(type_node, 'full_statelist', None):
+            rust_body.extend([
+                f'#[no_mangle]',
+                f'pub unsafe extern "C" fn {process.name.lower()}_state() -> *const u8 {{',
+                f'    {type_module}::state_str()',
+                f'}}',
+                ''])
 
     # ── Instance RI implementation ──
     # The instance implements the process type's RI trait. In TASTE the
