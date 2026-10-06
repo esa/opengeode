@@ -673,7 +673,11 @@ def _decision(dec, **kwargs):
             else_stmts.insert(1, 'else')
             stmts.extend(else_stmts)
         else:
-            else_stmts.insert(0, '} // 2')  # close the if part
+            # Else-only decision: no 'if' branch was emitted, so there is no
+            # block to close. Emit the else body as a plain compound statement
+            # (else_stmts already starts with '{'); adding '} // 2' here would
+            # close the enclosing scope and unbalance the braces.
+            else_stmts.append('}')
             stmts.extend(else_stmts)
     except:
         # no else statement
@@ -3443,6 +3447,9 @@ def generate_sdl_constants(process):
             _, val, _ = expression(sdl_constant.value)
             if sdl_constant_basic_type.kind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
                 val = array_content(sdl_constant.value, val, sdl_constant_basic_type)
+            elif sdl_constant_basic_type.kind == 'IA5StringType':
+                # IA5Strings are null-terminated C arrays
+                val = ia5string_raw(sdl_constant.value)
             elif sdl_constant_basic_type.kind == 'NullType':
                 val = '0'
             elif sdl_constant_basic_type.kind not in ("EnumeratedType", "SequenceType"):
