@@ -1,0 +1,38 @@
+--  Regression test: an EXPORTED procedure of a process TYPE whose dataview
+--  has a PID type gets an automatic <type>_<name>_transition call at the end.
+--  That transition function is emitted as a fake PI with signature
+--  (ctxt) - no destination-PID parameter - so the call must not pass one.
+--  Before the fix the call emitted <type>_<name>_transition(ctxt, PID_env)
+--  against the 1-argument declaration, and the generated C did not compile.
+/* CIF PROCESS (54, 46), (150, 75) */
+process type child_type;
+    /* CIF TEXT (2755, 9), (245, 263) */
+    dcl n T_Int32;
+    /* CIF ENDTEXT */
+    /* CIF procedure (2524, 738), (189, 35) */
+    procedure DoIt;
+        /* CIF START (513, 132), (70, 35) */
+        START;
+            /* CIF PROCEDURECALL (410, 187), (274, 35) */
+            call writeln("DoIt called");
+            /* CIF return (530, 242), (35, 35) */
+            return ;
+    endprocedure;
+    /* CIF START (524, 139), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (524, 194), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF state (524, 194), (70, 35) */
+    state wait;
+        /* CIF input (524, 249), (70, 35) */
+        input DoIt;
+            /* CIF PROCEDURECALL (524, 280), (70, 35) */
+            call writeln("transition after DoIt");
+            /* CIF NEXTSTATE (524, 304), (70, 35) */
+            NEXTSTATE wait;
+        /* CIF input (524, 360), (70, 35) */
+        input go;
+            /* CIF NEXTSTATE (524, 415), (70, 35) */
+            NEXTSTATE wait;
+    endstate;
+endprocess type child_type;

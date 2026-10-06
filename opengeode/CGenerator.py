@@ -966,8 +966,14 @@ def _call_external_function(output, **kwargs):
                 RIName = out['outputName']
             if is_transition_call and IS_INSTANCE:
                 list_of_params.insert(0, 'ctxt')
-            if dest_pid is not None:
-                # the RI has an extra dest_pid parameter (PID type exists)
+            if dest_pid is not None and not is_transition_call:
+                # The RI has an extra dest_pid parameter when the PID type is
+                # in view. This does NOT apply to the automatic
+                # <proc>_<name>_transition call generated at the end of an
+                # exported procedure: that function is emitted as a fake PI
+                # (see processing_input_signals) whose signature is just
+                # (ctxt) for a process type, and Ada calls it with no PID
+                # either.
                 list_of_params.append(dest_pid)
             if list_of_params:
                 params = ', '.join(list_of_params)
