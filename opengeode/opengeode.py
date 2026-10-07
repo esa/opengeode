@@ -744,17 +744,32 @@ class SDL_Scene(QGraphicsScene):
                 for each in floaters:
                     fix_pos_from_ast(each)
                 gs.Symbol.mass_updating_no_bubble = False
+                # clean_layout measures each branch by its bounding
+                # rectangle, which depends on the size of the text
+                # inside the symbols. Right after rendering, the
+                # EditableText widths are not final yet: Qt computes the
+                # document layout lazily, on the event loop (a symbol's
+                # width can go from 178 to 187px once settled). Measuring
+                # now would spread the branches by a stale width and the
+                # wider text would then overlap its neighbours. Flush the
+                # pending layout events so the widths are final before we
+                # lay out.
+                QApplication.processEvents()
                 # Only the floating (top-level) symbols keep the
                 # coordinates read from the CIF comments. Rebalance the
                 # horizontal branches underneath each of them so they
                 # are evenly spread and cannot overlap. clean_layout is
                 # recursive, so a single call per floating symbol covers
-                # its whole sub-tree. Start symbols, text areas and
-                # comments are skipped: they have nothing to rebalance.
+                # its whole sub-tree.
+                #
+                # A START symbol must NOT be skipped: in a composite-state
+                # or procedure scene the inner states hang below the START
+                # (they are its children, not floating symbols), so the
+                # START owns the whole state machine that needs
+                # rebalancing. Only text areas and comments are skipped -
+                # they carry no branches to rebalance.
                 for each in floaters:
-                    if isinstance(each, (sdlSymbols.Start,
-                                         sdlSymbols.TextSymbol,
-                                         gs.Comment)):
+                    if isinstance(each, (sdlSymbols.TextSymbol, gs.Comment)):
                         continue
                     gs.clean_layout(each)
                     layout_comments(each)
