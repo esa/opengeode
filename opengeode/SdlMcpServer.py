@@ -186,6 +186,48 @@ def _kind_of(symbol):
     return _KIND_OF.get(type(symbol))
 
 
+def relayout_after_insert(scene, symbol):
+    """Tidy the scene after a symbol was placed, the way the editor does
+    when a user finishes moving something:
+
+    * rebalance the horizontal branches of the symbol's sub-tree, so a
+      freshly inserted branch is spread evenly and cannot overlap its
+      siblings (``clean_layout`` is recursive, one call per top-level
+      root is enough);
+    * run the Collision Avoidance Manoeuvre (``cam``) so the new symbol
+      does not sit on top of a neighbour.
+
+    Both are no-ops when there is nothing to do, so this is safe to call
+    for every insertion, in the live editor scene or headless.
+    """
+    from opengeode import genericSymbols
+    # The root of the sub-tree to relayout: a horizontal symbol (a branch
+    # of a decision) is rebalanced together with its siblings, hence the
+    # parent; anything else is its own root.
+    try:
+        root = (symbol.parentItem()
+                if isinstance(symbol, genericSymbols.HorizontalSymbol)
+                else symbol)
+    except AttributeError:
+        root = symbol
+    root = root or symbol
+    try:
+        genericSymbols.clean_layout(root)
+    except Exception:                       # layout must never break a tool
+        pass
+    try:
+        symbol.cam(symbol.pos(), symbol.pos(), animate=False)
+    except Exception:
+        pass
+    # Equivalent of a F5 keypress: a programmatic insertion has no user
+    # gesture to redraw the view, so resize the scrollbars to the new
+    # extent of the diagram. No-op on a headless scene (no attached view).
+    try:
+        scene.refresh_scrollbars()
+    except AttributeError:
+        pass
+
+
 class SdlModel:
     """The SDL model under control: the parsed AST, the rendered scenes,
     and the operations on them. One model, loaded once at startup; the
@@ -513,6 +555,9 @@ class SdlModel:
             item.nested_scene = scene.create_subscene(
                     cls.__name__.lower(), scene)
             item.nested_scene.name = str(item)
+        # Tidy up: rebalance the branches and avoid collisions, so a
+        # remote insertion looks like a manual one.
+        relayout_after_insert(scene, item)
         scene.scene_refresh()
         return self._symbol_info(item, scene)
 
