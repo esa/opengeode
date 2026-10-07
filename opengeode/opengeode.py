@@ -932,6 +932,13 @@ class SDL_Scene(QGraphicsScene):
                 else:
                     errs.append(error)
             self.clear_focus()
+            # Offer orbit's "Auto fix" only when orbit is actually reachable;
+            # all the orbit-facing code lives in OrbitSyntaxFix (see there).
+            try:
+                from .OrbitSyntaxFix import auto_fix_available, auto_fix_symbol
+                can_autofix = auto_fix_available()
+            except Exception:
+                can_autofix = False
             msg_box = QMessageBox(view)
             msg_box.setFont(QFont('UbuntuMono', 10))
             msg_box.setIcon(QMessageBox.Warning)
@@ -941,8 +948,24 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setText("Syntax error! Keep editing?" + " " * additional_spaces)
             msg_box.setStandardButtons(QMessageBox.Ignore | QMessageBox.Yes)
             msg_box.setDefaultButton(QMessageBox.Yes)
+            fix_button = (msg_box.addButton('Auto fix', QMessageBox.ActionRole)
+                          if can_autofix else None)
             view.toolbar.disable_all_actions()
-            res = msg_box.exec()
+            while True:
+                res = msg_box.exec()
+                if fix_button is not None and msg_box.clickedButton() is fix_button:
+                    # Let the user take orbit's correction; this shows its own
+                    # progress and review dialogs. On success the symbol parses
+                    # again, so stop here and let the caller record the edit.
+                    view.toolbar.update_menu(self)
+                    if auto_fix_symbol(view, symbol, errs):
+                        symbol.syntax_error = False
+                        self.clear_highlight(symbol)
+                        return False
+                    # Not fixed (cancelled or still broken): ask again.
+                    view.toolbar.disable_all_actions()
+                    continue
+                break
             if res == QMessageBox.Ignore:
                 ret = False
                 self.highlight(symbol, Qt.red)
