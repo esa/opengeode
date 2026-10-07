@@ -28,6 +28,7 @@ description: >
 7. [Text Areas and Declarations](#7-text-areas-and-declarations)
 8. [States and State Machine Structure](#8-states-and-state-machine-structure)
 9. [Transitions and Actions](#9-transitions-and-actions)
+   - [What the editor stores in a symbol](#what-the-editor-stores-in-a-symbol-read-this-before-fixing-a-symbol)
 10. [Task and Assignment](#10-task-and-assignment)
 11. [Output](#11-output)
 12. [Decision](#12-decision)
@@ -573,7 +574,9 @@ timer myTimer;
 ```
 
 Text areas are opened with `/* CIF TEXT ... */` and closed with `/* CIF ENDTEXT
-*/`. Inside, you can write:
+*/`. The markers are added by the editor when it saves the model: the text
+stored in a text-area symbol is only the declarations **between** them, so a
+snippet handed to a fixer must not include the markers. Inside, you can write:
 
 - Variable declarations (`DCL`)
 - Timer declarations (`timer`)
@@ -763,6 +766,35 @@ myLabel:
 
 Labels allow re-routing via JOIN (see §16).
 
+### What the editor stores in a symbol (READ THIS BEFORE FIXING A SYMBOL)
+
+This matters whenever you are asked to repair the text of a symbol. OpenGEODE
+keeps only the **body** of a symbol, not the complete SDL statement:
+
+- **No leading keyword.** A Task symbol holding `x := x + 1` is stored exactly
+  as `x := x + 1`; the generator emits `task x := x + 1;`. The same applies to
+  `output`, `call`, `provided`, `input`, `connect` and `NEXTSTATE`.
+- **No trailing `;`.** The generator appends the statement terminator, and
+  `check_syntax` reports *"Remove the semi-colon at the end of the text."* if
+  the stored text ends with one.
+- **Exception — a text area** (`dcl`, `timer`, `fpar`, `procedure`, `syntype`,
+  `synonym`, `use`) keeps its own `;`. Its stored text does **not** include the
+  `/* CIF TEXT ... */` / `/* CIF ENDTEXT */` markers — the editor adds those
+  when serialising the model.
+
+| Symbol | Stored text (what is in the box) | Generator emits |
+|--------|----------------------------------|-----------------|
+| Task | `x := x + 1` | `task x := x + 1;` |
+| Task with a loop | `for i in range(10):` / `    call writeln(i)` / `endfor` | `task for i in range(10): ... endfor;` |
+| Output | `value(count)` | `output value(count);` |
+| Procedure call | `set_timer(100, t)` | `call set_timer(100, t);` |
+| Continuous signal | `x > 0` | `provided x > 0;` |
+| Nextstate | `Wait` | `NEXTSTATE Wait;` |
+| Create | `P(x)` | `create P(x);` |
+| Return | *(empty)* or `x + 1` | `return;` / `return x + 1;` |
+| Stop | *(empty)* | `stop;` |
+| Text area | `dcl counter MyInteger;` | (verbatim, including the `;`) |
+
 ---
 
 ## 10. Task and Assignment
@@ -803,9 +835,14 @@ documentation.
 ```sdl
 task for each in mySeqOf:
     call writeln(each);
-    each := each + 1
+    total := total + each
 endfor;
 ```
+
+**Do not assign the loop variable.** The iterator (`each`) is read-only inside
+the loop; assigning it is a semantic error
+(`Assignment to loop parameter "each" is not allowed`). Accumulate into another
+variable instead, as above.
 
 ### FOR with RANGE
 
@@ -1106,6 +1143,13 @@ fpar in param1 TypeA,
 -- no body here (declaration only)
 endprocedure;
 ```
+
+A procedure declared in a text area stores the signature with its optional
+`fpar` / `returns` / `referenced` / `external` and the closing `endprocedure;`,
+**without** any `/* CIF ... */` markers (the editor adds those when saving). A
+procedure with a graphical body is a separate symbol; its body is not stored in
+the text area. Set the `FPAR` section as a single declaration: one `fpar`
+keyword, comma-separated parameters, one `;` at the end.
 
 **With graphical body:**
 ```sdl

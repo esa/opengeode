@@ -906,6 +906,21 @@ class SDL_Scene(QGraphicsScene):
         ''' Parse a symbol and return a list of syntax errors '''
         return symb.check_syntax('\n'.join(Pr.generate(symb, recursive=False)))
 
+    @staticmethod
+    def _format_errors(errors):
+        ''' Turn the parser's error strings into the short lines shown in the
+        syntax-error pop-up (drop the leading "line N:C" location).'''
+        result = []
+        for error in errors:
+            split = error.split()
+            if split and split[0] == 'line' and len(split) > 1:
+                line_col = split[1].split(':')
+                if len(line_col) == 2:
+                    result.append(' '.join(split[2:]))
+                    continue
+            result.append(error)
+        return result
+
     def check_syntax(self, symbol) -> bool:
         ''' Check syntax of a symbol and display a pop-up in case of errors '''
         # return True if syntax errors were found
@@ -918,19 +933,6 @@ class SDL_Scene(QGraphicsScene):
             return False
         ret = True
         for view in self.views():
-            errs = []
-            for error in errors:
-                split = error.split()
-                if split[0] == 'line' and len(split) > 1:
-                    line_col = split[1].split(':')
-                    if len(line_col) == 2:
-                        # Get line number and column..to locate error
-                        # line_nb, col = line_col
-                        errs.append(' '.join(split[2:]))
-                    else:
-                        errs.append(error)
-                else:
-                    errs.append(error)
             self.clear_focus()
             # Offer orbit's "Auto fix" only when orbit is actually reachable;
             # all the orbit-facing code lives in OrbitSyntaxFix (see there).
@@ -943,15 +945,28 @@ class SDL_Scene(QGraphicsScene):
             msg_box.setFont(QFont('UbuntuMono', 10))
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
-            additional_spaces = min(100, max([len(e) for e in errs]))
-            msg_box.setInformativeText('\n'.join(errs))
-            msg_box.setText("Syntax error! Keep editing?" + " " * additional_spaces)
             msg_box.setStandardButtons(QMessageBox.Ignore | QMessageBox.Yes)
             msg_box.setDefaultButton(QMessageBox.Yes)
             fix_button = (msg_box.addButton('Auto fix', QMessageBox.ActionRole)
                           if can_autofix else None)
             view.toolbar.disable_all_actions()
             while True:
+                # (Re)compute the errors each time the box is shown: an auto-fix
+                # may have changed the text (including a partial fix that is
+                # kept when orbit gives up), so the old list can be stale.
+                errors = self.syntax_errors(symbol)
+                if not errors:
+                    # The symbol parses now (e.g. a kept fix cleared
+                    # everything): treat it as fixed.
+                    symbol.syntax_error = False
+                    self.clear_highlight(symbol)
+                    view.toolbar.update_menu(self)
+                    return False
+                errs = self._format_errors(errors)
+                additional_spaces = min(100, max([len(e) for e in errs]))
+                msg_box.setInformativeText('\n'.join(errs))
+                msg_box.setText("Syntax error! Keep editing?"
+                                + " " * additional_spaces)
                 res = msg_box.exec()
                 if fix_button is not None and msg_box.clickedButton() is fix_button:
                     # Let the user take orbit's correction; this shows its own
@@ -962,7 +977,8 @@ class SDL_Scene(QGraphicsScene):
                         symbol.syntax_error = False
                         self.clear_highlight(symbol)
                         return False
-                    # Not fixed (cancelled or still broken): ask again.
+                    # Not fixed (cancelled, or the attempts ran out): the box is
+                    # shown again with the (possibly updated) errors.
                     view.toolbar.disable_all_actions()
                     continue
                 break
