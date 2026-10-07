@@ -233,10 +233,15 @@ def _stub_dialogs(monkeypatch, accept=True):
     class _Review:
         #: Which candidate the stub dialog "chooses"; None = the default (0).
         pick = 0
+        #: The last (current, proposed, candidates) it saw, for assertions.
         last_candidates = None
+        last_current = None
+        calls = 0
         def __init__(self, parent, construct, current, proposed, candidates,
-                     errors):
+                     errors, attempt=1, total=1):
             _Review.last_candidates = list(candidates)
+            _Review.last_current = current
+            _Review.calls += 1
             self.chosen_text = candidates[_Review.pick]
         def exec(self):
             from PySide6.QtWidgets import QDialog
@@ -245,9 +250,14 @@ def _stub_dialogs(monkeypatch, accept=True):
         @staticmethod
         def warning(*a, **k):
             return None
+    _Review.pick = 0
+    _Review.calls = 0
+    _Review.last_current = None
+    _Review.last_candidates = None
     monkeypatch.setattr(osf, 'QProgressDialog', _Progress)
     monkeypatch.setattr(osf, '_ReviewDialog', _Review)
     monkeypatch.setattr(osf, 'QMessageBox', _MessageBox)
+    return _Review
 
 
 def test_apply_strips_the_semicolon_orbit_adds(qapp, tmp_path, monkeypatch):
@@ -312,10 +322,11 @@ def test_cancel_leaves_the_text_untouched(qapp, tmp_path, monkeypatch):
     assert str(symbol.text) == "x := ;"
 
 
-def test_a_suggestion_that_still_does_not_parse_is_rolled_back(qapp, tmp_path,
-                                                               monkeypatch):
-    '''If orbit's text still fails the parser, the original text is restored
-    and False is returned: the model is never left in a worse state.'''
+def test_exhausting_the_attempts_keeps_the_last_proposal(qapp, tmp_path,
+                                                         monkeypatch):
+    '''When every attempt still fails to parse, the text is NOT reverted to the
+    original: the user asked for the change, so orbit's last proposal is kept
+    and False is returned (the caller keeps the pop-up).'''
     monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
     _stub_dialogs(monkeypatch, accept=True)
 
@@ -329,12 +340,120 @@ def test_a_suggestion_that_still_does_not_parse_is_rolled_back(qapp, tmp_path,
             self.done.emit(("```\nstill broken ;\n```", None))
         def cancel(self): pass
     monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
-    # The re-check always reports an error (both candidate forms fail).
+    # Every re-check reports an error.
+    scene = _FakeScene(force_errors=["still bad"])
     view = _FakeView(str(tmp_path / "model.pr"))
-    symbol = _FakeSymbol("x := ;",
-                         scene=_FakeScene(force_errors=["still bad"]))
+    symbol = _FakeSymbol("x := ;", scene=scene)
     assert osf.auto_fix_symbol(view, symbol, ["expression expected"]) is False
-    assert str(symbol.text) == "x := ;"
+    # The last proposal is kept (with the ';' stripped for a task), not the
+    # original text.
+    assert str(symbol.text) == "still broken"
+    lines = scene.messages_window.lines
+    assert any('[Auto fix]' in ln and 'gave up' in ln for ln in lines)
+
+
+def test_retries_until_it_parses(qapp, tmp_path, monkeypatch):
+    '''A fix may reveal the next error; orbit is asked again and the retry
+    completes the job. The text progresses and the change sticks.'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    review = _stub_dialogs(monkeypatch, accept=True)
+
+    # First answer leaves one error; the second clears it.
+    from PySide6.QtCore import QObject, Signal
+    class _Asker(QObject):
+        done = Signal(object)
+        n = 0
+        def __init__(self, q, cwd):
+            super().__init__()
+        def moveToThread(self, t): pass
+        def run(self):
+            _Asker.n += 1
+            ans = "```\nx := 1\n```" if _Asker.n == 1 else "```\nx := 2\n```"
+            self.done.emit((ans, None))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _Asker)
+
+    class _Sc:
+        messages_window = _Messages()
+        def __init__(self):
+            self.n = 0
+        def syntax_errors(self, symbol):
+            self.n += 1
+            # First attempt's text fails, the retry's text parses.
+            return ["more"] if str(symbol.text) != "x := 2" else []
+    scene = _Sc()
+    symbol = _FakeSymbol("x := ;", scene=scene)
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is True
+    assert str(symbol.text) == "x := 2"
+    assert _Asker.n == 2                    # it asked twice
+    assert review.calls == 2                # two review dialogs
+    lines = scene.messages_window.lines
+    assert any('applied' in ln and 'attempt 2' in ln for ln in lines)
+
+
+def test_a_declined_retry_keeps_the_previous_correction(qapp, tmp_path,
+                                                        monkeypatch):
+    '''If the user says no on a retry, the earlier accepted correction is kept
+    (the symbol is not reverted) and False is returned.'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+
+    from PySide6.QtCore import QObject, Signal
+    import opengeode.OrbitSyntaxFix as osf
+    from PySide6.QtWidgets import QDialog
+
+    class _Asker(QObject):
+        done = Signal(object)
+        n = 0
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self):
+            _Asker.n += 1
+            self.done.emit(("```\nx := 1\n```", None))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _Asker)
+
+    # A review dialog that ACCEPTS the first proposal and DECLINES the retry.
+    class _Review:
+        calls = 0
+        def __init__(self, parent, construct, current, proposed, candidates,
+                     errors, attempt=1, total=1):
+            _Review.calls += 1
+            self._accept = attempt == 1
+            self.chosen_text = candidates[0]
+        def exec(self):
+            return QDialog.Accepted if self._accept else QDialog.Rejected
+    class _Progress:
+        def __init__(self, *a, **k): self.canceled = _S()
+        def setWindowTitle(self, *a): pass
+        def setWindowModality(self, *a): pass
+        def setMinimumDuration(self, *a): pass
+        def setAutoClose(self, *a): pass
+        def setAutoReset(self, *a): pass
+        def show(self): pass
+        def close(self): pass
+        def wasCanceled(self): return False
+    class _S:
+        def connect(self, *a): pass
+    class _MB:
+        @staticmethod
+        def warning(*a, **k): return None
+    monkeypatch.setattr(osf, 'QProgressDialog', _Progress)
+    monkeypatch.setattr(osf, '_ReviewDialog', _Review)
+    monkeypatch.setattr(osf, 'QMessageBox', _MB)
+
+    class _Sc:
+        messages_window = _Messages()
+        def syntax_errors(self, symbol):
+            return ["more"]            # always still broken
+    symbol = _FakeSymbol("x := ;", scene=_Sc())
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is False
+    # The first attempt's accepted text is kept, not the original.
+    assert str(symbol.text) == "x := 1"
+    assert _Asker.n == 2
+    lines = symbol.scene().messages_window.lines
+    assert any('kept the correction' in ln for ln in lines)
 
 
 def test_empty_text_is_not_sent_to_orbit(qapp, tmp_path, monkeypatch):
@@ -441,7 +560,8 @@ def test_a_bad_outcome_is_logged_too(qapp, tmp_path, monkeypatch):
     assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
                                ["bad"]) is False
     lines = symbol.scene().messages_window.lines
-    assert any('[Auto fix]' in ln and 'unchanged' in ln for ln in lines)
+    assert any('[Auto fix]' in ln and ('gave up' in ln or 'does not parse' in ln)
+               for ln in lines)
 
 
 def test_an_orbit_error_is_logged(qapp, tmp_path, monkeypatch):

@@ -45,6 +45,12 @@ __all__ = ["auto_fix_available", "auto_fix_symbol"]
 #: correction is a small task; a longer wait means orbit is stuck.
 ASK_TIMEOUT = 180.0
 
+#: How many times orbit is asked in one auto-fix session. The parser usually
+#: reports only the FIRST error, so a correction can reveal the next one; a few
+#: transparent retries let orbit fix them in turn. Each retry keeps whatever the
+#: previous one achieved (the user asked for the change to stick).
+MAX_ATTEMPTS = 3
+
 #: Live worker threads, held so Qt never destroys a QThread that is still
 #: running (which aborts the process). Entries drop themselves when done.
 _LIVE = set()
@@ -153,6 +159,27 @@ def _build_question(construct, text, errors):
     )
 
 
+def _build_retry_question(construct, text, errors, attempt, total):
+    '''The prompt for a retry, after a previous correction revealed more errors.
+
+    A parser usually reports only the first error, so fixing it can uncover the
+    next one. On a retry orbit is handed the text it just produced and the NEW
+    complaints, and is warned to change nothing that already works.'''
+    problem = "\n".join(str(e) for e in errors) if errors else "(no detail given)"
+    return (
+        f"An earlier correction of a '{construct}' snippet in an SDL "
+        f"(ITU-T Z.100) model still does not parse (attempt {attempt} of "
+        f"{total}). This is a pure text rewrite.\n"
+        "IMPORTANT: answer immediately. Do NOT read files, run commands, search "
+        "the project, or use any tool. Everything you need is below.\n\n"
+        f"The current snippet is:\n```\n" + text + "\n```\n\n"
+        "The OpenGEODE parser now reports:\n" + problem + "\n\n"
+        "Fix ONLY what is needed to clear these errors and keep everything that "
+        "is already correct. Reply with ONLY the corrected snippet in a single "
+        "fenced code block and nothing else. Do not end it with a semicolon."
+    )
+
+
 def _extract_code(answer):
     '''Take the corrected snippet out of orbit's answer: the body of the first
     fenced code block, or the whole answer (trimmed) when there is no fence.'''
@@ -226,7 +253,8 @@ class _ReviewDialog(QDialog):
     is in :attr:`chosen_text`.
     '''
 
-    def __init__(self, parent, construct, current, proposed, candidates, errors):
+    def __init__(self, parent, construct, current, proposed, candidates, errors,
+                 attempt=1, total=1):
         super().__init__(parent)
         self.setWindowTitle("OpenGEODE - Suggested fix (orbit)")
         self.setModal(True)
@@ -235,8 +263,9 @@ class _ReviewDialog(QDialog):
         layout = QVBoxLayout(self)
 
         headline = QLabel(
-            f"orbit proposes this correction for the '{construct}' symbol. "
-            "Apply it to replace the text?")
+            f"orbit proposes this correction for the '{construct}' symbol"
+            + (f" (attempt {attempt} of {total})" if total > 1 else "")
+            + ". Apply it to replace the text?")
         headline.setWordWrap(True)
         layout.addWidget(headline)
 
@@ -288,23 +317,31 @@ class _ReviewDialog(QDialog):
 # The public entry point called by the editor's syntax-error pop-up
 # ---------------------------------------------------------------------------
 
-def auto_fix_symbol(view, symbol, errors) -> bool:
-    '''Ask orbit to fix ``symbol``'s syntax error and let the user apply the
-    result.
+def _set_symbol_text(symbol, value):
+    '''Replace the symbol's text and let it re-lay out.'''
+    symbol.text.setPlainText(value)
+    try:
+        symbol.text.try_resize()
+    except AttributeError:
+        pass
 
-    Returns True when a correction was applied and the symbol now parses (the
-    caller should then let the normal post-edit path run, recording the change
-    as one undo step); False when nothing was applied — user cancelled, orbit
-    unavailable, an error occurred, or the suggestion did not fix the problem.
 
-    All UI lives here; the caller only inspects the return value.
-    '''
-    text = str(getattr(symbol, "text", "") or "")
-    if not text.strip():
-        return False
-    construct = getattr(symbol, "common_name", "") or "symbol"
-    model_dir = _model_dir(view)
+def _syntax_errors(scene, symbol):
+    '''The parser's complaints for the symbol's current text (empty when it
+    parses, or when there is no scene to ask).'''
+    try:
+        return list(scene.syntax_errors(symbol)) if scene is not None else []
+    except Exception:
+        return []
 
+
+def _ask_orbit(view, question, model_dir):
+    '''Run one question to orbit on a worker thread, under a modal progress
+    dialog. Returns ``(status, payload)`` where status is ``'ok'`` (payload is
+    orbit's raw answer), ``'cancelled'`` or ``'error'`` (payload is the message).
+
+    Kept as a function so each retry is one clean ask: the threading dance and
+    the progress dialog are identical every time.'''
     progress = QProgressDialog("Asking orbit to fix the syntax error…",
                                "Cancel", 0, 0, view)
     progress.setWindowTitle("OpenGEODE - Auto fix")
@@ -316,7 +353,7 @@ def auto_fix_symbol(view, symbol, errors) -> bool:
 
     loop = QEventLoop()
     thread = QThread()
-    asker = _OrbitAsker(_build_question(construct, text, errors), model_dir)
+    asker = _OrbitAsker(question, model_dir)
     asker.moveToThread(thread)
     result = {}
 
@@ -354,82 +391,127 @@ def auto_fix_symbol(view, symbol, errors) -> bool:
         thread.wait(5000)
 
     if cancelled:
-        _log(view, symbol, "[Auto fix] cancelled while orbit was answering.")
-        return False
+        return 'cancelled', None
     if result.get("error"):
-        _log(view, symbol, "[Auto fix] orbit could not answer: "
-             + str(result["error"]))
-        QMessageBox.warning(
-            view, "OpenGEODE - Auto fix",
-            "orbit could not answer:\n" + str(result["error"]) +
-            "\n\nPlease fix the syntax error manually.")
+        return 'error', result.get("error")
+    return 'ok', result.get("answer")
+
+
+def auto_fix_symbol(view, symbol, errors, max_attempts=MAX_ATTEMPTS) -> bool:
+    '''Ask orbit to fix ``symbol``'s syntax error and let the user apply the
+    result, retrying a few times when a correction is not enough on its own.
+
+    A parser normally reports only the FIRST error, so a correction can reveal
+    the next one; up to ``max_attempts`` rounds are run, each handing orbit the
+    text it just produced plus the NEW complaints. Every accepted correction is
+    kept — a retry never reverts the user's change.
+
+    Returns True when the symbol finally parses (the caller should then let the
+    normal post-edit path run, recording the change as one undo step); False
+    when it does not — nothing was applied, the user declined, orbit failed, or
+    the attempts ran out (in which case the last accepted text is still kept, so
+    the user does not lose the work done so far).
+
+    All UI lives here; the caller only inspects the return value.
+    '''
+    text = str(getattr(symbol, "text", "") or "")
+    if not text.strip():
         return False
-
-    proposed = _extract_code(result.get("answer"))
-    if not proposed.strip():
-        _log(view, symbol, "[Auto fix] orbit returned no usable correction "
-             "(raw answer: " + repr(result.get("answer"))[:300] + ")")
-        QMessageBox.warning(
-            view, "OpenGEODE - Auto fix",
-            "orbit returned no usable correction.\n"
-            "Please fix the syntax error manually.")
-        return False
-
-    # The forms of the proposal worth trying (orbit usually adds the ';' that
-    # OpenGEODE wants kept out of a symbol's text — see _candidate_texts).
-    candidates = _candidate_texts(proposed, construct)
-
-    dialog = _ReviewDialog(view, construct, text, proposed, candidates, errors)
-    if dialog.exec() != QDialog.Accepted:
-        _log(view, symbol, "[Auto fix] proposal discarded by the user "
-             "(orbit proposed: " + proposed.replace("\n", " ") + ")")
-        return False
-
-    # Apply the accepted form, verify it parses, and fall back to the next
-    # candidate (e.g. the proposal without its trailing semicolon) if it does
-    # not. On total failure restore the original text so the model is left
-    # exactly as the user had it.
-    # syntax_errors lives on the scene (SDL_Scene), not the view.
+    construct = getattr(symbol, "common_name", "") or "symbol"
+    model_dir = _model_dir(view)
     scene = symbol.scene()
-    chosen = dialog.chosen_text
-    order = [chosen] + [c for c in candidates if c != chosen]
-    remaining = []
-    applied = None
-    for candidate in order:
-        symbol.text.setPlainText(candidate)
-        try:
-            symbol.text.try_resize()
-        except AttributeError:
-            pass
-        remaining = []
-        try:
-            if scene is not None:
-                remaining = scene.syntax_errors(symbol)
-        except Exception:
-            remaining = []
-        if not remaining:
-            applied = candidate
-            break
 
-    if applied is None:
-        symbol.text.setPlainText(text)
-        try:
-            symbol.text.try_resize()
-        except AttributeError:
-            pass
-        _log(view, symbol, "[Auto fix] orbit's proposal still does not parse "
-             "(proposed: " + proposed.replace("\n", " ") + "); text unchanged. "
-             + " ".join(str(e) for e in remaining))
-        QMessageBox.warning(
-            view, "OpenGEODE - Auto fix",
-            "orbit's suggestion still does not parse:\n" +
-            "\n".join(str(e) for e in remaining) +
-            "\n\nThe text was left unchanged. Please fix it manually.")
-        return False
+    current = text                 # the running, accepted text
+    current_errors = list(errors)  # its current complaints
+    for attempt in range(1, max_attempts + 1):
+        if attempt == 1:
+            question = _build_question(construct, current, current_errors)
+        else:
+            question = _build_retry_question(construct, current, current_errors,
+                                             attempt, max_attempts)
 
-    _log(view, symbol, "[Auto fix] applied orbit's correction: "
-         + applied.replace("\n", " "))
-    return True
+        status, payload = _ask_orbit(view, question, model_dir)
+        if status == 'cancelled':
+            _log(view, symbol, "[Auto fix] cancelled while orbit was answering.")
+            return False
+        if status == 'error':
+            _log(view, symbol, "[Auto fix] orbit could not answer: " + str(payload))
+            QMessageBox.warning(
+                view, "OpenGEODE - Auto fix",
+                "orbit could not answer:\n" + str(payload) +
+                "\n\nPlease fix the syntax error manually.")
+            return False
+
+        proposed = _extract_code(payload)
+        if not proposed.strip():
+            _log(view, symbol, "[Auto fix] orbit returned no usable correction "
+                 "(raw answer: " + repr(payload)[:300] + ")")
+            if attempt == 1:
+                QMessageBox.warning(
+                    view, "OpenGEODE - Auto fix",
+                    "orbit returned no usable correction.\n"
+                    "Please fix the syntax error manually.")
+            return False
+
+        # The forms of the proposal worth trying (orbit usually adds the ';'
+        # that OpenGEODE wants kept out of a symbol's text — see
+        # _candidate_texts).
+        candidates = _candidate_texts(proposed, construct)
+        dialog = _ReviewDialog(view, construct, current, proposed, candidates,
+                               current_errors, attempt, max_attempts)
+        if dialog.exec() != QDialog.Accepted:
+            if current != text:
+                _log(view, symbol, "[Auto fix] kept the correction from the "
+                     "previous attempt at your request; the symbol still has "
+                     "syntax errors.")
+            else:
+                _log(view, symbol, "[Auto fix] proposal discarded by the user "
+                     "(orbit proposed: " + proposed.replace("\n", " ") + ")")
+            return False
+
+        # Try the user's chosen form first, then any alternative; stop at the
+        # first that parses. chosen_errors is the chosen form's outcome, which
+        # is what a retry must build on.
+        chosen = dialog.chosen_text
+        order = [chosen] + [c for c in candidates if c != chosen]
+        chosen_errors = []
+        applied = None
+        for index, candidate in enumerate(order):
+            _set_symbol_text(symbol, candidate)
+            remaining = _syntax_errors(scene, symbol)
+            if index == 0:
+                chosen_errors = remaining
+            if not remaining:
+                applied = candidate
+                break
+
+        if applied is not None:
+            _log(view, symbol, "[Auto fix] applied orbit's correction"
+                 + (f" (attempt {attempt})" if attempt > 1 else "") + ": "
+                 + applied.replace("\n", " "))
+            return True
+
+        # Not parseable yet: keep the chosen form in the widget and ask orbit
+        # again, so a correction that revealed the next error can be completed.
+        current = chosen
+        current_errors = chosen_errors
+        _log(view, symbol, f"[Auto fix] attempt {attempt}/{max_attempts} still "
+             "does not parse; asking orbit again. "
+             + " ".join(str(e) for e in chosen_errors))
+
+    # Attempts exhausted: keep the last accepted text (the user asked for the
+    # change to stick) and let them finish by hand.
+    _set_symbol_text(symbol, current)
+    remaining = _syntax_errors(scene, symbol)
+    _log(view, symbol, f"[Auto fix] gave up after {max_attempts} attempts; the "
+         "text was kept as last proposed and still has syntax errors. "
+         + " ".join(str(e) for e in remaining))
+    QMessageBox.warning(
+        view, "OpenGEODE - Auto fix",
+        f"orbit could not fully fix the syntax error in {max_attempts} "
+        "attempts.\n\n" + "\n".join(str(e) for e in remaining) +
+        "\n\nThe text was left as orbit last proposed; please finish it by hand.")
+    return False
 
 
 def _model_dir(view) -> str:
