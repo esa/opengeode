@@ -128,6 +128,9 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.11.4 (10/2026)**
+- New orbit connection: an **Auto fix** button in the syntax-error pop-up. When a text symbol fails to parse, the button asks orbit (the same agent as the AI Chat tab, with the same bundled `sdl-model-construction` skill) for a corrected version of the text and offers it in a review dialog; nothing is applied unless the user accepts, and a suggestion that still does not parse is rolled back. All orbit-facing code lives in the new `opengeode/OrbitSyntaxFix.py`; if `orbit_acp` or the orbit agent is not available, the button is not shown at all and the pop-up is unchanged. Available for every text symbol. Tests: `tests/pytests/test_orbit_syntax_fix.py`.
+
 **4.11.3 (09/2026)**
 - Removed the one-process limitation: a model holding several processes in a single `.pr` file (connected by channels and signalroutes) is now fully supported by the command line:
     - `--check` reports the parse result regardless of the number of processes (it only fails when the model has no process or real errors)
