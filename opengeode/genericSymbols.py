@@ -888,8 +888,17 @@ class Symbol(QObject, QGraphicsPathItem):
                 self.mapRectToScene(self.childrenBoundingRect()))
 
     # pylint: disable=R0914
-    def cam(self, old_pos, new_pos, ignore=None):
-        ''' Collision Avoidance Manoeuvre for top level symbols '''
+    def cam(self, old_pos, new_pos, ignore=None, animate=True):
+        ''' Collision Avoidance Manoeuvre for top level symbols.
+
+        With ``animate`` True (the default when a user moves something)
+        the displacement is played by a MoveSymbol animation, so it only
+        takes effect once the Qt event loop runs. Callers that place
+        symbols programmatically (loading a model, a remote MCP insert)
+        pass ``animate=False`` to move the symbols immediately: there is
+        no gesture to animate and, with no event loop, an animated move
+        would simply not happen.
+        '''
         # Since the cam function is recursive it may be time consuming
         # Call the Qt event processing to avoid blocking the application
         # Removed (had bad visual side effects)
@@ -905,7 +914,8 @@ class Symbol(QObject, QGraphicsPathItem):
         top_level = self.top_level()
         if top_level != self:
             # Execute CAM on top level of this item
-            top_level.cam(top_level.position, top_level.position)
+            top_level.cam(top_level.position, top_level.position,
+                          animate=animate)
             return
 
         # In case CAM is called due to object move, go to the new position
@@ -917,11 +927,13 @@ class Symbol(QObject, QGraphicsPathItem):
         # Move the rectangle to the new position, and move the current item
         animation = False
         if self.position != new_pos:
-            animation = True
+            animation = animate
             rect.adjust(delta.x(), delta.y(), delta.x(), delta.y())
             undo_cmd = undoCommands.MoveSymbol(
                     self, old_pos, new_pos, animate=animation)
             self.scene().undo_stack.push(undo_cmd)
+            # MoveSymbol.redo() already moves the symbol when it is not
+            # animated; keep the position consistent either way.
             self.position = new_pos
 
         # Get all items in the rectangle when placed at the new position
@@ -971,14 +983,19 @@ class Symbol(QObject, QGraphicsPathItem):
                 delta.setY(col.y())
             if col.position == col_pos[col]:
                 #print str(self), 'collides with', str(col)
-                col.cam(col.position, delta, ignore=ignore + [self])
+                col.cam(col.position, delta, ignore=ignore + [self],
+                        animate=animate)
                 # Put it back at the new position to make sure recursive
                 # CAM can happen properly with all object in new positions
                 # (End of CAM reset to the old position for animation)
                 col.position = delta
-        # Place top level colliders in old position so that animation can run
-        for col in items:
-            col.position = col_pos[col]
+        # Place top level colliders in old position so that animation can
+        # run. This reset only exists to support the animation, so it is
+        # skipped when we are moving immediately (animate=False): there the
+        # move is final and resetting would undo the collision avoidance.
+        if animate:
+            for col in items:
+                col.position = col_pos[col]
         self.update_connections()
         if animation:
             # If animation is planned, it will trigger only when Qt
@@ -1042,11 +1059,12 @@ class Comment(Symbol):
         # Do not call the parent cam: it messes up all coordinates
         #parent.cam(parent.position, parent.position)
 
-    def cam(self, old_pos, new_pos, ignore=None):
+    def cam(self, old_pos, new_pos, ignore=None, animate=True):
         ''' Comment is a top-level symbol - CAM would not apply properly
         to siblings in a decision branch. We must apply the CAM to the
         parent symbol to which the comment is attached. '''
-        self.parent.cam(self.parent.position, self.parent.position)
+        self.parent.cam(self.parent.position, self.parent.position,
+                        animate=animate)
 
     def connect_to_parent(self):
         ''' Redefinition of the function to use a comment connector '''
@@ -1365,7 +1383,7 @@ class HorizontalSymbol(Symbol):
             self.update_connections()
         super().mouse_move(event)
 
-    def cam(self, old_pos, new_pos, ignore=None):
+    def cam(self, old_pos, new_pos, ignore=None, animate=True):
         '''
             Collision avoidance manoeuvre for parallel branches
             (for SDL: input, decision answers, continuous signals)
@@ -1418,12 +1436,14 @@ class HorizontalSymbol(Symbol):
                     except AttributeError:
                         # If there is no scene or no undo stack
                         pass
-                    sibling.cam(sibling.position, sibling.position)
-        super().cam(old_pos, new_pos, ignore)
+                    sibling.cam(sibling.position, sibling.position,
+                                animate=animate)
+        super().cam(old_pos, new_pos, ignore, animate=animate)
         # Recursively call the cam of the parent
         try:
             self.parentItem().cam(self.parentItem().position,
-                                  self.parentItem().position)
+                                  self.parentItem().position,
+                                  animate=animate)
         except AttributeError:
             pass
         self.update_connections()
@@ -1740,7 +1760,7 @@ class VerticalSymbol(Symbol):
             self.update_connections()
             self.updateConnectionPoints()
 
-    def cam(self, old_pos, new_pos, ignore=None):
+    def cam(self, old_pos, new_pos, ignore=None, animate=True):
         ''' Collision avoidance manoeuvre for vertical symbols '''
         if self.hasParent:
             branch_entry = self
@@ -1749,6 +1769,7 @@ class VerticalSymbol(Symbol):
                 # See cam of symbol for explanation about
                 # the 'or branch_entry.parent' (pyside/qt bug)
                 branch_entry = branch_entry.parentItem() or branch_entry.parent
-            branch_entry.cam(branch_entry.position, branch_entry.position)
+            branch_entry.cam(branch_entry.position,
+                             branch_entry.position, animate=animate)
         else:
-            super().cam(old_pos, new_pos, ignore)
+            super().cam(old_pos, new_pos, ignore, animate=animate)

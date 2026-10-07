@@ -41,7 +41,8 @@ from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from . import sdlSymbols, undoCommands
-from .SdlMcpServer import SdlModel, SYMBOL_KINDS, _kind_of
+from .SdlMcpServer import (SdlModel, SYMBOL_KINDS, _kind_of,
+                           relayout_after_insert)
 
 # ---------------------------------------------------------------------------
 # The live model: the same tools, the editor's live scenes.
@@ -251,6 +252,9 @@ class LiveSdlModel(SdlModel):
             item.text.setPlainText(text)
             item.ast.inputString = text
             item.text.try_resize()
+        # Tidy up like a manual insertion would: rebalance branches and
+        # avoid collisions, so a remote add does not overlap the diagram.
+        relayout_after_insert(scene, item)
         scene.scene_refresh()
         return self._symbol_info(item, scene)
 

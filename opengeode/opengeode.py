@@ -676,18 +676,22 @@ class SDL_Scene(QGraphicsScene):
                 dest_scene.refresh()
                 # Once everything is rendered, adjust position of each
                 # symbol to the value from the AST (positions may be
-                # slightly altered by the reshaping functions)
+                # slightly altered by the reshaping functions).
+                #
+                # Only the floating (top-level) symbols are placed from
+                # the coordinates stored in the file (the CIF comments):
+                # everything below them is laid out relative to its
+                # parent (see clean_layout below), so the diagram is
+                # drawn from the CIF anchors but the branches stay tidy
+                # and cannot overlap because of stale coordinates. The
+                # function is therefore called on the floating symbols
+                # only and does not recurse into their children.
                 def fix_pos_from_ast(symbol):
                     try:
-                        if(symbol.ast.pos_x is not None
-                                and symbol.ast.pos_y is not None):
-                            relpos = symbol.mapFromScene(symbol.ast.pos_x,
-                                                         symbol.ast.pos_y)
-                            if not symbol.hasParent:
-                                symbol.pos_x = symbol.ast.pos_x
-                                symbol.pos_y = symbol.ast.pos_y
-                            else:
-                                symbol.position += relpos
+                        if symbol.ast.pos_x is not None \
+                                and symbol.ast.pos_y is not None:
+                            symbol.pos_x = symbol.ast.pos_x
+                            symbol.pos_y = symbol.ast.pos_y
                             symbol.update_connections()
                             # Update_position is called here because it
                             # is not possible to be sure that the
@@ -697,34 +701,84 @@ class SDL_Scene(QGraphicsScene):
                             # between Linux and Windows for example.
                             symbol.update_position()
                         else:
-                            # No CIF coordinates: fix COMMENT position
-                            if isinstance(symbol, genericSymbols.Comment):
-                                symbol.pos_x = \
-                                  symbol.parent.boundingRect().width() + 15
-                                symbol.pos_y = 0
-                            if not symbol.hasParent:
-                                sc_br = dest_scene.itemsBoundingRect()
-                                sy_br = symbol.mapRectToScene(
-                                            symbol.boundingRect() |
-                                            symbol.childrenBoundingRect())
-                                symbol.pos_x += (sc_br.width() - sy_br.x())
+                            # No CIF coordinates: push the floating
+                            # symbol to the right of whatever is already
+                            # in the scene, so it does not land on top
+                            # of an existing sub-diagram.
+                            sc_br = dest_scene.itemsBoundingRect()
+                            sy_br = symbol.mapRectToScene(
+                                        symbol.boundingRect() |
+                                        symbol.childrenBoundingRect())
+                            symbol.pos_x += (sc_br.width() - sy_br.x())
                     except AttributeError as err:
                         # no AST, ignore (e.g. Connections, Cornergrabbers)
                         pass
                         #LOG.debug("[render everything] " + str(err))
-                    else:
-                        # Recursively fix pos of sub branches and followers
-                        for branch in (elm for elm in symbol.childSymbols()
-                                   if isinstance(elm,
-                                         genericSymbols.HorizontalSymbol)):
-                            fix_pos_from_ast(branch)
-                        fix_pos_from_ast(symbol.next_aligned_symbol())
-                        fix_pos_from_ast(symbol.comment)
+
+                def layout_comments(symbol):
+                    ''' Comments are decorations, not layout anchors: place
+                    each one to the right of its parent rather than from
+                    its own CIF coordinates, then recurse so every
+                    comment of the sub-diagram is handled. '''
+                    try:
+                        comment = symbol.comment
+                    except AttributeError:
+                        comment = None
+                    if comment is not None:
+                        try:
+                            comment.pos_x = \
+                                symbol.boundingRect().width() + 15
+                            comment.pos_y = 0
+                        except AttributeError:
+                            pass
+                    try:
+                        children = symbol.childSymbols()
+                    except AttributeError:
+                        children = []
+                    for child in children:
+                        layout_comments(child)
+
                 import opengeode.genericSymbols as gs
                 gs.Symbol.mass_updating_no_bubble = True
-                for each in dest_scene.floating_symb:
+                floaters = list(dest_scene.floating_symb)
+                for each in floaters:
                     fix_pos_from_ast(each)
                 gs.Symbol.mass_updating_no_bubble = False
+                # Only the floating (top-level) symbols keep the
+                # coordinates read from the CIF comments. Rebalance the
+                # horizontal branches underneath each of them so they
+                # are evenly spread and cannot overlap. clean_layout is
+                # recursive, so a single call per floating symbol covers
+                # its whole sub-tree. Start symbols, text areas and
+                # comments are skipped: they have nothing to rebalance.
+                for each in floaters:
+                    if isinstance(each, (sdlSymbols.Start,
+                                         sdlSymbols.TextSymbol,
+                                         gs.Comment)):
+                        continue
+                    gs.clean_layout(each)
+                    layout_comments(each)
+                    # clean_layout rebalances branches but does no
+                    # collision avoidance: a widened branch can reach
+                    # into a neighbouring top-level tree. Run the CAM
+                    # (non-animated: there is no event loop yet during
+                    # the load) so the symbols end up apart.
+                    try:
+                        each.cam(each.pos(), each.pos(), animate=False)
+                    except Exception:
+                        pass
+                # In a block diagram the textbox holding the signal and
+                # procedure declarations is generated to the right of the
+                # process symbols; make sure it does not overlap them by
+                # running the collision avoidance on it (Process is a
+                # horizontal symbol, so this pushes the processes aside
+                # if they collide).
+                if dest_scene.context == 'block':
+                    for text in dest_scene.texts:
+                        try:
+                            text.cam(text.pos(), text.pos(), animate=False)
+                        except Exception:
+                            pass
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -808,6 +862,19 @@ class SDL_Scene(QGraphicsScene):
         if not self.refresh_requested:
             self.refresh_requested = True
             QTimer.singleShot(0, self.scene_refresh)
+
+    def refresh_scrollbars(self):
+        ''' Equivalent of a F5 keypress: redraw each attached view so its
+        scrollbars are resized to the full extent of the diagram. Called
+        after symbols are added programmatically (e.g. by the Orbit MCP
+        bridge), where no user gesture triggers the refresh. No-op when
+        the scene is not attached to any view (headless rendering). '''
+        for view in self.views():
+            try:
+                view.view_refresh()
+            except RuntimeError:
+                # Underlying C++ view deleted on teardown
+                pass
 
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
@@ -2804,6 +2871,11 @@ clean:
             self.scene().render_everything(block)
         except AttributeError as err:
             LOG.debug("[Rendering] " + str(err))
+        # The automatic clean_layout done while rendering records
+        # MoveSymbol commands on the undo stack; a freshly loaded model
+        # must start with an empty history, so drop them.
+        if hasattr(self.scene(), 'undo_stack'):
+            self.scene().undo_stack.clear()
         self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(
