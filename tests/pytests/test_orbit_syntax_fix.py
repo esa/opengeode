@@ -392,6 +392,59 @@ def test_retries_until_it_parses(qapp, tmp_path, monkeypatch):
     assert any('applied' in ln and 'attempt 2' in ln for ln in lines)
 
 
+def test_stops_early_when_orbit_repeats_itself(qapp, tmp_path, monkeypatch):
+    '''A stuck orbit that keeps returning the same text must not burn every
+    attempt: the loop stops as soon as it sees no progress, keeps the last text
+    and reports it.'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    review = _stub_dialogs(monkeypatch, accept=True)
+
+    from PySide6.QtCore import QObject, Signal
+    class _Asker(QObject):
+        done = Signal(object)
+        n = 0
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self):
+            _Asker.n += 1
+            self.done.emit(("```\nx := 1\n```", None))   # always the same
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _Asker)
+
+    class _Sc:
+        messages_window = _Messages()
+        def syntax_errors(self, symbol):
+            return ["same error"]        # always the same complaint
+    scene = _Sc()
+    symbol = _FakeSymbol("x := ;", scene=scene)
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is False
+    # First attempt is new; the second repeats it -> stop. So the budget is not
+    # exhausted (which would be MAX_ATTEMPTS rounds).
+    assert _Asker.n == 2
+    assert review.calls == 2
+    assert str(symbol.text) == "x := 1"      # the last text is kept
+    lines = scene.messages_window.lines
+    assert any('repeated the same correction' in ln for ln in lines)
+    assert any('gave up' in ln and 'stopped making progress' in ln
+               for ln in lines)
+
+
+def test_the_attempt_budget_is_generous():
+    '''The user asked for it to keep going; the cap is a few rounds, well above
+    the one-shot behaviour this started with.'''
+    assert osf.MAX_ATTEMPTS >= 5
+
+
+def test_stall_key_ignores_whitespace_noise():
+    '''Two states that differ only in surrounding whitespace count as the same
+    (no progress), so the early stop does not miss a true stall.'''
+    assert (osf._stall_key("x := 1", ["e"]) ==
+            osf._stall_key("  x := 1  ", ["  e  "]))
+    assert osf._stall_key("x := 1", ["e"]) != osf._stall_key("x := 2", ["e"])
+    assert osf._stall_key("x := 1", ["e"]) != osf._stall_key("x := 1", ["f"])
+
+
 def test_a_declined_retry_keeps_the_previous_correction(qapp, tmp_path,
                                                         monkeypatch):
     '''If the user says no on a retry, the earlier accepted correction is kept
