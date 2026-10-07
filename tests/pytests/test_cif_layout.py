@@ -26,6 +26,8 @@ import pytest
 
 pytest.importorskip('PySide6')
 
+from PySide6.QtCore import QEventLoop, QTimer  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
 TESTSUITE = os.path.join(REPO, 'tests', 'testsuite')
@@ -68,6 +70,16 @@ def _load_model(directory):
         block.processes = list(ast.processes)
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
+    # Replicate the GUI's own load: it calls scene_refresh() and the text
+    # sizes are only final once Qt has run its deferred layout on the
+    # event loop. Measuring the layout before this point would test a
+    # half-settled scene and miss branch overlaps (the 178 -> 187px text
+    # growth). The layout pass itself must already have flushed the
+    # pending events, so this must not change the result.
+    scene.scene_refresh()
+    loop = QEventLoop()
+    QTimer.singleShot(20, loop.quit)
+    loop.exec()
     return scene
 
 
@@ -112,8 +124,11 @@ def _all_scenes(scene):
 
 
 # Models with processes, decisions and states to exercise the layout.
+# TrafficLight_Basic and test-save use composite states (state/substructure),
+# where the inner states hang below the START symbol - the case that first
+# showed the state-level clean_layout was not being done.
 MODELS = ['test1', 'test2', 'test3', 'test4', 'test6', 'test7',
-          'test-controlflow']
+          'test-controlflow', 'test-save', 'TrafficLight_Basic']
 
 
 @pytest.mark.parametrize('model', MODELS)
@@ -128,6 +143,41 @@ def test_loaded_model_has_no_flow_overlaps(model):
         overlaps = _flow_overlaps(sc)
         assert not overlaps, (f'{model}: overlap in scene '
                               f'{sc.name!r}: {overlaps}')
+
+
+def test_state_level_branches_are_rebalanced():
+    '''The inner states of a composite state hang below the START symbol,
+    so only a clean_layout on the START reaches them. Their input
+    branches must be rebalanced (not left at the CIF coordinates).'''
+    scene = _load_model(os.path.join(TESTSUITE, 'TrafficLight_Basic'))
+    import opengeode.sdlSymbols as sdlSymbols
+    # First_Delay has two input branches (Clock and Button): after the
+    # rebalance they must be spread apart and centred under the state.
+    state_scene = None
+    first = None
+    for sc in _all_scenes(scene):
+        for s in sc.visible_symb:
+            if (str(s) == 'First_Delay'
+                    and sdlSymbols.State in type(s).__mro__):
+                state_scene, first = sc, s
+                break
+        if first is not None:
+            break
+    assert first is not None, 'First_Delay state not found'
+    inputs = [s for s in state_scene.visible_symb
+              if isinstance(s, sdlSymbols.Input)
+              and s.parentItem() is first]
+    assert len(inputs) >= 2, 'expected two input branches'
+    rects = sorted((s.sceneBoundingRect() for s in inputs),
+                   key=lambda r: r.left())
+    for i in range(len(rects) - 1):
+        assert not rects[i].intersects(rects[i + 1]), \
+            'input branches of a state overlap'
+    # They must NOT still be sitting at their raw CIF x coordinates: the
+    # fixture puts them at 251 (Clock) and 435 (Button).
+    xs = {round(r.left()) for r in rects}
+    assert not xs.issuperset({251, 435}), \
+        'state-level branches were left at their CIF coordinates'
 
 
 def test_block_textbox_does_not_overlap_process_symbols():
