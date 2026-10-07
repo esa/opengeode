@@ -4,18 +4,18 @@
 > OpenGEODE ↔ asn1scc BIT STRING work finished, this is now a three-backend
 > status document, not just Ada vs Rust.
 >
-> Status date: 2026-10-06 · branch `feature_bitstring_align_ada_with_c`.
+> Status date: 2026-10-07 · branch `feature_bitstring_align_ada_with_c`.
 
 ## Overview
 
 | Aspect | Ada | C | Rust |
 |--------|-----|---|------|
-| File | `AdaGenerator.py` (4309 lines) | `CGenerator.py` (4589 lines) | `RustGenerator.py` (5245 lines) |
+| File | `AdaGenerator.py` (4312 lines) | `CGenerator.py` (4895 lines) | `RustGenerator.py` (5312 lines) |
 | Architecture | `@singledispatch generate` + `@singledispatch expression` | Same | Same |
 | `@generate.register` handlers | 12 | 11 | 12 |
 | `@expression.register` handlers | 41 | 41 | 41 |
 | Shared `Helper` functions | `code_generation_preprocessing`, `generate_asn1_datamodel`, `add_labels_before_each_branch`, `inner_labels_to_floating` | Same four | Same four |
-| Feature coverage (main codegen) | Reference | ~99% | ~99% (compile-clean; see runtime residuals) |
+| Feature coverage (main codegen) | Reference | ~99% | ~99% (compile-clean; all runtime tests pass) |
 | Feature coverage (simulation mode) | Reference | Partial | Not supported |
 
 All three backends share the same structural skeleton: a `@singledispatch
@@ -199,24 +199,28 @@ re-discovery of earlier misclassifications.
 
 ### Compile-level: none remaining
 
-As of this branch, **all 45 Rust runtime tests compile with zero errors** (they
+As of this branch, **all Rust runtime tests compile with zero errors** (they
 previously produced ~15 non-compiling `.rs` files). See "Recent Rust fixes"
 below for the list.
 
-### Runtime residuals (1 of 45 tests)
+### Runtime residuals: none
 
-These do **not** reflect a generator defect; each was verified:
+No Rust runtime test differs from the reference any more. Two previously
+reported residuals were fixture problems, not generator defects, and are now
+fixed:
 
-| Test | Cause | Classification |
-|------|-------|----------------|
-| `test-simu` | Its `test-ada` rule is entirely commented out; `expected` is stale. | Stale fixture |
+- `test-simu` — its `test-ada` rule was entirely commented out and `expected`
+  was stale (`Size=24` from a removed probe). The C and Rust drivers were also
+  not equivalent to `test_ada.c` (C called both `CInit` and `startup`, running
+  the startup transition twice, and did not link its RI stubs; Rust printed no
+  state). All three now do the same thing — one startup, then the state around
+  two `other` inputs — and diff the same `expected`.
+- `test-debug` — the C backend already supported `DECISION ANY`; the Rust
+  harness printed no banner and its `expected` was stale. Both fixed, and the
+  randomly chosen `ANY` branch is normalised before diffing in the C and Rust
+  test targets.
 
-(`test-debug` used to be a second residual; it now passes in Ada, C **and** Rust.
-The C backend does support `DECISION ANY`; the Rust harness printed no banner and
-its `expected` was stale. Both fixed, and the randomly chosen `ANY` branch is
-normalised before diffing in the C and Rust test targets.)
-
-(`test-uart` used to be a third residual and was mis-classified here as a
+(`test-uart` used to be another residual and was mis-classified here as a
 "runtime-loop divergence". The real cause was a Rust **generator** bug: the
 conditional-expression codegen hoisted *both* branches' statements before the
 `if`, so the untaken branch ran too — in this model an append
@@ -302,18 +306,27 @@ between the two generators would not be caught there.
 
 ## Test Coverage Status
 
-- **128 test directories** run by the harness. **50** have a shared
-  `expected` (a runtime comparison); the rest only compile-check.
-- Suites (current, branch `feature_bitstring_align_ada_with_c`):
-  - **C: 128 tests, 0 errors.**
-  - **Ada: 128 tests, 0 errors** (one pre-existing expected failure,
-    `test-nestedpriority`).
-  - **Rust: 128 tests, 1 error** — exactly the 1 known residual above
-    (`test-simu`).
+- **129 test directories** run by the harness. **51** have a shared
+  `expected` (a runtime comparison); **47** build+run in Rust (`main.rs`); the
+  rest only compile-check.
+- Suites (current, branch `feature_bitstring_align_ada_with_c`) — run with
+  `make test-ada` / `make test-c` / `make test-rust`, which use the suite
+  defaults (`EXPECTED_FAILURES` from `tests/testsuite/Makefile`):
+  - **C: 129 tests, 0 errors** (1 expected failure, `test-nestedpriority`).
+  - **Ada: 129 tests, 0 errors** (1 expected failure, `test-nestedpriority`).
+  - **Rust: 129 tests, 0 errors** (6 expected failures: the `--check` parse-error
+    tests `test-branchcoverage`, `test-branchcoverage2`, `test-procedure`,
+    `test-procedure-inparam`, `test-typecheck`, plus `test-nestedpriority`).
+    **No Rust runtime test differs from the reference.**
 - `test-branchcoverage`, `test-branchcoverage2`, `test-nestedpriority` are
   `--check` parse-error tests (their `expected` is compiler diagnostics); they
-  intentionally get no runtime harness.
+  intentionally get no runtime harness. `test-procedure`, `test-procedure-inparam`
+  and `test-typecheck` are likewise parse-error models, but their `test-rust`
+  rule still calls `--toRust`, which correctly fails on the invalid model — hence
+  they are expected failures in the Rust suite.
 - `state` references are now covered by `test-stateref` (Ada/C/Rust).
+- `<proc>_state()` (state as string) is covered by `test-state-to-string`
+  (Ada/C/Rust).
 - `CREATE` and `STOP` are now covered by `test-create-delete` (runtime test in
   C, using local environment glue; Ada/Rust are generation-checked).
   **The earlier C gaps (`CREATE` unsupported, `STOP` a no-op) are fixed.**
@@ -361,10 +374,12 @@ backend; see the note under “Confirmed Gaps — Ada Backend”.)*
 *(The Ada `Asn1InT` spelling is not on this list — it is a deliberate marker;
 see the note under “Confirmed Gaps — Ada Backend”.)*
 
-### B. Rust test-suite residual
+### B. Rust test-suite residuals: none
 
-- Decide the 1 known-failing test: add `test-simu` to `RUST_EXPECTED_FAILURES`
-  (and/or refresh its stale `expected`, since its `test-ada` is commented out).
+- No Rust runtime test fails any more. `test-simu` was fixed (drivers unified;
+  see "Runtime residuals: none" above), so `RUST_EXPECTED_FAILURES` stays empty.
+  The only Rust-suite failures are the parse-error models listed in the suite
+  `EXPECTED_FAILURES` (they reuse `--toRust` and legitimately do not generate).
 - `test-debug` now has a meaningful Rust expectation: both the C and Rust test
   targets normalise the non-deterministic `DECISION ANY` branch (`Random value X`)
   before diffing, and both backends now seed their RNG from the clock.
@@ -378,8 +393,8 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ### D. Coverage / fixtures
 
-- Only 45/128 dirs build+run in Rust (the ones with a `test-rust` cargo rule);
-  the rest are compile-only.
+- Only 47/129 dirs build+run in Rust (the ones with a `main.rs`); the rest are
+  compile-only.
 - `test-bitstring` should optionally cross-check against asn1scc's C encode.
 
 ### E. BIT STRING residuals
@@ -389,7 +404,7 @@ see the note under “Confirmed Gaps — Ada Backend”.)*
 
 ---
 
-## Recent Rust Fixes (this branch) — 11 → 45 runtime tests, 45/45 building
+## Recent Rust Fixes (this branch) — 11 → 47 runtime tests, all building
 
 The Rust backend had ~15 latent codegen bugs that no test caught because only 11
 tests ran in Rust. After adding harnesses, all compile errors were fixed; the
@@ -437,11 +452,10 @@ notable ones:
 | # | Item | Backend | Kind | Severity |
 |---|------|---------|------|----------|
 | A1 | `MantissaBaseExp` raises/stub | C / Ada / Rust | Missing feature | Low |
-| B | 1 Rust runtime residual | Rust | Fixture | Low |
 | C1 | `parent`/`sender`/`entity` PID reads | Rust | Missing feature | Medium |
 | C2 | TASTE context-param wiring | Rust | Missing feature | Medium |
 | C3 | `mod`/`rem` negative operands | Rust | Semantic bug | Medium |
 | C4 | Decision answer-stmt ordering | Rust | Semantic diff | Medium |
 | C5 | Process-type generic wiring | Rust | Missing feature | High |
-| D | ~83 dirs compile-only | all | Test gap | Low |
+| D | ~82 dirs compile-only | all | Test gap | Low |
 | E | Keep/delete scratch prototypes | — | Housekeeping | Low |
