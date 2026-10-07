@@ -46,10 +46,13 @@ __all__ = ["auto_fix_available", "auto_fix_symbol"]
 ASK_TIMEOUT = 180.0
 
 #: How many times orbit is asked in one auto-fix session. The parser usually
-#: reports only the FIRST error, so a correction can reveal the next one; a few
-#: transparent retries let orbit fix them in turn. Each retry keeps whatever the
-#: previous one achieved (the user asked for the change to stick).
-MAX_ATTEMPTS = 3
+#: reports only the FIRST error, so a correction can reveal the next one; the
+#: retries let orbit fix them in turn. Each retry keeps whatever the previous
+#: one achieved (the user asked for the change to stick). Kept generous because
+#: a snippet can hold several errors, but the loop also stops early when orbit
+#: starts repeating itself (see _stall_key), so a stuck agent cannot burn the
+#: whole budget.
+MAX_ATTEMPTS = 6
 
 #: Live worker threads, held so Qt never destroys a QThread that is still
 #: running (which aborts the process). Entries drop themselves when done.
@@ -220,6 +223,14 @@ def _candidate_texts(proposed, construct):
         if without and without != stripped:
             return [without, stripped]
     return [proposed]
+
+
+def _stall_key(text, errors):
+    '''A fingerprint of a (text, errors) state, used to notice that a retry made
+    no progress: if orbit returns the same text AND the parser still reports the
+    same errors, asking again will not help, so the loop stops early instead of
+    burning every attempt.'''
+    return (text.strip(), tuple(str(e).strip() for e in errors))
 
 
 def _log(view, symbol, message):
@@ -403,8 +414,9 @@ def auto_fix_symbol(view, symbol, errors, max_attempts=MAX_ATTEMPTS) -> bool:
 
     A parser normally reports only the FIRST error, so a correction can reveal
     the next one; up to ``max_attempts`` rounds are run, each handing orbit the
-    text it just produced plus the NEW complaints. Every accepted correction is
-    kept — a retry never reverts the user's change.
+    text it just produced plus the NEW complaints. The loop stops early if orbit
+    repeats the same text with the same errors (no progress). Every accepted
+    correction is kept — a retry never reverts the user's change.
 
     Returns True when the symbol finally parses (the caller should then let the
     normal post-edit path run, recording the change as one undo step); False
@@ -423,6 +435,8 @@ def auto_fix_symbol(view, symbol, errors, max_attempts=MAX_ATTEMPTS) -> bool:
 
     current = text                 # the running, accepted text
     current_errors = list(errors)  # its current complaints
+    seen = {_stall_key(current, current_errors)}
+    stalled = False
     for attempt in range(1, max_attempts + 1):
         if attempt == 1:
             question = _build_question(construct, current, current_errors)
@@ -495,21 +509,33 @@ def auto_fix_symbol(view, symbol, errors, max_attempts=MAX_ATTEMPTS) -> bool:
         # again, so a correction that revealed the next error can be completed.
         current = chosen
         current_errors = chosen_errors
+        key = _stall_key(current, current_errors)
+        if key in seen:
+            # The retry produced the very same text with the same errors: no
+            # progress, so stop early rather than repeat the same question.
+            stalled = True
+            _log(view, symbol, "[Auto fix] orbit repeated the same correction; "
+                 "stopping early. " + " ".join(str(e) for e in current_errors))
+            break
+        seen.add(key)
         _log(view, symbol, f"[Auto fix] attempt {attempt}/{max_attempts} still "
              "does not parse; asking orbit again. "
              + " ".join(str(e) for e in chosen_errors))
 
-    # Attempts exhausted: keep the last accepted text (the user asked for the
-    # change to stick) and let them finish by hand.
+    # Attempts exhausted (or orbit stopped making progress): keep the last
+    # accepted text (the user asked for the change to stick) and let them finish
+    # by hand.
     _set_symbol_text(symbol, current)
     remaining = _syntax_errors(scene, symbol)
-    _log(view, symbol, f"[Auto fix] gave up after {max_attempts} attempts; the "
-         "text was kept as last proposed and still has syntax errors. "
+    reason = ("orbit stopped making progress" if stalled else
+              f"orbit could not fix it in {max_attempts} attempts")
+    _log(view, symbol, f"[Auto fix] gave up: {reason}; the text was kept as "
+         "last proposed and still has syntax errors. "
          + " ".join(str(e) for e in remaining))
     QMessageBox.warning(
         view, "OpenGEODE - Auto fix",
-        f"orbit could not fully fix the syntax error in {max_attempts} "
-        "attempts.\n\n" + "\n".join(str(e) for e in remaining) +
+        f"orbit could not fully fix the syntax error ({reason}).\n\n"
+        + "\n".join(str(e) for e in remaining) +
         "\n\nThe text was left as orbit last proposed; please finish it by hand.")
     return False
 
