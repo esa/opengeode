@@ -27,14 +27,14 @@ test-qgen-gt-c:
 
 test-ada:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
-	#$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
-	#$(CC) -c -g test_ada.c
-	#$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
-	#$(CC) -c external_proc.c
-	#$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
-	#$(GNATBIND) -n orchestrator.ali
-	#$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali
-	#./test_ada
+	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -c -g test_ada.c
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn orchestrator_datamodel.asn
+	$(CC) -c -g external_proc.c
+	$(GNATMAKE) -O$(O) -gnat2022 -g -c *.adb
+	$(GNATBIND) -n orchestrator.ali
+	$(GNATLINK) -o test_ada test_ada.o external_proc.o orchestrator.ali
+	./test_ada | diff expected -
 
 simu:
 	rm -rf orchestrator_simu
@@ -45,18 +45,18 @@ simu:
 
 test-c:
 	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
-	#$(CC) -c -g test_c.c
+	$(CC) -c -g test_c.c
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
 	gcc -c *.c
-	#$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
-	#./test_c | diff - expected
+	$(CC) -O$(O) test_c.c external_proc.c orchestrator.c -o test_c
+	./test_c | diff - expected
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
@@ -67,8 +67,15 @@ test-python:
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
+	  fi; \
+	done && \
+	cp orchestrator_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 

@@ -46,6 +46,17 @@ OUT_SIGNALS = []
 PROCEDURES = []
 STATES = []
 
+# Set while generating a process: the process AST node, and whether it is a
+# process TYPE (as opposed to a standalone process).
+PROCESS = None
+IS_PROCESS_TYPE = False
+# Set to True when a STOP terminator is generated for the current process,
+# so that the matching <proc>_delete_instance declaration is emitted.
+NEEDS_DELETE_INSTANCE = False
+# Statements that set the context fields to their DCL initial values, filled
+# by processing_process_variables() and replayed by a STOP terminator reset.
+DCL_INIT_STATEMENTS = []
+
 SEPARATOR = '_0_'
 LPREFIX = 'ctxt'
 
@@ -64,6 +75,9 @@ STRING_INCLUDE = False
 
 # True if stdlib.h has to be included
 STDLIB_INCLUDE = False
+
+# True if time.h has to be included (for seeding the RNG of DECISION ANY)
+TIME_INCLUDE = False
 
 
 def default_pid():
@@ -139,13 +153,21 @@ def _process(process, instance=False, **kwargs):
     global MATH_INCLUDE
     global STRING_INCLUDE
     global STDLIB_INCLUDE
+    global TIME_INCLUDE
     global LPREFIX
     global TIMER_VARIABLES
     global IS_INSTANCE
     global PROCESS_NAME
     PROCESS_NAME = process_name
-    global PROCESS
+    global PROCESS, IS_PROCESS_TYPE, NEEDS_DELETE_INSTANCE
     PROCESS = process
+    IS_PROCESS_TYPE = getattr(process, 'process_type', False)
+    # A STOP terminator needs the environment-provided delete function; detect
+    # it now so the matching declaration is emitted (the terminator code
+    # itself is generated later, during transition code generation).
+    NEEDS_DELETE_INSTANCE = any(
+        getattr(term, 'kind', None) == 'stop'
+        for term in getattr(process, 'terminators', []))
 
     TYPES = process.dataview
     
@@ -171,11 +193,47 @@ def _process(process, instance=False, **kwargs):
         # Allocate the context
         wrapper_c.append(f'static {ASN1SCC}{type_name_str.capitalize()}_Context ctxt = {{0}};\n')
 
+        type_node = process.instance_of_ref
+        type_has_stop = any(getattr(t, 'kind', None) == 'stop'
+                            for t in getattr(type_node, 'terminators', []))
+
         # Startup wrapper
-        wrapper_c.append(f'void CInit{process_instance.processName}(void) {{')
-        wrapper_c.append(f'    CInit{type_name_str}(&ctxt);')
+        wrapper_c.append(f'void CInit{process_instance.processName.lower()}(void) {{')
+        # The process TYPE declares "self" as a mutable static (its PID is only
+        # known here). Set it to this instance's PID before startup. This is
+        # the C counterpart of the Ada "self" generic formal and of the Rust
+        # SELF_PID static set by the instance wrapper.
+        if 'PID' in TYPES:
+            wrapper_c.append(
+                f'    self = {pid_enumerant(process_instance.processName)};')
+        wrapper_c.append(f'    CInit{type_name_str.lower()}(&ctxt);')
         wrapper_c.append('}\n')
-        wrapper_h.append(f'void CInit{process_instance.processName}(void);\n')
+        wrapper_h.append(f'void CInit{process_instance.processName.lower()}(void);\n')
+
+        # State-as-string accessor for this instance, mirroring the Ada backend
+        # (instance wrapper declares Get_State with Link_Name <instance>_state).
+        # The state enum belongs to the process TYPE; the strings match Ada's
+        # <States>'Image.
+        type_states = getattr(process.instance_of_ref, 'full_statelist', None)
+        if type_states and not getattr(process.instance_of_ref, 'no_context', False):
+            wrapper_c.extend(_state_to_str_switch(
+                f'{process_instance.processName.lower()}_state', 'ctxt',
+                type_states, f'{ASN1SCC}{type_name_str.capitalize()}'))
+            wrapper_h.append(
+                f'char* {process_instance.processName.lower()}_state(void);\n')
+
+        # Deletion forwarder: the process type calls <type>_RI_Delete_Instance
+        # (the deletion target is instance-specific); bind it to the concrete
+        # environment glue <instance>_delete_instance, like the other RIs.
+        if type_has_stop and 'PID' in TYPES:
+            wrapper_c.append(
+                f'void {type_name_str.lower()}_RI_Delete_Instance({ASN1SCC}PID id) {{')
+            wrapper_c.append(
+                f'    {process_instance.processName.lower()}_delete_instance(id);')
+            wrapper_c.append('}\n')
+            wrapper_h.append(
+                f'extern void {process_instance.processName.lower()}'
+                f'_delete_instance({ASN1SCC}PID id);\n')
 
         # PI wrappers
         generated_pis = set()
@@ -186,11 +244,11 @@ def _process(process, instance=False, **kwargs):
             
             if 'type' in pi:
                 pi_type = type_name(pi['type'])
-                sig = f'void {process_instance.processName}_PI_{pi["name"]}({pi_type} *param)'
-                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt, param)'
+                sig = f'void {process_instance.processName.lower()}_PI_{pi["name"]}({pi_type} *param)'
+                call = f'{type_name_str.lower()}_PI_{pi["name"]}(&ctxt, param)'
             else:
-                sig = f'void {process_instance.processName}_PI_{pi["name"]}()'
-                call = f'{type_name_str}_PI_{pi["name"]}(&ctxt)'
+                sig = f'void {process_instance.processName.lower()}_PI_{pi["name"]}()'
+                call = f'{type_name_str.lower()}_PI_{pi["name"]}(&ctxt)'
             wrapper_c.append(f'{sig} {{')
             wrapper_c.append(f'    {call};')
             wrapper_c.append('}\n')
@@ -199,16 +257,16 @@ def _process(process, instance=False, **kwargs):
         # Timer wrappers
         for timer in process.timers:
             # set
-            sig_set = f'void {process_instance.processName}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
-            call_set = f'{type_name_str}_PI_set_{timer}(&ctxt, val)'
+            sig_set = f'void {process_instance.processName.lower()}_PI_set_{timer}({ASN1SCC}T_UInt32 val)'
+            call_set = f'{type_name_str.lower()}_PI_set_{timer}(&ctxt, val)'
             wrapper_c.append(f'{sig_set} {{')
             wrapper_c.append(f'    {call_set};')
             wrapper_c.append('}\n')
             wrapper_h.append(f'{sig_set};\n')
 
             # reset
-            sig_reset = f'void {process_instance.processName}_PI_reset_{timer}()'
-            call_reset = f'{type_name_str}_PI_reset_{timer}(&ctxt)'
+            sig_reset = f'void {process_instance.processName.lower()}_PI_reset_{timer}()'
+            call_reset = f'{type_name_str.lower()}_PI_reset_{timer}(&ctxt)'
             wrapper_c.append(f'{sig_reset} {{')
             wrapper_c.append(f'    {call_reset};')
             wrapper_c.append('}\n')
@@ -220,23 +278,23 @@ def _process(process, instance=False, **kwargs):
                 ri_type = type_name(ri['type'])
                 if pid_type_in_view():
                     # the PID type is provided by TASTE, does not exist otherwise
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param, dest_pid)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}({ri_type} *param, const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(param, dest_pid)'
                 else:
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}({ri_type} *param)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}({ri_type} *param)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(param)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}({ri_type} *param)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}({ri_type} *param)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(param)'
             else:
                 if pid_type_in_view():
                     # the PID type is provided by TASTE, does not exist otherwise
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}(dest_pid)'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}(const {ASN1SCC}PID dest_pid)'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}(dest_pid)'
                 else:
-                    sig_type = f'void {type_name_str}_RI_{ri["name"]}()'
-                    sig_inst = f'void {process_instance.processName}_RI_{ri["name"]}()'
-                    call_inst = f'{process_instance.processName}_RI_{ri["name"]}()'
+                    sig_type = f'void {type_name_str.lower()}_RI_{ri["name"]}()'
+                    sig_inst = f'void {process_instance.processName.lower()}_RI_{ri["name"]}()'
+                    call_inst = f'{process_instance.processName.lower()}_RI_{ri["name"]}()'
             
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
@@ -255,9 +313,9 @@ def _process(process, instance=False, **kwargs):
                     args.append(f'const {ASN1SCC}PID dest_pid')
                     call_args.append('dest_pid')
                 
-                sig_type = f'void {type_name_str}_RI_{proc.inputString}({", ".join(args)})'
-                sig_inst = f'void {process_instance.processName}_RI_{proc.inputString}({", ".join(args)})'
-                call_inst = f'{process_instance.processName}_RI_{proc.inputString}({", ".join(call_args)})'
+                sig_type = f'void {type_name_str.lower()}_RI_{proc.inputString}({", ".join(args)})'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_{proc.inputString}({", ".join(args)})'
+                call_inst = f'{process_instance.processName.lower()}_RI_{proc.inputString}({", ".join(call_args)})'
 
                 wrapper_c.append(f'{sig_type} {{')
                 wrapper_c.append(f'    {call_inst};')
@@ -268,13 +326,13 @@ def _process(process, instance=False, **kwargs):
             # set
             if pid_type_in_view():
                 # the PID type is provided by TASTE, does not exist otherwise
-                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
-                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
-                call_inst = f'{process_instance.processName}_RI_set_{timer}(val, dest_pid)'
+                sig_type = f'void {type_name_str.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val, const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName.lower()}_RI_set_{timer}(val, dest_pid)'
             else:
-                sig_type = f'void {type_name_str}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-                sig_inst = f'void {process_instance.processName}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
-                call_inst = f'{process_instance.processName}_RI_set_{timer}(val)'
+                sig_type = f'void {type_name_str.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_set_{timer}({ASN1SCC}T_UInt32 val)'
+                call_inst = f'{process_instance.processName.lower()}_RI_set_{timer}(val)'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
@@ -283,13 +341,13 @@ def _process(process, instance=False, **kwargs):
             # reset
             if pid_type_in_view():
                 # the PID type is provided by TASTE, does not exist otherwise
-                sig_type = f'void {type_name_str}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
-                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
-                call_inst = f'{process_instance.processName}_RI_reset_{timer}(dest_pid)'
+                sig_type = f'void {type_name_str.lower()}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_reset_{timer}(const {ASN1SCC}PID dest_pid)'
+                call_inst = f'{process_instance.processName.lower()}_RI_reset_{timer}(dest_pid)'
             else:
-                sig_type = f'void {type_name_str}_RI_reset_{timer}()'
-                sig_inst = f'void {process_instance.processName}_RI_reset_{timer}()'
-                call_inst = f'{process_instance.processName}_RI_reset_{timer}()'
+                sig_type = f'void {type_name_str.lower()}_RI_reset_{timer}()'
+                sig_inst = f'void {process_instance.processName.lower()}_RI_reset_{timer}()'
+                call_inst = f'{process_instance.processName.lower()}_RI_reset_{timer}()'
             wrapper_c.append(f'{sig_type} {{')
             wrapper_c.append(f'    {call_inst};')
             wrapper_c.append('}\n')
@@ -311,6 +369,10 @@ def _process(process, instance=False, **kwargs):
     del PROCEDURES[:]
     PROCEDURES.extend(process.procedures)
 
+    # A DECISION ANY inside an inner procedure also needs the RNG to be seeded.
+    for each in PROCEDURES:
+        process.random_generator.update(each.random_generator)
+
     del TIMER_VARIABLES[:]
     TIMER_VARIABLES.extend(process.timers)
 
@@ -318,6 +380,7 @@ def _process(process, instance=False, **kwargs):
     MATH_INCLUDE = False
     STRING_INCLUDE = False
     STDLIB_INCLUDE = False
+    TIME_INCLUDE = False
 
     # Prepare the AST for code generation (flatten states, etc.)
     no_renames = Helper.code_generation_preprocessing(process)
@@ -357,6 +420,7 @@ def _process(process, instance=False, **kwargs):
     continuous_signals_header_file_code, transition_code = processing_transitions_and_floating_labels(process)
     includes_code = generating_includes(process)
     generate_current_state_to_str_code = generating_current_state_to_str(process)
+    instance_glue_declarations = generating_instance_glue_declarations(process)
 
     generated_c_source_code = []
     generated_c_source_code.extend(includes_code)
@@ -364,6 +428,7 @@ def _process(process, instance=False, **kwargs):
     generated_c_source_code.extend(sdl_constants_code)
     generated_c_source_code.extend(aliases_code)
     generated_c_source_code.extend(context_code)
+    generated_c_source_code.extend(instance_glue_declarations)
     # run_transition_declaration_code is moved to header
     generated_c_source_code.extend(aggreg_start_proc_code)
     generated_c_source_code.extend(inner_procedures_declarations_code)
@@ -376,6 +441,14 @@ def _process(process, instance=False, **kwargs):
 
     with open(process_name.lower() + '.c', 'wb') as c_file:
         c_file.write(u'\n'.join(indent_c_code(generated_c_source_code)).encode('latin1'))
+
+    # Public prototype for <proc>_state() when it is generated (mirrors the Ada
+    # backend, which declares Get_State in the package spec). Only for a
+    # standalone process - a process type has no global context to inspect.
+    state_header_file_code = []
+    if generate_current_state_to_str_code and not IS_INSTANCE:
+        state_header_file_code.append(
+            f'char* {process_name.lower()}_state(void);\n')
 
     generated_h_source_code = []
     generated_h_source_code.extend(beginning_of_include_guard_header_file_code)
@@ -396,6 +469,7 @@ def _process(process, instance=False, **kwargs):
         generated_h_source_code.extend(continuous_signals_header_file_code)
     generated_h_source_code.extend(external_procedures_header_file_code)
     generated_h_source_code.extend(timers_header_file_code)
+    generated_h_source_code.extend(state_header_file_code)
     generated_h_source_code.extend(ending_of_include_guard_header_file_code)
 
     with open(process_name.lower() + '.h', 'wb') as h_file:
@@ -629,7 +703,11 @@ def _decision(dec, **kwargs):
             else_stmts.insert(1, 'else')
             stmts.extend(else_stmts)
         else:
-            else_stmts.insert(0, '} // 2')  # close the if part
+            # Else-only decision: no 'if' branch was emitted, so there is no
+            # block to close. Emit the else body as a plain compound statement
+            # (else_stmts already starts with '{'); adding '} // 2' here would
+            # close the enclosing scope and unbalance the braces.
+            else_stmts.append('}')
             stmts.extend(else_stmts)
     except:
         # no else statement
@@ -922,8 +1000,14 @@ def _call_external_function(output, **kwargs):
                 RIName = out['outputName']
             if is_transition_call and IS_INSTANCE:
                 list_of_params.insert(0, 'ctxt')
-            if dest_pid is not None:
-                # the RI has an extra dest_pid parameter (PID type exists)
+            if dest_pid is not None and not is_transition_call:
+                # The RI has an extra dest_pid parameter when the PID type is
+                # in view. This does NOT apply to the automatic
+                # <proc>_<name>_transition call generated at the end of an
+                # exported procedure: that function is emitted as a fake PI
+                # (see processing_input_signals) whose signature is just
+                # (ctxt) for a process type, and Ada calls it with no PID
+                # either.
                 list_of_params.append(dest_pid)
             if list_of_params:
                 params = ', '.join(list_of_params)
@@ -1270,6 +1354,27 @@ def _task_informal_text(task, **kwargs):
     return code, []
 
 
+@generate.register(ogAST.Create)
+def _create_request(create, **kwargs):
+    ''' "Dynamic" creation of an external process instance.
+
+    Mirrors the Ada backend (``ctxt.Offspring := Create_X (Self);``) and the
+    Rust backend (``ctxt.offspring = create_X(default_pid());``): the returned
+    PID is stored in the context "offspring" variable. The function is
+    provided by the environment (TASTE glue) under the link name
+    ``<instance>_create_instance`` (see
+    ``generating_instance_glue_declarations``).
+    '''
+    code, local_decl = [], []
+    code.extend(traceability(create))
+    if create.comment:
+        code.extend(traceability(create.comment))
+    code.append(
+        f'{LPREFIX}.offspring = '
+        f'{create.instance_to_create.lower()}_create_instance(self);')
+    return code, local_decl
+
+
 @generate.register(ogAST.Transition)
 def _transition(tr, **kwargs):
     ''' generate the code for a transition '''
@@ -1385,8 +1490,37 @@ def _transition(tr, **kwargs):
                 else:
                     stmts.append(f'return {tr.terminator.inputString.lower()};')
             elif tr.terminator.kind == 'stop':
-                pass
-                # TODO
+                if 'PID' in TYPES:
+                    # An instance deletes itself, resets its context to the
+                    # default value and clears init_done, so it stops consuming
+                    # any further message. Mirrors the Ada backend
+                    # (Delete_Instance (Self); ctxt := Default_Context;
+                    # ctxt.Init_Done := False) and the Rust backend
+                    # (delete_instance(self); ctxt = Default::default(); ...).
+                    global NEEDS_DELETE_INSTANCE
+                    NEEDS_DELETE_INSTANCE = True
+                    # The deletion function is provided by the environment:
+                    #  - standalone process: <proc>_delete_instance (TASTE
+                    #    glue for the function itself);
+                    #  - process TYPE: it is instance-specific, so the type
+                    #    calls the per-type RI forwarder <type>_RI_Delete_Instance
+                    #    which the instance wrapper binds to the concrete
+                    #    <instance>_delete_instance glue (same scheme as the
+                    #    other RIs, e.g. <type>_RI_rezult).
+                    if IS_PROCESS_TYPE:
+                        stmts.append(
+                            f'{PROCESS_NAME.lower()}_RI_Delete_Instance(self);')
+                    else:
+                        stmts.append(f'{PROCESS_NAME.lower()}_delete_instance(self);')
+                    # Reset to the ASN.1 default context, then re-apply the
+                    # DCL initial values (as the Ada Default_Context does;
+                    # "sender" and "offspring" are DCLs defaulted to env).
+                    ctx_type = (f'{ASN1SCC}'
+                                f'{PROCESS.processName.capitalize()}_Context')
+                    stmts.append(f'{LPREFIX} = ({ctx_type}) {ctx_type}_constant;')
+                    stmts.extend(DCL_INIT_STATEMENTS)
+                    stmts.append(f'{LPREFIX}.init_done = false;')
+                stmts.append('return continuous_signals; // Leaving state forever')
             elif tr.terminator.kind == 'return':
                 return_string = ''
 
@@ -1827,15 +1961,17 @@ def _prim_index(prim, **kwargs):
     idx_stmts, idx_string, idx_var = expression(prim.value[1]['index'][0], readonly=ro)
     string += '.arr'
 
-    if expr_bs.kind == 'BitStringType' and ro:
-        phy_bit = f"({expr_bs.Max} - 1 - {idx_string})"
-        # .arr is an array so we have to read the bit in the right byte
-        # depending on the size of the array
-        string = f'({string}[{phy_bit} / 8] >> {phy_bit} % 8) & 1'
-    elif expr_bs.kind == 'BitStringType' and not ro:
-        # It is for a write to a bit index: here we only compute the
-        # place in the byte array.
-        string += f'[{idx_string} / 8]'
+    if expr_bs.kind == 'BitStringType':
+        # A BIT STRING is stored as an array of whole bytes, most-significant
+        # bit first, exactly as asn1scc does it (and as the C encoder expects):
+        # ASN.1 bit k is bit (7 - k % 8) of byte k / 8. SDL indexes bits from
+        # the left (bit 0 is the first character of a '...'B literal).
+        if ro:
+            string = f'({string}[{idx_string} / 8] >> (7 - {idx_string} % 8)) & 1'
+        else:
+            # For a write we only compute the byte; _assign_expression sets
+            # the bit with a read-modify-write.
+            string += f'[{idx_string} / 8]'
     else:
         string += f'[{idx_string}]'
 
@@ -1887,12 +2023,13 @@ def _prim_selector(prim, **kwargs):
 
 @expression.register(ogAST.PrimStateReference)
 def _primary_state_reference(prim, **kwargs):
-    ''' Reference to the current state '''
+    ''' Reference to the current state.
 
-    error = 'To Be Implemented'
-    LOG.error(error)
-    raise TypeError(error)
-    return [], '', []
+    The current state is stored in the context field ``state`` (see
+    ``generate_state_name`` and the ``ctxt.state = ...`` assignments emitted by
+    the terminator handler), so this simply resolves to ``ctxt.state``.
+    '''
+    return [], f'{LPREFIX}.state', []
 
 
 @expression.register(ogAST.ExprPlus)
@@ -2177,8 +2314,10 @@ def _assign_expression(expr, **kwargs):
         leftIsBitString = leftbs.kind == 'BitStringType'
         if leftIsBitString:
             _, bit_idx, _ = expression(expr.left.value[1]['index'][0])
-            bit = f'({leftbs.Max} - 1 - {bit_idx})'
-            res = f"({right_string} ? {left_string} | (1u << {bit} % 8) : {left_string} & ~(1u << {bit} % 8))"
+            # ASN.1 bit k is bit (7 - k % 8) of byte k / 8 (MSB-first, as C
+            # stores and the encoder reads it)
+            mask = f'(1u << (7 - {bit_idx} % 8))'
+            res = f"({right_string} ? {left_string} | {mask} : {left_string} & ~{mask})"
             strings.append(f"{left_string} = {res};")
         else:
             strings.append(f"{left_string} = ({LEFT_TYPE}) {right_string};  // index assignment")
@@ -2696,6 +2835,12 @@ def _enumerated_value(primary, **kwargs):
         if enumerant.lower() == enumerant_raw:
             enumID = basic_type.EnumValues[enumerant].EnumID
 
+    # A state name used as an expression (e.g. ``state = Wait``) has kind
+    # StateEnumeratedType: it has no CName and is stored using the same
+    # naming convention as state assignments (generate_state_name).
+    if basic_type.kind == 'StateEnumeratedType':
+        return [], generate_state_name(enumID), []
+
     if enumID.endswith("_PRESENT"): # choice
         return [], enumID, []
     else:
@@ -2768,13 +2913,17 @@ def _string_literal(primary, **kwargs):
     # If user put a literal string to fill an Octet string,
     # then convert the string to an array of unsigned_8 integers
     if isinstance(primary, ogAST.PrimBitStringLiteral):
-        # here we have a bit string literal and inside primary.bitarray
-        # we have something like ['0', '1']
-        # In C the representation is packed in a byte (for bitstings <= 8 bits)
-        # so we must set it using proper bitwise logic
-        bits = ''.join(primary.bit_array)
-        c_value = f"0b{bits}"
-        return [], c_value, []
+        # A BIT STRING is stored as whole bytes, most-significant bit first:
+        # ASN.1 bit k is bit (7 - k % 8) of byte k / 8 (as asn1scc stores it
+        # and the C encoder reads it). Pack the literal accordingly so that a
+        # '...'B value has the same bytes as the equivalent asn1scc value.
+        bits = primary.bit_array
+        nbytes = (len(bits) + 7) // 8
+        packed = []
+        for b in range(nbytes):
+            chunk = ''.join(bits[b * 8:(b + 1) * 8]).ljust(8, '0')
+            packed.append(str(int(chunk, 2)))
+        return [], ', '.join(packed), []
     elif isinstance(primary, ogAST.PrimOctetStringLiteral):
         # Hex string used as input
         unsigned_8 = [str(x) for x in primary.hexstring]
@@ -3265,6 +3414,21 @@ def _prim_substring(prim, **kwargs):
         stmts.append(f'    {tmp_var}[{loop_idx}] = {receiver_string}[{loop_idx} + {min_range}];')
         stmts.append('}')
         stmts.append(f'if ({loop_idx} < {receiver_bty.Max}) {tmp_var}[{loop_idx}] = \'\\0\';')
+    elif receiver_bty.kind == 'BitStringType':
+        # Bits are packed in whole bytes, most-significant bit first (ASN.1 bit
+        # k is bit (7 - k % 8) of byte k / 8). A slice b(i, j) selects bits
+        # i..j and places them at the front (bit 0) of the result, the rest
+        # being zero, matching the element-wise behaviour of SEQ OF/OCTET STRING.
+        local_decl.append(f'{actual_type} {tmp_var};')
+        if receiver_bty.Min != receiver_bty.Max:
+            stmts.append(f'{tmp_var}.nCount = {max_range} - {min_range} + 1;')
+        nbytes = (int(receiver_bty.Max) + 7) // 8
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} < {nbytes}; {loop_idx}++) {tmp_var}.arr[{loop_idx}] = 0;')
+        stmts.append(f'for({loop_idx} = 0; {loop_idx} <= {max_range} - {min_range} && {loop_idx} + {min_range} < {receiver_bty.Max}; {loop_idx}++)')
+        stmts.append('{')
+        stmts.append(f'    if (({receiver_string}.arr[({loop_idx} + {min_range}) / 8] >> (7 - ({loop_idx} + {min_range}) % 8)) & 1)')
+        stmts.append(f'        {tmp_var}.arr[{loop_idx} / 8] |= (1u << (7 - {loop_idx} % 8));')
+        stmts.append('}')
     else:
         local_decl.append(f'{actual_type} {tmp_var};')
         if receiver_bty.Min != receiver_bty.Max:
@@ -3313,6 +3477,9 @@ def generate_sdl_constants(process):
             _, val, _ = expression(sdl_constant.value)
             if sdl_constant_basic_type.kind in('SequenceOfType', 'OctetStringType', 'BitStringType'):
                 val = array_content(sdl_constant.value, val, sdl_constant_basic_type)
+            elif sdl_constant_basic_type.kind == 'IA5StringType':
+                # IA5Strings are null-terminated C arrays
+                val = ia5string_raw(sdl_constant.value)
             elif sdl_constant_basic_type.kind == 'NullType':
                 val = '0'
             elif sdl_constant_basic_type.kind not in ("EnumeratedType", "SequenceType"):
@@ -3320,10 +3487,16 @@ def generate_sdl_constants(process):
                 raise TypeError(f'Constant "{sdl_constant.varName}" value is not a ground expression')
 
         data_type = sdl_constant.type.ReferencedTypeName.replace('-', '_')
-        # Don't generate the "self" constant if the process is a process type
-        # as it is provided as a generic parameter during instantiation
+        # For a process TYPE with a PID type, "self" is not a compile-time
+        # constant: it is the PID of the running instance, which only the
+        # instance wrapper knows. Mirror the Rust backend's SELF_PID: emit a
+        # mutable file-scope static (per instance, since the type .c is
+        # #included into each instance wrapper) that the wrapper sets at
+        # startup.
         if process.process_type and sdl_constant.varName == 'self' and 'PID' in TYPES:
-            pass
+            sdl_constants_code.append(
+                f'static {ASN1SCC}{data_type} self = {ASN1SCC}PID_env; '
+                f'/* set to this instance PID by the wrapper */')
         else:
             sdl_constants_code.append(f"[[maybe_unused]]")
             sdl_constants_code.append(f"static const {ASN1SCC}{data_type} {sdl_constant.varName} = {val};")
@@ -3359,6 +3532,70 @@ def generating_context(process):
 
     return context_code
 
+
+def pid_enumerant(name):
+    '''Return the C enumerant for a PID with the given (case-insensitive) name.
+
+    The PID type is provided by TASTE; its enumerants are renamed by asn1scc
+    with the "asn1Scc" prefix (e.g. ``PID_og`` -> ``asn1SccPID_og``). Falls
+    back to the environment PID when the name is not among the PID values
+    (mirrors ``default_pid``).
+    '''
+    try:
+        pid_basic = TYPES['PID'].type
+        enum_name = getattr(pid_basic, 'CName', 'PID')
+        for each in pid_basic.EnumValues.keys():
+            if each.lower() == name.lower():
+                enum_id = pid_basic.EnumValues[each].EnumID
+                break
+        else:
+            return default_pid()
+    except (AttributeError, KeyError):
+        return f'{ASN1SCC}PID_env'
+    if enum_id.startswith(enum_name):
+        return f'{ASN1SCC}{enum_id}'
+    return f'{ASN1SCC}{enum_name}_{enum_id}'
+
+
+def generating_instance_glue_declarations(process):
+    '''Declare the environment-provided functions used by CREATE and STOP.
+
+    In TASTE, the middleware glue provides (see kazoo's vm_if-header template):
+        asn1SccPID <instance>_create_instance(void);
+        void       <instance>_delete_instance(asn1SccPID id);
+    The Ada backend imports the same two under link names
+    "<instance>_create_instance" and "<instance>_delete_instance", so C must
+    use those exact symbols too. Declaring them here keeps the generated file
+    self-contained (TASTE's own header is not otherwise included).
+
+    For a process TYPE, the delete target is instance-specific, so the type
+    only declares its own RI forwarder <type>_RI_Delete_Instance, which the
+    instance wrapper binds to the concrete <instance>_delete_instance (the
+    same scheme as the other RIs, e.g. <type>_RI_rezult).
+
+    NOTE: this runs only for the process TYPE itself and for standalone
+    processes — the instance wrapper file is generated in an earlier,
+    self-contained branch that returns before reaching here.
+    '''
+    declarations = []
+
+    for created in sorted(process.dependencies.get('create', set())):
+        declarations.append(
+            f'asn1SccPID {created.lower()}_create_instance({ASN1SCC}PID from);')
+
+    if NEEDS_DELETE_INSTANCE:
+        if IS_PROCESS_TYPE:
+            declarations.append(
+                f'void {PROCESS_NAME.lower()}_RI_Delete_Instance({ASN1SCC}PID id);')
+        else:
+            declarations.append(
+                f'void {PROCESS_NAME.lower()}_delete_instance({ASN1SCC}PID id);')
+
+    if declarations:
+        declarations = ['//// Instance creation/deletion'] + declarations + ['\n']
+    return declarations
+
+
 def generating_aggregate_start_funtions(process):
    aggreg_start_proc = ['//// State Aggregations Start functions']
    # Declare start procedure for aggregate states
@@ -3393,6 +3630,37 @@ def generating_startup_function(process, no_renames):
     startup_function_code.append('{')
 
     processing_process_variables(process, no_renames, startup_function_code)
+
+    # Seed the C RNG so that DECISION ANY really picks a branch at random.
+    # Done once at startup, before the startup transition is executed.
+    # time(NULL) alone has a one-second granularity, which is too coarse for
+    # short-running programs; use the nanosecond clock when it is available
+    # (POSIX) and fall back to time() otherwise. The value is mixed before
+    # srand() because glibc's rand() produces correlated first values for
+    # nearby seeds.
+    if process.random_generator:
+        global TIME_INCLUDE
+        TIME_INCLUDE = True
+        startup_function_code.extend([
+            '{',
+            'unsigned long long og_seed;',
+            '#if defined(CLOCK_REALTIME)',
+            'struct timespec og_ts;',
+            'if (clock_gettime(CLOCK_REALTIME, &og_ts) == 0) {',
+            'og_seed = (unsigned long long) og_ts.tv_sec * 1000000000ULL',
+            '        + (unsigned long long) og_ts.tv_nsec;',
+            '} else {',
+            'og_seed = (unsigned long long) time(NULL);',
+            '}',
+            '#else',
+            'og_seed = (unsigned long long) time(NULL);',
+            '#endif',
+            'og_seed ^= og_seed >> 33;',
+            'og_seed *= 0xFF51AFD7ED558CCDULL;',
+            'og_seed ^= og_seed >> 33;',
+            'srand((unsigned) og_seed);',
+            '}',
+        ])
 
     if process.transitions and not getattr(process, 'no_context', False):
         startup_function_code.append('\n')
@@ -3454,6 +3722,9 @@ def generating_nested_states(process):
 
 
 def processing_process_variables(process, no_renames, startup_function_code):
+    global DCL_INIT_STATEMENTS
+    del DCL_INIT_STATEMENTS[:]
+    init_start = len(startup_function_code)
     for var_name, (var_type, init) in process.variables.items():
         LOG.debug(var_name)
 
@@ -3498,6 +3769,11 @@ def processing_process_variables(process, no_renames, startup_function_code):
 
             assert not init_stmt, 'Initialization of ' + var_name + ' requires to add statement'
             assert not init_decl, 'Initialization of ' + var_name + ' requires to add declarations'
+
+    # Keep a copy of the DCL initialisation statements: a STOP terminator
+    # resets the context to its default value, which must include these
+    # initial values (as does the Ada "Default_Context").
+    DCL_INIT_STATEMENTS.extend(startup_function_code[init_start:])
     
 
 def processing_inner_procedures(process):
@@ -3612,6 +3888,17 @@ def processing_input_signals(process):
 
         input_signals_code.append(pi_header)
         input_signals_code.append('{')
+        if not getattr(process, 'no_context', False):
+            # Ignore incoming messages before startup has completed, and after
+            # a STOP terminator has cleared init_done (the instance deleted
+            # itself and must stay silent). Mirrors the Ada backend
+            # (Execute_Transition: "if not ctxt.Init_Done and Branch /=
+            # Startup_Transition then return;") and the Rust backend
+            # (execute_transition: "if !ctxt.init_done && branch !=
+            # Branches::Startup_Transition { return; }"). This guard must stay
+            # out of runTransition(), which is also called by the aggregation
+            # start functions during startup (with init_done still False).
+            input_signals_code.append(f'if (!{LPREFIX}.init_done) return;')
         
         has_transition = any(signame.lower() == k.lower() for k in process.input_mapping.keys())
         
@@ -3854,15 +4141,54 @@ def processing_timers(process, output_signals_code):
     return timers_header_file_code
 
 
-def generating_current_state_to_str(process):
-    # Generate code returning the current state as a string (used by tracer)
+def _state_to_str_switch(func_name, ctx_expr, states, enum_prefix):
+    ''' Build a C function returning the current state as a string.
 
-    process_name = process.processName
-    return ['//// Current State To String',
-            f'char* {process_name.lower()}_state(void)',
-             '{',
-             '  return "Not_supported_in_C__Use_the_Ada_backend";',
-             '}']
+    func_name  : name of the generated function
+    ctx_expr   : C expression denoting the context (e.g. "ctxt")
+    states     : iterable of state names (as used by the datamodel)
+    enum_prefix: prefix of the ASN.1 state enum, e.g. "asn1SccOrchestrator"
+
+    Mirrors the Ada backend, where Get_State returns <States>'Image(State),
+    i.e. the enumeration literal in upper case. C has no 'Image, so switch on
+    the state and return a stable string literal. String literals (no malloc)
+    keep the caller from having to free the result and make <proc>_state()
+    behave identically in C and Ada.
+    '''
+    code = [f'char* {func_name}(void)', '{']
+    if states:
+        code.append(f'  switch ({ctx_expr}.state)')
+        code.append('  {')
+        # sorted() so the generated switch is deterministic run to run
+        for each_state in sorted(states):
+            code.append(f'    case {enum_prefix}_States_{each_state.lower()}:')
+            code.append(f'      return "{ASN1SCC.upper()}{each_state.upper()}";')
+        code.append('  }')
+        code.append('  return "Unknown_State";')
+    else:
+        code.append('  return "No_State";')
+    code.append('}')
+    return code
+
+
+def generating_current_state_to_str(process):
+    # Generate code returning the current state as a string (used by tracer).
+    #
+    # Like Ada, never emitted for a process TYPE: that module has no global
+    # context (it is a function parameter), so it cannot inspect any state.
+    # The instance wrapper gets its own <instance>_state (see _process).
+    if IS_INSTANCE or IS_PROCESS_TYPE or not process.full_statelist:
+        return []
+    code = ['//// Current State To String']
+    if getattr(process, 'no_context', False):
+        # No context/state variable to inspect: keep a valid, stable string.
+        code.extend(_state_to_str_switch(
+            f'{process.processName.lower()}_state', LPREFIX, None, ASN1SCC))
+    else:
+        code.extend(_state_to_str_switch(
+            f'{process.processName.lower()}_state', LPREFIX,
+            process.full_statelist, f'{ASN1SCC}{process.processName.capitalize()}'))
+    return code
 
 
 def generating_includes(process):
@@ -3879,6 +4205,9 @@ def generating_includes(process):
 
     if STDLIB_INCLUDE == True:
         includes_code.append(u'#include <stdlib.h>')
+
+    if TIME_INCLUDE == True:
+        includes_code.append(u'#include <time.h>')
 
     for each in process.DV.asn1Files:
         hname = os.extsep.join(each.split(os.extsep)[:-1]) + os.extsep + 'h'

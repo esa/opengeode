@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp test_ada.ada test_ada.adb && gnat make test_ada.adb -g && ./test_ada | diff expected -
 
 test-c:
@@ -38,14 +38,21 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) og.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
+	  fi; \
+	done && \
+	cp og_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 test-if:
 	sdl2if og.pr
 
 test-python:
 	$(OPENGEODE) og.pr --shared
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(ASN1SCC) -c -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -fPIC -c *.adb
 	$(GNATBIND) -n -Llibog og

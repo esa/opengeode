@@ -1,0 +1,27 @@
+--  Regression test: a process TYPE whose name has mixed case, instantiated.
+--  The instance wrapper (mixedtype.c) must reference the type module's
+--  symbols with the same casing the type module emits them with
+--  (<type>.lower() for functions, <Type>.capitalize() for the Context type).
+--  Before the fix the wrapper used the type name verbatim
+--  (CInitMixedType/ MixedType_PI_go / MixedType_RI_rezult) while the type
+--  module emitted CInitmixedtype / mixedtype_PI_go / mixedtype_RI_rezult,
+--  so the generated C did not compile.
+/* CIF PROCESS (54, 46), (150, 75) */
+process type MixedType;
+    /* CIF TEXT (2755, 9), (245, 263) */
+    dcl n T_Int32;
+    /* CIF ENDTEXT */
+    /* CIF START (524, 139), (70, 35) */
+    START;
+        /* CIF NEXTSTATE (524, 194), (70, 35) */
+        NEXTSTATE wait;
+    /* CIF state (524, 194), (70, 35) */
+    state wait;
+        /* CIF input (524, 249), (70, 35) */
+        input go;
+            /* CIF OUTPUT (524, 280), (70, 35) */
+            output rezult;
+            /* CIF STOP (524, 330), (70, 35) */
+            stop;
+    endstate;
+endprocess type MixedType;

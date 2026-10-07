@@ -19,8 +19,10 @@ clean:
 	       real.c xer.c ber.c acn.c asn1crt.c asn1crt.h test_ada \
 	       *.autosave *_simu.sh *_interface.aadl *.lst *.gcno *.gcda *.gcov \
 	       check obj src code *_datamodel.asn asn1_x86.gpr *_ada.gpr *.pml x86 \
-		   *.dump *.rs *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
+		       *.dump *_cargo.toml *_datamodelDef.rs *_datamodel.rs asn1rust/ \
 		   Cargo.toml target
+	# Remove generated Rust sources but keep the committed test harness (main.rs)
+	find . -maxdepth 1 -name '*.rs' ! -name 'main.rs' -delete
 
 test-promela: FORCE
 		 sdl2promela --sdl *.pr -o og.pml
@@ -34,7 +36,7 @@ test-promela: FORCE
 
 %.ali: %.pr FORCE
 	$(OPENGEODE) $< system_structure.pr --toAda && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn && \
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn && \
 	$(GNATMAKE) -O$(O) -c -g -fprofile-arcs -ftest-coverage *.adb
 
 %.rs: %.pr FORCE
@@ -49,7 +51,7 @@ test-rust: FORCE
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
 	for f in *_datamodel.rs; do \
 	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
 	  fi; \
 	done && \
 	if [ -f "$(RUST_PROCESS)_cargo.toml" ]; then cp $(RUST_PROCESS)_cargo.toml Cargo.toml; fi && \

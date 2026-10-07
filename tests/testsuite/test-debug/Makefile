@@ -31,14 +31,20 @@ test-ada: orchestrator.ali dataview-uniq.o | test_ada.o
 	./test_ada
 
 test-c:
-	$(OPENGEODE) --toC orchestrator.pr system_structure.pr 2>&1 | sort | diff expected_c - || exit 0
+	$(OPENGEODE) orchestrator.pr system_structure.pr --toC
+	$(ASN1SCC) -c -ig -typePrefix asn1Scc -renamePolicy 3 -equal -fp AUTO *.asn
+	$(CC) -O$(O) -g -o test_c test_c.c orchestrator.c orchestrator_datamodel.c \
+	    dataview-uniq.c asn1crt.c
+	# A DECISION ANY picks a branch at random, so normalise the selected
+	# branch before comparing with the reference output.
+	./test_c | sed -E 's/Random value \w+/Random value X/' | diff expected_c -
 
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -c -fPIC *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -fPIC -gnat2012 b~orchestrator.adb
@@ -50,8 +56,15 @@ test-vhdl : test-c
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
+	  fi; \
+	done && \
+	cp orchestrator_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | sed -E 's/Random value \w+/Random value X/' | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda
 

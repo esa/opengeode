@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	#make -f Makefile.og
 	$(OPENGEODE) *.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make test_ada.ada && ./test_ada | diff expected -
 
 test-c: 
@@ -43,8 +43,15 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) *.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
+	  fi; \
+	done && \
+	cp og_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 

@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: 
 	mkdir -p src && cd src && $(OPENGEODE) ../toto.pr -g --toAda && \
 	cp ../test_toto.ada test_toto.adb && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../dataview.asn *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal ../dataview.asn *.asn
 	mkdir -p obj && cd obj && gnat make -O$(O) ../src/test_toto && \
 	./test_toto | diff ../expected -
 
@@ -48,6 +48,13 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) toto.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	for f in *_datamodel.rs; do \
+	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
+	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
+	  fi; \
+	done && \
+	cp toto_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 .PHONY: all edit test-parse test-ada test-rust coverage

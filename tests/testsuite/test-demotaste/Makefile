@@ -27,7 +27,7 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make -gnatd.E orchestrator
 
 test-c:

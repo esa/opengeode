@@ -12,7 +12,7 @@ test-parse:
 
 test-ada:
 	$(OPENGEODE) --toAda --dumpAST $(ROOT_MODEL)
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n bare_outputs.ali
 
