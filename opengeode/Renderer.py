@@ -105,8 +105,14 @@ def _block(ast, scene):
                 text_area = ogAST.TextArea()
                 text_area.inputString = "{}\n\n{}".format('\n'.join(signals),
                                                           '\n'.join(procedures))
-                text_area.pos_x = scene.itemsBoundingRect().width()
-                text_area.pos_y = scene.itemsBoundingRect().y() + 10
+                # Place the declarations textbox to the right of the
+                # process symbols, with a margin so it cannot overlap
+                # them. Use the bounding rect's right edge, not its
+                # width: the processes may not start at x=0 (they are
+                # placed from their CIF coordinates).
+                block_rect = scene.itemsBoundingRect()
+                text_area.pos_x = block_rect.right() + 20
+                text_area.pos_y = block_rect.y() + 10
                 top_level.append(render(text_area, scene))
 
         # Render channels and routes between processes/env
