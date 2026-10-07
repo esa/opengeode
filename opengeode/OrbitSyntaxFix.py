@@ -32,9 +32,9 @@ synchronous ``Conversation.ask`` must never run in the GUI thread.
 import os
 
 from PySide6.QtCore import QEventLoop, QObject, QThread, Qt, Signal, Slot
-from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QLabel, QPlainTextEdit,
-                               QProgressDialog, QVBoxLayout, QHBoxLayout,
-                               QMessageBox)
+from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QLabel,
+                               QPlainTextEdit, QProgressDialog, QVBoxLayout,
+                               QHBoxLayout, QMessageBox)
 
 from .OrbitChatPanel import (SKILL_FILENAME, SKILL_NAME, SKILL_RESOURCE,
                              _read_skill_text, _skill_body, orbit_acp_available)
@@ -128,19 +128,28 @@ class _OrbitAsker(QObject):
 
 def _build_question(construct, text, errors):
     '''The prompt handed to orbit: the parser construct, the broken text and
-    the parser's complaints, with an explicit, machine-parseable reply format.'''
-    problem = "\n".join(errors) if errors else "(no detail given)"
+    the parser's complaints, with an explicit, machine-parseable reply format.
+
+    It is deliberately self-contained and forbids tool use. Without that, an
+    agent given a working directory full of files explores it (reading, grepping,
+    searching for the model and the error) instead of simply rewriting the
+    snippet — it then burns the whole timeout on thoughts and tool calls and
+    answers nothing, which looks like "orbit did nothing". A syntax fix is a
+    pure text rewrite; saying so keeps the answer fast and usable.'''
+    problem = "\n".join(str(e) for e in errors) if errors else "(no detail given)"
     return (
-        "You are helping repair one symbol in an SDL (ITU-T Z.100) model "
-        "inside the OpenGEODE editor.\n"
-        f"The symbol is a '{construct}' construct that failed to parse.\n\n"
-        "The current (broken) text inside the symbol is:\n"
+        "Rewrite ONE snippet of SDL (ITU-T Z.100) so that it parses. This is a "
+        "pure text rewrite.\n"
+        "IMPORTANT: answer immediately. Do NOT read files, run commands, search "
+        "the project, or use any tool. Everything you need is below.\n\n"
+        f"The snippet is the whole body of a '{construct}' symbol in an SDL "
+        "model. The editor keeps only the body; it adds the statement "
+        "terminator itself. The current snippet does not parse:\n"
         "```\n" + text + "\n```\n\n"
-        "The parser reported:\n" + problem + "\n\n"
-        "Give the corrected text for that symbol only. Keep the same intent, "
-        "fix the syntax, and do not add other symbols. Reply with ONLY the "
-        "corrected text in a single fenced code block, with no explanation and "
-        "no surrounding text."
+        "The OpenGEODE parser reports:\n" + problem + "\n\n"
+        "Give the corrected snippet, keeping its intent and fixing the syntax. "
+        "Reply with ONLY the corrected snippet in a single fenced code block "
+        "and nothing else. Do not end it with a semicolon."
     )
 
 
@@ -164,18 +173,65 @@ def _extract_code(answer):
     return answer.strip()
 
 
+def _candidate_texts(proposed, construct):
+    '''The forms of orbit's proposal that are worth trying, best first.
+
+    orbit answers with a complete SDL statement, very often WITH the trailing
+    ';'. OpenGEODE stores only the body: it adds the ';' itself when it
+    generates the model, and check_syntax rejects a text that already ends with
+    one ("Remove the semi-colon at the end of the text."). That is true for
+    every symbol except a text area (a block of declarations), which does take
+    its own semicolons.
+
+    So for anything but a text area whose proposal ends in ';', the form
+    OpenGEODE can store is the proposal WITHOUT that final semicolon, and it is
+    offered first (the likely-correct default); the verbatim proposal follows as
+    the alternative. The parser decides which one is right when applied.'''
+    stripped = proposed.rstrip()
+    if construct != 'text_area' and stripped.endswith(';'):
+        without = stripped[:-1].rstrip()
+        if without and without != stripped:
+            return [without, stripped]
+    return [proposed]
+
+
+def _log(view, symbol, message):
+    '''Append a line to the model's message window (where OpenGEODE reports
+    parse/check results), so an auto-fix always leaves a trace of what it did,
+    even when the proposal is rejected. Never raises.'''
+    try:
+        window = getattr(symbol.scene(), 'messages_window', None)
+    except Exception:
+        window = None
+    if window is None:
+        window = getattr(view, 'messages_window', None)
+    try:
+        if window is not None:
+            window.addItem(message)
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # The review dialog: current vs proposed, apply or cancel
 # ---------------------------------------------------------------------------
 
 class _ReviewDialog(QDialog):
     '''Shows the broken text and orbit's proposed correction side by side and
-    lets the user apply or discard it. Applying is the only way text changes.'''
+    lets the user apply or discard it. Applying is the only way text changes.
 
-    def __init__(self, parent, construct, current, proposed, errors):
+    When the proposal has a semicolon-tolerant variant (see _candidate_texts),
+    a small choice lets the user pick which form to apply — so the review makes
+    the actual change visible instead of silently trying forms. The chosen form
+    is in :attr:`chosen_text`.
+    '''
+
+    def __init__(self, parent, construct, current, proposed, candidates, errors):
         super().__init__(parent)
         self.setWindowTitle("OpenGEODE - Suggested fix (orbit)")
         self.setModal(True)
+        self._candidates = list(candidates)
+        self.chosen_text = self._candidates[0] if self._candidates else proposed
         layout = QVBoxLayout(self)
 
         headline = QLabel(
@@ -196,8 +252,22 @@ class _ReviewDialog(QDialog):
             panes.addLayout(box)
         layout.addLayout(panes)
 
+        if len(self._candidates) > 1:
+            # The proposal differs only by a trailing ';' OpenGEODE does not
+            # want inside a symbol. Let the user choose; the default is the
+            # form that will parse.
+            row = QHBoxLayout()
+            row.addWidget(QLabel("Apply:"))
+            self._choice = QComboBox()
+            for cand in self._candidates:
+                label = repr(cand) if '\n' not in cand else cand.replace('\n', ' ⏎ ')
+                self._choice.addItem(label, cand)
+            self._choice.currentIndexChanged.connect(self._on_choice)
+            row.addWidget(self._choice, 1)
+            layout.addLayout(row)
+
         if errors:
-            why = QLabel("Parser error: " + " ".join(errors))
+            why = QLabel("Parser error: " + " ".join(str(e) for e in errors))
             why.setWordWrap(True)
             layout.addWidget(why)
 
@@ -208,6 +278,10 @@ class _ReviewDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self._apply.setDefault(True)
+
+    def _on_choice(self, index):
+        if 0 <= index < len(self._candidates):
+            self.chosen_text = self._candidates[index]
 
 
 # ---------------------------------------------------------------------------
@@ -265,18 +339,26 @@ def auto_fix_symbol(view, symbol, errors) -> bool:
     _LIVE.add(thread)
     thread.finished.connect(lambda: _LIVE.discard(thread))
     thread.start()
+    # NOTE: QProgressDialog.close() makes wasCanceled() report True, so the
+    # state must be read BEFORE closing it — reading it afterwards would make
+    # every run look cancelled and the fix would never be applied.
+    cancelled = False
     try:
         loop.exec()
     finally:
-        if progress.wasCanceled():
+        cancelled = progress.wasCanceled()
+        if cancelled:
             asker.cancel()
         progress.close()
         thread.quit()
         thread.wait(5000)
 
-    if progress.wasCanceled():
+    if cancelled:
+        _log(view, symbol, "[Auto fix] cancelled while orbit was answering.")
         return False
     if result.get("error"):
+        _log(view, symbol, "[Auto fix] orbit could not answer: "
+             + str(result["error"]))
         QMessageBox.warning(
             view, "OpenGEODE - Auto fix",
             "orbit could not answer:\n" + str(result["error"]) +
@@ -285,42 +367,68 @@ def auto_fix_symbol(view, symbol, errors) -> bool:
 
     proposed = _extract_code(result.get("answer"))
     if not proposed.strip():
+        _log(view, symbol, "[Auto fix] orbit returned no usable correction "
+             "(raw answer: " + repr(result.get("answer"))[:300] + ")")
         QMessageBox.warning(
             view, "OpenGEODE - Auto fix",
             "orbit returned no usable correction.\n"
             "Please fix the syntax error manually.")
         return False
 
-    dialog = _ReviewDialog(view, construct, text, proposed, errors)
+    # The forms of the proposal worth trying (orbit usually adds the ';' that
+    # OpenGEODE wants kept out of a symbol's text — see _candidate_texts).
+    candidates = _candidate_texts(proposed, construct)
+
+    dialog = _ReviewDialog(view, construct, text, proposed, candidates, errors)
     if dialog.exec() != QDialog.Accepted:
+        _log(view, symbol, "[Auto fix] proposal discarded by the user "
+             "(orbit proposed: " + proposed.replace("\n", " ") + ")")
         return False
 
-    # Apply the correction, then verify it actually parses. On failure, restore
-    # the original text so the model is left exactly as the user had it.
+    # Apply the accepted form, verify it parses, and fall back to the next
+    # candidate (e.g. the proposal without its trailing semicolon) if it does
+    # not. On total failure restore the original text so the model is left
+    # exactly as the user had it.
     # syntax_errors lives on the scene (SDL_Scene), not the view.
     scene = symbol.scene()
-    symbol.text.setPlainText(proposed)
-    try:
-        symbol.text.try_resize()
-    except AttributeError:
-        pass
+    chosen = dialog.chosen_text
+    order = [chosen] + [c for c in candidates if c != chosen]
     remaining = []
-    try:
-        if scene is not None:
-            remaining = scene.syntax_errors(symbol)
-    except Exception:
+    applied = None
+    for candidate in order:
+        symbol.text.setPlainText(candidate)
+        try:
+            symbol.text.try_resize()
+        except AttributeError:
+            pass
         remaining = []
-    if remaining:
+        try:
+            if scene is not None:
+                remaining = scene.syntax_errors(symbol)
+        except Exception:
+            remaining = []
+        if not remaining:
+            applied = candidate
+            break
+
+    if applied is None:
         symbol.text.setPlainText(text)
         try:
             symbol.text.try_resize()
         except AttributeError:
             pass
+        _log(view, symbol, "[Auto fix] orbit's proposal still does not parse "
+             "(proposed: " + proposed.replace("\n", " ") + "); text unchanged. "
+             + " ".join(str(e) for e in remaining))
         QMessageBox.warning(
             view, "OpenGEODE - Auto fix",
             "orbit's suggestion still does not parse:\n" +
-            "\n".join(remaining) + "\n\nPlease fix the syntax error manually.")
+            "\n".join(str(e) for e in remaining) +
+            "\n\nThe text was left unchanged. Please fix it manually.")
         return False
+
+    _log(view, symbol, "[Auto fix] applied orbit's correction: "
+         + applied.replace("\n", " "))
     return True
 
 

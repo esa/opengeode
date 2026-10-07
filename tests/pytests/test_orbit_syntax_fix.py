@@ -73,6 +73,17 @@ def test_build_question_carries_construct_text_and_errors():
     assert "fenced code block" in q
 
 
+def test_build_question_forbids_tool_use():
+    '''The prompt must keep orbit from exploring the project: given a working
+    directory full of files, an agent that is not told to just rewrite the
+    snippet reads/greps/searches until the timeout and answers nothing (which
+    makes the feature look broken). A syntax fix is a pure text rewrite.'''
+    q = osf._build_question("task", "x := ;", ["boom"])
+    flat = " ".join(q.split()).lower()
+    assert "do not" in flat and "use any tool" in flat
+    assert "answer immediately" in flat
+
+
 def test_build_question_handles_missing_errors():
     q = osf._build_question("output", "hello", [])
     assert "(no detail given)" in q
@@ -149,14 +160,34 @@ class _FakeText:
         pass
 
 
+class _Messages:
+    '''A stand-in for the scene's message window (QListWidget).'''
+    def __init__(self):
+        self.lines = []
+    def addItem(self, item):
+        self.lines.append(item if isinstance(item, str) else str(item))
+
+
 class _FakeScene:
-    '''Just enough of an SDL_Scene: syntax_errors(), the re-check after a fix.'''
-    def __init__(self, errors_after=()):
-        self._errors_after = list(errors_after)
+    '''Just enough of an SDL_Scene: syntax_errors() and a message window.
+
+    It mirrors OpenGEODE's real rule so the tests catch the bug it caused: for
+    every symbol EXCEPT a text area, a text that ends with ';' is rejected
+    ("Remove the semi-colon at the end of the text.") because the generator adds
+    the terminator itself. force_errors overrides the rule for the rollback
+    test.'''
+    def __init__(self, force_errors=()):
+        self._force = list(force_errors)
         self.checked = 0
+        self.messages_window = _Messages()
     def syntax_errors(self, symbol):
         self.checked += 1
-        return list(self._errors_after)
+        if self._force:
+            return list(self._force)
+        text = str(symbol.text).strip()
+        if symbol.common_name != 'text_area' and text.endswith(';'):
+            return ["Remove the semi-colon at the end of the text."]
+        return []
 
 
 class _FakeSymbol:
@@ -183,20 +214,30 @@ def _stub_dialogs(monkeypatch, accept=True):
     with objects that return immediately: the test drives the logic, not Qt's
     event loop.'''
     class _Progress:
+        '''Emulates QProgressDialog: wasCanceled() is False until close() is
+        called, after which it reports True (as Qt really does). Reading it
+        after close() — the bug this shape guards — would look cancelled.'''
         def __init__(self, *a, **k):
             self.canceled = _NullSignal()
+            self._closed = False
         def setWindowTitle(self, *a): pass
         def setWindowModality(self, *a): pass
         def setMinimumDuration(self, *a): pass
         def setAutoClose(self, *a): pass
         def setAutoReset(self, *a): pass
         def show(self): pass
-        def close(self): pass
-        def wasCanceled(self): return False
+        def close(self): self._closed = True
+        def wasCanceled(self): return self._closed
     class _NullSignal:
         def connect(self, *a): pass
     class _Review:
-        def __init__(self, *a, **k): pass
+        #: Which candidate the stub dialog "chooses"; None = the default (0).
+        pick = 0
+        last_candidates = None
+        def __init__(self, parent, construct, current, proposed, candidates,
+                     errors):
+            _Review.last_candidates = list(candidates)
+            self.chosen_text = candidates[_Review.pick]
         def exec(self):
             from PySide6.QtWidgets import QDialog
             return QDialog.Accepted if accept else QDialog.Rejected
@@ -209,10 +250,12 @@ def _stub_dialogs(monkeypatch, accept=True):
     monkeypatch.setattr(osf, 'QMessageBox', _MessageBox)
 
 
-def test_apply_replaces_the_text_when_orbit_fixes_it(qapp, tmp_path, monkeypatch):
-    '''orbit's correction is applied, the symbol parses, and auto_fix_symbol
-    returns True (so the caller records the edit). The answer is scripted
-    through a stub asker, so no agent process is needed.'''
+def test_apply_strips_the_semicolon_orbit_adds(qapp, tmp_path, monkeypatch):
+    '''The bug this guards: orbit answers with a complete SDL statement
+    ('x := 1;'), but a task symbol must NOT end with ';' (the generator adds it,
+    and check_syntax rejects a trailing semicolon). The fix must strip it, so
+    the symbol really changes and parses. The answer is scripted through a stub
+    asker, so no agent process is needed.'''
     monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
     _stub_dialogs(monkeypatch, accept=True)
 
@@ -221,21 +264,30 @@ def test_apply_replaces_the_text_when_orbit_fixes_it(qapp, tmp_path, monkeypatch
     from PySide6.QtCore import QObject, Signal
     class _InstantAsker(QObject):
         done = Signal(object)
+        answer = "```\nx := 1;\n```"
         def __init__(self, q, cwd):
             super().__init__()
         def moveToThread(self, t):
             pass
         def run(self):
-            self.done.emit(("```\nx := 1;\n```", None))
+            self.done.emit((_InstantAsker.answer, None))
         def cancel(self):
             pass
     monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
 
     view = _FakeView(str(tmp_path / "model.pr"))
-    symbol = _FakeSymbol("x := ;")
+    symbol = _FakeSymbol("x := ;")           # common_name 'task'
     assert osf.auto_fix_symbol(view, symbol, ["expression expected"]) is True
-    assert str(symbol.text) == "x := 1;"
-    assert symbol.scene().checked >= 1
+    # The projected text is the parseable one: the ';' was stripped.
+    assert str(symbol.text) == "x := 1"
+    assert symbol.scene().syntax_errors(symbol) == []
+    # A text_area keeps its semicolons: the same shape of answer, applied
+    # verbatim (no stripping), so its own terminator survives.
+    _InstantAsker.answer = "```\ndcl x MyInt;\n```"
+    area = _FakeSymbol("dcl x MyInt", construct="text_area")
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "model.pr")), area,
+                               ["bad"]) is True
+    assert str(area.text) == "dcl x MyInt;"
 
 
 def test_cancel_leaves_the_text_untouched(qapp, tmp_path, monkeypatch):
@@ -277,10 +329,10 @@ def test_a_suggestion_that_still_does_not_parse_is_rolled_back(qapp, tmp_path,
             self.done.emit(("```\nstill broken ;\n```", None))
         def cancel(self): pass
     monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
-    # The re-check still reports an error.
+    # The re-check always reports an error (both candidate forms fail).
     view = _FakeView(str(tmp_path / "model.pr"))
     symbol = _FakeSymbol("x := ;",
-                         scene=_FakeScene(errors_after=["still bad"]))
+                         scene=_FakeScene(force_errors=["still bad"]))
     assert osf.auto_fix_symbol(view, symbol, ["expression expected"]) is False
     assert str(symbol.text) == "x := ;"
 
@@ -290,3 +342,125 @@ def test_empty_text_is_not_sent_to_orbit(qapp, tmp_path, monkeypatch):
     view = _FakeView(str(tmp_path / "model.pr"))
     symbol = _FakeSymbol("   ")
     assert osf.auto_fix_symbol(view, symbol, ["error"]) is False
+
+
+# --------------------------------------------------------------------------
+# The semicolon candidates, the chosen form, and the message-window trace.
+# --------------------------------------------------------------------------
+
+def test_candidate_texts_strip_the_semicolon_for_non_text_areas():
+    '''A trailing ';' is offered stripped first (that is what OpenGEODE stores),
+    with the verbatim proposal as the alternative.'''
+    assert osf._candidate_texts("x := 1;", "task") == ["x := 1", "x := 1;"]
+    assert osf._candidate_texts("x := 1;  ", "output") == ["x := 1", "x := 1;"]
+    # No semicolon: nothing to strip.
+    assert osf._candidate_texts("x := 1", "task") == ["x := 1"]
+    # A text area keeps its own semicolons.
+    assert osf._candidate_texts("dcl x MyInt;", "text_area") == ["dcl x MyInt;"]
+    # An empty body after stripping is not offered.
+    assert osf._candidate_texts(";", "task") == [";"]
+
+
+def test_the_user_may_keep_the_verbatim_form(qapp, tmp_path, monkeypatch):
+    '''When the proposal has two forms, the review dialog lets the user pick;
+    the verbatim form (with the ';') can be applied if they want it.'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    _stub_dialogs(monkeypatch, accept=True)
+    review_cls = osf._ReviewDialog
+
+    from PySide6.QtCore import QObject, Signal
+    class _InstantAsker(QObject):
+        done = Signal(object)
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self): self.done.emit(("```\nx := 1;\n```", None))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
+
+    try:
+        # A text_area accepts the semicolon form, so the chosen (only) form is
+        # applied verbatim.
+        review_cls.pick = 0
+        area = _FakeSymbol("dcl x MyInt", construct="text_area")
+        assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), area,
+                                   ["bad"]) is True
+        assert str(area.text) == "x := 1;"
+        assert review_cls.last_candidates == ["x := 1;"]
+        # For a task the two forms are offered, stripped first; picking the
+        # verbatim one ('x := 1;') is tried first, the parser rejects it, and
+        # the other form rescues the fix — the user's choice leads, the result
+        # still parses.
+        review_cls.pick = 1
+        task = _FakeSymbol("x := ;")
+        assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), task,
+                                   ["bad"]) is True
+        assert review_cls.last_candidates == ["x := 1", "x := 1;"]
+        assert str(task.text) == "x := 1"
+    finally:
+        review_cls.pick = 0
+
+
+def test_outcome_is_logged_in_the_message_window(qapp, tmp_path, monkeypatch):
+    '''Whatever happens, a line lands in the model's message window, so the user
+    can see that orbit was asked and what came back.'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    _stub_dialogs(monkeypatch, accept=True)
+
+    from PySide6.QtCore import QObject, Signal
+    class _InstantAsker(QObject):
+        done = Signal(object)
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self): self.done.emit(("```\nx := 1;\n```", None))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
+
+    symbol = _FakeSymbol("x := ;")
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is True
+    lines = symbol.scene().messages_window.lines
+    assert any('[Auto fix]' in ln and 'applied' in ln for ln in lines)
+
+
+def test_a_bad_outcome_is_logged_too(qapp, tmp_path, monkeypatch):
+    '''A rollback is logged as well — the user sees the attempt failed and why,
+    instead of "nothing happened".'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    _stub_dialogs(monkeypatch, accept=True)
+
+    from PySide6.QtCore import QObject, Signal
+    class _InstantAsker(QObject):
+        done = Signal(object)
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self): self.done.emit(("```\nstill broken ;\n```", None))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _InstantAsker)
+
+    symbol = _FakeSymbol("x := ;", scene=_FakeScene(force_errors=["nope"]))
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is False
+    lines = symbol.scene().messages_window.lines
+    assert any('[Auto fix]' in ln and 'unchanged' in ln for ln in lines)
+
+
+def test_an_orbit_error_is_logged(qapp, tmp_path, monkeypatch):
+    '''If orbit cannot answer, the reason is logged (and a warning shown).'''
+    monkeypatch.setenv('ORBIT_ACP_AGENT', FAKE)
+    _stub_dialogs(monkeypatch, accept=True)
+
+    from PySide6.QtCore import QObject, Signal
+    class _ErrAsker(QObject):
+        done = Signal(object)
+        def __init__(self, q, cwd): super().__init__()
+        def moveToThread(self, t): pass
+        def run(self): self.done.emit((None, "no orbit agent"))
+        def cancel(self): pass
+    monkeypatch.setattr(osf, '_OrbitAsker', _ErrAsker)
+
+    symbol = _FakeSymbol("x := ;")
+    assert osf.auto_fix_symbol(_FakeView(str(tmp_path / "m.pr")), symbol,
+                               ["bad"]) is False
+    assert str(symbol.text) == "x := ;"
+    lines = symbol.scene().messages_window.lines
+    assert any('[Auto fix]' in ln and 'no orbit agent' in ln for ln in lines)
