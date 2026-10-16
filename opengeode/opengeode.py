@@ -2299,6 +2299,10 @@ class SDL_View(QGraphicsView):
             When Up button is clicked, go up one nested scene level
         '''
         LOG.debug('GO_UP')
+        if not self.scene_stack:
+            if self.up_button:
+                self.up_button.setEnabled(False)
+            return
         self.scene().clear_focus()
         # Signal to the world that the current scene is left:
         self.scene().scene_left.emit()
@@ -2306,13 +2310,14 @@ class SDL_View(QGraphicsView):
         self.setScene(scene)
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.set_toolbar()
-        if not self.scene_stack:
+        if not self.scene_stack and self.up_button:
             self.up_button.setEnabled(False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
-        sdlSymbols.CONTEXT = self.context_history.pop()
+        if self.context_history:
+            sdlSymbols.CONTEXT = self.context_history.pop()
         self.update_datadict.emit()
         self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
         self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
@@ -2320,14 +2325,14 @@ class SDL_View(QGraphicsView):
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
-        # Save context history
-        self.context_history.append(sdlSymbols.CONTEXT)
         try:
             subtype, subname = name.split()
         except ValueError as err:
             LOG.debug("[go_down] name split fail (PROCESS TYPE?)" + str(err))
             LOG.info("Can't refine content of a type instance")
             return
+        # Save context history
+        self.context_history.append(sdlSymbols.CONTEXT)
         # Get AST of the element that is entered
         if subtype == 'procedure':
             for each in sdlSymbols.CONTEXT.procedures:
@@ -2669,6 +2674,7 @@ class SDL_View(QGraphicsView):
         if (not autosave
                and scene.ast is not None
                and scene.ast.processes
+               and self.options
                and (self.options.toAda or self.options.toC or self.options.toRust)):
             # When --edit is combined with --toAda, --toC, or --toRust, generate the
             # code at the same time as the model, to save build time in TASTE
@@ -2698,34 +2704,40 @@ class SDL_View(QGraphicsView):
             item.pos_y -= delta_y
 
         # Gather list of ASN.1 files (+possibly custom types definitions)
+        base_dir = os.path.abspath(pr_path or ".")
         try:
-            firstAsn1File = os.path.basename(ogParser.DV.asn1Files[0])
-            source_dir = os.path.relpath\
-                    (os.path.dirname(ogParser.DV.asn1Files[0]) or ".")
-            otherAsn1Files = [os.path.relpath(path, "code")
-                    for path in ogParser.DV.asn1Files[1:]]
+            asn1_files = [os.path.relpath(os.path.abspath(path), base_dir)
+                          for path in ogParser.DV.asn1Files]
         except (AttributeError, IndexError):
-            source_dir = "."
-            firstAsn1File, otherAsn1Files = "", []
+            asn1_files = []
 
         process = scene.ast.processes[0] if scene.ast and len(scene.ast.processes) == 1 else None
-        if not process or not getattr(process, 'no_context', False):
-            otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
-        otherAsn = " ".join(otherAsn1Files)
+        has_datamodel = not process or not getattr(process, 'no_context', False)
+
+        datamodel_name = f'{prj_name}_datamodel.asn'
+        asn1_ada = " ".join(asn1_files + ([f'code/{datamodel_name}'] if has_datamodel else []))
+        asn1_c = " ".join(asn1_files + ([f'code_c/{datamodel_name}'] if has_datamodel else []))
+        asn1_rust = " ".join(asn1_files + ([f'code_rust/{datamodel_name}'] if has_datamodel else []))
 
         #  Template for the Makefile
         template_makefile = f'''all:
 \tmkdir -p code
 \tcd code && opengeode --toAda ../*.pr
-\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada -adaBitStringAlignment {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada -adaBitStringAlignment {asn1_ada}
 \tcd code && gnat make {prj_name}
 c:
 \tmkdir -p code_c
 \tcd code_c && opengeode --toC ../*.pr
-\tasn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c {asn1_c}
 \tcd code_c && gcc -c *.c
+rust:
+\tmkdir -p code_rust
+\tcd code_rust && opengeode --toRust ../*.pr
+\tasn1scc -fp AUTO -typePrefix asn1Scc -renamePolicy 3 -equal -Rust -o code_rust {asn1_rust}
+\tfor f in code_rust/*_datamodel.rs; do if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then sed -i '/^use crate.*Def/s|$$|\\nuse crate::dataview_uniq::*;\\nuse crate::dataview_uniqDef::*;|' "$$f"; fi; done
+\tcd code_rust && (cp {prj_name.lower()}_cargo.toml Cargo.toml 2>/dev/null || cp *_cargo.toml Cargo.toml 2>/dev/null || true) && cargo build --lib
 clean:
-\trm -rf code code_c'''
+\trm -rf code code_c code_rust'''
         pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
@@ -2809,7 +2821,9 @@ clean:
                 if sys_struct not in files:
                     files.append(sys_struct)
         try:
-            ast, warnings, errors = ogParser.parse_pr(files=files)
+            ast, warnings, errors = ogParser.parse_pr(
+                files=files, prune_select_if=False
+            )
         except IOError:
             LOG.error('Aborting: could not open or parse input file')
             sdlSymbols.CONTEXT = ogAST.Block()
@@ -2878,6 +2892,9 @@ clean:
         # Reset current diagram scene & symbol tables before rendering reloaded/new AST
         self.need_new_scene.emit()
         self.scene_stack = []
+        self.context_history = []
+        if self.up_button:
+            self.up_button.setEnabled(False)
         if self.scene() and hasattr(self.scene(), 'undo_stack'):
             self.scene().undo_stack.clear()
         G_SYMBOLS.clear()
@@ -2989,6 +3006,9 @@ clean:
             return False
         self.need_new_scene.emit()
         self.scene_stack = []
+        self.context_history = []
+        if self.up_button:
+            self.up_button.setEnabled(False)
         self.scene().undo_stack.clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
@@ -3153,8 +3173,10 @@ clean:
         that the Up button is properly set when the scene is reached '''
         if not path:
             return True
-        while self.up_button.isEnabled():
+        while self.scene_stack:
             self.go_up()
+        if self.up_button:
+            self.up_button.setEnabled(False)
         processName = ''
         partitions = self.top_scene().partitions
         for each in path:
@@ -3220,8 +3242,12 @@ clean:
             if self.scene().context == 'process' and symbol.scene() != self.scene():
                 # We need to go to the right partition
                 processName = sdlSymbols.CONTEXT.processName
-                self.go_up()
-                self.go_down(symbol.scene(), name=f'process {processName}')
+                if self.scene_stack:
+                    self.go_up()
+                    self.go_down(symbol.scene(), name=f'process {processName}')
+                else:
+                    self.setScene(symbol.scene())
+                    self.update_partition_arrows()
 
             symbol.select()
             self.scene().highlight(symbol)
@@ -3900,15 +3926,40 @@ class OG_MainWindow(QMainWindow):
         self.cancel_asn1_edit()
 
     def associate_asn1_file_and_save(self, filename):
-        ''' Add a TextSymbol referencing the ASN.1 file to the diagram and save '''
+        ''' Add the USE clause referencing the ASN.1 file to the diagram and
+        save. The USE clause belongs to the top-level (system/block)
+        diagram, so that the dataview is visible to all processes: never
+        put it in the currently displayed scene if it is a nested one
+        (e.g. inside a process). '''
         from PySide6.QtCore import QPointF
-        pos = QPointF(50, 50)
-        text_content = f"use datamodel comment '{filename}';"
-        text_symbol = self.view.scene().place_symbol(item_type=sdlSymbols.TextSymbol, parent=None, pos=pos)
-        if text_symbol:
-            text_symbol.text.setPlainText(text_content)
-            text_symbol.ast.inputString = text_content
+        use_clause = f"use datamodel comment '{filename}';"
+        scene = self.view.top_scene()
+        # Reuse an existing top-level text area if there is one, so that
+        # all ASN.1 files are set in a single text area (required by the
+        # parser at system level)
+        existing = [t for t in getattr(scene, 'texts', [])
+                    if isinstance(t, sdlSymbols.TextSymbol)]
+        if existing:
+            text_symbol = existing[0]
+            old_text = text_symbol.text.toPlainText().rstrip()
+            new_text = f"{use_clause}\n{old_text}" if old_text else use_clause
+            text_symbol.text.setPlainText(new_text)
+            text_symbol.ast.inputString = new_text
             text_symbol.text.try_resize()
+        else:
+            # Place the new text area to the left of the existing symbols
+            # so that it does not overlap them
+            rect = scene.itemsBoundingRect()
+            if rect.isNull():
+                pos = QPointF(50, 50)
+            else:
+                pos = QPointF(rect.left() - 300, rect.top())
+            text_symbol = scene.place_symbol(item_type=sdlSymbols.TextSymbol,
+                                             parent=None, pos=pos)
+            if text_symbol:
+                text_symbol.text.setPlainText(use_clause)
+                text_symbol.ast.inputString = use_clause
+                text_symbol.text.try_resize()
 
         # Invoke model save
         self.view.save_diagram()
@@ -3940,13 +3991,14 @@ class OG_MainWindow(QMainWindow):
         base_dir = os.path.dirname(self.view.filename)
         if not base_dir:
             base_dir = "."
-            
-        module_name = process_name
-        
+
+        default_mod = f"{process_name[0].upper() + process_name[1:]}-Dataview" if process_name else "DataView"
+        module_name = default_mod
+
         while True:
             if not module_name:
                 from PySide6.QtWidgets import QInputDialog
-                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:")
+                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:", text=default_mod)
                 if not ok or not name.strip():
                     return
                 module_name = name.strip()
@@ -3954,8 +4006,11 @@ class OG_MainWindow(QMainWindow):
             # Ensure first letter of module name is uppercase
             module_name = module_name[0].upper() + module_name[1:] if len(module_name) > 0 else ""
 
-            # Ensure first letter of file name is lowercase
-            file_prefix = module_name[0].lower() + module_name[1:] if len(module_name) > 0 else ""
+            # Ensure file name does not clash with process name (e.g. foo.asn vs process foo)
+            # because asn1scc would generate foo.rs / foo.c, clobbering the process output.
+            file_prefix = module_name.lower().replace('-', '_')
+            if process_name and file_prefix == process_name.lower():
+                file_prefix = f"{file_prefix}_dv"
             filename = f"{file_prefix}.asn"
             filepath = os.path.join(base_dir, filename)
 

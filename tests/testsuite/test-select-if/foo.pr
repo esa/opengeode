@@ -1,0 +1,97 @@
+system foo;
+    /* CIF TEXT (94, 94), (267, 140) */
+    use dv comment 'datamodel.asn';
+
+    signal keep_sig;
+
+    select if (c_true);
+        signal sig_enabled(MyInteger);
+    endselect;
+
+    select if (c_false);
+        signal sig_disabled(MyInteger);
+        signal sig_multi_disabled;
+    endselect;
+    /* CIF ENDTEXT */
+    channel c
+        from env to foo with keep_sig, sig_enabled, sig_disabled, sig_multi_disabled;
+    endchannel;
+    block foo;
+        signalroute r
+            from env to foo with keep_sig, sig_enabled, sig_disabled, sig_multi_disabled;
+        connect c and r;
+        /* CIF PROCESS (420, 255), (150, 75) */
+        process foo;
+            /* CIF TEXT (631, 578), (267, 140) */
+            synonym local_false SomeBool = false;
+            dcl rx_val MyInteger;
+
+            select if (c_true and not local_false);
+                exported procedure exp_enabled;
+                    fpar in p MyInteger;
+                referenced;
+                procedure helper_enabled;
+                referenced;
+                timer timer_enabled;
+            endselect;
+
+            select if (c_false or local_false);
+                exported procedure exp_disabled;
+                    fpar in p MyInteger;
+                referenced;
+                procedure helper_disabled;
+                referenced;
+                timer timer_disabled;
+            endselect;
+            /* CIF ENDTEXT */
+            procedure exp_enabled;
+                fpar in p MyInteger;
+            start;
+                call writeln('exp_enabled called');
+                return;
+            endprocedure;
+
+            procedure helper_enabled;
+            start;
+                call writeln('helper_enabled called');
+                return;
+            endprocedure;
+
+            procedure exp_disabled;
+                fpar in p MyInteger;
+            start;
+                call writeln('ERROR exp_disabled');
+                return;
+            endprocedure;
+
+            procedure helper_disabled;
+            start;
+                call writeln('ERROR helper_disabled');
+                return;
+            endprocedure;
+
+            /* CIF START (321, 200), (70, 35) */
+            START;
+                call helper_enabled;
+                NEXTSTATE wait;
+            /* CIF state (623, 341), (70, 35) */
+            state wait;
+                input sig_enabled(rx_val);
+                    call writeln('sig_enabled received');
+                    NEXTSTATE wait;
+                input sig_disabled(rx_val);
+                    call writeln('ERROR sig_disabled');
+                    NEXTSTATE wait;
+                input keep_sig, sig_multi_disabled;
+                    call writeln('keep_sig received');
+                    NEXTSTATE wait;
+                input timer_enabled;
+                    call writeln('timer_enabled expired');
+                    NEXTSTATE wait;
+                input timer_disabled;
+                    call writeln('ERROR timer_disabled');
+                    NEXTSTATE wait;
+            endstate;
+        endprocess foo;
+    endblock;
+endsystem;

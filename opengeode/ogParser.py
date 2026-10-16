@@ -377,6 +377,7 @@ def set_global_DV(asn1_filenames):
     else:
         rename_policy = ASN1.NoRename
     try:
+        prev_constants = dict(getattr(DV, 'SDL_Constants', {}))
         DV = parse_asn1(tuple(asn1_filenames),
                         ast_version=ASN1.UniqueEnumeratedNames,
                         rename_policy=rename_policy,
@@ -388,8 +389,8 @@ def set_global_DV(asn1_filenames):
         #  as explicit ASN.1 types
         CHOICE_SELECTORS.update(choice_selectors)
         USER_DEFINED_TYPES=CHOICE_SELECTORS.copy()
-        # Add placeholder for SDL constants
-        DV.SDL_Constants = {}
+        # Add placeholder for SDL constants (preserving any already parsed)
+        DV.SDL_Constants = prev_constants
     except (ImportError, NameError) as err:
         # Can happen if DataView.py is not there
         LOG.error('Error loading ASN.1 model')
@@ -1861,10 +1862,10 @@ def find_variable_type(var, context):
         return sort
 
     # all DCL-variables
-    all_visible_variables = dict(context.global_variables)
-    all_visible_variables.update(context.variables)
-    all_visible_variables.update(context.monitors)
-    all_visible_variables.update(context.global_monitors)
+    all_visible_variables = dict(getattr(context, 'global_variables', {}))
+    all_visible_variables.update(getattr(context, 'variables', {}))
+    all_visible_variables.update(getattr(context, 'monitors', {}))
+    all_visible_variables.update(getattr(context, 'global_monitors', {}))
 
     # First check locally, i.e. in FPAR
     try:
@@ -1880,7 +1881,8 @@ def find_variable_type(var, context):
         if var.lower() == varname.lower():
             return selector(vartype)
 
-    for timer in chain(context.timers, context.global_timers):
+    for timer in chain(getattr(context, 'timers', []),
+                       getattr(context, 'global_timers', [])):
         if var.lower() == timer.lower():
             return TIMER
 
@@ -3865,7 +3867,10 @@ def composite_state(root, parent=None, context=None):
                 comp.state_exitpoints.add(point.toString().lower())
         elif child.type == lexer.TEXTAREA:
             textarea, err, warn = text_area(child, context=comp)
-            if textarea.signals:
+            sel_sigs = {s.get('name', '').lower()
+                        for sel in textarea.select_if for s in sel['signals']}
+            if [s for s in textarea.signals
+                    if s.get('name', '').lower() not in sel_sigs]:
                 msg = "Signals shall not be declared in a state"
                 errors.append([msg, [textarea.pos_y, textarea.pos_y], []])
                 textarea.errors.append(msg)
@@ -4822,10 +4827,49 @@ def content(root, parent=None, context=None):
 
 def text_area_content(root, ta_ast, context):
     ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators,
-        procedures  '''
+        procedures, select_if '''
     errors = []
     warnings = []
     signals, procedures = [], []
+
+    def handle_timer(timer_node, sel_entry=None):
+        # Don't lowercase the timer name, keep it as declared
+        # otherwise the code generator cannot make the connection with
+        # the corresponding functions in C to set/reset the timer.
+        try:
+            timers = [timer.text for timer in timer_node.children]
+            context.timers.extend(timers)
+            ta_ast.timers.extend(timers)
+            if sel_entry is not None:
+                sel_entry['timers'].extend(timers)
+        except AttributeError:
+            errors.append('Timers can be defined only inside a process')
+
+    def handle_select_if(select_node, parent_conds=None):
+        cond_node = select_node.getChild(0)
+        cond_nodes = list(parent_conds or []) + [cond_node]
+        sel_entry = {
+            'condition_nodes': cond_nodes,
+            'condition_str': ' and '.join(
+                get_input_string(c.getChild(0) if c.getChildren() else c)
+                for c in cond_nodes),
+            'signals': [],
+            'procedures': [],
+            'timers': [],
+            'context': context,
+            'ta_ast': ta_ast,
+        }
+        ta_ast.select_if.append(sel_entry)
+        for sub in select_node.getChildren()[1:]:
+            if sub.type == lexer.PROCEDURE:
+                procedures.append((sub, sel_entry))
+            elif sub.type == lexer.SIGNAL:
+                signals.append((sub, sel_entry))
+            elif sub.type == lexer.TIMER:
+                handle_timer(sub, sel_entry)
+            elif sub.type == lexer.SELECT:
+                handle_select_if(sub, cond_nodes)
+
     for child in root.getChildren():
         if child.type == lexer.DCL:
             err, warn = dcl(child, ta_ast, context)
@@ -4869,7 +4913,7 @@ def text_area_content(root, ta_ast, context):
             errors.extend(err)
             warnings.extend(warn)
         elif child.type == lexer.PROCEDURE:
-            procedures.append(child)
+            procedures.append((child, None))
         elif child.type == lexer.FPAR:
             params, err, warn = fpar(child)
             errors.extend(err)
@@ -4896,21 +4940,14 @@ def text_area_content(root, ta_ast, context):
             if hasattr(context, "return_var") and context.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
-            # Don't lowercase the timer name, keep it as declared
-            # otherwise the code generator cannot make the connection with
-            # the corresponding functions in C to set/reset the timer.
-            # timers = [timer.text.lower() for timer in child.children]
-            try:
-                timers = [timer.text for timer in child.children]
-                context.timers.extend(timers)
-                ta_ast.timers = timers
-            except AttributeError:
-                errors.append('Timers can be defined only inside a process')
+            handle_timer(child)
         elif child.type == lexer.SIGNAL:
             # Signals can be declared at system level, but that must be parsed
             # AFTER possible "USE Datamodel COMMENT 'asn1_filename';"
             # in order to have the types properly defined
-            signals.append(child)
+            signals.append((child, None))
+        elif child.type == lexer.SELECT:
+            handle_select_if(child)
         elif child.type == lexer.USE:
             entities = []
             # USE clauses can contain a CIF comment with the ASN.1 filename
@@ -4939,7 +4976,7 @@ def text_area_content(root, ta_ast, context):
             set_global_DV(ta_ast.asn1_files)
         except TypeError as err:
             errors.append(str(err))
-    for each in procedures:
+    for each, sel_entry in procedures:
         # Procedure textual declarations need ASN.1 types
         proc, err, warn = procedure(each, context=context)
         # set the flag to avoid rendering a graphical procedure
@@ -4951,19 +4988,50 @@ def text_area_content(root, ta_ast, context):
         except AttributeError:
             # May not be any content in current context (eg System)
             content = []
+        if sel_entry is not None:
+            # If a procedure in select_if has no body and matches an existing
+            # procedure definition in the scope, treat it as a referenced declaration
+            # and inherit its signature if omitted in the select_if declaration.
+            for existing in chain(content, getattr(context, 'procedures', [])):
+                if existing.inputString.lower() == proc.inputString.lower():
+                    if not proc.referenced and not proc.external and not proc.content.start:
+                        proc.referenced = True
+                    if proc.referenced:
+                        if not proc.fpar and existing.fpar:
+                            proc.fpar = existing.fpar
+                        if proc.return_type is None and existing.return_type is not None:
+                            proc.return_type = existing.return_type
+                    break
         check_duplicate_procedures(context, proc, errors)
         # Add procedure to the container (process or procedure) if any
-        content.append(proc)
+        if not proc.referenced:
+            content.append(proc)
         # Add to context to make it visible at scope level
         context.procedures.append(proc)
         # And add it to the TextArea AST for the text autocompletion
         ta_ast.procedures.append(proc)
-    for each in signals:
+        if sel_entry is not None:
+            sel_entry['procedures'].append(proc)
+        if proc.exported and hasattr(context, 'input_signals'):
+            if not any(s.get('name', '').lower() == proc.inputString.lower()
+                       for s in context.input_signals):
+                context.input_signals.append({'name': proc.inputString,
+                                              'direction': 'in'})
+    for each, sel_entry in signals:
         # Parse signals now - ASN.1 types should have been set
         sig, err, warn = signal(each)
         errors.extend(err)
         warnings.extend(warn)
         ta_ast.signals.append(sig)
+        if sel_entry is not None:
+            sel_entry['signals'].append(sig)
+            if hasattr(context, 'input_signals'):
+                if not any(s.get('name', '').lower() == sig.get('name', '').lower()
+                           for s in chain(context.input_signals,
+                                          getattr(context, 'output_signals', []))):
+                    sig_in = dict(sig)
+                    sig_in['direction'] = 'in'
+                    context.input_signals.append(sig_in)
     return errors, warnings
 
 
@@ -5451,6 +5519,21 @@ def process_definition(root, parent=None, context=None):
         return res
 
     tas = find_textareas(root)
+    ta_asn1_files = []
+    for child in tas:
+        for each in (x for x in child.getChildren()
+                     if x.type == lexer.TEXTAREA_CONTENT):
+            for use_node in (x for x in each.getChildren()
+                             if x.type == lexer.USE):
+                for uchild in use_node.getChildren():
+                    if uchild.type == lexer.COMMENT:
+                        use_cmt, _, _ = end(uchild)
+                        ta_asn1_files.append(use_cmt.inputString)
+    if ta_asn1_files:
+        try:
+            set_global_DV(ta_asn1_files)
+        except TypeError:
+            pass
     for child in tas:
         content = (x for x in child.getChildren()
                    if x.type == lexer.TEXTAREA_CONTENT)
@@ -5556,7 +5639,10 @@ def process_definition(root, parent=None, context=None):
         elif child.type == lexer.TEXTAREA:
             # Text zone where variables and operators are declared
             textarea, err, warn = text_area(child, context=process)
-            if textarea.signals:
+            sel_sigs = {s.get('name', '').lower()
+                        for sel in textarea.select_if for s in sel['signals']}
+            if [s for s in textarea.signals
+                    if s.get('name', '').lower() not in sel_sigs]:
                 msg = 'Signals shall not be declared in a process'
                 errors.append([msg, [textarea.pos_x, textarea.pos_y], []])
                 textarea.errors.append(msg)
@@ -7998,7 +8084,7 @@ def stop_if(root, parent, context=None):
     return expressions, errors, warnings
 
 
-def pr_file(root):
+def pr_file(root, prune_select_if=True):
     ''' Complete PR model - can be made up from several files/strings '''
     errors = []
     warnings = []
@@ -8141,6 +8227,9 @@ def pr_file(root):
         process.dv = DV
         errors.extend(err)
         warnings.extend(warn)
+    # Post-processing for "select if (...)" blocks in text areas
+    process_select_if(ast, errors, warnings, prune=prune_select_if)
+
     # Check that process instance/types match
     process_instances = []
     process_types     = []
@@ -8180,6 +8269,340 @@ def pr_file(root):
     return ast, errors, warnings
 
 
+def _eval_ground_expr(expr):
+    ''' Recursively evaluate a ground ogAST.Expression to a Python value '''
+    if isinstance(expr, ogAST.PrimBoolean):
+        return expr.value[0].lower().strip() == 'true'
+    if isinstance(expr, ogAST.PrimConstant):
+        val = expr.constant_value
+        if isinstance(val, bool):
+            return val
+        if isinstance(val, (int, float)):
+            return val
+        if isinstance(val, ogAST.Expression):
+            return _eval_ground_expr(val)
+        if isinstance(val, str):
+            s = val.lower().strip()
+            if s in ('true', 'false'):
+                return s == 'true'
+            try:
+                return int(val)
+            except ValueError:
+                try:
+                    return float(val)
+                except ValueError:
+                    pass
+            ref = is_asn1constant(val)
+            if ref is not None and hasattr(ref, 'value') and ref.value != val:
+                if isinstance(ref.value, bool):
+                    return ref.value
+                if isinstance(ref.value, str) and ref.value.lower().strip() in ('true', 'false'):
+                    return ref.value.lower().strip() == 'true'
+                if isinstance(ref.value, ogAST.Expression):
+                    return _eval_ground_expr(ref.value)
+                return ref.value
+            return s
+        return bool(val)
+    if isinstance(expr, ogAST.PrimInteger):
+        return int(expr.value[0])
+    if isinstance(expr, ogAST.PrimReal):
+        return float(expr.value[0])
+    if isinstance(expr, ogAST.PrimEnumeratedValue):
+        return expr.value[0].lower().replace('-', '_')
+    if isinstance(expr, ogAST.PrimStringLiteral):
+        return expr.value[1:-1] if len(expr.value) >= 2 else expr.value
+    if isinstance(expr, ogAST.ExprNot):
+        return not bool(_eval_ground_expr(expr.expr))
+    if isinstance(expr, ogAST.ExprNeg):
+        return -_eval_ground_expr(expr.expr)
+    if isinstance(expr, ogAST.ExprAnd):
+        return bool(_eval_ground_expr(expr.left)) and bool(_eval_ground_expr(expr.right))
+    if isinstance(expr, ogAST.ExprOr):
+        return bool(_eval_ground_expr(expr.left)) or bool(_eval_ground_expr(expr.right))
+    if isinstance(expr, ogAST.ExprXor):
+        return bool(_eval_ground_expr(expr.left)) != bool(_eval_ground_expr(expr.right))
+    if isinstance(expr, ogAST.ExprImplies):
+        return (not bool(_eval_ground_expr(expr.left))) or bool(_eval_ground_expr(expr.right))
+    if isinstance(expr, ogAST.ExprEq):
+        return _eval_ground_expr(expr.left) == _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprNeq):
+        return _eval_ground_expr(expr.left) != _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprGt):
+        return _eval_ground_expr(expr.left) > _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprGe):
+        return _eval_ground_expr(expr.left) >= _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprLt):
+        return _eval_ground_expr(expr.left) < _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprLe):
+        return _eval_ground_expr(expr.left) <= _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprPlus):
+        return _eval_ground_expr(expr.left) + _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprMinus):
+        return _eval_ground_expr(expr.left) - _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprMul):
+        return _eval_ground_expr(expr.left) * _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprDiv):
+        return _eval_ground_expr(expr.left) / _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprMod):
+        return _eval_ground_expr(expr.left) % _eval_ground_expr(expr.right)
+    if isinstance(expr, ogAST.ExprRem):
+        return _eval_ground_expr(expr.left) % _eval_ground_expr(expr.right)
+    raise TypeError(f'Cannot evaluate expression "{expr.inputString}" at compile time')
+
+
+def _collect_transition_labels(trans):
+    ''' Collect all ogAST.Label instances inside a Transition '''
+    labels = []
+    if not trans:
+        return labels
+    for act in getattr(trans, 'actions', []):
+        if isinstance(act, ogAST.Label):
+            labels.append(act)
+        elif isinstance(act, ogAST.Decision):
+            for ans in getattr(act, 'answers', []):
+                labels.extend(_collect_transition_labels(ans.transition))
+    return labels
+
+
+def _prune_scope_ast(ctxt, removed_signals, removed_timers, removed_procs):
+    ''' Recursively prune deselected signals, timers, procedures, and INPUT
+        transitions from a Process, CompositeState, or Procedure AST '''
+    removed_sigs_and_rpc = removed_signals | removed_procs
+    removed_triggers = removed_signals | removed_timers | removed_procs
+
+    if hasattr(ctxt, 'input_signals'):
+        ctxt.input_signals[:] = [
+            s for s in ctxt.input_signals
+            if s.get('name', '').lower() not in removed_sigs_and_rpc
+        ]
+    if hasattr(ctxt, 'output_signals'):
+        ctxt.output_signals[:] = [
+            s for s in ctxt.output_signals
+            if s.get('name', '').lower() not in removed_sigs_and_rpc
+        ]
+    if hasattr(ctxt, 'timers'):
+        ctxt.timers[:] = [
+            t for t in ctxt.timers if t.lower() not in removed_timers
+        ]
+    if hasattr(ctxt, 'global_timers'):
+        ctxt.global_timers[:] = [
+            t for t in ctxt.global_timers if t.lower() not in removed_timers
+        ]
+    if hasattr(ctxt, 'procedures'):
+        ctxt.procedures[:] = [
+            p for p in ctxt.procedures
+            if p.inputString.lower() not in removed_procs
+        ]
+    if hasattr(ctxt, 'content') and hasattr(ctxt.content, 'inner_procedures'):
+        ctxt.content.inner_procedures[:] = [
+            p for p in ctxt.content.inner_procedures
+            if p.inputString.lower() not in removed_procs
+        ]
+    if isinstance(ctxt, ogAST.CompositeState):
+        if ctxt.entry_procedure and ctxt.entry_procedure.inputString.lower() in removed_procs:
+            ctxt.entry_procedure = None
+        if ctxt.exit_procedure and ctxt.exit_procedure.inputString.lower() in removed_procs:
+            ctxt.exit_procedure = None
+
+    if hasattr(ctxt, 'content') and hasattr(ctxt.content, 'states'):
+        transitions_removed = False
+        for state_def in ctxt.content.states:
+            for inp in list(state_def.inputs):
+                if any(t.lower() in removed_triggers for t in inp.inputlist):
+                    inp.inputlist[:] = [
+                        t for t in inp.inputlist
+                        if t.lower() not in removed_triggers
+                    ]
+                    if inp.inputlist:
+                        if inp.inputString.strip() != '*' and not inp.parameters:
+                            inp.inputString = ', '.join(inp.inputlist)
+                    else:
+                        state_def.inputs.remove(inp)
+                        for st_list in ctxt.mapping.values():
+                            if isinstance(st_list, list) and inp in st_list:
+                                st_list.remove(inp)
+                        if getattr(inp, 'replaced_with_continuous_signal', False):
+                            state_def.continuous_signals[:] = [
+                                cs for cs in state_def.continuous_signals
+                                if getattr(cs, 'observer_input', None) is not inp
+                            ]
+                            for cs_list in ctxt.cs_mapping.values():
+                                if isinstance(cs_list, list):
+                                    cs_list[:] = [
+                                        cs for cs in cs_list
+                                        if getattr(cs, 'observer_input', None) is not inp
+                                    ]
+                        if inp.transition in ctxt.transitions:
+                            ctxt.transitions.remove(inp.transition)
+                            transitions_removed = True
+                        if inp.terminators:
+                            ctxt.terminators[:] = [
+                                t for t in ctxt.terminators
+                                if t not in inp.terminators
+                            ]
+                        removed_labs = _collect_transition_labels(inp.transition)
+                        if removed_labs and hasattr(ctxt, 'labels'):
+                            ctxt.labels[:] = [
+                                l for l in ctxt.labels if l not in removed_labs
+                            ]
+        if transitions_removed:
+            if ctxt.content.start and ctxt.content.start.transition in ctxt.transitions:
+                ctxt.mapping[ctxt.content.start.inputString or 'START'] = \
+                    ctxt.transitions.index(ctxt.content.start.transition)
+            for ns in getattr(ctxt.content, 'named_start', []):
+                if ns.transition in ctxt.transitions:
+                    ctxt.mapping[ns.inputString or 'START'] = \
+                        ctxt.transitions.index(ns.transition)
+            for st in ctxt.content.states:
+                for i in st.inputs:
+                    if i.transition in ctxt.transitions:
+                        i.transition_id = ctxt.transitions.index(i.transition)
+                for cs in st.continuous_signals:
+                    if cs.transition in ctxt.transitions:
+                        cs.transition_id = ctxt.transitions.index(cs.transition)
+                for conn in st.connects:
+                    if conn.transition in ctxt.transitions:
+                        conn.transition_id = ctxt.transitions.index(conn.transition)
+
+    for sub_comp in getattr(ctxt, 'composite_states', []):
+        _prune_scope_ast(sub_comp, removed_signals, removed_timers, removed_procs)
+    if hasattr(ctxt, 'content'):
+        for sub_proc in getattr(ctxt.content, 'inner_procedures', []):
+            _prune_scope_ast(sub_proc, removed_signals, removed_timers, removed_procs)
+
+
+def process_select_if(ast, errors, warnings, prune=True):
+    ''' Evaluate all "select if" blocks collected during parsing and remove
+        unselected signals, timers, procedures, and their implementations
+        (INPUT transitions and procedure definitions) from the AST '''
+    text_areas = []
+    for system in ast.systems:
+        text_areas.extend(system.text_areas)
+
+    def collect_scope_text_areas(scope):
+        if hasattr(scope, 'content') and hasattr(scope.content, 'textAreas'):
+            text_areas.extend(scope.content.textAreas)
+        for comp in getattr(scope, 'composite_states', []):
+            collect_scope_text_areas(comp)
+        if hasattr(scope, 'content'):
+            for proc in getattr(scope.content, 'inner_procedures', []):
+                collect_scope_text_areas(proc)
+
+    for proc in ast.processes:
+        collect_scope_text_areas(proc)
+
+    for ta_ast in text_areas:
+        if not getattr(ta_ast, 'select_if', None):
+            continue
+        ast.select_if.extend(ta_ast.select_if)
+        for sel in ta_ast.select_if:
+            context = sel['context']
+            eval_context = context if hasattr(context, 'global_variables') else (
+                ast.processes[0] if ast.processes else ogAST.Process()
+            )
+            is_active = True
+            has_error = False
+            for cond_node in sel['condition_nodes']:
+                expr_node = cond_node.getChild(0) if cond_node.type == lexer.GROUND else cond_node
+                cond_expr, err, warn = ground_expression(
+                    expr_node, 'select_if', BOOLEAN, eval_context
+                )
+                for e in err:
+                    msg = e if isinstance(e, str) else str(e)
+                    errors.append([msg, [ta_ast.pos_x or 0, ta_ast.pos_y or 0], list(ta_ast.path)])
+                    ta_ast.errors.append(msg)
+                    has_error = True
+                for w in warn:
+                    msg = w if isinstance(w, str) else str(w)
+                    warnings.append([msg, [ta_ast.pos_x or 0, ta_ast.pos_y or 0], list(ta_ast.path)])
+                    ta_ast.warnings.append(msg)
+                if not err:
+                    try:
+                        val = bool(_eval_ground_expr(cond_expr))
+                        is_active = is_active and val
+                    except Exception as exc:
+                        msg = str(exc)
+                        errors.append([msg, [ta_ast.pos_x or 0, ta_ast.pos_y or 0], list(ta_ast.path)])
+                        ta_ast.errors.append(msg)
+                        has_error = True
+            sel['active'] = is_active
+            if has_error or not prune:
+                continue
+            if is_active:
+                for p in sel['procedures']:
+                    if p.referenced and not p.exported and not p.external:
+                        pname = p.inputString.lower()
+                        for proc_scope in ast.processes:
+                            if any(
+                                existing.inputString.lower() == pname
+                                and not existing.referenced
+                                for existing in proc_scope.procedures
+                            ):
+                                proc_scope.procedures[:] = [
+                                    existing for existing in proc_scope.procedures
+                                    if existing is not p
+                                ]
+                continue
+
+            removed_signals = {s.get('name', '').lower() for s in sel['signals']}
+            removed_timers = {t.lower() for t in sel['timers']}
+            removed_procs = {p.inputString.lower() for p in sel['procedures']}
+            removed_sigs_and_rpc = removed_signals | removed_procs
+
+            ta_ast.signals[:] = [
+                s for s in ta_ast.signals
+                if s.get('name', '').lower() not in removed_sigs_and_rpc
+            ]
+            ta_ast.timers[:] = [
+                t for t in ta_ast.timers if t.lower() not in removed_timers
+            ]
+            ta_ast.procedures[:] = [
+                p for p in ta_ast.procedures
+                if p.inputString.lower() not in removed_procs
+            ]
+
+            def prune_block(block):
+                block.signals[:] = [
+                    s for s in block.signals
+                    if s.get('name', '').lower() not in removed_sigs_and_rpc
+                ]
+                if hasattr(block, 'procedures'):
+                    block.procedures[:] = [
+                        p for p in block.procedures
+                        if p.inputString.lower() not in removed_procs
+                    ]
+                for sr in block.signalroutes:
+                    for route in sr.get('routes', []):
+                        route['signals'][:] = [
+                            s for s in route['signals']
+                            if s.lower() not in removed_sigs_and_rpc
+                        ]
+                for sub_b in block.blocks:
+                    prune_block(sub_b)
+
+            for system in ast.systems:
+                system.signals[:] = [
+                    s for s in system.signals
+                    if s.get('name', '').lower() not in removed_sigs_and_rpc
+                ]
+                system.procedures[:] = [
+                    p for p in system.procedures
+                    if p.inputString.lower() not in removed_procs
+                ]
+                for ch in system.channels:
+                    for route in ch.get('routes', []):
+                        route['signals'][:] = [
+                            s for s in route['signals']
+                            if s.lower() not in removed_sigs_and_rpc
+                        ]
+                for block in system.blocks:
+                    prune_block(block)
+
+            for proc in ast.processes:
+                _prune_scope_ast(proc, removed_signals, removed_timers, removed_procs)
+
+
+
 def add_to_ast(ast, filename=None, string=None):
     ''' Parse a file or string and add it to an AST '''
     errors, warnings = [], []
@@ -8211,7 +8634,7 @@ def add_to_ast(ast, filename=None, string=None):
     return errors, warnings
 
 
-def parse_pr(files=None, string=None):
+def parse_pr(files=None, string=None, prune_select_if=True):
     ''' Parse SDL files (.pr) and/or string '''
     warnings = []
     errors = []
@@ -8260,7 +8683,7 @@ def parse_pr(files=None, string=None):
 
     # At the end when common tree is complete, perform the parsing
     try:
-        og_ast, err, warn = pr_file(common_tree)
+        og_ast, err, warn = pr_file(common_tree, prune_select_if=prune_select_if)
     except RecursionError:
         # SECURITY/robustness: the semantic walkers recurse over the ANTLR
         # tree; a model with excessive nesting can exceed the interpreter

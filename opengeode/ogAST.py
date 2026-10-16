@@ -997,6 +997,8 @@ class TextArea:
         # List of Observer states defined in this text area (error/success/ignore states)
         # used for error reporting to get the right symbol coordinates
         self.observer_states: List[str] = []
+        # Optional elements declared inside "select if (...) ... endselect;" blocks
+        self.select_if = []
         # Errors associated to this element
         self.errors, self.warnings = [], []
         # the path allows to retrieve the location of the symbol
@@ -1431,3 +1433,6 @@ class AST:
 
         # List of Process types
         self.process_types = []
+
+        # Optional elements declared inside "select if (...) ... endselect;" blocks
+        self.select_if = []

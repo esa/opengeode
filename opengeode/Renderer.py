@@ -84,7 +84,8 @@ def _block(ast, scene):
             signals = ["signal {si[name]}{param};\n".format(si=sig,
                param=('(' + sig['type'].ReferencedTypeName.replace('-', '_') + ')')
                      if 'type' in sig else '')
-                 for sig in ast.parent.signals]
+                 for sig in ast.parent.signals
+                 if sig['name'].lower() != 'dummy']
             procedures = ["{exported}procedure {proc.inputString};\n{optfpar}{external};\n"
                           .format(proc=proc,
                                   exported="exported " if proc.exported else "",
