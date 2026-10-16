@@ -146,6 +146,8 @@ class ResizeSymbol(QUndoCommand):
         except AttributeError:
             # Not all symbols can be resized
             pass
+        if self.symbol.scene() and hasattr(self.symbol.scene(), 'refresh_scrollbars'):
+            self.symbol.scene().refresh_scrollbars()
 
     def redo(self):
         try:
@@ -155,6 +157,8 @@ class ResizeSymbol(QUndoCommand):
         except AttributeError:
             # Not all symbols can be resized
             pass
+        if self.symbol.scene() and hasattr(self.symbol.scene(), 'refresh_scrollbars'):
+            self.symbol.scene().refresh_scrollbars()
 
 
 class InsertSymbol(QUndoCommand):
@@ -244,6 +248,10 @@ class MoveSymbol(QUndoCommand):
             self.animation.setStartValue(self.old_pos)
             self.animation.setEndValue(self.new_pos)
             self.animation.setEasingCurve(QEasingCurve.OutCirc)
+            def _on_finished():
+                if self.symbol.scene() and hasattr(self.symbol.scene(), 'refresh_scrollbars'):
+                    self.symbol.scene().refresh_scrollbars()
+            self.animation.finished.connect(_on_finished)
 
     def undo(self):
         ''' Undo a symbol move '''
@@ -252,6 +260,8 @@ class MoveSymbol(QUndoCommand):
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:
             pass
+        if self.symbol.scene() and hasattr(self.symbol.scene(), 'refresh_scrollbars'):
+            self.symbol.scene().refresh_scrollbars()
 
     def redo(self):
         ''' Apply a symbol move '''
@@ -259,6 +269,8 @@ class MoveSymbol(QUndoCommand):
             self.animation.start()
         except AttributeError:
             self.symbol.position = self.new_pos
+            if self.symbol.scene() and hasattr(self.symbol.scene(), 'refresh_scrollbars'):
+                self.symbol.scene().refresh_scrollbars()
         try:
             self.symbol.decisionParent.updateConnectionPointPosition()
         except AttributeError:

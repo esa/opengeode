@@ -525,6 +525,22 @@ grammar is defined here:
 
 https://github.com/esa/opengeode/blob/master/sdl92.g
 
+Conditional compilation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OpenGEODE supports the SDL Z.100 ``select if`` construct for static conditional compilation:
+
+.. code-block:: sdl
+
+    select if (feature_flag);
+        signal extra_signal(MyInteger);
+        exported procedure do_something; referenced;
+    else;
+        signal default_signal;
+    endselect;
+
+Conditions are evaluated during parsing against declared boolean synonyms or ASN.1 constants. Unselected branches are automatically pruned before code generation.
+
 SDL in the context of TASTE
 ===========================
 

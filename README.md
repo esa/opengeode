@@ -128,6 +128,17 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.13.0 (10/2026)**
+- **Conditional compilation (`select if`)**: Added full support for the SDL Z.100 `select if (<condition>); ... [else; ...] endselect;` construct across the parser, AST, and code generators. Enables static configuration of signals, procedures, synonyms, variables, and transitions based on boolean ASN.1/SDL constants and synonyms; unselected branches are pruned before semantic analysis and code generation.
+- **Auto-redimensioning of scrollbars on move/resize**: Moving or resizing symbols on the diagram now automatically triggers a scrollbar and view bounds refresh upon mouse button release (equivalent to pressing F5), keeping symbols reachable when moved far out. Collision avoidance (CAM) animations and undo/redo operations also refresh view bounds.
+- **Makefile generation & Rust target**:
+  - Added a `rust` target to generated `Makefile.<process>` to build Rust code in `code_rust/` using Cargo (`cargo build --lib`).
+  - Fixed relative path calculation for multiple ASN.1 files when targeting `code`, `code_c`, and `code_rust`.
+- **GUI and dataview improvements**:
+  - Automatically place the `use <dataview> comment ...;` clause at the system / top-level diagram instead of inside process text areas when creating/adding a dataview, avoiding syntax errors.
+  - Automatically append `_dv` to generated ASN.1 dataview filenames (`<process>_dv.asn`) to prevent naming collisions with the process name and backend code generation files.
+  - Fixed an `IndexError` when navigating back/up through scene stacks (`go_to_scene_path` / `go_up`) when the scene stack is empty.
+
 **4.12.0 (10/2026)**
 - **Cross-language BIT STRING alignment (Ada/C/Rust).** The three backends now agree on how an ASN.1 `BIT STRING` is laid out in memory and on disk. The problem (found and proven with an asn1scc-level test) was that the generated Ada stored bit *k* at bit `k%8` from the **LSB** of byte `k/8` (`adaasn1rtl.BitArray`), while C and Rust store it at bit `k%8` from the **MSB** (`0x80>>(k%8)`) — a per-byte bit reversal: setting "bit 0" in C meant "bit 7" in Ada, so C and Ada could not share a raw `BIT STRING` buffer. The Ada backend now uses asn1scc's C-aligned byte representation, and the C and Rust backends were fixed too (bit addressing, string literals, the `//` append and the *slice* operator `bs(i,j)`, which was broken in all three). The generated code is byte-identical across backends. This **changes the Ada `BIT STRING` API** (it is a byte array now, not a bit array) — the underlying asn1scc work is a new opt-in flag `--adaBitStringAlignment`.
 - **`<proc>_state()` returns the current state name** in all three backends (it returned a null pointer in Ada/C and `null()` in Rust, crashing any TASTE trace that dereferenced it): Ada now returns the string (fixing the generated RI stub `To_C_Pointer`), C emits a `switch` on the state, Rust a `match`. The C and Rust test programs of `test-simu` were aligned on the Ada one.

@@ -843,6 +843,8 @@ class Symbol(QObject, QGraphicsPathItem):
                 self.scene().undo_stack.push(undo_cmd)
                 self.cam(self.coord, self.position)
                 self.updateConnectionPoints()
+            if self.scene() and hasattr(self.scene(), 'refresh_scrollbars'):
+                self.scene().refresh_scrollbars()
         elif self.mode == 'Move' and self.coord != self.position:
             with undoCommands.UndoMacro(self.scene().undo_stack, 'Move'):
                 undo_cmd = undoCommands.MoveSymbol(
@@ -855,6 +857,8 @@ class Symbol(QObject, QGraphicsPathItem):
                 # sent while moving, so that connection is updated on the fly
                 #self.moved.emit(self.coord.x() - self.pos_x,
                 #                self.coord.y() - self.pos_y)
+            if self.scene() and hasattr(self.scene(), 'refresh_scrollbars'):
+                self.scene().refresh_scrollbars()
         self.mode = ''
 
     def updateConnectionPoints(self):
