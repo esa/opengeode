@@ -446,11 +446,35 @@ def path_type(path):
     return kind, asn1_name.replace('-', '_')
 
 
+# Comment prefix used by this backend. Line comments end at a line break,
+# so every line of model text must be prefixed individually (see
+# ``_comment`` below) — otherwise the continuation lines are emitted as
+# bare (live) code, letting model text inject code into the generated file.
+COMMENT_PREFIX = '//'
+
+
+def _comment(text):
+    '''Return a list of safe Rust comment lines from model-supplied text.
+
+    Model text (informal tasks, requirement IDs, decision texts, trace()
+    strings) may contain embedded line breaks. Rust line comments end at
+    the newline, so every physical line must carry its own prefix, as the
+    Ada (``-- ``) and C (``// ``) backends do. A carriage return is also
+    neutralized: the Rust reference allows \r as a line terminator, and
+    some host editors write CRLF text through, which would end the
+    comment early and leak the rest of the line as live code.
+    '''
+    lines = str(text).replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    # Same convention as the Ada/C backends: every line gets the prefix
+    # followed by a space, even when the line itself is empty.
+    return [f'{COMMENT_PREFIX} {line}' for line in lines]
+
+
 def traceability(symbol):
     '''Return a list of strings with code-to-model traceability'''
-    trace = [f'// {line}' for line in symbol.trace().split('\n')]
+    trace = _comment(symbol.trace())
     if hasattr(symbol, 'req_ids') and symbol.req_ids:
-        trace.append(f"// Requirement IDs: {', '.join(symbol.req_ids)}")
+        trace.extend(_comment('Requirement IDs: ' + ', '.join(symbol.req_ids)))
     if hasattr(symbol, 'comment') and symbol.comment:
         trace.extend(traceability(symbol.comment))
     return trace
@@ -2853,11 +2877,11 @@ def _task_informal_text(task, **kwargs):
         code.extend(traceability(task))
     elif task.comment:
         code.extend(traceability(task.comment))
-    # Each element may contain embedded newlines: comment EVERY line, otherwise
-    # the continuation lines are emitted as bare (invalid) Rust code.
+    # Each element may contain embedded newlines: comment EVERY line (see
+    # _comment) — the continuation lines must never be emitted as bare
+    # (live) Rust code.
     for text in task.elems:
-        for line in str(text).split('\n'):
-            code.append('// ' + line)
+        code.extend(_comment(text))
     return code, []
 
 
@@ -2983,7 +3007,9 @@ def _decision(dec, branch_to=None, sep='if ', last='}', exitcalls=[], **kwargs):
         return code, local_decl
 
     elif dec.kind == 'informal_text':
-        code.append(f'// Informal decision ignored: {dec.inputString}')
+        # Informal decision text is free text and may span lines: comment
+        # every line, never trust it to stay inside one comment.
+        code.extend(_comment(f'Informal decision ignored: {dec.inputString}'))
         return code, local_decl
 
     elif dec.kind == 'alternative':
@@ -3168,7 +3194,7 @@ def _label(lab, **kwargs):
     else:
         # Rust doesn't have goto; labels in procedures are handled via
         # floating label functions (same approach as process-level)
-        return [f'// Label {lab.inputString} (handled via floating label)'], []
+        return _comment(f'Label {lab.inputString} (handled via floating label)'), []
 
 
 @generate.register(ogAST.Transition)
@@ -3191,7 +3217,9 @@ def _transition(tr, **kwargs):
             if tr.terminator.kind == 'next_state':
                 history = ns in ('-', '-*')
                 if tr.terminator.next_is_aggregation and not history:
-                    code.append(f'// Entering state aggregation {tr.terminator.inputString}')
+                    code.extend(_comment(
+                        f'Entering state aggregation '
+                        f'{tr.terminator.inputString}'))
                     if not NO_CONTEXT:
                         if not tr.terminator.substate:
                             code.append(f'{LPREFIX}.state = {generate_state_name(tr.terminator.inputString)};')
@@ -3209,7 +3237,8 @@ def _transition(tr, **kwargs):
                         code.append('return Branches::Continuous_Signals;')
                     else:
                         if tr.terminator.instance_of:
-                            code.append(f'// Instance {tr.terminator.inputString}')
+                            code.extend(_comment(
+                                f'Instance {tr.terminator.inputString}'))
                             if not NO_CONTEXT:
                                 code.append(f'{LPREFIX}.state_instance = {generate_state_name(tr.terminator.inputString)};')
                         code.append(f'return Branches::{tr.terminator.next_id};')
@@ -3247,7 +3276,9 @@ def _transition(tr, **kwargs):
                         code.append(f'__next = "{tr.terminator.inputString}";')
                         code.append('continue;')
                     else:
-                        code.append(f'// Join to {tr.terminator.inputString}')
+                        code.extend(_comment(
+                            f'Join to {tr.terminator.inputString} '
+                            '(handled via floating label)'))
                 else:
                     code.append(f'return Branches::{tr.terminator.inputString};')
             elif tr.terminator.kind == 'stop':
