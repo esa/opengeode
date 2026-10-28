@@ -22,7 +22,11 @@ test-c:
 	$(CC) -O$(O) -o test_c *.c
 	./test_c | diff expected -
 
+test-rust:
+	$(OPENGEODE) foo.pr --toRust && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
+
 coverage:
 	coverage run -p $(OPENGEODE) *.pr --toAda
 
-.PHONY: all edit test-parse test-ada test-c coverage
+.PHONY: all edit test-parse test-ada test-c test-rust coverage

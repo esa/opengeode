@@ -128,6 +128,10 @@ The background pattern was downloaded from www.subtlepatterns.com
 Changelog
 =========
 
+**4.13.1 (10/2026)**
+- **Security fix in the Rust backend (comment injection)**. Model-supplied free text could inject live Rust code into the generated file. The SDL `STRING` token (used by informal tasks, requirement IDs, informal decisions) may span lines, so a naive single-line `//` prefix let continuation lines escape the comment, exactly the class of bug Ada (`-- ` on every line) and C (`// ` on every line) already neutralize. All Rust comment emission sites now go through one `_comment()` helper that prefixes **every** physical line; a bare carriage return is neutralized too (the Rust reference allows `\r` as a line terminator, unlike Ada/C line comments, so a conforming host could otherwise end the comment early and leak the tail as code). Verified end to end: a model with `TASK 'innocent\nevil();\rsecond();';` generates inert comments and a full `cargo build` succeeds. New regression tests (`tests/pytests/test_rust_comment_injection.py`, 16 tests). All 130 tests of `make test-rust` pass.
+- `test-select-if` testsuite fixture: added its `test-rust` Makefile target (it was falling back to the shared rule that requires a `system_structure.pr` it does not have).
+
 **4.13.0 (10/2026)**
 - **Conditional compilation (`select if`)**: Added full support for the SDL Z.100 `select if (<condition>); ... [else; ...] endselect;` construct across the parser, AST, and code generators. Enables static configuration of signals, procedures, synonyms, variables, and transitions based on boolean ASN.1/SDL constants and synonyms; unselected branches are pruned before semantic analysis and code generation.
 - **Auto-redimensioning of scrollbars on move/resize**: Moving or resizing symbols on the diagram now automatically triggers a scrollbar and view bounds refresh upon mouse button release (equivalent to pressing F5), keeping symbols reachable when moved far out. Collision avoidance (CAM) animations and undo/redo operations also refresh view bounds.
