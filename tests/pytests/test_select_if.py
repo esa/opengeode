@@ -313,3 +313,263 @@ def test_save_does_not_generate_signal_dummy():
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
+
+# Model exercising the error suppression for deselected blocks: elements
+# declared in a "select if" block whose condition is False may reference
+# types or procedures that do not exist, because the whole block is
+# discarded when generating code. The parser must evaluate the conditions
+# FIRST (they are constants) and ignore all the errors raised while
+# parsing the discarded elements.
+BROKEN_MODEL = """\
+system demo;
+    /* CIF TEXT (100, 100), (300, 200) */
+    use DV comment '{asn1_path}';
+
+    signal keep_sig;
+
+    select if (feat_disabled);
+        signal ghost_sig(GhostType);
+        exported procedure ghost_proc; referenced;
+    endselect;
+    /* CIF ENDTEXT */
+
+    channel c
+        from env to demo with keep_sig, ghost_sig;
+    endchannel;
+
+    block demo;
+        signalroute r
+            from env to demo with keep_sig, ghost_sig;
+        connect c and r;
+
+        /* CIF PROCESS (200, 100), (150, 75) */
+        process demo;
+            /* CIF TEXT (50, 50), (300, 200) */
+            synonym local_false SomeBool = false;
+            dcl x MyInteger := 0;
+
+            select if (local_false);
+                procedure ghost_helper;
+                    fpar in p GhostType;
+                endprocedure;
+                timer ghost_timer;
+            endselect;
+            /* CIF ENDTEXT */
+
+            START;
+                NEXTSTATE wait;
+
+            state wait;
+                input keep_sig;
+                    NEXTSTATE wait;
+
+                input ghost_sig(x);
+                    task x := 1;
+                    NEXTSTATE wait;
+
+                input ghost_timer;
+                    NEXTSTATE wait;
+            endstate;
+        endprocess demo;
+    endblock;
+endsystem;
+"""
+
+
+def _parse_broken_model(prune=True):
+    tmpdir = tempfile.mkdtemp(prefix="og_select_if_")
+    try:
+        ogParser.USER_DEFINED_TYPES.clear()
+        asn1_path = os.path.join(tmpdir, "dataview.asn")
+        with open(asn1_path, "w", encoding="utf-8") as f:
+            f.write(ASN1_CONTENT)
+        pr_text = BROKEN_MODEL.format(asn1_path=asn1_path)
+        pr_path = os.path.join(tmpdir, "demo.pr")
+        with open(pr_path, "w", encoding="utf-8") as f:
+            f.write(pr_text)
+        # the ASN.1 file is referenced with a relative path
+        cwd = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            ast, warnings, errors = ogParser.parse_pr(
+                files=[pr_path], prune_select_if=prune)
+        finally:
+            os.chdir(cwd)
+        return ast, errors, warnings, tmpdir
+    except Exception:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        raise
+
+
+def test_discarded_block_with_broken_elements_parses_clean():
+    ''' A deselected block declaring types/signals/procedures that do not
+        exist must not raise any error: the block is discarded at code
+        generation time and its content is not parsed further '''
+    ast, errors, warnings, tmpdir = _parse_broken_model(prune=True)
+    try:
+        assert not errors, f"Unexpected parse errors: {errors}"
+        assert not warnings, f"Unexpected warnings: {warnings}"
+
+        proc = ast.processes[0]
+        # The discarded elements are not part of the final model
+        in_sig_names = {s["name"].lower() for s in proc.input_signals}
+        assert "keep_sig" in in_sig_names
+        assert "ghost_sig" not in in_sig_names
+        assert "ghost_proc" not in in_sig_names
+        assert "ghost_timer" not in {t.lower() for t in proc.timers}
+        assert "ghost_helper" not in {
+            p.inputString.lower() for p in proc.procedures
+        }
+        # The input triggered by the discarded signal was removed
+        trigger_lists = [
+            [t.lower() for t in inp.inputlist]
+            for st in proc.content.states for inp in st.inputs
+        ]
+        assert ["keep_sig"] in trigger_lists
+        assert ["ghost_sig"] not in trigger_lists
+        assert ["ghost_timer"] not in trigger_lists
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def test_discarded_block_errors_still_reported_without_pruning():
+    ''' Without pruning (GUI mode) the errors of the deselected blocks
+        must still be reported, as the user needs to see the whole model '''
+    ast, errors, warnings, tmpdir = _parse_broken_model(prune=False)
+    try:
+        assert errors, "Expected errors in non-pruning (GUI) mode"
+        # The signal with the missing type must be reported
+        assert any("GhostType" in str(e) for e in errors)
+        # The exported referenced procedure without body must be reported
+        assert any("Missing procedure definition" in str(e) for e in errors)
+        # ... but nothing was pruned from the model
+        proc = ast.processes[0]
+        in_sig_names = {s["name"].lower() for s in proc.input_signals}
+        assert "ghost_sig" in in_sig_names
+        assert "ghost_proc" in in_sig_names
+        # the textual procedure and its (broken) body are kept
+        assert "ghost_helper" in {
+            p.inputString.lower() for p in proc.procedures
+        }
+        assert "ghost_helper" in {
+            p.inputString.lower() for p in proc.content.inner_procedures
+        }
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# Model with a GRAPHICAL procedure definition whose interface and body
+# use types that do not exist in the ASN.1 dataview, declared inside a
+# "select if" block evaluating to False. This is the case reported in the
+# test-select-if testsuite case: the procedure definition is parsed BEFORE
+# the process text areas (see process_definition), so the list of
+# discarded parts must be dressed up in a pre-scan, before any procedure
+# is parsed.
+BROKEN_PROC_MODEL = """\
+system demo;
+    /* CIF TEXT (100, 100), (300, 200) */
+    use DV comment '{asn1_path}';
+
+    signal keep_sig;
+    /* CIF ENDTEXT */
+
+    channel c
+        from env to demo with keep_sig;
+    endchannel;
+
+    block demo;
+        signalroute r
+            from env to demo with keep_sig;
+        connect c and r;
+
+        /* CIF PROCESS (200, 100), (150, 75) */
+        process demo;
+            /* CIF TEXT (50, 50), (300, 200) */
+            select if (feat_disabled);
+                exported procedure ghost_proc;
+                    fpar in p GhostType;
+                referenced;
+            endselect;
+
+            dcl x MyInteger := 0;
+            /* CIF ENDTEXT */
+
+            /* CIF PROCEDURE (100, 200), (150, 35) */
+            procedure ghost_proc;
+                /* CIF TEXT (50, 50), (170, 140) */
+                fpar in p GhostType;
+                dcl y NoType;
+                /* CIF ENDTEXT */
+                START;
+                    task y := {{ a, b, c }};
+                    return;
+            endprocedure;
+
+            START;
+                NEXTSTATE wait;
+
+            state wait;
+                input keep_sig;
+                    NEXTSTATE wait;
+            endstate;
+        endprocess demo;
+    endblock;
+endsystem;
+"""
+
+
+def _write_model(tmpdir, template):
+    ogParser.USER_DEFINED_TYPES.clear()
+    asn1_path = os.path.join(tmpdir, "dataview.asn")
+    with open(asn1_path, "w", encoding="utf-8") as f:
+        f.write(ASN1_CONTENT)
+    pr_text = template.format(asn1_path=asn1_path)
+    pr_path = os.path.join(tmpdir, "demo.pr")
+    with open(pr_path, "w", encoding="utf-8") as f:
+        f.write(pr_text)
+    return pr_path
+
+
+def _parse_model_in_tmpdir(pr_path, prune=True):
+    cwd = os.getcwd()
+    os.chdir(os.path.dirname(pr_path) or ".")
+    try:
+        return ogParser.parse_pr(files=[pr_path], prune_select_if=prune)
+    finally:
+        os.chdir(cwd)
+
+
+def test_discarded_graphical_procedure_definition_parses_clean():
+    ''' A graphical procedure definition declared in a deselected
+        "select if" block (referenced declaration in the block, definition
+        below the process) may reference types that do not exist: the block
+        is discarded, so no error must be raised. The definition is parsed
+        BEFORE the process text areas, hence the need for the pre-scan of
+        the select_if conditions '''
+    # pruning mode: the whole block is discarded, no error allowed
+    tmpdir = tempfile.mkdtemp(prefix="og_select_if_")
+    try:
+        pr_path = _write_model(tmpdir, BROKEN_PROC_MODEL)
+        ast, warnings, errors = _parse_model_in_tmpdir(pr_path, prune=True)
+        assert not errors, f"Unexpected parse errors: {errors}"
+        assert not warnings, f"Unexpected warnings: {warnings}"
+        proc = ast.processes[0]
+        assert "ghost_proc" not in {
+            p.inputString.lower() for p in proc.procedures
+        }
+        assert "ghost_proc" not in {
+            p.inputString.lower() for p in proc.content.inner_procedures
+        }
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+    # ... and the same model without pruning must still report the errors
+    tmpdir = tempfile.mkdtemp(prefix="og_select_if_")
+    try:
+        pr_path = _write_model(tmpdir, BROKEN_PROC_MODEL)
+        ast, _, errors = _parse_model_in_tmpdir(pr_path, prune=False)
+        assert errors, "Expected errors in non-pruning (GUI) mode"
+        assert any("GhostType" in str(e) for e in errors)
+        assert any("NoType" in str(e) for e in errors)
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+

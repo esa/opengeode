@@ -1,31 +1,42 @@
 system foo;
-    /* CIF TEXT (94, 94), (267, 140) */
+    /* CIF Keep Specific Geode Partition 'default' */
+    /* CIF TEXT (94, 94), (221, 188) */
     use dv comment 'datamodel.asn';
-
+    
     signal keep_sig;
-
+    
     select if (c_true);
         signal sig_enabled(MyInteger);
     endselect;
-
+    
     select if (c_false);
         signal sig_disabled(MyInteger);
         signal sig_multi_disabled;
     endselect;
     /* CIF ENDTEXT */
-    channel c
-        from env to foo with keep_sig, sig_enabled, sig_disabled, sig_multi_disabled;
+    channel c1
+        /* CIF Keep Specific Geode ROUTE (420, 292) (120, 292) */
+        from env to foo with keep_sig,
+sig_enabled,
+sig_disabled,
+sig_multi_disabled;
     endchannel;
     block foo;
-        signalroute r
-            from env to foo with keep_sig, sig_enabled, sig_disabled, sig_multi_disabled;
-        connect c and r;
+        signalroute r1
+            /* CIF Keep Specific Geode ROUTE (420, 292) (120, 292) */
+            from env to foo with keep_sig,
+sig_enabled,
+sig_disabled,
+sig_multi_disabled;
+        connect c1 and r1;
         /* CIF PROCESS (420, 255), (150, 75) */
+        /* CIF Keep Specific Geode _REQSERVER_ 'https://gitlab.esa.int/taste/demo' */
         process foo;
-            /* CIF TEXT (631, 578), (267, 140) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (672, 581), (253, 308) */
             synonym local_false SomeBool = false;
             dcl rx_val MyInteger;
-
+            
             select if (c_true and not local_false);
                 exported procedure exp_enabled;
                     fpar in p MyInteger;
@@ -34,7 +45,7 @@ system foo;
                 referenced;
                 timer timer_enabled;
             endselect;
-
+            
             select if (c_false or local_false);
                 exported procedure exp_disabled;
                     fpar in p MyInteger;
@@ -44,52 +55,117 @@ system foo;
                 timer timer_disabled;
             endselect;
             /* CIF ENDTEXT */
-            procedure exp_enabled;
-                fpar in p MyInteger;
-            start;
-                call writeln('exp_enabled called');
-                return;
-            endprocedure;
-
-            procedure helper_enabled;
-            start;
-                call writeln('helper_enabled called');
-                return;
-            endprocedure;
-
-            procedure exp_disabled;
-                fpar in p MyInteger;
-            start;
-                call writeln('ERROR exp_disabled');
-                return;
-            endprocedure;
-
+            /* CIF Keep Specific Geode Partition 'default' */
+            /* CIF TEXT (846, 166), (318, 140) */
+            select if(false);
+              exported procedure exp_with_unexisting_types;
+                    fpar in p MyFoolishType;
+                referenced;
+            endselect;
+            /* CIF ENDTEXT */
+            /* CIF procedure (873, 0), (117, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             procedure helper_disabled;
-            start;
-                call writeln('ERROR helper_disabled');
-                return;
+                /* CIF START (286, 0), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (210, 50), (221, 35) */
+                    call writeln('ERROR helper_disabled');
+                    /* CIF return (303, 100), (35, 35) */
+                    return ;
             endprocedure;
-
+            /* CIF procedure (992, 0), (100, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure exp_disabled;
+                /* CIF Keep Specific Geode Partition 'default' */
+                /* CIF TEXT (0, 0), (170, 140) */
+                -- Formal parameters
+                fpar p MyInteger;
+                /* CIF ENDTEXT */
+                /* CIF START (728, 0), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (660, 50), (204, 35) */
+                    call writeln('ERROR exp_disabled');
+                    /* CIF return (745, 100), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (1104, 0), (115, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure helper_enabled;
+                /* CIF START (272, 0), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (201, 50), (211, 35) */
+                    call writeln('helper_enabled called');
+                    /* CIF return (289, 100), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (1230, 0), (98, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure exp_enabled;
+                /* CIF Keep Specific Geode Partition 'default' */
+                /* CIF TEXT (0, 0), (170, 140) */
+                -- Formal parameters
+                fpar p MyInteger;
+                /* CIF ENDTEXT */
+                /* CIF START (710, 0), (70, 35) */
+                START;
+                    /* CIF PROCEDURECALL (647, 50), (195, 35) */
+                    call writeln('exp_enabled called');
+                    /* CIF return (727, 100), (35, 35) */
+                    return ;
+            endprocedure;
+            /* CIF procedure (546, 81), (183, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
+            procedure exp_with_unexisting_types;
+                /* CIF Keep Specific Geode Partition 'default' */
+                /* CIF TEXT (151, 103), (170, 140) */
+                fpar in p MyFoolishType;
+                dcl x NoType;
+                /* CIF ENDTEXT */
+                /* CIF START (508, 95), (70, 35) */
+                START;
+                    /* CIF task (497, 150), (90, 35) */
+                    task x:= { a, b, c };
+                    /* CIF return (525, 200), (35, 35) */
+                    return ;
+            endprocedure;
             /* CIF START (321, 200), (70, 35) */
             START;
+                /* CIF PROCEDURECALL (298, 250), (115, 35) */
                 call helper_enabled;
+                /* CIF NEXTSTATE (321, 300), (70, 35) */
                 NEXTSTATE wait;
             /* CIF state (623, 341), (70, 35) */
+            /* CIF Keep Specific Geode Partition 'default' */
             state wait;
+                /* CIF input (139, 396), (137, 35) */
                 input sig_enabled(rx_val);
+                    /* CIF PROCEDURECALL (105, 446), (205, 35) */
                     call writeln('sig_enabled received');
+                    /* CIF NEXTSTATE (172, 496), (70, 35) */
                     NEXTSTATE wait;
+                /* CIF input (360, 396), (139, 35) */
                 input sig_disabled(rx_val);
+                    /* CIF PROCEDURECALL (330, 446), (199, 35) */
                     call writeln('ERROR sig_disabled');
+                    /* CIF NEXTSTATE (395, 496), (70, 35) */
                     NEXTSTATE wait;
+                /* CIF input (550, 396), (190, 35) */
                 input keep_sig, sig_multi_disabled;
+                    /* CIF PROCEDURECALL (551, 446), (186, 35) */
                     call writeln('keep_sig received');
+                    /* CIF NEXTSTATE (610, 496), (70, 35) */
                     NEXTSTATE wait;
+                /* CIF input (813, 396), (108, 35) */
                 input timer_enabled;
+                    /* CIF PROCEDURECALL (760, 446), (215, 35) */
                     call writeln('timer_enabled expired');
+                    /* CIF NEXTSTATE (833, 496), (70, 35) */
                     NEXTSTATE wait;
+                /* CIF input (1048, 396), (111, 35) */
                 input timer_disabled;
+                    /* CIF PROCEDURECALL (996, 446), (214, 35) */
                     call writeln('ERROR timer_disabled');
+                    /* CIF NEXTSTATE (1068, 496), (70, 35) */
                     NEXTSTATE wait;
             endstate;
         endprocess foo;

@@ -349,6 +349,17 @@ Error = ParsingError
 USER_DEFINED_TYPES = dict()
 CHOICE_SELECTORS = dict()
 g_choice_selectors_ignore_list = list()
+# Select-if pre-evaluation state. During a parse with prune_select_if=True
+# (i.e. code generation, not the GUI), the conditions of every "select if"
+# block are evaluated as soon as the enclosing text area is parsed (see
+# _evaluate_select_if_blocks, called by text_area_content). Elements
+# declared in deselected blocks are then parsed with all their errors
+# silently ignored (a deselected declaration may legitimately reference
+# types, signals or procedures that the model author decided to remove
+# along with the block). _DISCARDED_SELECT_IF holds the lowercased names
+# of those elements so that individual parsers can check them.
+_PRUNE_SELECT_IF = False
+_DISCARDED_SELECT_IF = set()
 
 
 
@@ -3847,6 +3858,12 @@ def composite_state(root, parent=None, context=None):
     comp.connect_mapping = {name: [] for name in get_state_list(root)}
 
     inner_composite, states, floatings, starts = [], [], [], []
+    # Evaluate the select_if blocks of the text areas before the other
+    # children are parsed: the list of discarded parts must be dressed up
+    # first, so that the errors raised while parsing the procedures
+    # discarded by a "select if" are ignored (pruning mode only)
+    _prescan_select_if([child for child in root.getChildren()
+                        if child.type == lexer.TEXTAREA], comp)
     for child in root.getChildren():
         if child.type == lexer.ID:
             comp.line = child.getLine()
@@ -3880,6 +3897,10 @@ def composite_state(root, parent=None, context=None):
         elif child.type == lexer.PROCEDURE:
             new_proc, content, err, warn = procedure_pre(child, context=comp)
             inner_proc.append((new_proc, content))
+            if _select_if_is_discarded(new_proc.inputString):
+                # Discarded procedure (deselected "select if" block): ignore
+                # all its errors, it is pruned at the end of the parse
+                err, warn = [], []
             errors.extend(err)
             warnings.extend(warn)
             if new_proc.inputString.strip().lower() == 'entry':
@@ -3888,7 +3909,10 @@ def composite_state(root, parent=None, context=None):
                 comp.exit_procedure = new_proc
             # check for duplicate declaration
             dupl_errs = []
-            check_duplicate_procedures(comp, new_proc, dupl_errs)
+            if _select_if_is_discarded(new_proc.inputString):
+                check_duplicate_procedures(comp, new_proc, [])
+            else:
+                check_duplicate_procedures(comp, new_proc, dupl_errs)
             for err_str in dupl_errs:
                 errors.append([err_str, [new_proc.pos_x, new_proc.pos_y], []])
                 new_proc.errors.append(err_str)
@@ -3959,6 +3983,10 @@ def composite_state(root, parent=None, context=None):
     for proc, content in inner_proc:
         # parse content of procedures - all scopes are set
         err, warn = procedure_post(proc, content, context=comp)
+        if _select_if_is_discarded(proc.inputString):
+            # Discarded procedure (deselected "select if" block): ignore
+            # the errors of its body, it is pruned from the model
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
     for each in states:
@@ -4162,10 +4190,20 @@ def procedure_post(proc, content, parent=None, context=None):
     # (Note, procedures in OG currently do NOT support states)
     # proc.mapping = {name: [] for name in get_state_list(root)}
     inner_proc = []
+    # Evaluate the select_if blocks of the nested text areas before the
+    # inner procedures are parsed: the list of discarded parts must be
+    # dressed up first, so that the errors raised while parsing the
+    # procedures discarded by a "select if" are ignored (pruning mode only)
+    _prescan_select_if([child for child in content
+                        if child.type == lexer.TEXTAREA], proc)
     for child in content:
         if child.type == lexer.PROCEDURE:
             new_proc, content, err, warn = procedure_pre(child, context=proc)
             inner_proc.append((new_proc, content))
+            if _select_if_is_discarded(new_proc.inputString):
+                # Discarded procedure (deselected "select if" block):
+                # ignore all its errors, it is pruned from the model
+                err, warn = [], []
             errors.extend(err)
             warnings.extend(warn)
             # check for duplicate declaration
@@ -4174,6 +4212,8 @@ def procedure_post(proc, content, parent=None, context=None):
             # Add procedure to the context, to make it visible at scope level
             context.procedures.append(new_proc)
             proc.content.inner_procedures.append(new_proc)
+            if _select_if_is_discarded(new_proc.inputString):
+                dupl_errs = []
             for err_str in dupl_errs:
                 errors.append([err_str, [0, 0], []])
                 new_proc.errors.append(err_str)
@@ -4201,6 +4241,10 @@ def procedure_post(proc, content, parent=None, context=None):
     for new_proc, content in inner_proc:
         # parse content of procedures
         err, warn = procedure_post(new_proc, content, context=proc)
+        if _select_if_is_discarded(new_proc.inputString):
+            # Discarded procedure (deselected "select if" block): ignore
+            # the errors of its body, it is pruned from the model
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
     for each in proc.terminators:
@@ -4825,14 +4869,138 @@ def content(root, parent=None, context=None):
     e, w = text_area_content(root, ta, context)
     return None, e, w
 
+
+def _select_if_is_discarded(name):
+    ''' Return True if an element with the given name is declared in a
+        "select if" block whose condition was evaluated to False during
+        the current parse (pruning mode only). The element will be removed
+        from the model at the end of the parse (see process_select_if), so
+        all the errors raised while parsing it are ignored: it may
+        legitimately reference types, signals or procedures that were
+        deselected as well. '''
+    return bool(_PRUNE_SELECT_IF) and name.lower() in _DISCARDED_SELECT_IF
+
+
+def _harvest_discarded_select_if(node):
+    ''' Collect in _DISCARDED_SELECT_IF the lowercased names of the elements
+        declared in a "select if" parse tree node whose condition evaluated
+        to False (pruning mode only) '''
+    for sub in node.getChildren()[1:]:
+        if sub.type in (lexer.PROCEDURE, lexer.SIGNAL):
+            for kid in sub.getChildren():
+                if kid.type == lexer.ID and kid.text:
+                    _DISCARDED_SELECT_IF.add(kid.text.lower())
+                    break
+        elif sub.type == lexer.TIMER:
+            _DISCARDED_SELECT_IF.update(
+                    timer.text.lower()
+                    for timer in sub.getChildren() if timer.text)
+        elif sub.type == lexer.SELECT:
+            # Nested select_if: the nested block has its own entry, whose
+            # condition chain includes the parent conditions - but its
+            # elements are discarded with the parent block anyway
+            _harvest_discarded_select_if(sub)
+
+
+def _collect_select_if_nodes(node, parent_conds=None):
+    ''' Yield the (condition_nodes, select_node) pairs of every "select if"
+        block declared in a text area content parse tree (direct and nested
+        blocks), in declaration order. The condition nodes of a nested block
+        include the conditions of its enclosing blocks '''
+    parent_conds = list(parent_conds or [])
+    for child in node.getChildren():
+        if child.type == lexer.SELECT:
+            cond_node = child.getChild(0)
+            cond_nodes = parent_conds + [cond_node]
+            yield (cond_nodes, child)
+            yield from _collect_select_if_nodes(child, cond_nodes)
+
+
+def _eval_select_if_chain(condition_nodes, eval_context):
+    ''' Evaluate the and-chain of "select if" conditions, which must be
+        constant ("ground") expressions. Return True or False, or None when
+        no decision could be made (invalid or unresolvable condition at this
+        point): in that case the final evaluation done by process_select_if
+        at the end of the parse remains the sole authority for the pruning
+        and for the reporting of the condition errors '''
+    is_active = True
+    try:
+        for cond_node in condition_nodes:
+            expr_node = (cond_node.getChild(0)
+                         if cond_node.type == lexer.GROUND
+                         else cond_node)
+            cond_expr, err, _ = ground_expression(
+                    expr_node, 'select_if', BOOLEAN, eval_context)
+            if err:
+                return None
+            is_active = is_active and bool(_eval_ground_expr(cond_expr))
+    except Exception:
+        # Non-constant condition or unknown constant: no decision
+        return None
+    return is_active
+
+
+def _prescan_select_if(text_areas, context):
+    ''' Early evaluation of the "select if" blocks declared in the given
+        text area parse trees, before any of the gated elements is parsed
+        (pruning mode only). This is needed in particular because the
+        graphical procedures of a process are parsed before its text areas
+        (see process_definition): without this pre-scan the errors of the
+        procedure declarations and definitions discarded by a "select if"
+        would be raised although the whole block is removed from the model
+        at the end of the parse. The blocks are evaluated again when the
+        text areas are parsed (see _evaluate_select_if_blocks), which
+        records the decision on the text area AST entry; the final decision
+        remains with process_select_if at the end of the parse '''
+    if not _PRUNE_SELECT_IF:
+        return
+    eval_context = (context if hasattr(context, 'global_variables')
+                     else ogAST.Process())
+    for ta in text_areas:
+        for content_node in (x for x in ta.getChildren()
+                             if x.type == lexer.TEXTAREA_CONTENT):
+            for cond_nodes, node in _collect_select_if_nodes(content_node):
+                if _eval_select_if_chain(cond_nodes, eval_context) is False:
+                    _harvest_discarded_select_if(node)
+
+
+def _evaluate_select_if_blocks(ta_ast, context):
+    ''' Evaluate the conditions of the "select if" blocks of a text area
+        during the parse, before the gated elements are parsed, and dress up
+        the list of discarded parts (pruning mode only). Doing this first
+        makes it possible to ignore all the errors raised while parsing the
+        discarded elements (e.g. procedure declarations and definitions
+        referencing types or signals that were deselected with them).
+        Conditions must be constant ("ground") expressions. If a condition
+        cannot be evaluated at this point, no decision is recorded: the
+        final evaluation done by process_select_if at the end of the parse
+        remains the sole authority for the pruning and for the reporting
+        of the condition errors. '''
+    if not _PRUNE_SELECT_IF or not ta_ast.select_if:
+        return
+    eval_context = (context if hasattr(context, 'global_variables')
+                     else ogAST.Process())
+    for sel in ta_ast.select_if:
+        if 'active' in sel:
+            # Already evaluated (text areas can be visited twice)
+            continue
+        is_active = _eval_select_if_chain(sel['condition_nodes'], eval_context)
+        # No decision -> consider the block active for now:
+        # process_select_if (end of parse) will report the error
+        # and take the final decision
+        sel['active'] = True if is_active is None else is_active
+        if is_active is False:
+            _harvest_discarded_select_if(sel.get('node'))
+
+
 def text_area_content(root, ta_ast, context):
     ''' Content of a text area: DCL, NEWTYPES, SYNTYPES, SYNONYMS, operators,
         procedures, select_if '''
     errors = []
     warnings = []
-    signals, procedures = [], []
+    signals, procedures, timers = [], [], []
 
-    def handle_timer(timer_node, sel_entry=None):
+    def handle_timer(timer_node, sel_entry=None, suppress=False):
         # Don't lowercase the timer name, keep it as declared
         # otherwise the code generator cannot make the connection with
         # the corresponding functions in C to set/reset the timer.
@@ -4843,7 +5011,8 @@ def text_area_content(root, ta_ast, context):
             if sel_entry is not None:
                 sel_entry['timers'].extend(timers)
         except AttributeError:
-            errors.append('Timers can be defined only inside a process')
+            if not suppress:
+                errors.append('Timers can be defined only inside a process')
 
     def handle_select_if(select_node, parent_conds=None):
         cond_node = select_node.getChild(0)
@@ -4858,6 +5027,10 @@ def text_area_content(root, ta_ast, context):
             'timers': [],
             'context': context,
             'ta_ast': ta_ast,
+            # Keep the parse tree of the select_if block: the early
+            # evaluation (_evaluate_select_if_blocks) needs it to dress up
+            # the list of discarded elements from the declared names
+            'node': select_node,
         }
         ta_ast.select_if.append(sel_entry)
         for sub in select_node.getChildren()[1:]:
@@ -4866,7 +5039,10 @@ def text_area_content(root, ta_ast, context):
             elif sub.type == lexer.SIGNAL:
                 signals.append((sub, sel_entry))
             elif sub.type == lexer.TIMER:
-                handle_timer(sub, sel_entry)
+                # Defer gated timers: they are registered only after the
+                # select_if conditions have been evaluated, so that the
+                # errors of the discarded ones can be ignored
+                timers.append((sub, sel_entry))
             elif sub.type == lexer.SELECT:
                 handle_select_if(sub, cond_nodes)
 
@@ -4940,7 +5116,11 @@ def text_area_content(root, ta_ast, context):
             if hasattr(context, "return_var") and context.return_var:
                 warnings.append('Procedure return variable not supported')
         elif child.type == lexer.TIMER:
-            handle_timer(child)
+            # Defer all timer registrations: they are done after the
+            # select_if conditions have been evaluated (end of this
+            # function), so that the errors of the discarded ones can be
+            # ignored, while preserving the declaration order
+            timers.append((child, None))
         elif child.type == lexer.SIGNAL:
             # Signals can be declared at system level, but that must be parsed
             # AFTER possible "USE Datamodel COMMENT 'asn1_filename';"
@@ -4976,11 +5156,31 @@ def text_area_content(root, ta_ast, context):
             set_global_DV(ta_ast.asn1_files)
         except TypeError as err:
             errors.append(str(err))
+    # First thing to do now that the ASN.1 files and synonyms are known:
+    # evaluate the select_if conditions of this text area to dress up the
+    # list of discarded parts. All the errors raised while parsing the
+    # discarded elements are then ignored (pruning mode only)
+    _evaluate_select_if_blocks(ta_ast, context)
+    for each, sel_entry in timers:
+        # Register the gated timers now that the select_if conditions are
+        # known: ignore the errors of the discarded ones (pruning mode)
+        handle_timer(each, sel_entry,
+                      suppress=_PRUNE_SELECT_IF
+                      and sel_entry is not None
+                      and sel_entry.get('active') is False)
     for each, sel_entry in procedures:
         # Procedure textual declarations need ASN.1 types
         proc, err, warn = procedure(each, context=context)
         # set the flag to avoid rendering a graphical procedure
         proc.textual_procedure = True
+        if _PRUNE_SELECT_IF and sel_entry is not None \
+                and sel_entry.get('active') is False:
+            # Procedure in a deselected "select if" block: it will be
+            # pruned from the model at the end of the parse. Ignore all
+            # its errors (it may reference deselected types or signals),
+            # but keep it registered in the AST so that the pruning can
+            # remove it cleanly
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
         try:
@@ -5002,7 +5202,9 @@ def text_area_content(root, ta_ast, context):
                         if proc.return_type is None and existing.return_type is not None:
                             proc.return_type = existing.return_type
                     break
-        check_duplicate_procedures(context, proc, errors)
+        if not (_PRUNE_SELECT_IF and sel_entry is not None
+                and sel_entry.get('active') is False):
+            check_duplicate_procedures(context, proc, errors)
         # Add procedure to the container (process or procedure) if any
         if not proc.referenced:
             content.append(proc)
@@ -5020,6 +5222,12 @@ def text_area_content(root, ta_ast, context):
     for each, sel_entry in signals:
         # Parse signals now - ASN.1 types should have been set
         sig, err, warn = signal(each)
+        if _PRUNE_SELECT_IF and sel_entry is not None \
+                and sel_entry.get('active') is False:
+            # Signal in a deselected "select if" block: ignore its errors
+            # (e.g. a parameter type that is not in the ASN.1 model), the
+            # signal is removed from the model at the end of the parse
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
         ta_ast.signals.append(sig)
@@ -5335,6 +5543,10 @@ def system_definition(root, parent):
                 each, parent=None, context=system)
         # Procedure defined at system level are only textual
         proc.textual_procedure = True
+        if _select_if_is_discarded(proc.inputString):
+            # Discarded procedure (deselected "select if" block): ignore
+            # all its errors, it is pruned from the model
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
         system.procedures.append(proc)
@@ -5561,17 +5773,30 @@ def process_definition(root, parent=None, context=None):
                 # we just need the synonyms to be visible
                 _ = synonym_definition(sort, None, context)
 
+    # Evaluate the select_if blocks of all nested text areas before the
+    # procedures are parsed: the list of discarded parts must be dressed
+    # up first, so that the errors raised while parsing the procedures
+    # discarded by a "select if" are ignored (pruning mode only)
+    _prescan_select_if(tas, process)
+
     # then parse procedures, so that their signature is set in the ast
     procedures = (x for x in root.getChildren() if x.type == lexer.PROCEDURE)
     for child in procedures:
         proc, content, err, warn = procedure_pre(
                 child, parent=None, context=process)
         inner_proc.append((proc, content))
+        if _select_if_is_discarded(proc.inputString):
+            # Procedure declared in a deselected "select if" block: it will
+            # be pruned at the end of the parse - ignore all its errors
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
         # check for duplicate declaration
         dupl_errs = []
-        check_duplicate_procedures(process, proc, dupl_errs)
+        if _select_if_is_discarded(proc.inputString):
+            check_duplicate_procedures(process, proc, [])
+        else:
+            check_duplicate_procedures(process, proc, dupl_errs)
         for err_str in dupl_errs:
             errors.append([err_str, [proc.pos_x, proc.pos_y], []])
             proc.errors.append(err_str)
@@ -5715,6 +5940,10 @@ def process_definition(root, parent=None, context=None):
 
     for proc, content in inner_proc:
         err, warn = procedure_post(proc, content, context=process)
+        if _select_if_is_discarded(proc.inputString):
+            # Discarded procedure (deselected "select if" block): ignore
+            # the errors of its body, it is pruned from the model
+            err, warn = [], []
         errors.extend(err)
         warnings.extend(warn)
 
@@ -5802,7 +6031,8 @@ def process_definition(root, parent=None, context=None):
     if not process.referenced and not process.instance_of_name:
         needed_procedures = [proc.inputString.lower()
                 for proc in context.procedures
-                if proc.referenced and proc.exported]
+                if proc.referenced and proc.exported
+                and not _select_if_is_discarded(proc.inputString)]
         for each in context.procedures:
             if each.referenced and each.exported:
                 continue
@@ -6168,6 +6398,13 @@ def state(root, parent, context):
             # A transition triggered by an INPUT
             inp, err, warn = \
                     input_part(child, parent=state_def, context=context)
+            if inp.inputlist and _PRUNE_SELECT_IF and all(
+                    t.lower() in _DISCARDED_SELECT_IF
+                    for t in inp.inputlist):
+                # INPUT triggered only by signals/timers/procedures declared
+                # in deselected "select if" blocks: the input is pruned from
+                # the model at the end of the parse - ignore all its errors
+                err, warn = [], []
             errors.extend(err)
             warnings.extend(warn)
             def gather_inputlist(state_ast):
@@ -8086,6 +8323,25 @@ def stop_if(root, parent, context=None):
 
 def pr_file(root, prune_select_if=True):
     ''' Complete PR model - can be made up from several files/strings '''
+    global _PRUNE_SELECT_IF
+    global _DISCARDED_SELECT_IF
+    # Set up the select-if pruning mode for the whole semantic pass:
+    # the conditions of the "select if" blocks are evaluated during the
+    # parse (see _evaluate_select_if_blocks) and the errors raised while
+    # parsing the elements of the deselected blocks are ignored. Restore
+    # the previous state on exit so that nested/other parses are not
+    # affected (the GUI parses with prune_select_if=False).
+    saved_prune, saved_discarded = _PRUNE_SELECT_IF, _DISCARDED_SELECT_IF
+    _PRUNE_SELECT_IF, _DISCARDED_SELECT_IF = prune_select_if, set()
+    try:
+        return _pr_file_body(root, prune_select_if)
+    finally:
+        _PRUNE_SELECT_IF, _DISCARDED_SELECT_IF = saved_prune, saved_discarded
+
+
+def _pr_file_body(root, prune_select_if):
+    ''' Semantic analysis of a PR model (body of pr_file - see the pr_file
+        wrapper for the select-if pruning-mode setup) '''
     errors = []
     warnings = []
     ast = ogAST.AST()
