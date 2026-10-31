@@ -45,12 +45,7 @@ test-if:
 test-rust:
 	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
-	  fi; \
-	done && \
-	sed -i '/^pub const /d' dataview-uniq.rs && \
+	sed -i '/^pub const /d' taste_dataview.rs && \
 	sed -i 's/fn ri_0_pow(.*/fn ri_0_pow(a: \&mut asn1SccT_UInt32, b: \&mut asn1SccT_UInt32, res: \&mut asn1SccT_UInt32) { *res = (*a as u64).pow(*b as u32) as asn1SccT_UInt32; }/' challenge.rs 2>/dev/null || true && \
 	cp challenge_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
