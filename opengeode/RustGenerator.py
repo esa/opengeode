@@ -722,8 +722,15 @@ def array_content(prim, values, asnty):
         if not max_size:
             max_size = count
         # Determine the zero/placeholder value for padding based on element type
-        zero_val = '0'
-        if elem_type is not None:
+        zero_val = '0'  # placeholder; refined below
+        # mkstring: the sequence's declared element type is the octet string
+        # itself, but its actual elements are scalars (UINT8). Pad with the
+        # scalar zero, never with a whole octet-string struct.
+        _elem_expr_bty = find_basic_type(prim.value[0].exprType) if prim.value else None
+        if _elem_expr_bty is not None and _elem_expr_bty.kind.startswith('Integer'):
+            elem_type = None
+            zero_val = '0'
+        elif elem_type is not None:
             elem_bty = find_basic_type(elem_type)
             if elem_bty:
                 if elem_bty.kind == 'BooleanType':
@@ -765,16 +772,22 @@ def array_content(prim, values, asnty):
                         zero_val = const_zero_value(elem_type)
                 elif elem_bty.kind in ('EnumeratedType', 'StateEnumeratedType',
                                        'ChoiceEnumeratedType', 'ReferenceType',
-                                       'NullType', 'RealType'):
+                                       'NullType', 'RealType', 'ChoiceType'):
                     # Use the type-correct zero (e.g. an enum variant or `()`),
                     # never the integer literal 0, which does not type-check.
                     zero_val = const_zero_value(elem_type)
+                else:
+                    # Any remaining non-scalar element (SEQUENCE, CHOICE, ...)
+                    # also needs a type-correct zero: padding a struct array
+                    # with the integer 0 is E0308.
+                    if not elem_bty.kind.startswith('Integer'):
+                        zero_val = const_zero_value(elem_type)
         elif prim.value:
             first_elem_bty = find_basic_type(prim.value[0].exprType)
             if first_elem_bty and first_elem_bty.kind == 'BooleanType':
                 zero_val = 'false'
         else:
-            elem_bty = find_basic_type(prim.exprType)
+            elem_bty = find_basic_type(seqof_bty['type']) if seqof_bty and 'type' in seqof_bty else find_basic_type(prim.exprType)
             while elem_bty and elem_bty.kind == 'ReferenceType' and elem_bty.ReferencedTypeName in TYPES:
                 elem_bty = find_basic_type(TYPES[elem_bty.ReferencedTypeName].type)
             if elem_bty and elem_bty.kind == 'BooleanType':
@@ -1610,7 +1623,12 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     param_spec = f'param: *const {type_name(sig["type"])}'
                 c_ri_decls.append(f'    fn {process.name.lower()}_RI_{signame}({param_spec});')
         for proc in process.procedures:
-            if not proc.referenced:
+            # Only 'external' procedures have no local definition
+            # (implemented by hand or by another process) and are called
+            # through the RI glue. A 'referenced' procedure is a sync PI:
+            # it keeps its local body and is exported as <process>_PI_<name>
+            # (see AdaGenerator.py:763-772, CGenerator.py:3790).
+            if proc.external:
                 pname = proc.inputString
                 params = []
                 for fpar in proc.fpar:
@@ -1624,6 +1642,29 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                     params.append(f'default_sender: {ASN1SCC}PID')
                 param_str = ', '.join(params)
                 c_ri_decls.append(f'    fn {process.name.lower()}_RI_{pname}({param_str});')
+        # Timers are routed through the middleware like any other signal, so
+        # the glue provides them (CGenerator.py:4132-4139 emits the very same
+        # symbols as `#define SET_<timer> <pn>_RI_SET_<timer>`). Declare them
+        # extern C — without this the generated calls do not resolve (E0425).
+        # The prefix is the fixed upper-case SET_/RESET_, NOT the timer name
+        # upper-cased: for timer `monitoring_timer` the symbol is
+        # `SET_monitoring_timer` -> `<pn>_RI_SET_monitoring_timer`.
+        for timer in process.timers:
+            if 'PID' in TYPES:
+                # The plain <fn>_RI_SET_<timer> takes no PID; the variant
+                # that does is <fn>_RI_SET_<timer>_To_PID(dest_pid, val).
+                c_ri_decls.append(
+                    f'    fn {process.name.lower()}_RI_SET_{timer}_To_PID'
+                    f'(dest_pid: {ASN1SCC}PID, val: *const {ASN1SCC}T_UInt32);')
+                c_ri_decls.append(
+                    f'    fn {process.name.lower()}_RI_RESET_{timer}_To_PID'
+                    f'(dest_pid: {ASN1SCC}PID);')
+            else:
+                c_ri_decls.append(
+                    f'    fn {process.name.lower()}_RI_SET_{timer}'
+                    f'(val: *const {ASN1SCC}T_UInt32);')
+                c_ri_decls.append(
+                    f'    fn {process.name.lower()}_RI_RESET_{timer}();')
         if c_ri_decls:
             rust_body.append('extern "C" {')
             rust_body.extend(c_ri_decls)
@@ -2680,14 +2721,26 @@ def _call_external_function(output, **kwargs):
             p_id = canonical_timer_name(p_id)
             call_code.extend(p_code)
             call_local.extend(p_local)
+            # In TASTE the timers come from the glue, whose symbols are
+            # <pn>_RI_SET_<timer> / <pn>_RI_RESET_<timer> (CGenerator.py:
+            # 4132-4139 emits the same names as #define SET_<timer> ...).
+            # Outside TASTE the generator emits local set_/reset_<timer>
+            # stubs (see "Timer declarations" below), so call those.
             if 'PID' in TYPES:
-                call_code.append(
-                    f'ri.reset_{p_id}({default_dest_pid()});' if GENERIC
-                    else f'reset_{p_id}({default_dest_pid()});')
+                if GENERIC:
+                    call_code.append(f'ri.RESET_{p_id}_To_PID({default_dest_pid()});')
+                elif TASTE:
+                    call_code.append(
+                        f'{PROCESS_NAME.lower()}_RI_RESET_{p_id}_To_PID({default_dest_pid()});')
+                else:
+                    call_code.append(f'reset_{p_id}({default_dest_pid()});')
             else:
-                call_code.append(
-                    f'ri.reset_{p_id}();' if GENERIC
-                    else f'reset_{p_id}();')
+                if GENERIC:
+                    call_code.append(f'ri.RESET_{p_id}();')
+                elif TASTE:
+                    call_code.append(f'{PROCESS_NAME.lower()}_RI_RESET_{p_id}();')
+                else:
+                    call_code.append(f'reset_{p_id}();')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -2708,14 +2761,24 @@ def _call_external_function(output, **kwargs):
             tmp_id = f'tmp{out["tmpVars"][0]}'
             call_local.append(f'let mut {tmp_id}: {ASN1SCC}T_UInt32;')
             call_code.append(f'{tmp_id} = {t_val} as {ASN1SCC}T_UInt32;')
+            # Same split as reset_timer above: glue names under TASTE,
+            # local stubs otherwise.
             if 'PID' in TYPES:
-                call_code.append(
-                    f'ri.set_{p_id}(&mut {tmp_id}, {default_dest_pid()});' if GENERIC
-                    else f'set_{p_id}(&mut {tmp_id}, {default_dest_pid()});')
+                if GENERIC:
+                    call_code.append(
+                        f'ri.SET_{p_id}_To_PID({default_dest_pid()}, &mut {tmp_id});')
+                elif TASTE:
+                    call_code.append(
+                        f'{PROCESS_NAME.lower()}_RI_SET_{p_id}_To_PID({default_dest_pid()}, &mut {tmp_id});')
+                else:
+                    call_code.append(f'set_{p_id}(&mut {tmp_id}, {default_dest_pid()});')
             else:
-                call_code.append(
-                    f'ri.set_{p_id}(&mut {tmp_id});' if GENERIC
-                    else f'set_{p_id}(&mut {tmp_id});')
+                if GENERIC:
+                    call_code.append(f'ri.SET_{p_id}(&mut {tmp_id});')
+                elif TASTE:
+                    call_code.append(f'{PROCESS_NAME.lower()}_RI_SET_{p_id}(&mut {tmp_id});')
+                else:
+                    call_code.append(f'set_{p_id}(&mut {tmp_id});')
             if call_local:
                 code.append('{')
                 code.extend(call_local)
@@ -2737,6 +2800,9 @@ def _call_external_function(output, **kwargs):
                 if not candidates:
                     raise ValueError
                 proc = candidates[0] if len(candidates) == 1 else candidates[0]
+                # Only an 'external' procedure has no local definition and
+                # is called through the RI glue. 'referenced' procedures are
+                # sync PIs with a local body: call them directly.
                 if proc.external:
                     out_sig = proc
             except ValueError:
@@ -2813,6 +2879,15 @@ def _call_external_function(output, **kwargs):
                     call_code.append(f'{tmp_id} = {p_id};')
                     list_of_params.append(f'&mut {tmp_id}')
                 else:
+                    # A plain dereference of an in-parameter (e.g. *INDEX)
+                    # must be copied into a temporary: taking &mut of it
+                    # keeps a mutable borrow alive while later arguments
+                    # still read the same variable (E0503).
+                    _bare = p_id[1:-1] if p_id.startswith('(*') and p_id.endswith(')') else p_id
+                    if _bare.startswith('*') and _bare[1:].isidentifier():
+                        tmp_id = f'tmp{out["tmpVars"][idx]}'
+                        call_local.append(f'let mut {tmp_id}: {typename} = {p_id};')
+                        p_id = tmp_id
                     list_of_params.append(f'&mut {p_id}')
 
             name = out["outputName"]
@@ -2851,14 +2926,36 @@ def _call_external_function(output, **kwargs):
             ident = proc.inputString
             p = [p for p in PROCEDURES
                  if p.inputString.lower() == ident.lower() and not p.referenced][0]
+            # Evaluate every argument first, so that repeated or borrowed
+            # operands can be bound to a single temporary before the call.
+            _evaluated = []
             for idx, param in enumerate(out.get('params', [])):
                 param_type = p.fpar[idx]['type']
                 p_code, p_id, p_local = expression(param, readonly=1)
                 call_code.extend(p_code)
                 call_local.extend(p_local)
-                # Procedure fpar params are &mut in Rust, so add &mut prefix
+                _evaluated.append(p_id)
+            # An operand passed twice (e.g. an in/out parameter used for two
+            # formals) cannot be borrowed mutably twice (E0499). A plain
+            # dereference of an in-parameter (e.g. *INDEX) must also be copied
+            # into a temporary: taking &mut of it keeps a mutable borrow alive
+            # while later arguments still read the same variable (E0503).
+            for idx, p_id in enumerate(_evaluated):
+                _bare = p_id[1:-1] if p_id.startswith('(*') and p_id.endswith(')') else p_id
+                _needs_tmp = (_bare.startswith('*') and _bare[1:].isidentifier()) \
+                    or _evaluated.count(p_id) > 1
+                if _needs_tmp:
+                    tmp = f'tmp_arg{len(call_local)}{idx}'
+                    call_code.append(f'let mut {tmp} = {p_id};')
+                    p_id = tmp
                 list_of_params.append(f'&mut {p_id}')
-            full_name = f'p{SEPARATOR}{proc.inputString}'
+            # Exported procedures are declared without the p_0_ prefix
+            # (see procedure_header), so call them by their plain name.
+            # Ask the matched definition: the call record is not the one
+            # that carries the exported flag.
+            _exported = getattr(p, 'exported', False) or getattr(proc, 'exported', False)
+            full_name = (proc.inputString if _exported
+                         else f'p{SEPARATOR}{proc.inputString}')
             if list_of_params:
                 call_code.append(
                     f'{full_name}{ri_call_args(list_of_params)};')
@@ -3487,7 +3584,14 @@ def _inner_procedure(proc, is_rpc=True, **kwargs):
 
         # Local variables
         for var_name, (var_type, def_value) in proc.variables.items():
-            typename = type_name(var_type)
+            # A dcl of a CHOICE-selection type must use the same
+            # owner-qualified name as the decision arms (which call
+            # selection_type_name): asn1scc emits the enum as
+            # <Process>_<Choice>_Selection, not <Choice>_Selection.
+            if type_name(var_type).endswith('_Selection'):
+                typename = ASN1SCC + (PROCESS_NAME or "").title().replace("-", "_") + "_" + type_name(var_type, use_prefix=False)
+            else:
+                typename = type_name(var_type)
             if def_value:
                 # Expression must be a ground expression, i.e. must not
                 # require temporary variable to store computed result
