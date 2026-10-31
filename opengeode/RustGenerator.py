@@ -93,29 +93,54 @@ def is_numeric(string) -> bool:
     return True
 
 
+def sanitize_rust_module_name(name: str) -> str:
+    '''Sanitize an ASN.1 module name the way asn1scc does for Rust file names:
+    keep alphanumerics and underscores, replace anything else with an
+    underscore, lowercase, and prefix an underscore when the result would
+    start with a digit (asn1scc StgRust sanitizeModuleName).'''
+    out = []
+    for c in name:
+        out.append(c if c.isalnum() or c == '_' else '_')
+    result = ''.join(out).lower()
+    if not result:
+        return '_'
+    if result[0].isdigit():
+        return '_' + result
+    return result
+
+
 def dataview_rust_names(process=None) -> Tuple[str, str]:
     '''Return (file_stem, module_name) for the ASN.1 dataview Rust modules.
 
-    asn1scc names the generated Rust files after the *input ASN.1 file stem*,
-    not after the ASN.1 module name:
-      - ``datamodel.asn``   -> ``datamodel.rs`` / ``datamodelDef.rs``, whose
-        internal import is ``use crate::datamodelDef::*;`` (module ``datamodel``).
-      - ``dataview-uniq.asn`` -> ``dataview-uniq.rs`` / ``dataview-uniqDef.rs``,
-        module ``dataview_uniq`` (a dash becomes an underscore in the Rust
-        module identifier, while the file name keeps the dash).
-    The C and Ada backends derive the same name from the ASN.1 file; Rust must
-    too, otherwise a dataview not named ``dataview-uniq.asn`` (e.g. the test
-    suite's ``datamodel.asn`` / ``dv.asn`` / ``dataview.asn``) fails to build.
+    asn1scc (4.9.64+, "one file pair per ASN.1 module") names the generated
+    Rust files after the *ASN.1 module name*, not after the input file stem:
+      - module ``TASTE-Dataview`` in ``dataview-uniq.asn`` ->
+        ``taste_dataview.rs`` / ``taste_dataviewDef.rs`` (lowercased module
+        name, non-alphanumerics become underscores).
+    The module referenced here must be the first module of the dataview (the
+    one whose types the process actually uses), and the Rust module
+    identifier is the sanitized module name with ``Def`` appended for the
+    type-definition pair.
     '''
     p = process if process is not None else PROCESS
-    stem = 'dataview-uniq'
+    # Prefer the ASN.1 module name (asn1scc per-module file naming).
+    try:
+        modules = list(getattr(p, 'asn1Modules', None) or [])
+    except TypeError:
+        modules = []
+    if modules:
+        return (sanitize_rust_module_name(modules[0]),
+                sanitize_rust_module_name(modules[0]))
+    # Fallback: derive from the first ASN.1 file stem (single-module
+    # dataviews where the module name equals the file stem keep working).
     try:
         files = list(getattr(getattr(p, 'DV', None), 'asn1Files', None) or [])
         if files:
             stem = os.path.splitext(os.path.basename(files[0]))[0]
+            return stem, stem.replace('-', '_')
     except TypeError:
         pass
-    return stem, stem.replace('-', '_')
+    return 'dataview-uniq', 'dataview_uniq'
 
 
 def external_ri_list(process, has_cs=False) -> List:
@@ -1461,26 +1486,34 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
     # they are already declared in the process type module.
     dv_stem, dv_mod = dataview_rust_names(process)
     if not instance:
+        # asn1scc (4.9.64+) generates one file pair per ASN.1 module, named
+        # after the sanitized (lowercased) module name. The datamodel file it
+        # generates for this process self-imports every dataview module it
+        # references, so the crate root must declare ALL of them — not just the
+        # first. The datamodel module itself is declared further below.
         try:
+            declared = set()
+            declared_alias = False
             for dv in process.asn1Modules:
+                mod = sanitize_rust_module_name(dv)
+                if mod in declared:
+                    continue
+                declared.add(mod)
                 # Dataview type definitions and functions.
-                # File name keeps the dash (dataview-uniqDef.rs); the Rust
-                # module identifier uses an underscore (dataview_uniqDef).
-                rust_body.append(f'#[path = "{dv_stem}Def.rs"]')
-                rust_body.append(f'pub mod {dv_mod}Def;')
-                rust_body.append(f'#[path = "{dv_stem}.rs"]')
-                rust_body.append(f'pub mod {dv_mod};')
-                # The asn1scc-generated <proc>_datamodel.rs imports the dataview
-                # under the legacy fixed name 'dataview_uniq' (see the generator
-                # post-processing and the test Makefile sed, which cannot know
-                # the dataview file stem). Re-export the real module under that
-                # name so any dataview file stem works.
-                if dv_mod != 'dataview_uniq':
-                    rust_body.append(f'pub use {dv_mod}Def as dataview_uniqDef;')
-                    rust_body.append(f'pub use {dv_mod} as dataview_uniq;')
-                rust_body.append(f'use {dv_mod}Def::*;')
-                rust_body.append(f'use {dv_mod}::*;')
-                break  # Only need one dataview module
+                rust_body.append(f'#[path = "{mod}Def.rs"]')
+                rust_body.append(f'pub mod {mod}Def;')
+                rust_body.append(f'#[path = "{mod}.rs"]')
+                rust_body.append(f'pub mod {mod};')
+                # Legacy compatibility: code (generated or hand-written) may
+                # still reference the dataview under the fixed historic name
+                # 'dataview_uniq{,Def}'. Re-export the first module under that
+                # name so it keeps resolving.
+                if mod != 'dataview_uniq' and not declared_alias:
+                    rust_body.append(f'pub use {mod}Def as dataview_uniqDef;')
+                    rust_body.append(f'pub use {mod} as dataview_uniq;')
+                    declared_alias = True
+                rust_body.append(f'use {mod}Def::*;')
+                rust_body.append(f'use {mod}::*;')
             rust_body.append('use asn1rust::*;')
         except TypeError:
             rust_body.append('// No ASN.1 data types used in this model')

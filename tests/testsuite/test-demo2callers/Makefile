@@ -41,11 +41,6 @@ test-if:
 test-rust:
 	$(OPENGEODE) f1.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
-	  fi; \
-	done && \
 	cp f1_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
 	./target/debug/test_rust | diff expected -

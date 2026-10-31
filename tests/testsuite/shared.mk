@@ -49,11 +49,6 @@ test-promela: FORCE
 test-rust: FORCE
 	$(OPENGEODE) *.pr system_structure.pr --toRust && \
 	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s|$$|\nuse crate::dataview_uniq::*;\nuse crate::dataview_uniqDef::*;|' "$$f"; \
-	  fi; \
-	done && \
 	if [ -f "$(RUST_PROCESS)_cargo.toml" ]; then cp $(RUST_PROCESS)_cargo.toml Cargo.toml; fi && \
 	if [ -f "main.rs" ]; then cargo build 2>&1; fi
 

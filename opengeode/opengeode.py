@@ -2734,7 +2734,6 @@ rust:
 \tmkdir -p code_rust
 \tcd code_rust && opengeode --toRust ../*.pr
 \tasn1scc -fp AUTO -typePrefix asn1Scc -renamePolicy 3 -equal -Rust -o code_rust {asn1_rust}
-\tfor f in code_rust/*_datamodel.rs; do if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then sed -i '/^use crate.*Def/s|$$|\\nuse crate::dataview_uniq::*;\\nuse crate::dataview_uniqDef::*;|' "$$f"; fi; done
 \tcd code_rust && (cp {prj_name.lower()}_cargo.toml Cargo.toml 2>/dev/null || cp *_cargo.toml Cargo.toml 2>/dev/null || true) && cargo build --lib
 clean:
 \trm -rf code code_c code_rust'''
