@@ -2,7 +2,10 @@
 unused_variables, unused_mut, unused_assignments, dead_code)]
 mod complexsdl;
 use complexsdl::*;
-use complexsdl::dataview_uniqDef::*;
+// asn1scc emits one file pair per ASN.1 module, so the type lives in the
+// module that declares it (TESTBENCH2-DATAVIEW), not in the first
+// module's legacy 'dataview_uniqDef' alias.
+use complexsdl::testbench2_dataviewDef::*;
 
 fn main() {
     unsafe {
