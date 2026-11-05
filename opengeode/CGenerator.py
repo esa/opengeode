@@ -1563,8 +1563,7 @@ def _transition(tr, **kwargs):
                                     var_name = f"_ret_{VAR_COUNTER}"
                                     VAR_COUNTER += 1
                                     t_name = type_name(proc.return_type)
-                                    val = retexp.value[1:-1].replace('"', '\\"')
-                                    init_val = f'"{val}"'
+                                    init_val = c_string_literal(retexp.value[1:-1])
                                     decls.append(f"static {t_name} {var_name} = {init_val};")
                                     return_string = var_name
 
@@ -4510,6 +4509,54 @@ def find_basic_type(a_type):
     return Helper.find_basic_type(TYPES, a_type)
 
 
+# Characters that may follow a backslash inside a quoted SDL/ASN.1 string.
+# The parser keeps the source escapes verbatim in PrimStringLiteral.value
+# (sdl92.g: ESC1 = \' | \\, ESC2 = \" | \\), so they must be interpreted
+# before the text is re-escaped for the target language.
+SDL_STRING_ESCAPES = ('"', "'", '\\')
+
+
+def sdl_string_unescape(text):
+    ''' Interpret the SDL/ASN.1 escapes of a raw string token body.
+
+    The lexer only accepts \\", \\' and \\\\ inside a quoted string, so any
+    other backslash is literal. Interpreting the escapes first is what makes
+    the re-escaping below safe: a model writing \\" must reach the generated
+    C string as a quote, never as a backslash followed by a quote (which
+    would close the C literal and let the rest of the text be compiled as
+    code - source injection through a model file).
+    '''
+    out = []
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char == '\\' and index + 1 < len(text) and text[index + 1] in SDL_STRING_ESCAPES:
+            out.append(text[index + 1])
+            index += 2
+            continue
+        out.append(char)
+        index += 1
+    return ''.join(out)
+
+
+def c_escape_string(text):
+    ''' Escape a text for inclusion inside a C double-quoted string literal.
+
+    Every character that can end the literal or be altered by the compiler is
+    escaped (backslash first), so the result always stays within one string.
+    '''
+    return (text.replace('\\', '\\\\')
+                .replace('"', '\\"')
+                .replace('\n', '\\n')
+                .replace('\r', '\\r')
+                .replace('\t', '\\t'))
+
+
+def c_string_literal(raw):
+    ''' Build a C string literal from the body of a raw SDL string token '''
+    return f'"{c_escape_string(sdl_string_unescape(raw))}"'
+
+
 def ia5string_raw(prim: ogAST.PrimStringLiteral):
     ''' IA5Strings are null-terminated C arrays '''
     unsigned_8 = [str(ord(val)) for val in prim.value[1:-1]]
@@ -4523,8 +4570,7 @@ def array_content(prim, values, asnty):
         return values
 
     elif asnty.kind == 'IA5StringType':
-        val = prim.value[1:-1].replace('"', '\\"')
-        return f'"{val}"'
+        return c_string_literal(prim.value[1:-1])
 
     elif asnty.kind == 'OctetStringType':
         if isinstance(prim, ogAST.PrimOctetStringLiteral):
@@ -4769,32 +4815,18 @@ def write_statement(param, newline):
         local.extend(lcl2)
     elif type_kind.endswith('StringType'):
         if isinstance(param, ogAST.PrimOctetStringLiteral):
-            code.append('printf(\"{}\");'.format(param.printable_string))
+            # printable_string holds the decoded bytes of the literal: they are
+            # arbitrary text and must be escaped, not pasted into the printf.
+            code.append('printf({});'.format(c_string_literal(param.printable_string)))
         elif isinstance(param, ogAST.PrimStringLiteral):
-            # adding/or not escaping for quote (") character
-            raw_string = param.value[1:-1]
-            new_string = ''
+            # Interpret the SDL escapes, then escape for C. Splitting on the
+            # real newlines afterwards keeps multi-line output as several
+            # printf calls.
+            new_string = c_escape_string(sdl_string_unescape(param.value[1:-1]))
 
             start_pos = 0
             while True:
-                quote_pos = raw_string.find('"', start_pos)
-
-                if quote_pos == -1:
-                    new_string += raw_string[start_pos:]
-                    break
-
-                if raw_string[quote_pos - 1] == '\\':
-                    new_string += raw_string[start_pos:quote_pos+1]
-                else:
-                    new_string += raw_string[start_pos:quote_pos]
-                    new_string += '\\"'
-
-                start_pos = quote_pos + 1
-
-            # looking for '\n' characters
-            start_pos = 0
-            while True:
-                new_line_pos = new_string.find('\n', start_pos)
+                new_line_pos = new_string.find('\\n', start_pos)
 
                 if new_line_pos == -1:
                     code.append(f'printf(\"{new_string[start_pos:]}\");')
@@ -4803,7 +4835,7 @@ def write_statement(param, newline):
                 code.append(f'printf(\"{new_string[start_pos:new_line_pos]}\");')
                 code.append(u'printf(\"\\n\");')
 
-                start_pos = new_line_pos + 1
+                start_pos = new_line_pos + 2
         else:
             code, string, local = expression(param)
 
