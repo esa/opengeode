@@ -2097,13 +2097,28 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 p.exported and p.inputString.lower() in
                 (f'{process.name.lower()}_check_queue', 'check_queue')
                 for p in process.procedures)
+            # In TASTE the glue (kazoo's node_linux_interface template) defines
+            # <pn>_check_queue in C++: it polls the function's threads to decide
+            # whether the continuous-signals loop must run. Defining the stub as
+            # well would give the symbol two strong definitions and the link
+            # fails with "multiple definition", so only declare it, as an
+            # external C function. The call site in
+            # generate_code_for_continuous_signals uses the same name and
+            # resolves to the glue's definition.
             if not has_user_check_queue:
-                rust_body.extend([
-                    f'#[no_mangle]',
-                    f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
-                    f'    // Provided by runtime',
-                    f'}}',
-                    ''])
+                if TASTE:
+                    rust_body.extend([
+                        f'extern "C" {{',
+                        f'    fn {process.name.lower()}_check_queue(res: &mut bool);',
+                        f'}}',
+                        ''])
+                else:
+                    rust_body.extend([
+                        f'#[no_mangle]',
+                        f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
+                        f'    // Provided by runtime',
+                        f'}}',
+                        ''])
 
     # ── Instance startup ──
     if instance:
