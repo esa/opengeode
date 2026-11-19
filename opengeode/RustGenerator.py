@@ -1531,16 +1531,29 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
         except TypeError:
             rust_body.append('// No ASN.1 data types used in this model')
     else:
-        # Instance wrapper: use types from the process type module
+        # Instance wrapper: use types from the process type module.
+        # The type module is declared further below in THIS file
+        # ('pub mod <ptype_module>;'), so its submodules must be reached
+        # through 'crate::<ptype_module>::' — a bare '<ptype_module>::' is
+        # resolved as a top-level crate, which does not exist (E0433).
         ptype_module = process.instance_of_name.lower() if hasattr(process, 'instance_of_name') and process.instance_of_name else process.name.lower()
-        rust_body.append(f'use {ptype_module}::{dv_mod}Def::*;')
-        rust_body.append(f'use {ptype_module}::{dv_mod}::*;')
+        rust_body.append(f'use crate::{ptype_module}::{dv_mod}Def::*;')
+        rust_body.append(f'use crate::{ptype_module}::{dv_mod}::*;')
         # The datamodelDef module is declared by the process type module
         # (only when the type has a context). Re-export it here so that
         # code using the wrapper can reach the context types.
         if (getattr(process, 'instance_of_ref', None) is not None
                 and not getattr(process.instance_of_ref, 'no_context', False)):
-            rust_body.append(f'use {ptype_module}::{ptype_module}_datamodelDef::*;')
+            rust_body.append(f'use crate::{ptype_module}::{ptype_module}_datamodelDef::*;')
+        # The wrapper body and the RI trait impl below refer to asn1SccPID
+        # and asn1SccT_Runtime_Error. In TASTE these are declared in the
+        # system dataview and in the TASTE basic types, which are submodules
+        # of the process type module that it does not re-export — so import
+        # them explicitly (the non-instance branch above does declare them).
+        if TASTE and 'PID' in TYPES:
+            for extra in ('system_dataviewDef', 'system_dataview',
+                          'taste_basictypesDef', 'taste_basictypes'):
+                rust_body.append(f'use crate::{ptype_module}::{extra}::*;')
         rust_body.append('use asn1rust::*;')
 
     if not getattr(process, 'no_context', False) and not stop_condition and not instance:
@@ -2084,13 +2097,28 @@ def _process(process, simu=False, instance=False, taste=False, **kwargs):
                 p.exported and p.inputString.lower() in
                 (f'{process.name.lower()}_check_queue', 'check_queue')
                 for p in process.procedures)
+            # In TASTE the glue (kazoo's node_linux_interface template) defines
+            # <pn>_check_queue in C++: it polls the function's threads to decide
+            # whether the continuous-signals loop must run. Defining the stub as
+            # well would give the symbol two strong definitions and the link
+            # fails with "multiple definition", so only declare it, as an
+            # external C function. The call site in
+            # generate_code_for_continuous_signals uses the same name and
+            # resolves to the glue's definition.
             if not has_user_check_queue:
-                rust_body.extend([
-                    f'#[no_mangle]',
-                    f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
-                    f'    // Provided by runtime',
-                    f'}}',
-                    ''])
+                if TASTE:
+                    rust_body.extend([
+                        f'extern "C" {{',
+                        f'    fn {process.name.lower()}_check_queue(res: &mut bool);',
+                        f'}}',
+                        ''])
+                else:
+                    rust_body.extend([
+                        f'#[no_mangle]',
+                        f'pub unsafe extern "C" fn {process.name.lower()}_check_queue(res: &mut bool) {{',
+                        f'    // Provided by runtime',
+                        f'}}',
+                        ''])
 
     # ── Instance startup ──
     if instance:
@@ -2498,6 +2526,14 @@ opt-level = 3
                     else '',
                     '',
                 ]
+                # The stub signatures use asn1SccPID and
+                # asn1SccT_Runtime_Error, which the process type module does
+                # not re-export. They only exist in TASTE builds.
+                if TASTE and 'PID' in TYPES:
+                    for extra in ('system_dataviewDef', 'system_dataview',
+                                  'taste_basictypesDef', 'taste_basictypes'):
+                        stub_lines.append(
+                            f'use super::{ptype_module}::{extra}::*;')
                 hook_list = external_ri_list(ptype_node, has_cs)
                 if TASTE:
                     # Only the entries without glue belong in the stub file

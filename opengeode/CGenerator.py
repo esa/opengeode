@@ -4775,12 +4775,29 @@ def indent_c_code(lines):
             previous_line = line_stripped
 
 
+def _comment_lines(text, prefix='//'):
+    ''' Return a list of C comment lines from model-supplied text.
+
+    The requirement IDs (and the modeler's comment) come from SDL STRING
+    tokens, which may span lines. A line comment ends at the newline, so a
+    one-line prefix would let the continuation lines be emitted as bare
+    (live) C code - source injection through a model file. Every physical
+    line is therefore prefixed individually, as is already done for
+    symbol.trace() and for the informal task text. A lone carriage return
+    is neutralized too: some toolchains treat it as a line break, which
+    would end the comment early.
+    '''
+    lines = str(text).replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    return [f'{prefix} {line}' for line in lines]
+
+
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
 
     trace = [u'// {line}'.format(line=l) for l in symbol.trace().split('\n')]
     if hasattr(symbol, 'req_ids') and symbol.req_ids:
-        trace.append(f"// Requirement IDs: {', '.join(symbol.req_ids)}")
+        trace.extend(_comment_lines('Requirement IDs: ' +
+                                    ', '.join(symbol.req_ids)))
 
     if hasattr(symbol, 'comment') and symbol.comment:
         trace.extend(traceability(symbol.comment))

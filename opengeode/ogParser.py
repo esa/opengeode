@@ -7735,6 +7735,158 @@ def terminator_statement(root, parent, context):
     return t, errors, warnings
 
 
+def _alternative_question_value(root):
+    ''' Evaluate the question of an ALTERNATIVE without type checks.
+        Return True or False if the question is a boolean ground expression,
+        None otherwise. Errors are ignored: this is only used to know which
+        branch is selected before the branches are parsed; decision() does
+        the real evaluation and reports the errors. '''
+    try:
+        node = next(c for c in root.getChildren() if c.type == lexer.GROUND)
+        if node.getChildren():
+            node = node.getChild(0)
+        expr, _, _ = ground_expression(node, 'alternative', BOOLEAN,
+                                       ogAST.Process())
+        value = _eval_ground_expr(expr)
+    except Exception:  # pylint: disable=broad-except
+        LOG.debug('ogParser:\n' + str(traceback.format_exc()))
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().lower() in ('true', 'false'):
+        return value.strip().lower() == 'true'
+    return None
+
+
+def _alternative_answer_value(answer):
+    ''' Return "true" or "false" for a single constant answer of an
+        ALTERNATIVE, "else" for an ELSE branch, "invalid" otherwise '''
+    values = []
+    for each in answer.answers:
+        kind = each['kind']
+        if kind == 'else':
+            values.append('else')
+        elif kind == 'constant':
+            constant = each['content'][1]
+            raw = str(getattr(constant, 'value', [''])[0]).strip().lower()
+            if raw not in ('true', 'false'):
+                return 'invalid'
+            values.append(raw)
+        else:
+            return 'invalid'
+    return values[0] if len(values) == 1 else 'invalid'
+
+
+def _alternative_answer_node_value(node):
+    ''' Return the value of an ANSWER parse tree node (see
+        _alternative_answer_value) without parsing its transition '''
+    answer = ogAST.Answer()
+    for sub in node.getChildren():
+        if sub.type == lexer.CONSTANT:
+            constant, err, _ = expression(sub.getChild(0), ogAST.Process())
+            if err:
+                return 'invalid'
+            answer.answers.append({'kind': 'constant',
+                                   'content': (ogAST.ExprEq, constant)})
+    return _alternative_answer_value(answer)
+
+
+def _alternative_selected_branch(root):
+    ''' Return "true", "false" or "else" - the branch of an ALTERNATIVE that
+        is selected - or None if the question cannot be evaluated without
+        type checks '''
+    value = _alternative_question_value(root)
+    if value is None:
+        return None
+    selected, has_else = [], False
+    for child in root.getChildren():
+        if child.type == lexer.ANSWER:
+            if _alternative_answer_node_value(child) == \
+                    ('true' if value else 'false'):
+                selected.append(child)
+        elif child.type == lexer.ELSE:
+            has_else = True
+    if len(selected) == 1:
+        return 'true' if value else 'false'
+    if not selected and has_else:
+        return 'else'
+    # Ambiguous (duplicated answers) or no matching branch: no pruning
+    return None
+
+
+def _in_pruned_branch(item, pruned_answers):
+    ''' Return True if a parsing error/warning refers to a pruned answer of
+        an ALTERNATIVE. Errors are [message, [x, y], path] lists: the
+        coordinates are compared with the coordinates of the answers '''
+    if not pruned_answers:
+        return False
+    if not isinstance(item, (list, tuple)) or len(item) < 2:
+        return False
+    pos = item[1]
+    if not isinstance(pos, (list, tuple)) or len(pos) != 2:
+        return False
+    try:
+        x, y = float(pos[0]), float(pos[1])
+    except (TypeError, ValueError):
+        return False
+    def same_pos(symbol):
+        try:
+            return abs(float(symbol.pos_x) - x) < 0.5 and \
+                   abs(float(symbol.pos_y) - y) < 0.5
+        except (AttributeError, TypeError, ValueError):
+            return False
+
+    for answer in pruned_answers:
+        if same_pos(answer):
+            return True
+        # Errors raised while parsing the symbols of the branch are located
+        # at the coordinates of those symbols, not of the answer
+        for symbol in _transition_symbols(answer.transition):
+            if same_pos(symbol):
+                return True
+    return False
+
+
+def _transition_symbols(transition):
+    ''' Yield all the symbols (AST nodes with coordinates) of a transition,
+        recursively (decision answers included) '''
+    if not transition:
+        return
+    for action in transition.actions:
+        yield action
+        if isinstance(action, ogAST.Decision):
+            for answer in action.answers:
+                yield answer
+                yield from _transition_symbols(answer.transition)
+
+
+def _remove_pruned_alternative_branches(trans, context):
+    ''' Remove from a transition the branches of the ALTERNATIVE symbols
+        that were not selected (see transition), and unregister the labels
+        and terminators declared in those branches '''
+    def walk(transition, remove=False):
+        if not transition:
+            return
+        for action in transition.actions:
+            if not isinstance(action, ogAST.Decision):
+                continue
+            for answer in action.answers:
+                if getattr(answer, 'pruned', False):
+                    if answer.transition and answer.transition.terminators:
+                        removed = set(answer.transition.terminators)
+                        context.terminators[:] = [
+                            t for t in context.terminators if t not in removed]
+                    for label in _collect_transition_labels(answer.transition):
+                        if label in context.labels:
+                            context.labels.remove(label)
+                else:
+                    walk(answer.transition)
+
+    walk(trans)
+    trans.actions[:] = [a for a in trans.actions
+                        if not getattr(a, 'pruned', False)]
+
+
 def transition(root, parent, context):
     ''' Parse a transition '''
     errors = []
@@ -7817,7 +7969,22 @@ def transition(root, parent, context):
             # Alternative use ground expressions of boolean type, so
             # we know here that there are at most 2 answers, true and false
             # (one of them could be "else")
+            selected = _alternative_selected_branch(child)
             alt, err, warn = decision(child, parent=parent, context=context)
+            if selected is not None:
+                # The question was evaluated before the branches were parsed:
+                # the branches that are not selected are removed from the
+                # model, so their errors and warnings are ignored completely
+                # (they may reference symbols that do not exist)
+                pruned = []
+                for answer in alt.answers:
+                    branch = _alternative_answer_value(answer)
+                    if branch in ('else', selected):
+                        continue
+                    answer.pruned = True
+                    pruned.append(answer)
+                err = [e for e in err if not _in_pruned_branch(e, pruned)]
+                warn = [w for w in warn if not _in_pruned_branch(w, pruned)]
             errors.extend(err)
             warnings.extend(warn)
             if not isinstance(alt.question, ogAST.PrimConstant):
@@ -7880,6 +8047,9 @@ def transition(root, parent, context):
     # Also update the list of terminators of each label in the transition
     for lab, term_count in terminators.items():
         lab.terminators = list(context.terminators[term_count:])
+    # Branches of ALTERNATIVE symbols that were not selected are not part
+    # of the model (the backends generate only the selected branch)
+    _remove_pruned_alternative_branches(trans, context)
     return trans, errors, warnings
 
 
