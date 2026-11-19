@@ -4241,12 +4241,29 @@ def path_type(path):
     return kind, asn1_name.replace('-', '_')
 
 
+def _comment_lines(text, prefix='--  '):
+    ''' Return a list of Ada comment lines from model-supplied text.
+
+    The requirement IDs (and the modeler's comment) come from SDL STRING
+    tokens, which may span lines. A line comment ends at the newline, so a
+    one-line prefix would let the continuation lines be emitted as bare
+    (live) Ada code - source injection through a model file. Every physical
+    line is therefore prefixed individually, as is already done for
+    symbol.trace() and for the informal task text. A lone carriage return
+    is neutralized too: Ada compilers have been known to treat it as a line
+    terminator, which would end the comment early.
+    '''
+    lines = str(text).replace('\r\n', '\n').replace('\r', '\n').split('\n')
+    return [f'{prefix}{line}' for line in lines]
+
+
 def traceability(symbol):
     ''' Return a string with code-to-model traceability '''
     trace = ['--  {line}'.format(line=l) for l in
         symbol.trace().split('\n')]
     if hasattr(symbol, 'req_ids') and symbol.req_ids:
-        trace.append(f"--  Requirement IDs: {', '.join(symbol.req_ids)}")
+        trace.extend(_comment_lines('Requirement IDs: ' +
+                                    ', '.join(symbol.req_ids)))
     if hasattr(symbol, 'comment') and symbol.comment:
         trace.extend(traceability(symbol.comment))
     return trace

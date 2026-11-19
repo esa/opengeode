@@ -296,9 +296,30 @@ def cif_symbolid(symbol):
     return f'/* CIF _id {symbol_id} */'
 
 
+def _cif_string(value):
+    ''' Sanitize a value that is written between quotes inside a CIF comment.
+
+    Values such as requirement IDs, hyperlinks and partition names are free
+    text (the SDL STRING token accepts any character other than a backslash
+    and the closing quote, including newlines and comment terminators). A
+    value containing "*/" - or a newline followed by "*/" - would close the
+    CIF comment early and the rest of the value would be written back to the
+    .pr file as live model text; a quote would end the SDL string early.
+    Escape the quote (the SDL/ASN.1 convention) and break the comment
+    terminator so it can never appear verbatim.
+
+    Only such values are altered: ordinary IDs are written unchanged, so an
+    untouched model round-trips byte for byte.
+    '''
+    return (str(value).replace('\\', '\\\\')
+                       .replace("'", "\\'")
+                       .replace('*/', '* /'))
+
+
 def hyperlink(symbol):
     ''' PR string for the optional hyperlink associated to a symbol '''
-    return f"/* CIF Keep Specific Geode HyperLink '{symbol.text.hyperlink}' */"
+    return ("/* CIF Keep Specific Geode HyperLink "
+            f"'{_cif_string(symbol.text.hyperlink)}' */")
 
 
 def req_server(symbol):
@@ -307,7 +328,7 @@ def req_server(symbol):
         url = genericSymbols.g_url
         if type(url) != str:
             url = url.toString()
-        return f"/* CIF Keep Specific Geode _REQSERVER_ '{url}' */"
+        return f"/* CIF Keep Specific Geode _REQSERVER_ '{_cif_string(url)}' */"
     else:
         return ''
 
@@ -321,7 +342,8 @@ def req_ids(symbol):
     #selected=set(ticked)
     result = []
     for each in ticked:
-        result.append(f"/* CIF Keep Specific Geode _REQID_ '{each}' */")
+        result.append("/* CIF Keep Specific Geode _REQID_ "
+                      f"'{_cif_string(each)}' */")
     return result
 
 
@@ -331,7 +353,8 @@ def rid_ids(symbol):
     rids = symbol.ast.rid_ids
     result = []
     for each in rids:
-        result.append(f"/* CIF Keep Specific Geode _RIDID_ '{each}' */")
+        result.append("/* CIF Keep Specific Geode _RIDID_ "
+                      f"'{_cif_string(each)}' */")
     return result
 
 
@@ -339,7 +362,8 @@ def partition(symbol):
     scene = symbol.scene()
     if scene:
         part_name = scene.partition_name
-        return f"/* CIF Keep Specific Geode Partition '{part_name}' */"
+        return ("/* CIF Keep Specific Geode Partition "
+                f"'{_cif_string(part_name)}' */")
     else:
         return ''
 
