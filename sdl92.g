@@ -112,6 +112,7 @@ tokens {
         RID_ID;
         ROUTE;
         SAVE;
+        SELECT;
         SELECTOR;
         SEQOF;
         SEQUENCE;
@@ -374,11 +375,24 @@ content
                  | variable_definition
                  | monitor_definition
                  | observer_special_states_declaration
-                 | synonym_definition)*
+                 | synonym_definition
+                 | select_if)*
         ->       ^(TEXTAREA_CONTENT fpar* $res? procedure* variable_definition*
                    monitor_definition* syntype_definition* newtype_definition*
                    timer_declaration* signal_declaration* use_clause*
-                   observer_special_states_declaration* synonym_definition*)
+                   observer_special_states_declaration* synonym_definition*
+                   select_if*)
+        ;
+
+select_if
+        :       SELECT IF L_PAREN ground_expression R_PAREN end
+                (procedure
+                 | signal_declaration
+                 | timer_declaration
+                 | select_if)*
+                ENDSELECT end
+        ->      ^(SELECT ground_expression procedure* signal_declaration*
+                  timer_declaration* select_if*)
         ;
 
 // Observers for model checking can have states that are flagged as
@@ -1679,6 +1693,8 @@ THIS            :       T H I S;
 //RESET           :       R E S E T;
 ENDALTERNATIVE  :       E N D A L T E R N A T I V E;
 ALTERNATIVE     :       A L T E R N A T I V E;
+SELECT          :       S E L E C T;
+ENDSELECT       :       E N D S E L E C T;
 DEFAULT         :       D E F A U L T;
 DECISION        :       D E C I S I O N;
 ENDDECISION     :       E N D D E C I S I O N;

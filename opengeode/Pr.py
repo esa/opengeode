@@ -64,6 +64,9 @@ def asn1_header(scene):
         # editor keeps the load-time one on the sdlSymbols module —
         # it carries the USE clauses this header needs.
         ast_obj = getattr(sdlSymbols, 'AST', None)
+    use_clauses = getattr(ast_obj, 'use_clauses', None) or []
+    if not use_clauses:
+        return header
     dv = None
     try:
         from . import ogParser
@@ -81,7 +84,7 @@ def asn1_header(scene):
                 "/* CIF Keep Specific Geode ASNFilename '"
                 + asn1_file + "' */")
     # The USE clauses the model declared (ast.use_clauses holds them)
-    for module in (getattr(ast_obj, 'use_clauses', None) or []):
+    for module in use_clauses:
         header.append('use {};'.format(module))
     return header
 
@@ -125,7 +128,6 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
 
         pr_data.append('system {};'.format(system_name))
         Indent.indent = 1
-        pr_data.append('signal dummy;')
         channels, routes = Indent(), Indent()
         for each in scene.texts:
             # Parse text areas to retrieve signal names USELESS
@@ -148,44 +150,50 @@ def parse_scene(scene, full_model=False, use_symbol_id=False):
 
             if isinstance(conn, Connectors.Channel):
                 # Channel between two processes (only generated at block level as signalroute)
-                Indent.indent = 2
-                routes.append(f'signalroute r{route_idx}')
-                Indent.indent += 1
-                routes.append(cif_route)
-                out_sig = conn.out_sig or 'dummy'
-                in_sig = conn.in_sig or 'dummy'
-                routes.append(f'from {str(conn.parent)} to {str(conn.child)} with {out_sig};')
-                routes.append(f'from {str(conn.child)} to {str(conn.parent)} with {in_sig};')
-                Indent.indent = 1
-                route_idx += 1
+                if conn.out_sig or conn.in_sig:
+                    Indent.indent = 2
+                    routes.append(f'signalroute r{route_idx}')
+                    Indent.indent += 1
+                    routes.append(cif_route)
+                    if conn.out_sig:
+                        routes.append(f'from {str(conn.parent)} to {str(conn.child)} with {conn.out_sig};')
+                    if conn.in_sig:
+                        routes.append(f'from {str(conn.child)} to {str(conn.parent)} with {conn.in_sig};')
+                    Indent.indent = 1
+                    route_idx += 1
             else:
                 # Signalroute to environment
-                to_env = conn.out_sig or 'dummy'
-                from_env = conn.in_sig or 'dummy'
-                chan_name = f'c{channel_idx}'
-                rout_name = f'r{route_idx}'
-                
-                Indent.indent = 1
-                channels.append(f'channel {chan_name}')
-                Indent.indent += 1
-                channels.append(cif_route)
-                channels.append(f'from env to {block_name} with {from_env};')
-                channels.append(f'from {block_name} to env with {to_env};')
-                Indent.indent -= 1
-                channels.append('endchannel;')
-                
-                Indent.indent = 2
-                routes.append(f'signalroute {rout_name}')
-                Indent.indent += 1
-                routes.append(cif_route)
-                routes.append(f'from env to {str(conn.parent)} with {from_env};')
-                routes.append(f'from {str(conn.parent)} to env with {to_env};')
-                Indent.indent -= 1
-                routes.append(f'connect {chan_name} and {rout_name};')
-                Indent.indent = 1
-                
-                channel_idx += 1
-                route_idx += 1
+                to_env = conn.out_sig
+                from_env = conn.in_sig
+                if to_env or from_env:
+                    chan_name = f'c{channel_idx}'
+                    rout_name = f'r{route_idx}'
+
+                    Indent.indent = 1
+                    channels.append(f'channel {chan_name}')
+                    Indent.indent += 1
+                    channels.append(cif_route)
+                    if from_env:
+                        channels.append(f'from env to {block_name} with {from_env};')
+                    if to_env:
+                        channels.append(f'from {block_name} to env with {to_env};')
+                    Indent.indent -= 1
+                    channels.append('endchannel;')
+
+                    Indent.indent = 2
+                    routes.append(f'signalroute {rout_name}')
+                    Indent.indent += 1
+                    routes.append(cif_route)
+                    if from_env:
+                        routes.append(f'from env to {str(conn.parent)} with {from_env};')
+                    if to_env:
+                        routes.append(f'from {str(conn.parent)} to env with {to_env};')
+                    Indent.indent -= 1
+                    routes.append(f'connect {chan_name} and {rout_name};')
+                    Indent.indent = 1
+
+                    channel_idx += 1
+                    route_idx += 1
 
         pr_data.extend(channels)
         pr_data.append('block {};'.format(block_name))
@@ -682,21 +690,21 @@ def _channel(symbol, recursive=True, **kwargs):
     result.append('signalroute c')
     Indent.indent += 1
     if isinstance(symbol, Connectors.Channel):
-        out_sig = symbol.out_sig or 'dummy'
-        in_sig = symbol.in_sig or 'dummy'
-        result.append('from {} to {} with {};'.format(str(symbol.parent),
-                                                       str(symbol.child),
-                                                       out_sig))
-        result.append('from {} to {} with {};'.format(str(symbol.child),
-                                                       str(symbol.parent),
-                                                       in_sig))
+        if symbol.out_sig:
+            result.append('from {} to {} with {};'.format(str(symbol.parent),
+                                                           str(symbol.child),
+                                                           symbol.out_sig))
+        if symbol.in_sig:
+            result.append('from {} to {} with {};'.format(str(symbol.child),
+                                                           str(symbol.parent),
+                                                           symbol.in_sig))
     else:
-        out_sig = symbol.out_sig or 'dummy'
-        in_sig = symbol.in_sig or 'dummy'
-        result.append('from {} to env with {};'.format(str(symbol.parent),
-                                                       out_sig))
-        result.append('from env to {} with {};'.format(str(symbol.parent),
-                                                       in_sig))
+        if symbol.out_sig:
+            result.append('from {} to env with {};'.format(str(symbol.parent),
+                                                           symbol.out_sig))
+        if symbol.in_sig:
+            result.append('from env to {} with {};'.format(str(symbol.parent),
+                                                           symbol.in_sig))
     Indent.indent -= 1
     return result
 

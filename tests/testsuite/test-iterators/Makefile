@@ -36,7 +36,7 @@ test-ada:
 	#[ $(ARCH) == 64 ] && EXTRAFLAG="--target=x86_64-linux" ;
 	mkdir -p build && cp *.pr *.asn model_checker.gpr properties build && cd build && \
 	$(OPENGEODE) orchestrator.pr --toAda && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	#taste-properties -d -s properties orchestrator.pr && \
 	#taste-asn1-iterators *.asn && \
 	#ADA_PROJECT_PATH=~/.local/share/gpr:${ADA_PROJECT_PATH} gprbuild -Pmodel_checker && ./model_checker
@@ -53,7 +53,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda

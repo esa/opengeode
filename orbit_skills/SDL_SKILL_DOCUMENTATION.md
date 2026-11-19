@@ -28,6 +28,7 @@ description: >
 7. [Text Areas and Declarations](#7-text-areas-and-declarations)
 8. [States and State Machine Structure](#8-states-and-state-machine-structure)
 9. [Transitions and Actions](#9-transitions-and-actions)
+   - [What the editor stores in a symbol](#what-the-editor-stores-in-a-symbol-read-this-before-fixing-a-symbol)
 10. [Task and Assignment](#10-task-and-assignment)
 11. [Output](#11-output)
 12. [Decision](#12-decision)
@@ -573,7 +574,9 @@ timer myTimer;
 ```
 
 Text areas are opened with `/* CIF TEXT ... */` and closed with `/* CIF ENDTEXT
-*/`. Inside, you can write:
+*/`. The markers are added by the editor when it saves the model: the text
+stored in a text-area symbol is only the declarations **between** them, so a
+snippet handed to a fixer must not include the markers. Inside, you can write:
 
 - Variable declarations (`DCL`)
 - Timer declarations (`timer`)
@@ -763,6 +766,35 @@ myLabel:
 
 Labels allow re-routing via JOIN (see §16).
 
+### What the editor stores in a symbol (READ THIS BEFORE FIXING A SYMBOL)
+
+This matters whenever you are asked to repair the text of a symbol. OpenGEODE
+keeps only the **body** of a symbol, not the complete SDL statement:
+
+- **No leading keyword.** A Task symbol holding `x := x + 1` is stored exactly
+  as `x := x + 1`; the generator emits `task x := x + 1;`. The same applies to
+  `output`, `call`, `provided`, `input`, `connect` and `NEXTSTATE`.
+- **No trailing `;`.** The generator appends the statement terminator, and
+  `check_syntax` reports *"Remove the semi-colon at the end of the text."* if
+  the stored text ends with one.
+- **Exception — a text area** (`dcl`, `timer`, `fpar`, `procedure`, `syntype`,
+  `synonym`, `use`) keeps its own `;`. Its stored text does **not** include the
+  `/* CIF TEXT ... */` / `/* CIF ENDTEXT */` markers — the editor adds those
+  when serialising the model.
+
+| Symbol | Stored text (what is in the box) | Generator emits |
+|--------|----------------------------------|-----------------|
+| Task | `x := x + 1` | `task x := x + 1;` |
+| Task with a loop | `for i in range(10):` / `    call writeln(i)` / `endfor` | `task for i in range(10): ... endfor;` |
+| Output | `value(count)` | `output value(count);` |
+| Procedure call | `set_timer(100, t)` | `call set_timer(100, t);` |
+| Continuous signal | `x > 0` | `provided x > 0;` |
+| Nextstate | `Wait` | `NEXTSTATE Wait;` |
+| Create | `P(x)` | `create P(x);` |
+| Return | *(empty)* or `x + 1` | `return;` / `return x + 1;` |
+| Stop | *(empty)* | `stop;` |
+| Text area | `dcl counter MyInteger;` | (verbatim, including the `;`) |
+
 ---
 
 ## 10. Task and Assignment
@@ -803,9 +835,14 @@ documentation.
 ```sdl
 task for each in mySeqOf:
     call writeln(each);
-    each := each + 1
+    total := total + each
 endfor;
 ```
+
+**Do not assign the loop variable.** The iterator (`each`) is read-only inside
+the loop; assigning it is a semantic error
+(`Assignment to loop parameter "each" is not allowed`). Accumulate into another
+variable instead, as above.
 
 ### FOR with RANGE
 
@@ -1106,6 +1143,13 @@ fpar in param1 TypeA,
 -- no body here (declaration only)
 endprocedure;
 ```
+
+A procedure declared in a text area stores the signature with its optional
+`fpar` / `returns` / `referenced` / `external` and the closing `endprocedure;`,
+**without** any `/* CIF ... */` markers (the editor adds those when saving). A
+procedure with a graphical body is a separate symbol; its body is not stored in
+the text area. Set the `FPAR` section as a single declaration: one `fpar`
+keyword, comma-separated parameters, one `;` at the end.
 
 **With graphical body:**
 ```sdl
@@ -2841,15 +2885,13 @@ signalroutes, connections), and the rules that govern which process
 can send or receive which signal.
 
 OpenGEODE's `--check` parses multi-process models and reports any
-syntax or semantic errors found (0 warnings and 0 errors when the
-model is correct). However, `--check` then also checks that exactly
-one process is present and reports `Found N process(es) instead of
-one` with exit code 1 when there are more. This is not a syntax or
-semantic error in the model — it is a limitation of OpenGEODE's
-code-generation pipeline, which handles one process at a time. The
-error line `Found N process(es) instead of one` can be safely ignored
-for multi-process models as long as the parser reports `0 warnings
-and 0 errors` in the summary line.
+syntax or semantic errors found (`0 warnings and 0 errors` when the
+model is correct). The number of processes is not itself an error:
+`--check` accepts a model with several processes and returns exit code
+0 when the model is clean. (Only a model with **no** process is
+refused.) Code generation likewise runs once per process, so
+`--toAda`/`--toC`/`--toRust` produce each process' code from a single
+multi-process `.pr` file.
 
 ### 30.1 The System Hierarchy
 
@@ -3478,7 +3520,7 @@ signalroute r1
 |-------|-------|-----|
 | `"X" is not defined or not visible` | Signal `X` used in `output` but not routed from this process, or not declared at system level | Add the signal to a signalroute with `from ThisProcess to ... with X`, and declare it at system level |
 | `Missing declaration for signal(s) X` | Signal `X` appears in a channel or signalroute route but is not declared | Add `signal X;` at system level (or in a text area) |
-| `Found N process(es) instead of one` | More than one process in the model | Not a syntax/semantic error. `--check` reports it and returns exit 1, but the model is valid if the summary says `0 warnings and 0 errors`. Only `--toAda`/`--toC` fail. Safe to ignore for multi-process models. |
+| `No process found in the input file(s)` | The model declares no process at all | Add a `process X;` (or `process X referenced;`) inside a block — a model with several processes is fine |
 | `Process X is defined but not declared in a system` | Process body exists but no system/block with a matching process declaration | Add a system/block with `process X;` or `process X referenced;` |
 | `FPAR cannot be declared at system level` | `fpar` appears in a system-level text area | Move `fpar` into the process's text area or into the `referenced` process declaration |
 | `Timers shall be declared only in a process` | Timer declared in system-level text area | Move timer declaration into the process text area |
@@ -3609,13 +3651,12 @@ flowchart LR
 |---------|------------|-------|-----------|-------------------|
 | **Single process, inline** | Simple models, most test cases | One `.pr` | ✅ | ✅ |
 | **Single process, TASTE split** | TASTE function, system structure separate from body | `system_structure.pr` + `function.pr` | ✅ (pass both) | ✅ (pass both) |
-| **Multi-process, inline** | Multi-process system, prototyping, validation | One `.pr` | ✅ | ❌ (N processes) |
-| **Multi-process, TASTE split** | Each process in its own TASTE function | One `system_structure.pr` + one `.pr` per process | ✅ (pass all) | ❌ per file |
+| **Multi-process, inline** | Multi-process system, prototyping, validation | One `.pr` | ✅ | ✅ (one run per process) |
+| **Multi-process, TASTE split** | Each process in its own TASTE function | One `system_structure.pr` + one `.pr` per process | ✅ (pass all) | ✅ |
 
 **Key takeaway**: Use `opengeode --check` to validate multi-process models
-— look for the summary line `found 0 warnings and 0 errors`. Ignore the
-`Found N process(es) instead of one` error (exit code 1); it is a
-code-generation constraint, not a model error. Do not expect `--toAda` or
-`--toC` to generate code for multi-process models — OpenGEODE generates
-code for one process at a time. In TASTE, the build system handles
-multi-process code generation by invoking OpenGEODE once per process.
+— look for the summary line `found 0 warnings and 0 errors`. The number of
+processes is not an error: a clean model returns exit code 0 whatever its
+process count. `--toAda`/`--toC`/`--toRust` generate each process' code in
+turn, so a single multi-process `.pr` file produces every process' output.
+In TASTE, the build system still invokes OpenGEODE once per function.

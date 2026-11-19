@@ -62,6 +62,7 @@ def run_test(op):
     gentypes = False
     lang=''
     asnlang=''
+    ada_extra = []
     asn_path=''
 
     if op.rule == 'test-qgen-parse':
@@ -69,6 +70,9 @@ def run_test(op):
     elif op.rule == 'test-qgen-ada':
         lang = 'ada'
         asnlang = '-Ada'
+        # OpenGeode's Ada backend uses the C-aligned byte representation for
+        # BIT STRING values, so request the matching asn1scc codegen.
+        ada_extra = ['-adaBitStringAlignment']
     elif op.rule == 'test-qgen-c':
         lang = 'c'
         asnlang = '-c'
@@ -111,8 +115,9 @@ def run_test(op):
     if not gentypes:
         asn_files = glob.glob ('*.asn')
         if asn_files:
-            asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang,
-                '--type-prefix', 'asn1Scc'] + asn_files
+            asn_call = ['asn1.exe', "-equal", '-o', outfolder, asnlang] + \
+                (ada_extra if asnlang == '-Ada' else []) + \
+                ['--type-prefix', 'asn1Scc'] + asn_files
 
             p0 = subprocess.Popen(asn_call,
                     stdout=subprocess.PIPE,

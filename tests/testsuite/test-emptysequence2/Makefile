@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) test.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n test.ali
 
@@ -47,7 +47,7 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) test.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) test.pr --toAda

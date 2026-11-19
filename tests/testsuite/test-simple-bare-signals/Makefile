@@ -12,7 +12,7 @@ test-parse:
 
 test-ada:
 	$(OPENGEODE) --toAda --dumpAST $(ROOT_MODEL)
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n bare_signals.ali
 
@@ -23,7 +23,7 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) --toRust $(ROOT_MODEL) && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda

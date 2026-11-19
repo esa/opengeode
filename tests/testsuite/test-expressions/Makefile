@@ -33,7 +33,7 @@ test-ada: clean
 
 expressions.adb: expressions.pr expressions_ri.adb
 	$(OPENGEODE) expressions.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 
 test_ada.adb: test_ada.ada
 	cp test_ada.ada test_ada.adb
@@ -57,12 +57,7 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) expressions.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
-	  fi; \
-	done && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
 	cp expressions_cargo.toml Cargo.toml && \
 	python3 patch_ri.py expressions.rs && \
 	printf '%s\n' '#![allow(non_snake_case, non_upper_case_globals, unused_parens, unused_imports,' \

@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) demodevicedsap.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n demodevicedsap.ali
 
@@ -41,7 +41,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) demodevicedsap.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) demodevicedsap.pr --toAda

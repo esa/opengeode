@@ -40,8 +40,10 @@ test-c: challenge.c test_c.o dataview-uniq.o
 
 test-rust:
 	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	cp challenge_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda
 

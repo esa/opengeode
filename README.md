@@ -21,6 +21,9 @@ Features
 
 - Graphical editor of SDL processes and procedures.
 - Support for state composition and state aggregation (parallel/nested states)
+- Supports models holding several processes connected by channels and
+  signalroutes, in a single `.pr` file: they are edited, checked, exported
+  and code-generated (one backend run per process)
 - Works on pure PR+CIF files (textual SDL notation)
 - Supports ASN.1 data types using ESA Space Certified compiler (www.github.com/ttsiodras/asn1scc)
 - Generates Ada and C code, and Rust code (prototype - use `--toRust`)
@@ -37,7 +40,6 @@ Features
 Main limitations
 -----------
 
-- Supports only one process at a time (use [TASTE](https://taste.tools) to connect processes to form a complete system)
 - Minimal support of legacy SDL datatypes (newtypes/synonyms..): use ASN.1 instead
 
 Installation
@@ -125,6 +127,47 @@ The background pattern was downloaded from www.subtlepatterns.com
 
 Changelog
 =========
+
+**4.13.3 (11/2026)**
+- **Security fix in the C backend (string-literal injection, ESA-CERT report)**. A model could inject arbitrary C statements into the generated source through an `IA5String` literal. The parser keeps the source escapes of a quoted string verbatim (`\"`, `\'`, `\\`), and the C backend escaped the text with a plain `value.replace('"', '\\"')`: a model writing `"benign\";extern int system(...); //"` therefore produced `"benign\\";…"`, where the `\\` is a literal backslash and the following `"` closes the C string — the rest of the model text became live, syntactically valid C. The generated code compiled with `gcc -Wall` with **zero warnings** and executed the injected statements at runtime. A second vector was found during the audit: `write`/`writeln` of a hex literal pasted the decoded bytes (`printable_string`) straight into `printf("…")`, so a hex literal spelling out a quote closed the format string. Both sites (plus the procedure-return initializer) now go through one helper that first interprets the SDL escapes and then re-escapes for C — the same two-step approach the Ada backend already used. The Ada backend (character aggregates) and the Rust backend (byte arrays) were audited and are not affected. New regression tests in `tests/pytests/test_c_string_injection.py` (19 tests, including a `gcc -Wall` compile-and-run proof that the payload stays inert); they fail on the previous code and pass with the fix. `make test-c` reports the same two pre-existing errors (`test-debug`, `test-strings2`) before and after the change; `make test-ada` and `make test-parse` are clean.
+
+**4.13.2 (10/2026)**
+- **`select if` conditions are now evaluated before the gated elements are parsed.** Previously, elements discarded by a `select if` (e.g. a procedure or a signal declared in a block whose condition is false) were still fully parsed and could raise spurious errors — for example a "Type not found in ASN.1 model" error for a signal or a `fpar` whose type was intentionally deselected along with the block, a "Missing procedure definition" error for an exported referenced procedure without body, or type errors in the body of a discarded procedure definition. The parser now dresses up the list of discarded parts first (the conditions, which must be constant, are evaluated as soon as the enclosing text area is parsed — including a pre-scan before the graphical procedure definitions are parsed, which happen to be visited before the process text areas), and then ignores every error and warning raised while parsing the discarded elements. They are still registered in the AST and pruned from the final model as before. In the GUI (and `prune_select_if=False`) the behaviour is unchanged: all errors are still reported, since the user must see the whole model. New tests in `tests/pytests/test_select_if.py` (a deselected block declaring a signal with a type absent from the dataview, an exported referenced procedure without body, and a graphical procedure definition using unexisting types, all parse clean in pruning mode; the errors are still reported without pruning). The `test-select-if` testsuite case was extended with a graphical procedure definition using unexisting types inside a `select if(false)` block.
+
+**4.13.1 (10/2026)**
+- **Security fix in the Rust backend (comment injection)**. Model-supplied free text could inject live Rust code into the generated file. The SDL `STRING` token (used by informal tasks, requirement IDs, informal decisions) may span lines, so a naive single-line `//` prefix let continuation lines escape the comment, exactly the class of bug Ada (`-- ` on every line) and C (`// ` on every line) already neutralize. All Rust comment emission sites now go through one `_comment()` helper that prefixes **every** physical line; a bare carriage return is neutralized too (the Rust reference allows `\r` as a line terminator, unlike Ada/C line comments, so a conforming host could otherwise end the comment early and leak the tail as code). Verified end to end: a model with `TASK 'innocent\nevil();\rsecond();';` generates inert comments and a full `cargo build` succeeds. New regression tests (`tests/pytests/test_rust_comment_injection.py`, 16 tests). All 130 tests of `make test-rust` pass.
+- `test-select-if` testsuite fixture: added its `test-rust` Makefile target (it was falling back to the shared rule that requires a `system_structure.pr` it does not have).
+
+**4.13.0 (10/2026)**
+- **Conditional compilation (`select if`)**: Added full support for the SDL Z.100 `select if (<condition>); ... [else; ...] endselect;` construct across the parser, AST, and code generators. Enables static configuration of signals, procedures, synonyms, variables, and transitions based on boolean ASN.1/SDL constants and synonyms; unselected branches are pruned before semantic analysis and code generation.
+- **Auto-redimensioning of scrollbars on move/resize**: Moving or resizing symbols on the diagram now automatically triggers a scrollbar and view bounds refresh upon mouse button release (equivalent to pressing F5), keeping symbols reachable when moved far out. Collision avoidance (CAM) animations and undo/redo operations also refresh view bounds.
+- **Makefile generation & Rust target**:
+  - Added a `rust` target to generated `Makefile.<process>` to build Rust code in `code_rust/` using Cargo (`cargo build --lib`).
+  - Fixed relative path calculation for multiple ASN.1 files when targeting `code`, `code_c`, and `code_rust`.
+- **GUI and dataview improvements**:
+  - Automatically place the `use <dataview> comment ...;` clause at the system / top-level diagram instead of inside process text areas when creating/adding a dataview, avoiding syntax errors.
+  - Automatically append `_dv` to generated ASN.1 dataview filenames (`<process>_dv.asn`) to prevent naming collisions with the process name and backend code generation files.
+  - Fixed an `IndexError` when navigating back/up through scene stacks (`go_to_scene_path` / `go_up`) when the scene stack is empty.
+
+**4.12.0 (10/2026)**
+- **Cross-language BIT STRING alignment (Ada/C/Rust).** The three backends now agree on how an ASN.1 `BIT STRING` is laid out in memory and on disk. The problem (found and proven with an asn1scc-level test) was that the generated Ada stored bit *k* at bit `k%8` from the **LSB** of byte `k/8` (`adaasn1rtl.BitArray`), while C and Rust store it at bit `k%8` from the **MSB** (`0x80>>(k%8)`) — a per-byte bit reversal: setting "bit 0" in C meant "bit 7" in Ada, so C and Ada could not share a raw `BIT STRING` buffer. The Ada backend now uses asn1scc's C-aligned byte representation, and the C and Rust backends were fixed too (bit addressing, string literals, the `//` append and the *slice* operator `bs(i,j)`, which was broken in all three). The generated code is byte-identical across backends. This **changes the Ada `BIT STRING` API** (it is a byte array now, not a bit array) — the underlying asn1scc work is a new opt-in flag `--adaBitStringAlignment`.
+- **`<proc>_state()` returns the current state name** in all three backends (it returned a null pointer in Ada/C and `null()` in Rust, crashing any TASTE trace that dereferenced it): Ada now returns the string (fixing the generated RI stub `To_C_Pointer`), C emits a `switch` on the state, Rust a `match`. The C and Rust test programs of `test-simu` were aligned on the Ada one.
+- **C backend feature parity**: `CREATE` and the `STOP` terminator are now implemented (creation/deletion via the TASTE kazoo runtime contract, matching Ada and Rust), as is the `state` reference expression (`(state = S1)`); DECISION ANY now really selects at random (the RNG is seeded from the clock, as in Ada); the C BIT STRING addressing/literals were corrected; fixed a call to a process-type transition that wrongly passed a destination PID it does not take.
+- **Rust backend, large cleanup**: a dataview module name derived from the ASN.1 file (it was hardcoded `dataview-uniq`), and a long list of codegen fixes (CHOICE selection, strings/arrays, aliases, timers, nested states, expressions, RI stubs); the Rust test suite went from 11 to ~50 tests that actually build and run, and now passes with no residual failures.
+- New `docs/backend-comparison.md`: a documented comparison of the Ada/C/Rust backends and the state of what is implemented.
+- Model layout on load: only the **floating** (top-level) symbols are now placed at the coordinates read from the file (the CIF comments); everything below them is laid out relative to its parent and each floating symbol's sub-tree is rebalanced (`clean_layout`, recursive) followed by a non-animated collision avoidance (`cam`), so the branches are evenly spread and cannot overlap — including across neighbouring top-level trees and inside composite states (the inner states hang below the START symbol, which is now laid out too; the text widths are flushed with the event loop first so the rebalance does not use stale sizes). The block scene's generated declarations textbox is placed to the right of the process symbols (it used to land on top of them when processes did not start at x=0). A programmatic symbol insertion (the Orbit MCP bridge, `SdlMcpServer`) now does the same rebalance + collision avoidance and triggers the F5-equivalent view refresh so the scrollbars span the new diagram. Tests: `tests/pytests/test_cif_layout.py`.
+- New orbit connection: an **Auto fix** button in the syntax-error pop-up. When a text symbol fails to parse, the button asks orbit (the same agent as the AI Chat tab, with the same bundled `sdl-model-construction` skill) for a corrected version of the text and offers it in a review dialog; nothing is applied unless the user accepts. A parser usually reports only the first error, so a correction can reveal the next one: orbit is then asked again, up to a few attempts, each building on the text the previous round produced. An accepted correction is never rolled back — when the attempts run out (or orbit starts repeating itself) the last proposed text is kept for the user to finish by hand. Every outcome is reported in the model's message window. All orbit-facing code lives in the new `opengeode/OrbitSyntaxFix.py`; if `orbit_acp` or the orbit agent is not available, the button is not shown at all and the pop-up is unchanged. Available for every text symbol. Tests: `tests/pytests/test_orbit_syntax_fix.py`.
+
+**4.11.3 (09/2026)**
+- Removed the one-process limitation: a model holding several processes in a single `.pr` file (connected by channels and signalroutes) is now fully supported by the command line:
+    - `--check` reports the parse result regardless of the number of processes (it only fails when the model has no process or real errors)
+    - `--toAda`, `--toC` and `--toRust` run the backend once per process, generating each process' code (as the GUI already did)
+    - `--png`/`--pdf`/`--svg` render the whole block scene (all processes and their connections) and emit one statechart per process
+- Fixed signal direction inference in multi-process blocks: `get_interfaces` read the block's process count while the block was still being parsed, so all but the first process could have their inputs misclassified as outputs (reported as "Input signal or timer not declared" for a signal that IS declared)
+
+**4.11.2 (09/2026)**
+- Rust backend: the generated statics (`DEFAULT_CONTEXT` and its `ctxt` mirror, monitors, stop-condition contexts) no longer contain function calls in their initializers. `std::mem::zeroed()` and `Default::default()` are not `const fn` on rustc < 1.75, so compiling the generated code on Debian 12 (rustc 1.63) failed with error E0015 "cannot call non-const fn in statics". Fields without a user-specified initial value are now filled with const-evaluable literal zeros built recursively from the ASN.1 type shape (scalars, enum first variant, `SEQUENCE OF` arrays, `SEQUENCE`/`CHOICE` literals, string structs with their asn1scc `n_count` convention)
+- All 124 tests of `make test-rust` pass
 
 **4.11.1 (09/2026)**
 - Rust backend fixes for SDL instances and TASTE integration:

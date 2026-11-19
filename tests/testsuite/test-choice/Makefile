@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada  -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment  -typePrefix asn1Scc -equal *.asn
 	$(GNATMAKE) -O$(O) test_ada.ada && ./test_ada | diff expected_ada -
 
 test-c: 
@@ -45,6 +45,6 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) og.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 .PHONY: all edit test-parse test-ada test-rust coverage

@@ -43,13 +43,8 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) operators.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
-	  fi; \
-	done && \
-	sed -i '/^pub const /d' dataview-uniq.rs && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	sed -i '/^pub const /d' taste_dataview.rs && \
 	sed -i 's/fn ri_0_assert(.*{/fn ri_0_assert(_res: \&mut asn1SccBool, _msg: \&asn1SccCharString) { \/\/ no-op/' operators_ri.rs 2>/dev/null || true && \
 	cp operators_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \

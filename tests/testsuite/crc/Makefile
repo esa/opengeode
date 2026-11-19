@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada:
 	#make -f Makefile.og
 	$(OPENGEODE) ${ROOT_MODEL} --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make insdl
 
 test-c:
@@ -38,7 +38,7 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) insdl.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 test-if:
 	sdl2if ${ROOT_MODEL}

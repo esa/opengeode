@@ -648,6 +648,88 @@ def test_live_bridge_edits_the_running_editor(tmp_path):
             os.unlink(sock_path)
 
 
+def _raw_socket_call(path, payload, split_at=None, pause=0.15):
+    '''Send one newline-terminated request over a fresh socket and
+    return the decoded reply line. With `split_at`, the request is
+    written in TWO chunks with a pause between them, so it arrives as
+    two readyRead events — a request larger than one read, or a slow
+    client, looks exactly like this.'''
+    import socket as socklib
+    s = socklib.socket(socklib.AF_UNIX, socklib.SOCK_STREAM)
+    s.connect(path)
+    s.settimeout(8.0)
+    try:
+        raw = (json.dumps(payload) + '\n').encode('utf-8')
+        if split_at is None:
+            s.sendall(raw)
+        else:
+            s.sendall(raw[:split_at])
+            time.sleep(pause)
+            s.sendall(raw[split_at:])
+        buf = b''
+        while b'\n' not in buf:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            buf += chunk
+        return buf.split(b'\n', 1)[0].decode('utf-8', 'replace')
+    finally:
+        s.close()
+
+
+def test_live_bridge_reassembles_fragmented_and_large_requests(tmp_path):
+    '''The regression the user hit: a request larger than one socket
+    read is delivered as several readyRead events. The bridge used to
+    parse each read as a whole line, so a large request (a symbol with
+    a big text or a whole state body) was split, its fragments failed
+    to parse, and the stream desynced — orbit then saw the bridge as
+    "down" after a few commands. The bridge must carry the partial line
+    across reads and dispatch only complete lines.'''
+    workdir = tmp_path / 'model'
+    shutil.copytree(MODEL_DIR, workdir,
+                    ignore=shutil.ignore_patterns('*.o', 'target', 'code*'))
+    stop = tmp_path / 'STOP'
+    proc, sock_path = _live_editor(workdir, stop)
+    assert sock_path, f"bridge never came up: {proc.stderr.read()[:200]}"
+    try:
+        # 1. A request split in two, as a fragmented read delivers it:
+        #    the reply must still be the ping's, matched by id.
+        reply = json.loads(_raw_socket_call(
+            sock_path, {'jsonrpc': '2.0', 'id': 7, 'method': 'ping',
+                        'params': {}}, split_at=6))
+        assert reply.get('id') == 7, reply
+        assert 'error' not in reply, reply
+
+        # 2. A LARGE request — far bigger than one socket read — split
+        #    by the OS: it must be reassembled and answered, not lost.
+        #    (A ping with a big pad: the wire reassembly is what is
+        #    under test, not the grammar, so nothing deep is parsed.)
+        big = 'x' * 200000
+        reply = json.loads(_raw_socket_call(
+            sock_path,
+            {'jsonrpc': '2.0', 'id': 8, 'method': 'ping',
+             'params': {'pad': big}},
+            split_at=2000))
+        assert reply.get('id') == 8, reply
+        assert 'error' not in reply, reply
+        assert reply['result'] == {}, reply
+
+        # 3. The bridge is still healthy after the big request (the old
+        #    bug left the connection desynced for every later call).
+        reply = json.loads(_raw_socket_call(
+            sock_path, {'jsonrpc': '2.0', 'id': 9, 'method': 'tools/list',
+                        'params': {}}))
+        assert reply.get('id') == 9 and 'result' in reply, reply
+    finally:
+        stop.write_text('stop')
+        try:
+            proc.wait(timeout=10)
+        except Exception:
+            proc.kill()
+        if os.path.exists(sock_path):
+            os.unlink(sock_path)
+
+
 # ---------------------------------------------------------------------- #
 # The structural capabilities: process creation in the block view,
 # channels/signalroutes, signal declarations, and NEXTSTATE.

@@ -43,7 +43,7 @@ testif:
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -gnat2012 -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c -gnat2012 b~orchestrator.adb
@@ -55,7 +55,7 @@ test-vhdl : test-c
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda

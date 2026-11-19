@@ -1,0 +1,9 @@
+DV DEFINITIONS ::=
+BEGIN
+  T-UInt32 ::= INTEGER (0 .. 4294967295)
+  MyInteger ::= INTEGER (0 .. 100)
+  SomeBool ::= BOOLEAN
+
+  c-true BOOLEAN ::= TRUE
+  c-false SomeBool ::= FALSE
+END

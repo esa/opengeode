@@ -33,7 +33,7 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) DemoDeviceDSAP_fixed.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 test-if:
 	sdl2if DemoDeviceDSAP_fixed.pr

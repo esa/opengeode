@@ -311,6 +311,11 @@ together with join/labels:
 
 |ClipCapIt-210118-111213.PNG|
 
+The generated code seeds its random number generator from the system clock at
+startup, so the chosen branch genuinely varies from one run to the next. Note
+that this makes such a process non-deterministic, which also shows up as a
+warning when the model is analysed.
+
 It is also possible to group answers in convenient ways to limit the
 number of branches:
 
@@ -519,6 +524,22 @@ SDL is both a graphical **and** a textual language. OpenGEODE's SDL
 grammar is defined here:
 
 https://github.com/esa/opengeode/blob/master/sdl92.g
+
+Conditional compilation
+~~~~~~~~~~~~~~~~~~~~~~~
+
+OpenGEODE supports the SDL Z.100 ``select if`` construct for static conditional compilation:
+
+.. code-block:: sdl
+
+    select if (feature_flag);
+        signal extra_signal(MyInteger);
+        exported procedure do_something; referenced;
+    else;
+        signal default_signal;
+    endselect;
+
+Conditions are evaluated during parsing against declared boolean synonyms or ASN.1 constants. Unselected branches are automatically pruned before code generation.
 
 SDL in the context of TASTE
 ===========================

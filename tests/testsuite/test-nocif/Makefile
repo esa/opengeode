@@ -35,14 +35,16 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	cp orchestrator_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 test-if:
 	sdl2if orchestrator.pr system_structure.pr
 
 test-python:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --shared
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn
 	$(GNATMAKE) -O$(O) -c *.adb
 	$(GNATBIND) -n -Lliborchestrator orchestrator
 	$(GNATMAKE) -c b~orchestrator.adb

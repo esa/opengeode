@@ -27,7 +27,7 @@ test-parse:
 
 test-ada:
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make test_ada.ada
 	./test_ada | diff expected -
 
@@ -43,9 +43,10 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) og.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
-
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	cp og_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 coverage:
 	coverage run -p $(OPENGEODE) og.pr --toAda
 

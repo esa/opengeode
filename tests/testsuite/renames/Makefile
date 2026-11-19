@@ -36,8 +36,10 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) *.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	cp renaming_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 test-if:
 	sdl2if *.pr
 

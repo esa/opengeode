@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) og.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp test_ada.ada test_ada.adb
 	gnat make test_ada
 	./test_ada | diff expected -
@@ -47,6 +47,8 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) og.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
-
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	cp og_cargo.toml Cargo.toml && \
+	cargo build 2>&1 && \
+	./target/debug/test_rust | diff expected -
 .PHONY: all edit test-parse test-ada test-rust coverage

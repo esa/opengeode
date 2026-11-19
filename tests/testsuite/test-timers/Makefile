@@ -27,7 +27,7 @@ test-qgen-gt-c:
 
 test-ada:
 	$(OPENGEODE) test.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	cp toto_timer.adasource test_ri.ads
 	cp toto_timer.adabody test_ri.adb
 	gnat make test_ada.ada -Iboards/x86 -Isrc -Iasn1rtl
@@ -49,7 +49,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) test.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 
 coverage:

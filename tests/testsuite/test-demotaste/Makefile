@@ -27,7 +27,7 @@ test-parse:
 
 test-ada: 
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make -gnatd.E orchestrator
 
 test-c:
@@ -41,7 +41,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) orchestrator.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) orchestrator.pr system_structure.pr --toAda

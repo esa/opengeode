@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada:  clean
 	mkdir -p src && cd src && $(OPENGEODE) ../toto.pr -g --toAda && \
 	cp ../test_toto.ada test_toto.adb && \
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal ../*.asn *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal ../*.asn *.asn
 	mkdir -p obj && cd obj && gnat make -O$(O) ../src/test_toto && \
 	./test_toto
 
@@ -47,6 +47,6 @@ coverage:
 
 test-rust:
 	$(OPENGEODE) toto.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 .PHONY: all edit test-parse test-ada test-rust coverage

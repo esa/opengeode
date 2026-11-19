@@ -1,7 +1,7 @@
 all:
 	mkdir -p code
 	cd code && opengeode --toAda ../*.pr
-	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada dataview-uniq.asn code/og_datamodel.asn
+	asn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada -adaBitStringAlignment dataview-uniq.asn code/og_datamodel.asn
 	cd code && gnat make og
 c:
 	mkdir -p code_c

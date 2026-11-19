@@ -676,18 +676,22 @@ class SDL_Scene(QGraphicsScene):
                 dest_scene.refresh()
                 # Once everything is rendered, adjust position of each
                 # symbol to the value from the AST (positions may be
-                # slightly altered by the reshaping functions)
+                # slightly altered by the reshaping functions).
+                #
+                # Only the floating (top-level) symbols are placed from
+                # the coordinates stored in the file (the CIF comments):
+                # everything below them is laid out relative to its
+                # parent (see clean_layout below), so the diagram is
+                # drawn from the CIF anchors but the branches stay tidy
+                # and cannot overlap because of stale coordinates. The
+                # function is therefore called on the floating symbols
+                # only and does not recurse into their children.
                 def fix_pos_from_ast(symbol):
                     try:
-                        if(symbol.ast.pos_x is not None
-                                and symbol.ast.pos_y is not None):
-                            relpos = symbol.mapFromScene(symbol.ast.pos_x,
-                                                         symbol.ast.pos_y)
-                            if not symbol.hasParent:
-                                symbol.pos_x = symbol.ast.pos_x
-                                symbol.pos_y = symbol.ast.pos_y
-                            else:
-                                symbol.position += relpos
+                        if symbol.ast.pos_x is not None \
+                                and symbol.ast.pos_y is not None:
+                            symbol.pos_x = symbol.ast.pos_x
+                            symbol.pos_y = symbol.ast.pos_y
                             symbol.update_connections()
                             # Update_position is called here because it
                             # is not possible to be sure that the
@@ -697,34 +701,99 @@ class SDL_Scene(QGraphicsScene):
                             # between Linux and Windows for example.
                             symbol.update_position()
                         else:
-                            # No CIF coordinates: fix COMMENT position
-                            if isinstance(symbol, genericSymbols.Comment):
-                                symbol.pos_x = \
-                                  symbol.parent.boundingRect().width() + 15
-                                symbol.pos_y = 0
-                            if not symbol.hasParent:
-                                sc_br = dest_scene.itemsBoundingRect()
-                                sy_br = symbol.mapRectToScene(
-                                            symbol.boundingRect() |
-                                            symbol.childrenBoundingRect())
-                                symbol.pos_x += (sc_br.width() - sy_br.x())
+                            # No CIF coordinates: push the floating
+                            # symbol to the right of whatever is already
+                            # in the scene, so it does not land on top
+                            # of an existing sub-diagram.
+                            sc_br = dest_scene.itemsBoundingRect()
+                            sy_br = symbol.mapRectToScene(
+                                        symbol.boundingRect() |
+                                        symbol.childrenBoundingRect())
+                            symbol.pos_x += (sc_br.width() - sy_br.x())
                     except AttributeError as err:
                         # no AST, ignore (e.g. Connections, Cornergrabbers)
                         pass
                         #LOG.debug("[render everything] " + str(err))
-                    else:
-                        # Recursively fix pos of sub branches and followers
-                        for branch in (elm for elm in symbol.childSymbols()
-                                   if isinstance(elm,
-                                         genericSymbols.HorizontalSymbol)):
-                            fix_pos_from_ast(branch)
-                        fix_pos_from_ast(symbol.next_aligned_symbol())
-                        fix_pos_from_ast(symbol.comment)
+
+                def layout_comments(symbol):
+                    ''' Comments are decorations, not layout anchors: place
+                    each one to the right of its parent rather than from
+                    its own CIF coordinates, then recurse so every
+                    comment of the sub-diagram is handled. '''
+                    try:
+                        comment = symbol.comment
+                    except AttributeError:
+                        comment = None
+                    if comment is not None:
+                        try:
+                            comment.pos_x = \
+                                symbol.boundingRect().width() + 15
+                            comment.pos_y = 0
+                        except AttributeError:
+                            pass
+                    try:
+                        children = symbol.childSymbols()
+                    except AttributeError:
+                        children = []
+                    for child in children:
+                        layout_comments(child)
+
                 import opengeode.genericSymbols as gs
                 gs.Symbol.mass_updating_no_bubble = True
-                for each in dest_scene.floating_symb:
+                floaters = list(dest_scene.floating_symb)
+                for each in floaters:
                     fix_pos_from_ast(each)
                 gs.Symbol.mass_updating_no_bubble = False
+                # clean_layout measures each branch by its bounding
+                # rectangle, which depends on the size of the text
+                # inside the symbols. Right after rendering, the
+                # EditableText widths are not final yet: Qt computes the
+                # document layout lazily, on the event loop (a symbol's
+                # width can go from 178 to 187px once settled). Measuring
+                # now would spread the branches by a stale width and the
+                # wider text would then overlap its neighbours. Flush the
+                # pending layout events so the widths are final before we
+                # lay out.
+                QApplication.processEvents()
+                # Only the floating (top-level) symbols keep the
+                # coordinates read from the CIF comments. Rebalance the
+                # horizontal branches underneath each of them so they
+                # are evenly spread and cannot overlap. clean_layout is
+                # recursive, so a single call per floating symbol covers
+                # its whole sub-tree.
+                #
+                # A START symbol must NOT be skipped: in a composite-state
+                # or procedure scene the inner states hang below the START
+                # (they are its children, not floating symbols), so the
+                # START owns the whole state machine that needs
+                # rebalancing. Only text areas and comments are skipped -
+                # they carry no branches to rebalance.
+                for each in floaters:
+                    if isinstance(each, (sdlSymbols.TextSymbol, gs.Comment)):
+                        continue
+                    gs.clean_layout(each)
+                    layout_comments(each)
+                    # clean_layout rebalances branches but does no
+                    # collision avoidance: a widened branch can reach
+                    # into a neighbouring top-level tree. Run the CAM
+                    # (non-animated: there is no event loop yet during
+                    # the load) so the symbols end up apart.
+                    try:
+                        each.cam(each.pos(), each.pos(), animate=False)
+                    except Exception:
+                        pass
+                # In a block diagram the textbox holding the signal and
+                # procedure declarations is generated to the right of the
+                # process symbols; make sure it does not overlap them by
+                # running the collision avoidance on it (Process is a
+                # horizontal symbol, so this pushes the processes aside
+                # if they collide).
+                if dest_scene.context == 'block':
+                    for text in dest_scene.texts:
+                        try:
+                            text.cam(text.pos(), text.pos(), animate=False)
+                        except Exception:
+                            pass
             except TypeError:
                 LOG.error(traceback.format_exc())
 
@@ -808,6 +877,19 @@ class SDL_Scene(QGraphicsScene):
         if not self.refresh_requested:
             self.refresh_requested = True
             QTimer.singleShot(0, self.scene_refresh)
+
+    def refresh_scrollbars(self):
+        ''' Equivalent of a F5 keypress: redraw each attached view so its
+        scrollbars are resized to the full extent of the diagram. Called
+        after symbols are added programmatically (e.g. by the Orbit MCP
+        bridge), where no user gesture triggers the refresh. No-op when
+        the scene is not attached to any view (headless rendering). '''
+        for view in self.views():
+            try:
+                view.view_refresh()
+            except RuntimeError:
+                # Underlying C++ view deleted on teardown
+                pass
 
     def scene_refresh(self):
         ''' Refresh the symbols and connections in the scene '''
@@ -906,6 +988,21 @@ class SDL_Scene(QGraphicsScene):
         ''' Parse a symbol and return a list of syntax errors '''
         return symb.check_syntax('\n'.join(Pr.generate(symb, recursive=False)))
 
+    @staticmethod
+    def _format_errors(errors):
+        ''' Turn the parser's error strings into the short lines shown in the
+        syntax-error pop-up (drop the leading "line N:C" location).'''
+        result = []
+        for error in errors:
+            split = error.split()
+            if split and split[0] == 'line' and len(split) > 1:
+                line_col = split[1].split(':')
+                if len(line_col) == 2:
+                    result.append(' '.join(split[2:]))
+                    continue
+            result.append(error)
+        return result
+
     def check_syntax(self, symbol) -> bool:
         ''' Check syntax of a symbol and display a pop-up in case of errors '''
         # return True if syntax errors were found
@@ -918,31 +1015,55 @@ class SDL_Scene(QGraphicsScene):
             return False
         ret = True
         for view in self.views():
-            errs = []
-            for error in errors:
-                split = error.split()
-                if split[0] == 'line' and len(split) > 1:
-                    line_col = split[1].split(':')
-                    if len(line_col) == 2:
-                        # Get line number and column..to locate error
-                        # line_nb, col = line_col
-                        errs.append(' '.join(split[2:]))
-                    else:
-                        errs.append(error)
-                else:
-                    errs.append(error)
             self.clear_focus()
+            # Offer orbit's "Auto fix" only when orbit is actually reachable;
+            # all the orbit-facing code lives in OrbitSyntaxFix (see there).
+            try:
+                from .OrbitSyntaxFix import auto_fix_available, auto_fix_symbol
+                can_autofix = auto_fix_available()
+            except Exception:
+                can_autofix = False
             msg_box = QMessageBox(view)
             msg_box.setFont(QFont('UbuntuMono', 10))
             msg_box.setIcon(QMessageBox.Warning)
             msg_box.setWindowTitle('OpenGEODE - Syntax Error')
-            additional_spaces = min(100, max([len(e) for e in errs]))
-            msg_box.setInformativeText('\n'.join(errs))
-            msg_box.setText("Syntax error! Keep editing?" + " " * additional_spaces)
             msg_box.setStandardButtons(QMessageBox.Ignore | QMessageBox.Yes)
             msg_box.setDefaultButton(QMessageBox.Yes)
+            fix_button = (msg_box.addButton('Auto fix', QMessageBox.ActionRole)
+                          if can_autofix else None)
             view.toolbar.disable_all_actions()
-            res = msg_box.exec()
+            while True:
+                # (Re)compute the errors each time the box is shown: an auto-fix
+                # may have changed the text (including a partial fix that is
+                # kept when orbit gives up), so the old list can be stale.
+                errors = self.syntax_errors(symbol)
+                if not errors:
+                    # The symbol parses now (e.g. a kept fix cleared
+                    # everything): treat it as fixed.
+                    symbol.syntax_error = False
+                    self.clear_highlight(symbol)
+                    view.toolbar.update_menu(self)
+                    return False
+                errs = self._format_errors(errors)
+                additional_spaces = min(100, max([len(e) for e in errs]))
+                msg_box.setInformativeText('\n'.join(errs))
+                msg_box.setText("Syntax error! Keep editing?"
+                                + " " * additional_spaces)
+                res = msg_box.exec()
+                if fix_button is not None and msg_box.clickedButton() is fix_button:
+                    # Let the user take orbit's correction; this shows its own
+                    # progress and review dialogs. On success the symbol parses
+                    # again, so stop here and let the caller record the edit.
+                    view.toolbar.update_menu(self)
+                    if auto_fix_symbol(view, symbol, errs):
+                        symbol.syntax_error = False
+                        self.clear_highlight(symbol)
+                        return False
+                    # Not fixed (cancelled, or the attempts ran out): the box is
+                    # shown again with the (possibly updated) errors.
+                    view.toolbar.disable_all_actions()
+                    continue
+                break
             if res == QMessageBox.Ignore:
                 ret = False
                 self.highlight(symbol, Qt.red)
@@ -1240,15 +1361,22 @@ class SDL_Scene(QGraphicsScene):
                 self.refresh()
         self.selectionChanged.emit()
 
-    def sdl_to_statechart(self, basic=True, view=None, ast=None):
+    def sdl_to_statechart(self, basic=True, view=None, ast=None, process=None):
         ''' Create a graphviz representation of the SDL model
-            Optionally take a QGraphicsView to use as parent for modals '''
+            Optionally take a QGraphicsView to use as parent for modals.
+            With several processes (and no explicit ``process`` argument),
+            there is no single automaton to draw: the caller must say
+            which one it wants. ``process`` is the process AST to draw;
+            without it the sole process/process type of the model is
+            used, as before. '''
         if ast is None:
             pr_raw = Pr.parse_scene(self)
             pr_data = str('\n'.join(pr_raw))
             ast, _, err = ogParser.parse_pr(string=pr_data)
             self.semantic_errors = True if err else False
-        if len(ast.processes) == 1:
+        if process is not None:
+            process_ast = process
+        elif len(ast.processes) == 1:
             process_ast, = ast.processes
         elif len(ast.process_types) == 1:
             process_ast, = ast.process_types
@@ -1256,16 +1384,26 @@ class SDL_Scene(QGraphicsScene):
             LOG.debug('No statechart to render (no process or process type)')
             return None
         try:
-            process_ast.input_signals = \
-                    sdlSymbols.CONTEXT.processes[0].input_signals
-        except IndexError:
-            try:
-                process_ast.input_signals = \
-                    view.context_history[0].processes[0].input_signals
-            except (AttributeError, IndexError):
-                # No process context, eg. when called from cmd line
-                # in that case ast was provided in the parameters
-                LOG.debug("Statechart rendering: no CONTEXT.processes[0]")
+            # Prefer the context's own entry for THIS process: with
+            # several processes, processes[0] is not necessarily the one
+            # being drawn.
+            contexts = [sdlSymbols.CONTEXT,
+                        view.context_history[0] if view is not None
+                        and getattr(view, 'context_history', None) else None]
+            for ctx in contexts:
+                if ctx is None or not getattr(ctx, 'processes', None):
+                    continue
+                match = next((p for p in ctx.processes
+                              if p.processName == process_ast.processName),
+                             ctx.processes[0] if len(ctx.processes) == 1
+                             else None)
+                if match is not None:
+                    process_ast.input_signals = match.input_signals
+                    break
+        except (AttributeError, IndexError):
+            # No process context, eg. when called from cmd line
+            # in that case ast was provided in the parameters
+            LOG.debug("Statechart rendering: no process context")
 
         # Flatten nested states (no, because neato does not support it,
         # dot supports only vertically-aligned states, and fdp does not
@@ -2161,6 +2299,10 @@ class SDL_View(QGraphicsView):
             When Up button is clicked, go up one nested scene level
         '''
         LOG.debug('GO_UP')
+        if not self.scene_stack:
+            if self.up_button:
+                self.up_button.setEnabled(False)
+            return
         self.scene().clear_focus()
         # Signal to the world that the current scene is left:
         self.scene().scene_left.emit()
@@ -2168,13 +2310,14 @@ class SDL_View(QGraphicsView):
         self.setScene(scene)
         self.wrapping_window.setWindowTitle(self.scene().name)
         self.set_toolbar()
-        if not self.scene_stack:
+        if not self.scene_stack and self.up_button:
             self.up_button.setEnabled(False)
         self.setSceneRect(self.scene().sceneRect())
         self.viewport().update()
         self.horizontalScrollBar().setSliderPosition(horpos)
         self.verticalScrollBar().setSliderPosition(verpos)
-        sdlSymbols.CONTEXT = self.context_history.pop()
+        if self.context_history:
+            sdlSymbols.CONTEXT = self.context_history.pop()
         self.update_datadict.emit()
         self.scene().undo_stack.cleanChanged.connect(self.update_window_modified)
         self.scene().undo_stack.indexChanged.connect(self.change_cleanliness)
@@ -2182,14 +2325,14 @@ class SDL_View(QGraphicsView):
 
     def go_down(self, scene, name=''):
         ''' Enter a nested diagram (procedure, composite state) '''
-        # Save context history
-        self.context_history.append(sdlSymbols.CONTEXT)
         try:
             subtype, subname = name.split()
         except ValueError as err:
             LOG.debug("[go_down] name split fail (PROCESS TYPE?)" + str(err))
             LOG.info("Can't refine content of a type instance")
             return
+        # Save context history
+        self.context_history.append(sdlSymbols.CONTEXT)
         # Get AST of the element that is entered
         if subtype == 'procedure':
             for each in sdlSymbols.CONTEXT.procedures:
@@ -2530,14 +2673,17 @@ class SDL_View(QGraphicsView):
 
         if (not autosave
                and scene.ast is not None
-               and len(scene.ast.processes) == 1
+               and scene.ast.processes
+               and self.options
                and (self.options.toAda or self.options.toC or self.options.toRust)):
             # When --edit is combined with --toAda, --toC, or --toRust, generate the
             # code at the same time as the model, to save build time in TASTE
-            process, = scene.ast.processes
             try:
                 cwd = os.getcwd()
-                generate(process, self.options)
+                # Generate for every process of the model (a single .pr
+                # file may hold several, with channels between them).
+                for process in scene.ast.processes:
+                    generate(process, self.options)
             except Exception as e:
                 # Code generation failed (can be due to errors in the model)
                 # pr saving must continue anyway
@@ -2558,34 +2704,39 @@ class SDL_View(QGraphicsView):
             item.pos_y -= delta_y
 
         # Gather list of ASN.1 files (+possibly custom types definitions)
+        base_dir = os.path.abspath(pr_path or ".")
         try:
-            firstAsn1File = os.path.basename(ogParser.DV.asn1Files[0])
-            source_dir = os.path.relpath\
-                    (os.path.dirname(ogParser.DV.asn1Files[0]) or ".")
-            otherAsn1Files = [os.path.relpath(path, "code")
-                    for path in ogParser.DV.asn1Files[1:]]
+            asn1_files = [os.path.relpath(os.path.abspath(path), base_dir)
+                          for path in ogParser.DV.asn1Files]
         except (AttributeError, IndexError):
-            source_dir = "."
-            firstAsn1File, otherAsn1Files = "", []
+            asn1_files = []
 
         process = scene.ast.processes[0] if scene.ast and len(scene.ast.processes) == 1 else None
-        if not process or not getattr(process, 'no_context', False):
-            otherAsn1Files.append(f'code/{prj_name}_datamodel.asn')
-        otherAsn = " ".join(otherAsn1Files)
+        has_datamodel = not process or not getattr(process, 'no_context', False)
+
+        datamodel_name = f'{prj_name}_datamodel.asn'
+        asn1_ada = " ".join(asn1_files + ([f'code/{datamodel_name}'] if has_datamodel else []))
+        asn1_c = " ".join(asn1_files + ([f'code_c/{datamodel_name}'] if has_datamodel else []))
+        asn1_rust = " ".join(asn1_files + ([f'code_rust/{datamodel_name}'] if has_datamodel else []))
 
         #  Template for the Makefile
         template_makefile = f'''all:
 \tmkdir -p code
 \tcd code && opengeode --toAda ../*.pr
-\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -typePrefix asn1Scc -o code -equal -Ada -adaBitStringAlignment {asn1_ada}
 \tcd code && gnat make {prj_name}
 c:
 \tmkdir -p code_c
 \tcd code_c && opengeode --toC ../*.pr
-\tasn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c {firstAsn1File} {otherAsn}
+\tasn1scc -fp AUTO -ig -renamePolicy 3 -typePrefix asn1Scc -o code_c -equal -c {asn1_c}
 \tcd code_c && gcc -c *.c
+rust:
+\tmkdir -p code_rust
+\tcd code_rust && opengeode --toRust ../*.pr
+\tasn1scc -fp AUTO -typePrefix asn1Scc -renamePolicy 3 -equal -Rust -o code_rust {asn1_rust}
+\tcd code_rust && (cp {prj_name.lower()}_cargo.toml Cargo.toml 2>/dev/null || cp *_cargo.toml Cargo.toml 2>/dev/null || true) && cargo build --lib
 clean:
-\trm -rf code code_c'''
+\trm -rf code code_c code_rust'''
         pr_data = str('\n'.join(pr_raw))
         try:
             pr_file.write(pr_data.encode('utf-8'))
@@ -2669,7 +2820,9 @@ clean:
                 if sys_struct not in files:
                     files.append(sys_struct)
         try:
-            ast, warnings, errors = ogParser.parse_pr(files=files)
+            ast, warnings, errors = ogParser.parse_pr(
+                files=files, prune_select_if=False
+            )
         except IOError:
             LOG.error('Aborting: could not open or parse input file')
             sdlSymbols.CONTEXT = ogAST.Block()
@@ -2738,6 +2891,9 @@ clean:
         # Reset current diagram scene & symbol tables before rendering reloaded/new AST
         self.need_new_scene.emit()
         self.scene_stack = []
+        self.context_history = []
+        if self.up_button:
+            self.up_button.setEnabled(False)
         if self.scene() and hasattr(self.scene(), 'undo_stack'):
             self.scene().undo_stack.clear()
         G_SYMBOLS.clear()
@@ -2746,6 +2902,11 @@ clean:
             self.scene().render_everything(block)
         except AttributeError as err:
             LOG.debug("[Rendering] " + str(err))
+        # The automatic clean_layout done while rendering records
+        # MoveSymbol commands on the undo stack; a freshly loaded model
+        # must start with an empty history, so drop them.
+        if hasattr(self.scene(), 'undo_stack'):
+            self.scene().undo_stack.clear()
         self.find_symbols_and_update_errors()
         self.toolbar.update_menu(self.scene())
         self.scene().name = 'block {}[*]'.format(
@@ -2844,6 +3005,9 @@ clean:
             return False
         self.need_new_scene.emit()
         self.scene_stack = []
+        self.context_history = []
+        if self.up_button:
+            self.up_button.setEnabled(False)
         self.scene().undo_stack.clear()
         G_SYMBOLS.clear()
         self.scene().process_name = ''
@@ -3008,8 +3172,10 @@ clean:
         that the Up button is properly set when the scene is reached '''
         if not path:
             return True
-        while self.up_button.isEnabled():
+        while self.scene_stack:
             self.go_up()
+        if self.up_button:
+            self.up_button.setEnabled(False)
         processName = ''
         partitions = self.top_scene().partitions
         for each in path:
@@ -3075,8 +3241,12 @@ clean:
             if self.scene().context == 'process' and symbol.scene() != self.scene():
                 # We need to go to the right partition
                 processName = sdlSymbols.CONTEXT.processName
-                self.go_up()
-                self.go_down(symbol.scene(), name=f'process {processName}')
+                if self.scene_stack:
+                    self.go_up()
+                    self.go_down(symbol.scene(), name=f'process {processName}')
+                else:
+                    self.setScene(symbol.scene())
+                    self.update_partition_arrows()
 
             symbol.select()
             self.scene().highlight(symbol)
@@ -3755,15 +3925,40 @@ class OG_MainWindow(QMainWindow):
         self.cancel_asn1_edit()
 
     def associate_asn1_file_and_save(self, filename):
-        ''' Add a TextSymbol referencing the ASN.1 file to the diagram and save '''
+        ''' Add the USE clause referencing the ASN.1 file to the diagram and
+        save. The USE clause belongs to the top-level (system/block)
+        diagram, so that the dataview is visible to all processes: never
+        put it in the currently displayed scene if it is a nested one
+        (e.g. inside a process). '''
         from PySide6.QtCore import QPointF
-        pos = QPointF(50, 50)
-        text_content = f"use datamodel comment '{filename}';"
-        text_symbol = self.view.scene().place_symbol(item_type=sdlSymbols.TextSymbol, parent=None, pos=pos)
-        if text_symbol:
-            text_symbol.text.setPlainText(text_content)
-            text_symbol.ast.inputString = text_content
+        use_clause = f"use datamodel comment '{filename}';"
+        scene = self.view.top_scene()
+        # Reuse an existing top-level text area if there is one, so that
+        # all ASN.1 files are set in a single text area (required by the
+        # parser at system level)
+        existing = [t for t in getattr(scene, 'texts', [])
+                    if isinstance(t, sdlSymbols.TextSymbol)]
+        if existing:
+            text_symbol = existing[0]
+            old_text = text_symbol.text.toPlainText().rstrip()
+            new_text = f"{use_clause}\n{old_text}" if old_text else use_clause
+            text_symbol.text.setPlainText(new_text)
+            text_symbol.ast.inputString = new_text
             text_symbol.text.try_resize()
+        else:
+            # Place the new text area to the left of the existing symbols
+            # so that it does not overlap them
+            rect = scene.itemsBoundingRect()
+            if rect.isNull():
+                pos = QPointF(50, 50)
+            else:
+                pos = QPointF(rect.left() - 300, rect.top())
+            text_symbol = scene.place_symbol(item_type=sdlSymbols.TextSymbol,
+                                             parent=None, pos=pos)
+            if text_symbol:
+                text_symbol.text.setPlainText(use_clause)
+                text_symbol.ast.inputString = use_clause
+                text_symbol.text.try_resize()
 
         # Invoke model save
         self.view.save_diagram()
@@ -3795,13 +3990,14 @@ class OG_MainWindow(QMainWindow):
         base_dir = os.path.dirname(self.view.filename)
         if not base_dir:
             base_dir = "."
-            
-        module_name = process_name
-        
+
+        default_mod = f"{process_name[0].upper() + process_name[1:]}-Dataview" if process_name else "DataView"
+        module_name = default_mod
+
         while True:
             if not module_name:
                 from PySide6.QtWidgets import QInputDialog
-                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:")
+                name, ok = QInputDialog.getText(self, "ASN.1 Module Name", "Enter the name for the ASN.1 module:", text=default_mod)
                 if not ok or not name.strip():
                     return
                 module_name = name.strip()
@@ -3809,8 +4005,11 @@ class OG_MainWindow(QMainWindow):
             # Ensure first letter of module name is uppercase
             module_name = module_name[0].upper() + module_name[1:] if len(module_name) > 0 else ""
 
-            # Ensure first letter of file name is lowercase
-            file_prefix = module_name[0].lower() + module_name[1:] if len(module_name) > 0 else ""
+            # Ensure file name does not clash with process name (e.g. foo.asn vs process foo)
+            # because asn1scc would generate foo.rs / foo.c, clobbering the process output.
+            file_prefix = module_name.lower().replace('-', '_')
+            if process_name and file_prefix == process_name.lower():
+                file_prefix = f"{file_prefix}_dv"
             filename = f"{file_prefix}.asn"
             filepath = os.path.join(base_dir, filename)
 
@@ -4780,17 +4979,21 @@ def export(ast, options):
     if not export_fmt:
         return
 
-    process, = ast.processes
+    processes = list(ast.processes)
+    # The block to render: the whole system when the model declares one
+    # (so every process and the channels/signalroutes between them are
+    # drawn), or a synthetic block holding all processes when there is
+    # no System/Block hierarchy.
     try:
         syst, = ast.systems
         block, = syst.blocks
-        if block.processes[0].referenced:
-            LOG.debug('Process is referenced, fixing')
-            block.processes = [process]
+        if block.processes and block.processes[0].referenced:
+            LOG.debug('Processes are referenced, fixing')
+            block.processes = processes
     except ValueError:
         # No System/Block hierarchy, creating single block
         block = ogAST.Block()
-        block.processes = [process]
+        block.processes = processes
 
     scene = SDL_Scene(context='block')
     scene.render_everything(block)
@@ -4803,27 +5006,35 @@ def export(ast, options):
         if any(each.visible_symb):
             scenes.append(each)
 
+    # The label identifying the diagram: the process name for a single
+    # process (as before), else the block/system name — one block
+    # diagram holds them all.
+    label = (processes[0].processName if len(processes) == 1
+             else (block.name or 'system'))
     for idx, diagram in enumerate(scenes):
         for doc_fmt in export_fmt:
             name = '{}-{}-{}-{}'.format(str(idx),
-                                        process.processName,
+                                        label,
                                         diagram.context,
                                         diagram.name or 'main')
             LOG.info('Saving {}.{}'.format(name, doc_fmt))
             diagram.export_img(name, doc_format=doc_fmt, split=options.split)
-        if diagram.context == 'block':
-            # Also save the statechart view of the current scene
-            sc_scene = SDL_Scene(context='statechart')
-            try:
-                graph = diagram.sdl_to_statechart(ast=ast)
-                Statechart.render_statechart(sc_scene, graph)
-                for doc_fmt in export_fmt:
-                    name = 'sc-' + process.processName
-                    LOG.info('Saving {}.{}'.format(name, doc_fmt))
-                    sc_scene.export_img(name, doc_format=doc_fmt)
-            except (AttributeError, IOError, TypeError) as err:
-                LOG.error(traceback.format_exc())
-                LOG.debug(str(err))
+    # The statechart is per process: draw one for each (the block-scene
+    # statechart of a multi-process model has no meaning).
+    for process in processes:
+        sc_scene = SDL_Scene(context='statechart')
+        try:
+            graph = scene.sdl_to_statechart(ast=ast, process=process)
+            if graph is None:
+                continue
+            Statechart.render_statechart(sc_scene, graph)
+            for doc_fmt in export_fmt:
+                name = 'sc-' + process.processName
+                LOG.info('Saving {}.{}'.format(name, doc_fmt))
+                sc_scene.export_img(name, doc_format=doc_fmt)
+        except (AttributeError, IOError, TypeError) as err:
+            LOG.error(traceback.format_exc())
+            LOG.debug(str(err))
 
 
 def cli(options):
@@ -4838,8 +5049,8 @@ def cli(options):
     if options.dumpAST:
         ogASTDumper.dump('ast.dump', ast)
 
-    if len(ast.processes) != 1:
-        LOG.error(f'Found {len(ast.processes)} process(es) instead of one')
+    if not ast.processes:
+        LOG.error('No process found in the input file(s)')
         return 1
 
     if options.png or options.pdf or options.svg:
@@ -4848,7 +5059,13 @@ def cli(options):
     if any((options.toAda, options.simu,
         options.stg, options.toC, options.toRust)):
         if not errors:
-            errors = generate(ast.processes[0], options)
+            # Generate the code for EVERY process of the model, not only
+            # the first: a single .pr file may hold a whole system with
+            # several processes (and channels between them).
+            for process in ast.processes:
+                rc = generate(process, options)
+                if rc:
+                    errors = rc
         else:
             LOG.error('Too many errors, cannot generate code')
 

@@ -43,13 +43,8 @@ test-vhdl : test-c
 
 test-rust:
 	$(OPENGEODE) og.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn && \
-	for f in *_datamodel.rs; do \
-	  if [ -f "$$f" ] && ! grep -q 'use crate::dataview_uniq::' "$$f"; then \
-	    sed -i '/^use crate.*Def/s/$$/\nuse crate::dataview_uniq::*;/' "$$f"; \
-	  fi; \
-	done && \
-	sed -i '/^pub const /d' dataview-uniq.rs && \
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn && \
+	sed -i '/^pub const /d' taste_dataview.rs && \
 	cp og_cargo.toml Cargo.toml && \
 	cargo build 2>&1 && \
 	./target/debug/test_rust | diff expected -

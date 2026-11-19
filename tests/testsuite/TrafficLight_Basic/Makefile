@@ -35,7 +35,7 @@ test-qgen-gt-c:
 
 test-ada: 
 	$(OPENGEODE) controller.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal dataview-uniq.asn 
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal dataview-uniq.asn 
 
 test-c:
 	$(OPENGEODE) controller.pr system_structure.pr --toC
@@ -44,7 +44,7 @@ test-c:
 
 test-rust:
 	$(OPENGEODE) controller.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 test-if:
 	sdl2if controller.pr system_structure.pr

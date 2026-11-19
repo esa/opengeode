@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada: dataview-uniq.o | test_ada.o
 	cp challenge_ri.ada challenge_ri.adb
 	$(OPENGEODE) challenge.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make challenge
 	$(GNATBIND) -n challenge.ali
 	$(GNATLINK) -o test_ada  test_ada.o challenge.ali -lm
@@ -48,7 +48,7 @@ test-c: challenge.c test_c.o dataview-uniq.o challenge_datamodel.o
 
 test-rust:
 	$(OPENGEODE) challenge.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 coverage:
 	coverage run -p $(OPENGEODE) challenge.pr system_structure.pr --toAda

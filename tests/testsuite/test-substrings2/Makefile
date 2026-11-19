@@ -28,7 +28,7 @@ test-qgen-gt-c:
 test-ada:
 	#make -f Makefile.function2
 	$(OPENGEODE) function2.pr system_structure.pr --toAda
-	$(ASN1SCC) -Ada -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Ada -adaBitStringAlignment -typePrefix asn1Scc -equal *.asn
 	gnat make function2
 
 test-c:
@@ -42,7 +42,7 @@ test-if:
 
 test-rust:
 	$(OPENGEODE) function2.pr system_structure.pr --toRust && \
-	$(ASN1SCC) -Rust -typePrefix asn1Scc -equal *.asn
+	$(ASN1SCC) -Rust -typePrefix asn1Scc -renamePolicy 3 -equal *.asn
 
 
 coverage:

@@ -1,0 +1,68 @@
+TASTE-BasicTypes DEFINITIONS ::=
+BEGIN
+
+-- Set of TASTE predefined basic types
+
+T-Int32 ::=  INTEGER (-2147483648 .. 2147483647)
+
+T-UInt32 ::= INTEGER (0 .. 4294967295)
+
+T-Int8 ::= INTEGER (-128 .. 127)
+
+T-UInt8 ::= INTEGER (0 .. 255)
+
+T-Boolean ::= BOOLEAN
+
+T-Null-Record ::= SEQUENCE {}
+
+END
+
+
+TESTBENCH2-DATAVIEW DEFINITIONS ::=
+BEGIN
+
+   MyInteger ::= INTEGER (0 .. 10000)
+
+   MySeq ::= SEQUENCE {
+      x  MyInteger,
+      y MyInteger
+   }
+
+   MyData ::= SEQUENCE (SIZE(0..10)) OF MyInteger
+
+   MyArray ::= SEQUENCE (SIZE(10)) OF MyInteger
+
+   MyRecord ::= SEQUENCE {
+       x MyInteger,
+       data MyArray
+   }
+
+   MyNested ::= SEQUENCE (SIZE(2)) OF MyArray
+
+   MyUnion ::= CHOICE {
+       packet MyInteger,
+       dummy MyInteger
+   }
+
+   SmallInteger ::= INTEGER (0 .. 2)
+   BigInteger ::= INTEGER (3 .. 5)
+   MyChoice ::= CHOICE {
+      small SmallInteger,
+      big BigInteger
+   }
+   MySequence ::= SEQUENCE {
+      value SmallInteger,
+      version MyChoice
+   }
+
+   MySequenceOf ::= SEQUENCE (SIZE(1)) OF MySequence
+
+   MyOctetString ::= OCTET STRING (SIZE(2))
+
+   MyVariableOctetString ::= OCTET STRING (SIZE(0..2))
+
+   myIntegerInitVal MyInteger ::= 3
+
+   my-DataInitVal MyData ::= {1, 7}
+
+END
